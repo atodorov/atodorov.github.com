@@ -37,6 +37,8 @@ JavaScript and HTML5 to the rescue
 Place this JavaScript code in the `<head>` section of your pages. Preferably near the top.
 
     <script type="text/javascript">
+    // (c) 2013 - Alexander Todorov, http://atodorov.org
+    // Published under GNU GPLv3
     var uri = window.location.toString();
     var clean_uri = uri.substring(0, uri.indexOf("?"));
     window.history.replaceState({}, document.title, clean_uri);
