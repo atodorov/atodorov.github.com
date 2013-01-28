@@ -46,6 +46,8 @@ Place this JavaScript code in the `<head>` section of your pages. Preferably nea
 
 
 This code will clean the URL in the browser address bar without reloading the page.
-It works for HTML5 enabled browsers. This totally works for me with 
-Firefox 10.0.12, Opera 12.02.1578 and Chrome 24.0.1312.56 under Linux.
+It works for HTML5 enabled browsers.
 
+This works for me with 
+Firefox 10.0.12, Opera 12.02.1578 and Chrome 24.0.1312.56 under Linux. In fact I'm
+using this snippet on this very own blog as well.
