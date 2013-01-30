@@ -3,7 +3,7 @@ layout: post
 title: "StartUP Talk#5 - book list"
 date: 2013-01-30 16:14
 comments: true
-categories: ['books']
+categories: ['start-up', 'books']
 ---
 
 Yesterday I have visited an interesting talk by
