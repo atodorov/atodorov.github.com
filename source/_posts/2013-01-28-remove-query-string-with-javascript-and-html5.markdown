@@ -39,6 +39,7 @@ Place this JavaScript code in the `<head>` section of your pages. Preferably nea
     <script type="text/javascript">
     // (c) 2013 - Alexander Todorov, http://atodorov.org
     // Published under GNU GPLv3
+
     var uri = window.location.toString();
     if (uri.indexOf("?") > 0) {
         var clean_uri = uri.substring(0, uri.indexOf("?"));
@@ -53,3 +54,36 @@ It works for HTML5 enabled browsers.
 This works for me with 
 Firefox 10.0.12, Opera 12.02.1578 and Chrome 24.0.1312.56 under Linux. In fact I'm
 using this snippet on this very own blog as well.
+
+
+**Updated on 2013-01-30**
+
+Here is another approach proposed by reader Kamen Mazdrashki: 
+
+    <script type="text/javascript">
+    // (c) 2013 - Alexander Todorov, http://atodorov.org
+    // Published under GNU GPLv3
+
+    var clean_uri = location.protocol + "//" + location.host + location.pathname;
+    /*
+    var hash_pos = location.href.indexOf("#");
+    if (hash_pos > 0) {
+        var hash = location.href.substring(hash_pos, location.href.length);
+        clean_uri += hash;
+    }
+    */
+    window.history.replaceState({}, document.title, clean_uri);
+    </script>
+
+If you'd like to keep the hash tag aka named anchor aka fragment identifier at the end of the URL
+then uncomment the commented section.
+
+I've tested removing the hashtag from the URL. Firefox doesn't seem to scroll the page
+to where I wanted but your experience may vary. I didn't try hard enough to
+verify the results.
+
+One question still remains though: Why would someone point the users to an URL which contains
+named anchors and then remove them? I don't see a valid use case for this scenario. Do you?
+
+
+
