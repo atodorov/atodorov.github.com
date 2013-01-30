@@ -14,6 +14,8 @@ some of the more interesting previous ones.
 Difio
 -----
 
+<img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
+
 [Difio](http://www.dif.io) is my latest project. This is a service targeted at developers
 who use open source packages and libraries. Difio keeps track of application dependencies
 and tells you when they change. It lets you inspect the changes and make informed decision
@@ -24,15 +26,19 @@ or the versions of those libraries can break the application.
 Open Technologies Bulgaria
 ---------------------------
 
+!["OTB"](/images/logos/otb.png "OTB")
+
 [Open Technologies Bulgaria, Ltd](http://otb.bg) is a company I founded in 2009 which
 mainly does open source consulting for some local clients and QA services to Red Hat, Inc. It's
-also a Red Hat re-seller in Bulgaria. At present this company is more like an umbrella
-company for other of my projects but it had some 
+also a [Red Hat re-seller in Bulgaria](http://redhat.force.com/finder/PFPartnerDetail?id=0016000000LxykhAAB).
+At present this company is more like an umbrella company for other of my projects but it had some 
 [cool stuff](http://www.youtube.com/watch?v=7GYbCDGTz-4) in the past itself.
 
 
 Red Hat
 -------
+
+<img style="float: left; margin-right: 10px;" src="/images/logos/redhat.png" alt="RedHat" />
 
 [Red Hat, Inc.](http://redhat.com) is the largest enterprise Linux vendor as you probably know.
 I used to work for them as an employee and still continue to do so as a contractor. My main responsibility
@@ -44,6 +50,8 @@ kick ass.
 
 One Laptop Per Child Bulgarian Chapter
 --------------------------------------
+
+<img style="float: left; margin-right: 10px;" src="/images/logos/olpcbg.png" alt="OLPC.bg" />
 
 [OLPC](http://laptop.org) was a project to build an entirely new laptop device and software for the children
 in developing countries. I was a co-founder of the Bulgarian chapter of this project.
