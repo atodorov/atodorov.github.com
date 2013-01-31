@@ -18,7 +18,7 @@ Standard approach
 
 A pretty common approach when sending huge volumes of email is to use an external
 service, such as MailChimp. This is one of many email
-marketting services which comes with a lot of features. The most important to me
+marketing services which comes with a lot of features. The most important to me
 was analytics and reports.
 
 The downside is that MailChimp (and I guess others) use HTML formatted emails
