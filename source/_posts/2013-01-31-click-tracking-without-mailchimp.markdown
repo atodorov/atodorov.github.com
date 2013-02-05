@@ -55,24 +55,24 @@ the `/daily/index.html` page uses as its destination. Before doing the redirect
 a script adds tracking parameters so that Google Analytics will properly
 report this visit. Here is the code: 
 
+{% codeblock lang:html %}
+<html>
+<head>
+<script type="text/javascript">
+// (c) 2013 - Alexander Todorov, http://atodorov.org
+// Published under GNU GPLv3
 
-    <html>
-    <head>
-    <script type="text/javascript">
-    // (c) 2013 - Alexander Todorov, http://atodorov.org
-    // Published under GNU GPLv3
-
-    var uri = window.location.toString();
-    var question = uri.indexOf("?");
-    var param = uri.substring(question + 1, uri.length)
-    if (question > 0) {
-        window.location.href = param + '?utm_source=email&utm_medium=email&utm_campaign=Daily_Notification';
-    }
-    </script>
-    </head>
-    <body></body>
-    </html>
-
+var uri = window.location.toString();
+var question = uri.indexOf("?");
+var param = uri.substring(question + 1, uri.length)
+if (question > 0) {
+    window.location.href = param + '?utm_source=email&utm_medium=email&utm_campaign=Daily_Notification';
+}
+</script>
+</head>
+<body></body>
+</html>
+{% endcodeblock %}
 
 Previously Google Analytics was reporting these visits as direct hits while now it lists them under
 campaigns like so:
