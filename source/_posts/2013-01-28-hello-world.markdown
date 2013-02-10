@@ -19,4 +19,4 @@ All content is published under
 license and all source code is under [GNU GPLv3](http://www.gnu.org/licenses/gpl.html) if not stated
 otherwise.
 
-I hope you find it interesting and successful.
+I hope you find it interesting and helpful.
