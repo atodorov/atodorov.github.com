@@ -27,5 +27,6 @@ but I don't have the time for this anymore. I still speak at conferences from ti
 You can always ping me if you'd like to chat or have a beer. See <http://about.me/atodorov>
 for a list of actively used social profiles and contact info.
 
+If you want to email me, please execute this to see my address:
 
-
+    echo 17535658@572.24 | tr [12345678] [abdgortv]
