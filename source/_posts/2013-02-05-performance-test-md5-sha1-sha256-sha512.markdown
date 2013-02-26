@@ -17,7 +17,7 @@ round.
 Test Data
 ---------
 
-The file [urls.txt](https://s3.amazonaws.com/atodorov/blog/urls.txt.gz)
+The file [urls.txt](http://s3.amazonaws.com/atodorov/blog/urls.txt.gz)
 contains 10000 unique paths from the [dif.io](http://www.dif.io)
 website and looks like this:
 
