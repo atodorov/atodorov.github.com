@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Performance Test: Amazon EBS vs. Instance Storage, Part 1"
+title: "Performance Test: Amazon EBS vs. Instance Storage, Pt.1"
 date: 2013-02-26 23:02
 comments: true
 categories: ['performance', 'testing', 'Amazon', 'EC2']
