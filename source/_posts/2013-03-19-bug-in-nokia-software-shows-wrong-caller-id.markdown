@@ -49,10 +49,33 @@ When receiving a call `Buddy 0` is displayed.
 but when multiple duplicate contacts are available it displays the name of the last entered in the
 contact list, independent of name sort order.
 
+<del>
 Later today or tomorrow I will test on 
 <a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 which runs Symbian OS and update this post with more results.
+</del>
 
+**Updated on 2013-03-19 23:50**
+
+Finally managed to test on
+<a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.
+Software version is:
+
+    Release
+    Nokia Belle Feature pack 1
+    Software version
+    112.010.1404
+    Software version date
+    2012-03-30
+    Type
+    RM-670
+
+**Result**: If a duplicate contact entry is present it doesn't matter if the name is empty or not.
+Both times no name was displayed when receiving a call. Looks like Nokia is not paying attention to
+regressions at all.
+
+Android and iPhone
+------------------
 
 I don't own any
 <a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Android&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Delectronics">Android</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
