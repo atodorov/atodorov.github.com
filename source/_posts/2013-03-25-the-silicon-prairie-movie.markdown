@@ -3,7 +3,7 @@ layout: post
 title: "The Silicon Prairie Movie"
 date: 2013-03-25 11:44
 comments: true
-categories: ['start-ups']
+categories: ['start-up']
 ---
 
 {% blockquote %}
