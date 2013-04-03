@@ -38,7 +38,7 @@ In addition *Useful at Night* uses MongoDB for metrics data with a custom metric
 written in Node.js; Amazon S3 for storing different assets; and a custom storage solution
 called Divan (simple CouchDB like).
 
-Why Not something else?
+Why Not Something Else?
 -----------------------
 
 {% blockquote %}
@@ -65,7 +65,7 @@ to say we're running a pretty graphically complex hybrid app with near-native GU
 on the iPhone 4S and above.
 {% endblockquote %}
 
-Want more info?
+Want More Info?
 ---------------
 
 If you'd like to hear more from *Useful at Night* please comment below. I will ask them
