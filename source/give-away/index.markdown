@@ -63,15 +63,15 @@ Books in Bulgarian
 * `reserved by Симеон`, `give-away` -
 [Нацията новатор - разказ за израелското икономическо чудо](http://www.mobilis.bg/mobilis/nacijata-novator-razkaz-za-izraelskoto-ikonomichesko-chudo.html) -
 Дан Сенор, Сол Сингър
-* `give-away` -
+* `reserved by Даниела Бояджиева`, `give-away` -
 [Тръмп: Мисли като милиардер](http://www.mobilis.bg/mobilis/tr-mp-misli-kato-miliarder.html) - Доналд Тръмп, Мередит Макайвър
 * `give-away` - [Стичането. Пътят към всички култури](http://www.mobilis.bg/mobilis/stichaneto-p-tjat-k-m-vsichki-kulturi.html) - Илия Троянов, Ранджит Хоскоте
 * `reserved by Vladimir Vassilev`, `give-away` -
 [Как да манипулираме хората - техники за манипулaция и защита от тях](http://www.mobilis.bg/mobilis/kak-da-manipulirame-horata-tehniki-za-manipulacija-i-zaschita-ot-tjah.html) -
 Игор Зорин
-* `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
-* `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
-* `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
+* `reserved by Даниела Бояджиева`, `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
+* `reserved by Даниела Бояджиева`, `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
+* `reserved by Даниела Бояджиева`, `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
 * `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
 * `reserved by Боби Рали`, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
 * `borrow` - [Дегустацията, или как да опознаем виното](http://www.mobilis.bg/mobilis/degustacijata-ili-kak-da-opoznaem-vinoto-1.html) - Неда Проданова
