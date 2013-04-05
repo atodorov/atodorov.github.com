@@ -60,7 +60,7 @@ Books in Bulgarian
 ------------------
 
 * `reserved by Vladimir Vassilev, Живко Георгиев`, `give-away` - [Изкуството на измамата](http://www.mobilis.bg/mobilis/izkustvoto-na-izmamata.html) - Кевин Митник
-* `give-away` -
+* `reserved by Симеон`, `give-away` -
 [Нацията новатор - разказ за израелското икономическо чудо](http://www.mobilis.bg/mobilis/nacijata-novator-razkaz-za-izraelskoto-ikonomichesko-chudo.html) -
 Дан Сенор, Сол Сингър
 * `give-away` -
