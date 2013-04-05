@@ -9,8 +9,21 @@ footer: true
 
 I have accumulated some items which I don't need or will not use anymore.
 Some of them I am willing to give away while others can be borrowed for a while.
-If you'd like to have an item feel free to comment and tell me why I should give
-it to you exactly. I will be happy if you give me something in exchange, especially books!
+
+**Rules Of Engagement** (added on 2013-04-05 21:45 EEST)
+
+* Items are tagged with a `prefix`. It is self explanatory;
+* Requests are served in a [FIFO](https://en.wikipedia.org/wiki/FIFO) fashion;
+If some items are returned back to me the next one in the queue will be served then;
+* If you'd like to have an item comment below! Requests via other platforms
+such as Facebook will **NOT** be taken into account although I may reply there occasionally.
+This is both for easier tracking of requests and for transparency sake! You are warned!
+* Your name (and possibly a link to you) will be published on this page upon request of an item;
+* You can give me something in exchange if you like but this is not necessary!
+* Feel free to share this page with your friends!
+* Scroll down to the bottom of the page and
+<img src="/images/subscribe.png" alt="subscribe via email" style="display:inline;border:none;margin:0;padding:0;vertical-align:text-bottom;"/>
+to get notified when I add new items!
 
 Books in English
 ----------------
