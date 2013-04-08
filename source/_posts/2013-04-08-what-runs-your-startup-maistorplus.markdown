@@ -3,7 +3,7 @@ layout: post
 title: "What Runs Your Start-up - MaistorPlus"
 date: 2013-04-08 12:52
 comments: true
-categories: ['what runs', 'PHP', 'Symfony', 'PostgreSQL']
+categories: ['what runs', 'PHP', 'Symfony', 'PostgreSQL', 'jQuery']
 ---
 
 <img src="/images/startup/maistorplus.jpg" alt="MaistorPlus logo" style="float:left; margin-right: 15px;"/>
@@ -19,8 +19,7 @@ offers and ratings and confidently choose who they want to hire.
 
 The team is also runner up at the Start IT Smart
 [3Challenge](http://www.3challenge.com/startups/season-3/).
-
-[Boris Sanchez](http://meisterplus.com/about/team) shared their technical mojo. Read on!
+[Boris Sanchez](http://meisterplus.com/about/team) shared their technical mojo.
 
 Main Technologies
 -----------------
@@ -32,14 +31,14 @@ MaistorPlus is a traditional web platform developed with the
 a straightforward, flexible and easy to extend templating engine, which is 
 integrated into the Symfony framework by default and works server-side with PHP
 in order to generate dynamic content, based on data stored in the database.
-Web pages also use jQuery and Sizzle.js and feature modern graphics.
+Web pages also use jQuery and [Sizzle.js](http://sizzlejs.com/) and feature modern graphics.
 Everything is beautifully styled with CSS.
 
 Why Not Something Else
 ----------------------
 
 {% blockquote Boris Sanchez %}
-The original development already had experience with Symfony, Zend, Spring and
+The original development team already had experience with Symfony, Zend, Spring and
 some other web application development frameworks. We opted for Symfony for two
 main reasons. First, Symfony is constantly improving, and has a strong and
 continuously growing community that offers 3rd party add-on components for free.
@@ -60,7 +59,7 @@ Want More Info?
 ---------------
 
 MaistorPlus is going to organize a Beta Testing next month. You are welcome to
-[subscribe](http://symfony.com/) to their monthly Newsletter or follow them on
+[subscribe](http://symfony.com/) to their monthly newsletter or follow them on
 [Facebook](https://www.facebook.com/MaistorPlus) / [Twitter](https://twitter.com/MaistorPlus).
 
 If you’d like to hear more from *MaistorPlus* please comment below.
