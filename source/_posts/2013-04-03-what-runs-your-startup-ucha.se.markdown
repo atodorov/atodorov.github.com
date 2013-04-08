@@ -58,5 +58,5 @@ quickly react on new business opportunities and technological (r)evolutions.
 Want More Info?
 ---------------
 
-If you’d like to hear more from Ucha.se please comment below.
-I will ask them to follow this thread and reply to you questions.
+If you’d like to hear more from *Ucha.se* please comment below.
+I will ask them to follow this thread and reply to your questions.

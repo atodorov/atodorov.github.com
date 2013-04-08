@@ -69,5 +69,5 @@ Want More Info?
 ---------------
 
 If you'd like to hear more from *Useful at Night* please comment below. I will ask them
-to follow this thread and reply to you questions.
+to follow this thread and reply to your questions.
 
