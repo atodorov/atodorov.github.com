@@ -59,7 +59,7 @@ Want More Info?
 ---------------
 
 MaistorPlus is going to organize a Beta Testing next month. You are welcome to
-[subscribe](http://symfony.com/) to their monthly newsletter or follow them on
+[subscribe](http://meisterplus.com/blog) to their monthly newsletter or follow them on
 [Facebook](https://www.facebook.com/MaistorPlus) / [Twitter](https://twitter.com/MaistorPlus).
 
 If you’d like to hear more from *MaistorPlus* please comment below.
