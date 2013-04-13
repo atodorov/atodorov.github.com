@@ -32,13 +32,13 @@ Books in English
 (
 <a href="http://www.amazon.com/gp/product/1449312063/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449312063&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449312063" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> |
 <a href="http://www.dpbolvw.net/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F0636920021995.do%3Fcmp%3Daf-npa-book-product_cj_9781449312060_%25zp&cjsku=0636920021995" target="_top">O'Reilly</a><img src="http://www.ftjcfx.com/image-7040110-11260198" width="0" height="0" border="0" style="display:none;"/>
-) - Jono Bacon
-* `reserved by Стилиян Стефанов`, `give-away` - 97 Things Every Software Architect Should Know
+)
+* `taken by Стилиян Стефанов`, `give-away` - 97 Things Every Software Architect Should Know
 (
 <a href="http://www.amazon.com/gp/product/059652269X/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=059652269X&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=059652269X" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> |
 <a href="http://www.kqzyfj.com/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F9780596522704.do%3Fcmp%3Daf-code-book-product_cj_9780596522698_%25zp&cjsku=9780596522704" target="_top">O'Reilly</a><img src="http://www.tqlkg.com/image-7040110-11260198" width="0" height="0" border="0" style="display:none"/>
-) - Richard Monson-Haefel
-* `reserved by Стилиян Стефанов`, `give-away` - 97 Things Every Project Manager Should Know 
+)
+* `taken by Стилиян Стефанов`, `give-away` - 97 Things Every Project Manager Should Know 
 (
 <a href="http://www.amazon.com/gp/product/0596804164/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0596804164&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0596804164" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> |
 <a href="http://www.kqzyfj.com/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F9780596804152.do%3Fcmp%3Daf-npa-book-product_cj_9780596804169_%25zp&cjsku=9780596804152" target="_top">O'Reilly</a><img src="http://www.tqlkg.com/image-7040110-11260198" width="0" height="0" border="0" style="display:none"/>
@@ -72,14 +72,14 @@ Books about living small
 Books in Bulgarian
 ------------------
 
-* `reserved by Vladimir Vassilev, Живко Георгиев`, `give-away` - [Изкуството на измамата](http://www.mobilis.bg/mobilis/izkustvoto-na-izmamata.html) - Кевин Митник
+* `taken by` [Vladimir Vassilev](http://initlab.org), `reserved by Живко Георгиев`, `give-away` - [Изкуството на измамата](http://www.mobilis.bg/mobilis/izkustvoto-na-izmamata.html) - Кевин Митник
 * `reserved by Симеон`, `give-away` -
 [Нацията новатор - разказ за израелското икономическо чудо](http://www.mobilis.bg/mobilis/nacijata-novator-razkaz-za-izraelskoto-ikonomichesko-chudo.html) -
 Дан Сенор, Сол Сингър
 * `reserved by Даниела Бояджиева`, `give-away` -
 [Тръмп: Мисли като милиардер](http://www.mobilis.bg/mobilis/tr-mp-misli-kato-miliarder.html) - Доналд Тръмп, Мередит Макайвър
 * `give-away` - [Стичането. Пътят към всички култури](http://www.mobilis.bg/mobilis/stichaneto-p-tjat-k-m-vsichki-kulturi.html) - Илия Троянов, Ранджит Хоскоте
-* `reserved by Vladimir Vassilev`, `give-away` -
+* `taken by` [Vladimir Vassilev](http://initlab.org), `give-away` -
 [Как да манипулираме хората - техники за манипулaция и защита от тях](http://www.mobilis.bg/mobilis/kak-da-manipulirame-horata-tehniki-za-manipulacija-i-zaschita-ot-tjah.html) -
 Игор Зорин
 * `reserved by Даниела Бояджиева`, `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
