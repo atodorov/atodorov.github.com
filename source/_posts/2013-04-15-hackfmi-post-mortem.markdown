@@ -83,7 +83,7 @@ ideas were pretty much standard. No screen scraping for additional information,
 no mashing up, no revolutionary ideas. Everybody was using the provided API and
 SQL dumps. Well almost.
 
-One of my favorite [teams](https://github.com/vcrazy/project-6) set off to
+One of my favorite       [teams](https://github.com/vcrazy/project-6) set off to
 write a PHP robot which will automatically login and extract information from
 SUSI (the faculty information system). Unfortunately that didn't work so they
 had to abandon it. They didn't known [Selenium](http://docs.seleniumhq.org/)
@@ -93,8 +93,10 @@ to try it.
 
 
 Because of their unorthodox approach from the start they became my personal favorites
-and received Red Hat swag from me. Pictures coming soon.
+and received Red Hat swag from me.
 
+![Team Six](/images/hackfmi_team_six_rh_swag.jpg "Team Six")
+Adrian and Vihren are Team Six!
 
 What I didn't like
 ------------------
