@@ -14,7 +14,7 @@ There are two upcoming events which are somewhat different.
 "Record Voting" Hackaton
 -------------------------
 
-![hackaton logo](http://iped.bg/pi_files/2013/03/20/16/mid_data.jpg)
+![hackaton logo](/images/opengov.jpg)
 
 Organized by [INSTITUTE FOR PUBLIC ENVIRONMENT DEVELOPMENT](http://iped.bg/en)
 this hackaton is the first I know of, which will focus on government provided data.
@@ -42,7 +42,7 @@ Daniel Lathrop and Laurel Ruma* (
 HackFMI
 -------
 
-![HackFMI](http://hackfmi.com/wp-content/uploads/2013/02/cropped-hackfmi.png "HackFMI")
+![HackFMI](/images/hackfmi/cropped-hackfmi.png "HackFMI")
 
 FMI stands for *Faculty of Mathematics and Informatics at the Sofia University* 
 (not where I graduated). It's one of the

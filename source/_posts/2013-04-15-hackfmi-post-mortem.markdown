@@ -6,7 +6,7 @@ comments: true
 categories: ['hackaton', 'hackfmi']
 ---
 
-<img src="/images/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" />
+<img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" />
 
 The first [HackFMI](http://hackfmi.com) event is now over :(. It was HUGE!
 Kudos to the organizers, sponsors, mentors and all teams who took part and worked hard during
@@ -83,7 +83,7 @@ ideas were pretty much standard. No screen scraping for additional information,
 no mashing up, no revolutionary ideas. Everybody was using the provided API and
 SQL dumps. Well almost.
 
-One of my favorite       [teams](https://github.com/vcrazy/project-6) set off to
+One of my favorite [teams](https://github.com/vcrazy/project-6) set off to
 write a PHP robot which will automatically login and extract information from
 SUSI (the faculty information system). Unfortunately that didn't work so they
 had to abandon it. They didn't known [Selenium](http://docs.seleniumhq.org/)
@@ -95,7 +95,7 @@ to try it.
 Because of their unorthodox approach from the start they became my personal favorites
 and received Red Hat swag from me.
 
-![Team Six](/images/hackfmi_team_six_rh_swag.jpg "Team Six")
+![Team Six](/images/hackfmi/hackfmi2013_team_six_rh_swag.jpg "Team Six")
 Adrian and Vihren are Team Six!
 
 What I didn't like
