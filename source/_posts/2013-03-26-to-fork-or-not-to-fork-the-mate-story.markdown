@@ -6,7 +6,7 @@ comments: true
 categories: 
 ---
 
-![](http://mate-desktop.org/wp-content/uploads/2011/12/cropped-Untitled.png)
+!["MATE Desktop"](/images/MATE.png "MATE Desktop")
 
 In the open source world
 [forking](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
