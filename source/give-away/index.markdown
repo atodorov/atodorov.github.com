@@ -45,7 +45,7 @@ Books in English
 ) - Barbee Davis
 * `borrow` - <a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> - Roy Osherove
 * `borrow` - <a href="http://www.amazon.com/gp/product/190676820X/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=190676820X&linkCode=as2&tag=atodorovorg-20">The Gentlemen's Clubs of London</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=190676820X" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> - Anthony Lejeune, 1984 edition
-* `borrow` - Technical Blogging: Turn Your Expertise into a Remarkable Online Presence
+* `given to Lyubomir Petkov`, `borrow` - Technical Blogging: Turn Your Expertise into a Remarkable Online Presence
 (
 <a href="http://www.amazon.com/gp/product/1934356883/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1934356883&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1934356883" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> |
 <a href="http://www.tkqlhce.com/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F9781934356883.do%3Fcmp%3Daf-npa-book-product_cj_9781934356883_%7BPID%7D&cjsku=9781934356883" target="_top">O'Reilly</a><img src="http://www.ftjcfx.com/image-7040110-11260198" width="0" height="0" border="0" style="margin:0;padding:0;display:none;"/>
@@ -76,15 +76,15 @@ Books in Bulgarian
 * `reserved by Симеон`, `give-away` -
 [Нацията новатор - разказ за израелското икономическо чудо](http://www.mobilis.bg/mobilis/nacijata-novator-razkaz-za-izraelskoto-ikonomichesko-chudo.html) -
 Дан Сенор, Сол Сингър
-* `reserved by Даниела Бояджиева`, `give-away` -
+* `taken by Даниела Бояджиева`, `give-away` -
 [Тръмп: Мисли като милиардер](http://www.mobilis.bg/mobilis/tr-mp-misli-kato-miliarder.html) - Доналд Тръмп, Мередит Макайвър
 * `give-away` - [Стичането. Пътят към всички култури](http://www.mobilis.bg/mobilis/stichaneto-p-tjat-k-m-vsichki-kulturi.html) - Илия Троянов, Ранджит Хоскоте
 * `taken by` [Vladimir Vassilev](http://initlab.org), `give-away` -
 [Как да манипулираме хората - техники за манипулaция и защита от тях](http://www.mobilis.bg/mobilis/kak-da-manipulirame-horata-tehniki-za-manipulacija-i-zaschita-ot-tjah.html) -
 Игор Зорин
-* `reserved by Даниела Бояджиева`, `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
-* `reserved by Даниела Бояджиева`, `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
-* `reserved by Даниела Бояджиева`, `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
+* `taken by Даниела Бояджиева`, `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
+* `taken by Даниела Бояджиева`, `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
+* `taken by Даниела Бояджиева`, `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
 * `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
 * `reserved by Боби Рали`, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
 * `borrow` - [Дегустацията, или как да опознаем виното](http://www.mobilis.bg/mobilis/degustacijata-ili-kak-da-opoznaem-vinoto-1.html) - Неда Проданова
