@@ -78,14 +78,14 @@ Books in Bulgarian
 Дан Сенор, Сол Сингър
 * `taken by Даниела Бояджиева`, `give-away` -
 [Тръмп: Мисли като милиардер](http://www.mobilis.bg/mobilis/tr-mp-misli-kato-miliarder.html) - Доналд Тръмп, Мередит Макайвър
-* `give-away` - [Стичането. Пътят към всички култури](http://www.mobilis.bg/mobilis/stichaneto-p-tjat-k-m-vsichki-kulturi.html) - Илия Троянов, Ранджит Хоскоте
+* `taken by unknown`@ [UseTogether event](http://www.usetogether.com/), `give-away` - [Стичането. Пътят към всички култури](http://www.mobilis.bg/mobilis/stichaneto-p-tjat-k-m-vsichki-kulturi.html) - Илия Троянов, Ранджит Хоскоте
 * `taken by` [Vladimir Vassilev](http://initlab.org), `give-away` -
 [Как да манипулираме хората - техники за манипулaция и защита от тях](http://www.mobilis.bg/mobilis/kak-da-manipulirame-horata-tehniki-za-manipulacija-i-zaschita-ot-tjah.html) -
 Игор Зорин
 * `taken by Даниела Бояджиева`, `give-away` - [Как да убеждаваме](http://www.mobilis.bg/mobilis/kak-da-ubezhdavame.html) - Хари Майлс
 * `taken by Даниела Бояджиева`, `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
 * `taken by Даниела Бояджиева`, `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
-* `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
+* `taken by unknown`@ [UseTogether event](http://www.usetogether.com/), `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
 * `reserved by Боби Рали`, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
 * `borrow` - [Дегустацията, или как да опознаем виното](http://www.mobilis.bg/mobilis/degustacijata-ili-kak-da-opoznaem-vinoto-1.html) - Неда Проданова
 
