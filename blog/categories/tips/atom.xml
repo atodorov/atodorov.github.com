@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: tips | atodorov.org]]></title>
+  <link href="http://atodorov.github.com/blog/categories/tips/atom.xml" rel="self"/>
+  <link href="http://atodorov.github.com/"/>
+  <updated>2013-05-02T01:45:34+03:00</updated>
+  <id>http://atodorov.github.com/</id>
+  <author>
+    <name><![CDATA[Alexander Todorov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/"/>
+    <updated>2013-04-24T11:58:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud</id>
+    <content type="html"><![CDATA[<p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+
+<h2>Background</h2>
+
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+
+<h2>Solution</h2>
+
+<p>There are two basic approaches to solving this problem:</p>
+
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version.</li>
+</ol>
+
+
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+
+<h2>Building the hotfix</h2>
+
+<p>First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+
+<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+$ tar -xzvf python-magic-0.4.3.tar.gz 
+$ cd python-magic-0.4.3
+$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
+</code></pre>
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+
+<h2>Deploying to OpenShift</h2>
+
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
+</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
+</span><span class='line'><span class="gd">--- a/setup.py</span>
+</span><span class='line'><span class="gi">+++ b/setup.py</span>
+</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;   author=&#39;Your Name&#39;,
+</span><span class='line'>   author_email=&#39;example@example.com&#39;,
+</span><span class='line'>   url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;ul&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3.1&#39;],
+</span><span class='line'>  )
+</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+</ul>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+
+<pre><code>remote: Processing dependencies for YourAppName==1.0
+remote: Searching for python-magic==0.4.3.1
+remote: Best match: python-magic 0.4.3.1
+remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
+remote: Processing python-magic-0.4.3.1.tar.gz
+remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
+remote: zip_safe flag not set; analyzing archive contents...
+remote: Removing python-magic 0.4.3 from easy-install.pth file
+remote: Adding python-magic 0.4.3.1 to easy-install.pth file
+</code></pre>
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Creating RPM .spec Files From Scratch Using Vim]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/09/creating-rpm-spec-files-from-scratch-using-vim/"/>
+    <updated>2013-04-09T15:24:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/09/creating-rpm-spec-files-from-scratch-using-vim</id>
+    <content type="html"><![CDATA[<p>On a Red Hat Enterprise Linux or Fedora (or compatible) system execute</p>
+
+<pre><code>$ vim example.spec
+</code></pre>
+
+<p>This will create a new file with all the important sections and fields
+already there. The template used is <code>/usr/share/vim/vimfiles/template.spec</code>
+and is part of the <em>vim-common</em> RPM package.</p>
+
+<p>This is very useful trick which I didn't know. Until now I always used the spec files
+from previously built packages when creating new RPMs. This wasn't as fast as
+creating a template and filling in the blanks.</p>
+
+<p>For a detailed description about recommended RPM build practices see
+the <a href="https://fedoraproject.org/wiki/Packaging:Guidelines">Fedora Packaging Guidelines</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using Django built-in template tags and filters in code]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/"/>
+    <updated>2013-04-06T22:26:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code</id>
+    <content type="html"><![CDATA[<p>In case you are wondering how to use Django's
+<a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
+in your source code, not inside a template here is how:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1.0 KB&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1020 bytes&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;97.7 MB&#39;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
+
+<p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Renaming Model Fields in Django]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/06/tip-renaming-model-fields-in-django/"/>
+    <updated>2013-04-06T01:18:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/06/tip-renaming-model-fields-in-django</id>
+    <content type="html"><![CDATA[<p>Did you ever have to re-purpose a column in your database schema?
+Here's a quick and easy way to do this if you happen to be using Django.</p>
+
+<h2>Scenario</h2>
+
+<p>I had an integer field in my model called <code>lines</code> which counted the lines of
+code in a particular tar.gz package. I figured the file size is a better indicator
+so decided to start using it. I was not planning to use the old field anymore and
+I didn't care about the data it was holding. So I decided to re-purpose it
+as the <code>size</code> field.</p>
+
+<h2>Possible methods</h2>
+
+<p>Looking around I figured several different ways to do this:</p>
+
+<ol>
+<li>Continue using the existing <code>lines</code> field and keep referencing the old name in the code.
+This is no-brainer but feels awkward and is a disaster waiting to happen;</li>
+<li>Add new <code>size</code> field and remove the old <code>lines</code> field. This involves modification to
+the DB schema and requires at least a backup with possible down time. Not something
+I will jump at right away;</li>
+<li>Add a <code>size</code> property in the model class which will persist to <code>self.lines</code>.
+This is a quick way to go but I'm not sure if one can use the property with the
+Django QuerySet API (objects.filter(), objects.update(), etc.) I suspect not.
+If you don't filter by the property or use it in bulk operations this method is fine though;</li>
+<li>Change the field name to <code>size</code> but continue to use the <code>lines</code> DB column;
+Mind my wording here :);</li>
+<li>Rename the column in the DB schema and then update the model class field.</li>
+</ol>
+
+
+<h2>How I did it</h2>
+
+<p>I decided to go for option 4 above:
+change the field name to <code>size</code> but continue to use the <code>lines</code> DB column.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/models.py b/models.py</span>
+</span><span class='line'><span class="gh">index e06d2b2..18cad6f 100644</span>
+</span><span class='line'><span class="gd">--- a/models.py</span>
+</span><span class='line'><span class="gi">+++ b/models.py</span>
+</span><span class='line'><span class="gu">@@ -667,7 +667,7 @@ class Package(models.Model):</span>
+</span><span class='line'><span class="gd">-    lines = models.IntegerField(default=None, null=True, blank=True)</span>
+</span><span class='line'><span class="gi">+    size  = models.IntegerField(default=None, null=True, blank=True, db_column=&#39;lines&#39;)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<ol>
+<li>Removed all references to <code>lines</code> from the code except the model class. This served as clean up as well.</li>
+<li>Renamed the model field to <code>size</code> but continued using the <code>lines</code> DB column as shown above.
+Django's <em>db_column</em> option makes this possible.</li>
+<li>From the Django shell (./manage.py shell) reset <code>size</code> to None (NULL) for all objects;</li>
+<li>Finally implement my new code and functionality behind the <code>size</code> field.</li>
+</ol>
+
+
+<p>The entire process happened for under 10 minutes. I will also opt for renaming the DB column at a later time.
+This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.</p>
+
+<p>If you were me, how would you do this? Please share in the comments below.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Django QuerySet tip - Search and Order By Exact Match]]></title>
+    <link href="http://atodorov.github.com/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match/"/>
+    <updated>2013-03-21T22:56:00+02:00</updated>
+    <id>http://atodorov.github.com/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match</id>
+    <content type="html"><![CDATA[<p>How do you order Django QuerySet results so that first item is the
+exact match if using <code>contains</code> or <code>icontains</code> ? Both solutions were proposed on the
+<a href="https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion">django-users</a>
+mailing list.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Solution by Tom Evans, example is mine  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+</span><span class='line'><span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">Q</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">)</span><span class="o">.</span><span class="n">extra</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">select</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;match&#39;</span> <span class="p">:</span> <span class="s">&#39;name = &quot;Django&quot;&#39;</span><span class="p">}</span>
+</span><span class='line'><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;-match&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">[</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">Django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_cms</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_filer</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_vcs</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BabelDjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BDD4Django</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">blanc</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">admin</span><span class="o">-</span><span class="n">skin</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">bootstrap</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">forms</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">capistrano</span><span class="o">-</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">ccnmtldjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">collective</span><span class="o">.</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">csdjango</span><span class="o">.</span><span class="n">contactform</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangopaste</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangorecipe</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">d51</span><span class="o">.</span><span class="n">django</span><span class="o">.</span><span class="n">virtualenv</span><span class="o">.</span><span class="n">test_runner</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">4</span><span class="n">store</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">503</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">absolute</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">abstract</span><span class="o">-</span><span class="n">templates</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">account</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
+
+<p>Another one:</p>
+
+<p><blockquote><p>I'm not sure this is the right way, but you could drop the Q objects, use<br/>only icontains and sort by the length of 'name'</p><footer><strong>Gabriel</strong> <cite><a href='https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion'>groups.google.com/d/topic/&hellip;</a></cite></footer></blockquote></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Example is mine  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">packages</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Dancer&#39;</span><span class="p">)]</span>
+</span><span class='line'><span class="nb">sorted</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="s">u&#39;Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;breakdancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;App::Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Routes&#39;</span><span class="p">,</span>
+</span><span class='line'><span class="s">u&#39;DancerX::Routes&#39;</span><span class="p">,</span> <span class="s">u&#39;DancerX::Config&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::DWIM::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::CDN&#39;</span><span class="p">,</span>
+</span><span class='line'><span class="s">u&#39;Dancer::Plugin::Feed&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::LDAP&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::Lucy&#39;</span><span class="p">,</span>
+</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
+
+<p>That's all folks. If you have other more interesting sorting needs please comment below.
+Thanks!</p>
+]]></content>
+  </entry>
+  
+</feed>

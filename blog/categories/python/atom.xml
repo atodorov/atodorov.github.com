@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Python | atodorov.org]]></title>
+  <link href="http://atodorov.github.com/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://atodorov.github.com/"/>
+  <updated>2013-05-02T01:45:34+03:00</updated>
+  <id>http://atodorov.github.com/</id>
+  <author>
+    <name><![CDATA[Alexander Todorov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/"/>
+    <updated>2013-04-24T11:58:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud</id>
+    <content type="html"><![CDATA[<p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+
+<h2>Background</h2>
+
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+
+<h2>Solution</h2>
+
+<p>There are two basic approaches to solving this problem:</p>
+
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version.</li>
+</ol>
+
+
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+
+<h2>Building the hotfix</h2>
+
+<p>First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+
+<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+$ tar -xzvf python-magic-0.4.3.tar.gz 
+$ cd python-magic-0.4.3
+$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
+</code></pre>
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+
+<h2>Deploying to OpenShift</h2>
+
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
+</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
+</span><span class='line'><span class="gd">--- a/setup.py</span>
+</span><span class='line'><span class="gi">+++ b/setup.py</span>
+</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;   author=&#39;Your Name&#39;,
+</span><span class='line'>   author_email=&#39;example@example.com&#39;,
+</span><span class='line'>   url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;ul&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3.1&#39;],
+</span><span class='line'>  )
+</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+</ul>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+
+<pre><code>remote: Processing dependencies for YourAppName==1.0
+remote: Searching for python-magic==0.4.3.1
+remote: Best match: python-magic 0.4.3.1
+remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
+remote: Processing python-magic-0.4.3.1.tar.gz
+remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
+remote: zip_safe flag not set; analyzing archive contents...
+remote: Removing python-magic 0.4.3 from easy-install.pth file
+remote: Adding python-magic 0.4.3.1 to easy-install.pth file
+</code></pre>
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using Django built-in template tags and filters in code]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/"/>
+    <updated>2013-04-06T22:26:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code</id>
+    <content type="html"><![CDATA[<p>In case you are wondering how to use Django's
+<a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
+in your source code, not inside a template here is how:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1.0 KB&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1020 bytes&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;97.7 MB&#39;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
+
+<p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Performance test of MD5, SHA1, SHA256 and SHA512]]></title>
+    <link href="http://atodorov.github.com/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/"/>
+    <updated>2013-02-05T10:33:00+02:00</updated>
+    <id>http://atodorov.github.com/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512</id>
+    <content type="html"><![CDATA[<p>A few months ago I wrote
+<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+This is Amazon Simple Storage Service (S3) cache backend for Django
+which uses hashed file names.
+django-s3-cache uses <code>sha1</code> instead of <code>md5</code> which appeared to be
+faster at the time. I recall that my testing wasn't very robust so I did another
+round.</p>
+
+<h2>Test Data</h2>
+
+<p>The file <a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz">urls.txt</a>
+contains 10000 unique paths from the <a href="http://www.dif.io">dif.io</a>
+website and looks like this:</p>
+
+<pre><code>/updates/Django-1.3.1/Django-1.3.4/7858/
+/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
+/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
+/updates/Data::Compare-1.22/Data::Compare-Type/8313/
+/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
+</code></pre>
+
+<h2>Test Automation</h2>
+
+<p>I used the standard <a href="http://docs.python.org/2/library/timeit.html">timeit</a>
+module in Python.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>test.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="err">!</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2013</span> <span class="o">-</span> <span class="n">Alexander</span> <span class="n">Todorov</span><span class="p">,</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">atodorov</span><span class="o">.</span><span class="n">org</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Published</span> <span class="n">under</span> <span class="n">GNU</span> <span class="n">GPLv3</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">timeit</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">t</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">import hashlib</span>
+</span><span class='line'><span class="sd">for line in url_paths:&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;pre&gt;&lt;code&gt;h = hashlib.md5(line).hexdigest()</span>
+</span><span class='line'><span class="sd">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha1(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha256(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha512(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;p&gt;&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">url_paths = []</span>
+</span><span class='line'><span class="sd">f = open(&#39;urls.txt&#39;, &#39;r&#39;)</span>
+</span><span class='line'><span class="sd">for l in f.readlines():&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;pre&gt;&lt;code&gt;url_paths.append(l)</span>
+</span><span class='line'><span class="sd">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;p&gt;f.close()</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">print</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Test Results</h2>
+
+<p>The main statement hashes all 10000 entries one by one. This statement is
+executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
+on my system. After every test run the system was rebooted.
+Execution time in seconds is available below.</p>
+
+<pre><code>MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
+SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
+SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
+SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
+</code></pre>
+
+<p>Looks like I was wrong the first time! MD5 is still faster but not that much.
+I will stick with SHA1 for the time being.</p>
+
+<p>As always I’d love to hear your thoughts and feedback. Please use the comment form below.</p>
+]]></content>
+  </entry>
+  
+</feed>

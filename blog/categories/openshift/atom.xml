@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: OpenShift | atodorov.org]]></title>
+  <link href="http://atodorov.github.com/blog/categories/openshift/atom.xml" rel="self"/>
+  <link href="http://atodorov.github.com/"/>
+  <updated>2013-05-02T01:45:34+03:00</updated>
+  <id>http://atodorov.github.com/</id>
+  <author>
+    <name><![CDATA[Alexander Todorov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
+    <link href="http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/"/>
+    <updated>2013-04-24T11:58:00+03:00</updated>
+    <id>http://atodorov.github.com/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud</id>
+    <content type="html"><![CDATA[<p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+
+<h2>Background</h2>
+
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+
+<h2>Solution</h2>
+
+<p>There are two basic approaches to solving this problem:</p>
+
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version.</li>
+</ol>
+
+
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+
+<h2>Building the hotfix</h2>
+
+<p>First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+
+<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+$ tar -xzvf python-magic-0.4.3.tar.gz 
+$ cd python-magic-0.4.3
+$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
+</code></pre>
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+
+<h2>Deploying to OpenShift</h2>
+
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
+</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
+</span><span class='line'><span class="gd">--- a/setup.py</span>
+</span><span class='line'><span class="gi">+++ b/setup.py</span>
+</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;   author=&#39;Your Name&#39;,
+</span><span class='line'>   author_email=&#39;example@example.com&#39;,
+</span><span class='line'>   url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;ul&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;   install_requires=[&#39;python-magic==0.4.3.1&#39;],
+</span><span class='line'>  )
+</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+</ul>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+
+<pre><code>remote: Processing dependencies for YourAppName==1.0
+remote: Searching for python-magic==0.4.3.1
+remote: Best match: python-magic 0.4.3.1
+remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
+remote: Processing python-magic-0.4.3.1.tar.gz
+remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
+remote: zip_safe flag not set; analyzing archive contents...
+remote: Removing python-magic 0.4.3 from easy-install.pth file
+remote: Adding python-magic 0.4.3.1 to easy-install.pth file
+</code></pre>
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Email Logging for Django on RedHat OpenShift with Amazon SES]]></title>
+    <link href="http://atodorov.github.com/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/"/>
+    <updated>2013-02-28T23:19:00+02:00</updated>
+    <id>http://atodorov.github.com/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses</id>
+    <content type="html"><![CDATA[<p>Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+<a href="http://aws.amazon.com/ses/">Amazon SES</a> as my email backend. Here is how to
+configure <a href="https://www.djangoproject.com/">Django</a> to send emails to site admins
+when something goes wrong.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>settings.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Valid</span> <span class="n">addresses</span> <span class="n">only</span><span class="o">.&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&#39;Alexander Todorov&#39;</span><span class="p">,</span> <span class="s">&#39;atodorov@example.com&#39;</span><span class="p">),</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="s">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'><span class="s">&#39;disable_existing_loggers&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+</span><span class='line'><span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s">&#39;mail_admins&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&#39;class&#39;</span><span class="p">:</span> <span class="s">&#39;django.utils.log.AdminEmailHandler&#39;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">},</span>
+</span><span class='line'><span class="s">&#39;loggers&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s">&#39;django.request&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;mail_admins&#39;</span><span class="p">],</span>
+</span><span class='line'>        <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&#39;propagate&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Used</span> <span class="k">as</span> <span class="n">the</span> <span class="n">From</span><span class="p">:</span> <span class="n">address</span> <span class="n">when</span> <span class="n">reporting</span> <span class="n">errors</span> <span class="n">to</span> <span class="n">admins</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Needs</span> <span class="n">to</span> <span class="n">be</span> <span class="n">verified</span> <span class="ow">in</span> <span class="n">Amazon</span> <span class="n">SES</span> <span class="k">as</span> <span class="n">a</span> <span class="n">valid</span> <span class="n">sender</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&#39;django@example.com&#39;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Amazon</span> <span class="n">Simple</span> <span class="n">Email</span> <span class="n">Service</span> <span class="n">settings</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">AWS_SES_ACCESS_KEY_ID</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxxxxxx&#39;</span>
+</span><span class='line'><span class="n">AWS_SES_SECRET_ACCESS_KEY</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxx&#39;</span>
+</span><span class='line'><span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">&#39;django_ses.SESBackend&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>You also need the <a href="https://github.com/hmarr/django-ses">django-ses</a>
+dependency.</p>
+
+<p>See <a href="http://docs.djangoproject.com/en/dev/topics/logging">http://docs.djangoproject.com/en/dev/topics/logging</a> for
+more details on how to customize your logging configuration.</p>
+
+<p>I am using this configuration successfully at RedHat's OpenShift PaaS environment.
+Other users have
+<a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django">reported</a>
+it works for them too. Should work with any other PaaS provider.</p>
+]]></content>
+  </entry>
+  
+</feed>
