@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="This article is a step-by-step guide to using two passwords with EncFS.
-The primary password is required and may be used to secure all data;
-the &hellip;">
+  <meta name="description" content="How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler! dif.io homepage &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -91,6 +90,138 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">Linux and Python Tools to Compare Images</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-17T21:13:00+03:00" pubdate data-updated="true">May 17<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler!</p>
+
+<p><img src="/images/difio_compare.png" alt="Difio Google +1 changes" style="clear:both;display:block"/>
+<a href="http://www.dif.io">dif.io</a> homepage before and after it got a G+1.</p>
+
+<h2>ImageMagic is magic</h2>
+
+<p>If you haven&#8217;t heard of <a href="http://www.imagemagick.org/">ImageMagic</a> then you&#8217;ve been
+living in a cave on a deserted island! The suite contains the <code>compare</code> command
+which mathematically and visually annotates the difference between two images.</p>
+
+<p>The third image above was produced with:</p>
+
+<pre><code>$ compare difio_10.png difio_11.png difio_diff.png
+</code></pre>
+
+<p>Differences are displayed in red (default) and the original image is seen in the
+background. As shown, the Google +1 button and count has changed between the two
+images. <code>compare</code> is a nice tool for manual inspection and debugging.
+It works well in this case because the images are lossless PNGs and are regions of
+screen shots where most objects are the same.</p>
+
+<p><img src="/images/chestnut_compare.jpg" alt="JPEG quality reduction" style="clear:both;display:block"/>
+Chestnuts I had in Rome. 100% to 99% quality reduction.</p>
+
+<p>As seen on the second image set only 1% of JPEG quality change leads to many small
+differences in the image, which are invisible to the naked eye.</p>
+
+<h2>Python Imaging Library aka PIL</h2>
+
+<p><a href="http://www.pythonware.com/products/pil/">PIL</a> is another powerful tool for
+image manipulation. I googled around and found some answers to my original
+questions
+<a href="http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way">here</a>.
+The proposed solution is to calculate
+<a href="https://en.wikipedia.org/wiki/Root_mean_square">RMS</a> of the two images
+and compare that with some threshold to establish the level of certainty that
+two images are identical.</p>
+
+<h2>Simple solution</h2>
+
+<p>I&#8217;ve been working on a script lately which needs to know what is displayed on
+the screen and recognize some of the objects. Calculating image similarity is
+quite complex but comparing if two images are <strong>exactly</strong> identical is not.
+Given my environment and the fact
+that I&#8217;m comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution:</p>
+
+<ul>
+<li>Take a screen shot;</li>
+<li>Crop a particular area of the image which needs to be examined;</li>
+<li>Compare to a baseline image of the same area created manually;</li>
+<li>Don&#8217;t use RMS, use the image histogram only to speed up calculation.</li>
+</ul>
+
+
+<p>I&#8217;ve prepared the baseline images with GIMP and tested couple of scenarios
+using <code>compare</code>. Here&#8217;s how it looks in code:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">dogtail.utils</span> <span class="kn">import</span> <span class="n">screenshot</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">baseline_histogram</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;/home/atodorov/baseline.png&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">screenshot</span><span class="p">())</span>
+</span><span class='line'><span class="n">region</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">crop</span><span class="p">((</span><span class="mi">860</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">320</span><span class="p">))</span>
+</span><span class='line'><span class="k">print</span> <span class="n">region</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span> <span class="o">==</span> <span class="n">baseline_histogram</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Results</h2>
+
+<p>The presented solution was easy to program, works fast and reliably for my use case.
+In fact after several iterations I&#8217;ve added a second baseline image to account for some
+unidentified noise which appears randomly in the first region. As far as I can tell
+the two checks combined are 100% accurate.</p>
+
+<h2>Field of application</h2>
+
+<p>I&#8217;m working on QA automation where this comes handy. However you may try some
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code.</p>
+
+<p>I&#8217;d love to hear
+about interesting projects which didn&#8217;t get too complicated because of image
+recognition.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1884,89 +2015,6 @@ Silicon areas outside <a href="http://sofiavalley.com">Sofia Valley</a> ?</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/24/upcoming-hackatons-in-sofia/">Upcoming Hackatons in Sofia</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-24T22:02:00+02:00" pubdate data-updated="true">Mar 24<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/03/24/upcoming-hackatons-in-sofia/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/Hackathon">Hackatons</a>
-have been organized in Sofia and generally through Bulgaria for the
-past several years but as far as I know they were mostly underground events.
-There are two upcoming events which are somewhat different.</p>
-
-<h2>&#8220;Record Voting&#8221; Hackaton</h2>
-
-<p><img src="/images/opengov.jpg" alt="hackaton logo" /></p>
-
-<p>Organized by <a href="http://iped.bg/en">INSTITUTE FOR PUBLIC ENVIRONMENT DEVELOPMENT</a>
-this hackaton is the first I know of, which will focus on government provided data.
-The objective is to process data
-(<a href="http://results.cik.bg/el2011_t1.zip">sample</a>) from the 2011 elections
-and find persons who were able to vote in the last minute, between 20:00-21:00 hours thus
-changing the election results by 20% in their voting section.</p>
-
-<p>The event starts at 09:29 on 30th Mar 2013 @ <a href="http://www.betahaus.bg">betahaus Sofia</a>.
-More info in Bulgarian <a href="http://bogomil.info/4805">here</a> and
-<a href="http://iped.bg/bg/news-read/news1c">here</a>.</p>
-
-<p>I&#8217;d love to attend but will be visiting a conference about mobile devices in
-another town at the same time :(. If you do attend, let me know how fun it was.</p>
-
-<p>Dare to read more on the topic about open government? I recommend starting with
-<em>Open Government: Collaboration, Transparency, and Participation in Practice by
-Daniel Lathrop and Laurel Ruma</em> (
-<a href="http://www.amazon.com/gp/product/0596804350/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0596804350&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0596804350" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-|
-<a href="http://www.dpbolvw.net/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F9780596804367.do%3Fcmp%3Daf-none-book-product_cj_9780596804350_%25zp&cjsku=9780596804367" target="_top">O&#8217;Reilly</a><img src="http://www.tqlkg.com/image-7040110-11260198" width="0" height="0" border="0" style="display:none; margin:0;padding:0"/>
-). This is an excellent book with tons of examples and easy to read.</p>
-
-<h2>HackFMI</h2>
-
-<p><img src="/images/hackfmi/cropped-hackfmi.png" title="HackFMI" alt="HackFMI" /></p>
-
-<p>FMI stands for <em>Faculty of Mathematics and Informatics at the Sofia University</em>
-(not where I graduated). It&#8217;s one of the
-best, arguably the best, places to study for an IT career. Like most other universities in Bulgaria
-its administration and processes suck big time!</p>
-
-<p><a href="http://hackfmi.com/">HackFMI</a> is the first ever hackaton which will focus on students
-improving faculty/university systems and processes. This is HUGE! As far as I know it is also the first
-hackaton which is supported by academia.</p>
-
-<p>I have already <a href="https://github.com/Hackfmi/Organization-Details/pull/2">volunteered</a> to be
-a mentor at HackFMI. I am looking forward to this. It will be fun. See you there!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1977,7 +2025,32 @@ a mentor at HackFMI. I am looking forward to this. It will be fun. See you there
 </div>
 <aside class="sidebar">
   
-    <section>
+    
+<section>
+  
+  <a href="https://github.com/atodorov">@atodorov</a> on GitHub
+  
+</section>
+
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("atodorov_", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+</section>
+
+<section>
     <h1>Trending Posts</h1>
 <!-- AddThis Trending Content BEGIN -->
 <div id="addthis_trendingcontent"></div>
@@ -1995,6 +2068,10 @@ addthis.box("#addthis_trendingcontent", {
 </section><section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">Linux and Python Tools To Compare Images</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/">Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</a>
@@ -2032,37 +2109,8 @@ addthis.box("#addthis_trendingcontent", {
         <a href="/blog/2013/04/15/hackfmi-post-mortem/">HackFMI Post-mortem</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2013/04/09/creating-rpm-spec-files-from-scratch-using-vim/">Creating RPM .spec Files From Scratch Using Vim</a>
-      </li>
-    
   </ul>
 </section>
-
-<section>
-  
-  <a href="https://github.com/atodorov">@atodorov</a> on GitHub
-  
-</section>
-
-
-<section>
-  
-    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="false">Follow @atodorov_</a>
-  
-
-  <h1>Latest Tweets</h1>
-  <ul id="tweets">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  <script type="text/javascript">
-    $.domReady(function(){
-      getTwitterFeed("atodorov_", 10, false);
-    });
-  </script>
-  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
-</section>
-
 <section>
   <h1>Disclaimer</h1>
   <p>

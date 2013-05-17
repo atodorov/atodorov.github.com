@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Hello World</title>
+  <title>Linux and Python Tools To Compare Images</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Hi everyone and welcome to my blog! My name is Alex and you can read more about me
-if you like. After several years of rather unsuccessful blogging I &hellip;">
+  <meta name="description" content="How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler! dif.io homepage &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@ if you like. After several years of rather unsuccessful blogging I &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/01/28/hello-world/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -93,7 +93,7 @@ if (uri.indexOf("?") > 0) {
   
   <header>
     
-      <h1 class="entry-title">Hello World</h1>
+      <h1 class="entry-title">Linux and Python Tools to Compare Images</h1>
     
     
       <p class="meta">
@@ -109,7 +109,7 @@ if (uri.indexOf("?") > 0) {
   
 
 
-<time datetime="2013-01-28T15:12:00+02:00" pubdate data-updated="true">Jan 28<span>th</span>, 2013</time>
+<time datetime="2013-05-17T21:13:00+03:00" pubdate data-updated="true">May 17<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -118,28 +118,101 @@ if (uri.indexOf("?") > 0) {
   </header>
 
 
-<div class="entry-content"><p>Hi everyone and welcome to my blog! My name is Alex and you can read more <a href="/about/">about me</a>
-if you like.</p>
+<div class="entry-content"><p>How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler!</p>
 
-<p>After several years of rather unsuccessful blogging I decided to revamp my blog,
-influenced by the book
-<em>Technical Blogging: Turn Your Expertise into a Remarkable Online Presence</em>
-(
-<a href="http://www.amazon.com/gp/product/1934356883/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1934356883&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1934356883" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-|
-<a href="http://www.tkqlhce.com/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F9781934356883.do%3Fcmp%3Daf-npa-book-product_cj_9781934356883_%7BPID%7D&cjsku=9781934356883" target="_top">O&#8217;Reilly</a><img src="http://www.ftjcfx.com/image-7040110-11260198" width="0" height="0" border="0" style="margin:0;padding:0;display:none;"/>
-).</p>
+<p><img src="/images/difio_compare.png" alt="Difio Google +1 changes" style="clear:both;display:block"/>
+<a href="http://www.dif.io">dif.io</a> homepage before and after it got a G+1.</p>
 
-<p>I&#8217;m starting fresh with new domain name and a big list of topics to write about. This blog will
-be the place to share my thoughts on open source software, QA and cloud. From time to time
-I intend to write about start-ups and being a start-up owner as well.</p>
+<h2>ImageMagic is magic</h2>
 
-<p>All content is published under
-<a href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0</a>
-license and all source code is under the <a href="http://opensource.org/licenses/MIT">MIT</a> license if not stated
-otherwise.</p>
+<p>If you haven&#8217;t heard of <a href="http://www.imagemagick.org/">ImageMagic</a> then you&#8217;ve been
+living in a cave on a deserted island! The suite contains the <code>compare</code> command
+which mathematically and visually annotates the difference between two images.</p>
 
-<p>I hope you find it interesting and helpful.</p>
+<p>The third image above was produced with:</p>
+
+<pre><code>$ compare difio_10.png difio_11.png difio_diff.png
+</code></pre>
+
+<p>Differences are displayed in red (default) and the original image is seen in the
+background. As shown, the Google +1 button and count has changed between the two
+images. <code>compare</code> is a nice tool for manual inspection and debugging.
+It works well in this case because the images are lossless PNGs and are regions of
+screen shots where most objects are the same.</p>
+
+<p><img src="/images/chestnut_compare.jpg" alt="JPEG quality reduction" style="clear:both;display:block"/>
+Chestnuts I had in Rome. 100% to 99% quality reduction.</p>
+
+<p>As seen on the second image set only 1% of JPEG quality change leads to many small
+differences in the image, which are invisible to the naked eye.</p>
+
+<h2>Python Imaging Library aka PIL</h2>
+
+<p><a href="http://www.pythonware.com/products/pil/">PIL</a> is another powerful tool for
+image manipulation. I googled around and found some answers to my original
+questions
+<a href="http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way">here</a>.
+The proposed solution is to calculate
+<a href="https://en.wikipedia.org/wiki/Root_mean_square">RMS</a> of the two images
+and compare that with some threshold to establish the level of certainty that
+two images are identical.</p>
+
+<h2>Simple solution</h2>
+
+<p>I&#8217;ve been working on a script lately which needs to know what is displayed on
+the screen and recognize some of the objects. Calculating image similarity is
+quite complex but comparing if two images are <strong>exactly</strong> identical is not.
+Given my environment and the fact
+that I&#8217;m comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution:</p>
+
+<ul>
+<li>Take a screen shot;</li>
+<li>Crop a particular area of the image which needs to be examined;</li>
+<li>Compare to a baseline image of the same area created manually;</li>
+<li>Don&#8217;t use RMS, use the image histogram only to speed up calculation.</li>
+</ul>
+
+
+<p>I&#8217;ve prepared the baseline images with GIMP and tested couple of scenarios
+using <code>compare</code>. Here&#8217;s how it looks in code:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">dogtail.utils</span> <span class="kn">import</span> <span class="n">screenshot</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">baseline_histogram</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;/home/atodorov/baseline.png&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">screenshot</span><span class="p">())</span>
+</span><span class='line'><span class="n">region</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">crop</span><span class="p">((</span><span class="mi">860</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">320</span><span class="p">))</span>
+</span><span class='line'><span class="k">print</span> <span class="n">region</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span> <span class="o">==</span> <span class="n">baseline_histogram</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Results</h2>
+
+<p>The presented solution was easy to program, works fast and reliably for my use case.
+In fact after several iterations I&#8217;ve added a second baseline image to account for some
+unidentified noise which appears randomly in the first region. As far as I can tell
+the two checks combined are 100% accurate.</p>
+
+<h2>Field of application</h2>
+
+<p>I&#8217;m working on QA automation where this comes handy. However you may try some
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code.</p>
+
+<p>I&#8217;d love to hear
+about interesting projects which didn&#8217;t get too complicated because of image
+recognition.</p>
 </div>
 
 
@@ -162,8 +235,14 @@ otherwise.</p>
   
 
 
-<time datetime="2013-01-28T15:12:00+02:00" pubdate data-updated="true">Jan 28<span>th</span>, 2013</time>
+<time datetime="2013-05-17T21:13:00+03:00" pubdate data-updated="true">May 17<span>th</span>, 2013</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/qa/'>QA</a>
+  
+</span>
 
 
     </p>
@@ -190,8 +269,8 @@ otherwise.</p>
     
     <p class="meta">
       
+        <a class="basic-alignment left" href="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/" title="Previous Post: Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6">&laquo; Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</a>
       
-        <a class="basic-alignment right" href="/blog/2013/01/28/remove-query-string-with-javascript-and-html5/" title="Next Post: Remove Query String with JavaScript and HTML5">Remove Query String with JavaScript and HTML5 &raquo;</a>
       
     </p>
   </footer>
@@ -327,8 +406,8 @@ Some of the links contained within this site have my referral id (e.g., Amazon),
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/01/28/hello-world/';
-        var disqus_url = 'http://atodorov.org/blog/2013/01/28/hello-world/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/';
+        var disqus_url = 'http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/';
         var disqus_script = 'embed.js';
       
     (function () {

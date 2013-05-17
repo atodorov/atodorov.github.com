@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-05-14T22:05:39+03:00</updated>
+  <updated>2013-05-17T22:14:39+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,108 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Linux and Python Tools To Compare Images]]></title>
+    <link href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/"/>
+    <updated>2013-05-17T21:13:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images</id>
+    <content type="html"><![CDATA[<p>How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler!</p>
+
+<p><img src="http://atodorov.org/images/difio_compare.png" alt="Difio Google +1 changes" style="clear:both;display:block"/>
+<a href="http://www.dif.io">dif.io</a> homepage before and after it got a G+1.</p>
+
+<h2>ImageMagic is magic</h2>
+
+<p>If you haven't heard of <a href="http://www.imagemagick.org/">ImageMagic</a> then you've been
+living in a cave on a deserted island! The suite contains the <code>compare</code> command
+which mathematically and visually annotates the difference between two images.</p>
+
+<p>The third image above was produced with:</p>
+
+<pre><code>$ compare difio_10.png difio_11.png difio_diff.png
+</code></pre>
+
+<p>Differences are displayed in red (default) and the original image is seen in the
+background. As shown, the Google +1 button and count has changed between the two
+images. <code>compare</code> is a nice tool for manual inspection and debugging.
+It works well in this case because the images are lossless PNGs and are regions of
+screen shots where most objects are the same.</p>
+
+<p><img src="http://atodorov.org/images/chestnut_compare.jpg" alt="JPEG quality reduction" style="clear:both;display:block"/>
+Chestnuts I had in Rome. 100% to 99% quality reduction.</p>
+
+<p>As seen on the second image set only 1% of JPEG quality change leads to many small
+differences in the image, which are invisible to the naked eye.</p>
+
+<h2>Python Imaging Library aka PIL</h2>
+
+<p><a href="http://www.pythonware.com/products/pil/">PIL</a> is another powerful tool for
+image manipulation. I googled around and found some answers to my original
+questions
+<a href="http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way">here</a>.
+The proposed solution is to calculate
+<a href="https://en.wikipedia.org/wiki/Root_mean_square">RMS</a> of the two images
+and compare that with some threshold to establish the level of certainty that
+two images are identical.</p>
+
+<h2>Simple solution</h2>
+
+<p>I've been working on a script lately which needs to know what is displayed on
+the screen and recognize some of the objects. Calculating image similarity is
+quite complex but comparing if two images are <strong>exactly</strong> identical is not.
+Given my environment and the fact
+that I'm comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution:</p>
+
+<ul>
+<li>Take a screen shot;</li>
+<li>Crop a particular area of the image which needs to be examined;</li>
+<li>Compare to a baseline image of the same area created manually;</li>
+<li>Don't use RMS, use the image histogram only to speed up calculation.</li>
+</ul>
+
+
+<p>I've prepared the baseline images with GIMP and tested couple of scenarios
+using <code>compare</code>. Here's how it looks in code:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">dogtail.utils</span> <span class="kn">import</span> <span class="n">screenshot</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">baseline_histogram</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;/home/atodorov/baseline.png&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">screenshot</span><span class="p">())</span>
+</span><span class='line'><span class="n">region</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">crop</span><span class="p">((</span><span class="mi">860</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">320</span><span class="p">))</span>
+</span><span class='line'><span class="k">print</span> <span class="n">region</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span> <span class="o">==</span> <span class="n">baseline_histogram</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Results</h2>
+
+<p>The presented solution was easy to program, works fast and reliably for my use case.
+In fact after several iterations I've added a second baseline image to account for some
+unidentified noise which appears randomly in the first region. As far as I can tell
+the two checks combined are 100% accurate.</p>
+
+<h2>Field of application</h2>
+
+<p>I'm working on QA automation where this comes handy. However you may try some
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code.</p>
+
+<p>I'd love to hear
+about interesting projects which didn't get too complicated because of image
+recognition.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
