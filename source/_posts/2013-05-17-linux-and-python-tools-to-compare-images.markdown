@@ -45,7 +45,6 @@ Python Imaging Library aka PIL
 image manipulation. I googled around and found some answers to my original
 questions
 [here](http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way).
-
 The proposed solution is to calculate
 [RMS](https://en.wikipedia.org/wiki/Root_mean_square) of the two images
 and compare that with some threshold to establish the level of certainty that
@@ -58,8 +57,8 @@ I've been working on a script lately which needs to know what is displayed on
 the screen and recognize some of the objects. Calculating image similarity is
 quite complex but comparing if two images are **exactly** identical is not.
 Given my environment and the fact
-that I'm comparing screen shots where only few areas changed (see first image above)
-led to the following solution: 
+that I'm comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution: 
 
 * Take a screen shot;
 * Crop a particular area of the image which needs to be examined;
@@ -95,8 +94,10 @@ Field of application
 ---------------------
 
 I'm working on QA automation where this comes handy. However you may try some
-lame image recognition by comparing regions to a pre-defined baseline. Let me know
-if you come up with a cool idea or actually used this in code. I'd love to hear
-about interesting project which didn't get too complicated because of image
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code. 
+
+I'd love to hear
+about interesting projects which didn't get too complicated because of image
 recognition.
 
