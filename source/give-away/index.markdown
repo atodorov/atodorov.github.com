@@ -28,7 +28,7 @@ to get notified when I add new items!
 Books in English
 ----------------
 
-* `reserved by Geno Rouspky`, `give-away` - The Art of Community: Building the New Age of Participation
+* `taken by Geno Rouspky`, `give-away` - The Art of Community: Building the New Age of Participation
 (
 <a href="http://www.amazon.com/gp/product/1449312063/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449312063&linkCode=as2&tag=atodorovorg-20">Amazon</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449312063" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> |
 <a href="http://www.dpbolvw.net/click-7040110-11260198?url=http%3A%2F%2Fshop.oreilly.com%2Fproduct%2F0636920021995.do%3Fcmp%3Daf-npa-book-product_cj_9781449312060_%25zp&cjsku=0636920021995" target="_top">O'Reilly</a><img src="http://www.ftjcfx.com/image-7040110-11260198" width="0" height="0" border="0" style="display:none;"/>
