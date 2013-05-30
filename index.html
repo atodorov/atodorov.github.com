@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Tomorrow I&#8217;m taking part in a discussion at Sofia University targeted towards
-young students. Speakers are well-known IT professionals and I&# &hellip;">
+  <meta name="description" content="Install related packages and make configuration changes: yum -y install vsftp policycoreutils-python
+sed -i "s/#anon_upload_enable=YES/ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -90,6 +90,69 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/">Configuring Anonymous FTP Uploads on Red Hat Enterprise Linux 6</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-30T13:07:00+03:00" pubdate data-updated="true">May 30<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Install related packages and make configuration changes:</p>
+
+<pre><code>yum -y install vsftp policycoreutils-python
+sed -i "s/#anon_upload_enable=YES/anon_upload_enable=YES/" /etc/vsftpd/vsftpd.conf
+</code></pre>
+
+<p>Configure writable directory for uploads:</p>
+
+<pre><code>mkdir /var/ftp/pub/upload
+chgrp ftp /var/ftp/pub/upload
+chmod 730 /var/ftp/pub/upload
+</code></pre>
+
+<p>Configure SELinux - this is <strong><a href="https://bugzilla.redhat.com/show_bug.cgi?id=968935">MISSING</a></strong>
+from Red Hat&#8217;s official docs:</p>
+
+<pre><code>setsebool -P allow_ftpd_anon_write=1
+semanage fcontext -a -t public_content_rw_t '/var/ftp/pub/upload(/.*)'
+chcon -t public_content_rw_t /var/ftp/pub/upload
+</code></pre>
+
+<p>Start the service:</p>
+
+<pre><code>chkconfig vsftpd on
+service vsftpd start
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1992,54 +2055,6 @@ to follow this thread and reply to your questions.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/27/what-runs-your-startup/">What Runs Your Start-up</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-27T12:00:00+02:00" pubdate data-updated="true">Mar 27<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/03/27/what-runs-your-startup/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I am starting a new section called
-<a href="/blog/categories/what-runs/">What Runs Your Start-up</a> where I will
-write about the technologies running behind some interesting
-start-up companies and why they made their technological choices.
-The articles will be short and to the point. Interested readers
-can engage in discussion with start-up owners in the comments later.</p>
-
-<p>I am starting with a dozen companies from the Bulgarian start-up eco-system
-and will present one or two start-ups per week.
-If you&#8217;d like to read about a company which is not listed here or want to
-promote your own just let me know.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2095,6 +2110,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/">Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/05/27/it-jobs-prediction-quality-engineering-devops-augmented-reality/">IT Jobs Prediction: Quality Engineering, DevOps, Augmented Reality</a>
       </li>
     
@@ -2128,10 +2147,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/04/23/what-runs-your-startup-deed/">What Runs Your Start-up - Deed</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/04/19/hackfmi-code-stats/">HackFMI Code Stats</a>
       </li>
     
   </ul>

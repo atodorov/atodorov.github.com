@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tips | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/tips/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-05-27T21:44:33+03:00</updated>
+  <updated>2013-05-30T13:18:50+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,40 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6]]></title>
+    <link href="http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/"/>
+    <updated>2013-05-30T13:07:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6</id>
+    <content type="html"><![CDATA[<p>Install related packages and make configuration changes:</p>
+
+<pre><code>yum -y install vsftp policycoreutils-python
+sed -i "s/#anon_upload_enable=YES/anon_upload_enable=YES/" /etc/vsftpd/vsftpd.conf
+</code></pre>
+
+<p>Configure writable directory for uploads:</p>
+
+<pre><code>mkdir /var/ftp/pub/upload
+chgrp ftp /var/ftp/pub/upload
+chmod 730 /var/ftp/pub/upload
+</code></pre>
+
+<p>Configure SELinux - this is <strong><a href="https://bugzilla.redhat.com/show_bug.cgi?id=968935">MISSING</a></strong>
+from Red Hat's official docs:</p>
+
+<pre><code>setsebool -P allow_ftpd_anon_write=1
+semanage fcontext -a -t public_content_rw_t '/var/ftp/pub/upload(/.*)'
+chcon -t public_content_rw_t /var/ftp/pub/upload
+</code></pre>
+
+<p>Start the service:</p>
+
+<pre><code>chkconfig vsftpd on
+service vsftpd start
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
@@ -259,95 +293,6 @@ Django's <em>db_column</em> option makes this possible.</li>
 This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.</p>
 
 <p>If you were me, how would you do this? Please share in the comments below.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Django QuerySet tip - Search and Order By Exact Match]]></title>
-    <link href="http://atodorov.org/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match/"/>
-    <updated>2013-03-21T22:56:00+02:00</updated>
-    <id>http://atodorov.org/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match</id>
-    <content type="html"><![CDATA[<p>How do you order Django QuerySet results so that first item is the
-exact match if using <code>contains</code> or <code>icontains</code> ? Both solutions were proposed on the
-<a href="https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion">django-users</a>
-mailing list.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Solution by Tom Evans, example is mine  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
-</span><span class='line'><span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">Q</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="p">)</span><span class="o">.</span><span class="n">extra</span><span class="p">(</span>
-</span><span class='line'>    <span class="n">select</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;match&#39;</span> <span class="p">:</span> <span class="s">&#39;name = &quot;Django&quot;&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;-match&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">[</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">Django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_cms</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_filer</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_vcs</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BabelDjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BDD4Django</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">blanc</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">admin</span><span class="o">-</span><span class="n">skin</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">bootstrap</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">forms</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">capistrano</span><span class="o">-</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">ccnmtldjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">collective</span><span class="o">.</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">csdjango</span><span class="o">.</span><span class="n">contactform</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangopaste</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangorecipe</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">d51</span><span class="o">.</span><span class="n">django</span><span class="o">.</span><span class="n">virtualenv</span><span class="o">.</span><span class="n">test_runner</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">4</span><span class="n">store</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">503</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">absolute</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">abstract</span><span class="o">-</span><span class="n">templates</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">account</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
-
-<p>Another one:</p>
-
-<p><blockquote><p>I'm not sure this is the right way, but you could drop the Q objects, use<br/>only icontains and sort by the length of 'name'</p><footer><strong>Gabriel</strong> <cite><a href='https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion'>groups.google.com/d/topic/&hellip;</a></cite></footer></blockquote></p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Example is mine  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">packages</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Dancer&#39;</span><span class="p">)]</span>
-</span><span class='line'><span class="nb">sorted</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">)</span>
-</span><span class='line'><span class="p">[</span><span class="s">u&#39;Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;breakdancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;App::Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Routes&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">u&#39;DancerX::Routes&#39;</span><span class="p">,</span> <span class="s">u&#39;DancerX::Config&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::DWIM::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::CDN&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">u&#39;Dancer::Plugin::Feed&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::LDAP&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::Lucy&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
-
-<p>That's all folks. If you have other more interesting sorting needs please comment below.
-Thanks!</p>
 ]]></content>
   </entry>
   
