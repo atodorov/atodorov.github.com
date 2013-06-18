@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tips | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/tips/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-06-18T17:42:29+03:00</updated>
+  <updated>2013-06-19T00:10:32+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,29 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Nibbler - W3C Validator on Steroids]]></title>
+    <link href="http://atodorov.org/blog/2013/06/18/nibbler-w3c-validator-on-steroids/"/>
+    <updated>2013-06-18T23:59:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/06/18/nibbler-w3c-validator-on-steroids</id>
+    <content type="html"><![CDATA[<p>I've recently found Nibbler which gives you a report scoring the website out of
+10 for various important criteria including accessibility, SEO, social media
+and technology.</p>
+
+<p>The produced report is very interesting. Here is the
+<a href="http://nibbler.silktide.com/reports/atodorov.org">report for this blog</a>.
+There are things I definitely need to work on!</p>
+
+<p>For comparison <a href="http://nibbler.silktide.com/reports/sofiavalley.com">SofiaValley</a>
+scores far beyond this blog. It is stronger in marketing and popularity but
+apparently weaker on the technology section. This is interesting!</p>
+
+<p>PS: sorry for not producing technical content lately. I've been very busy
+with some current projects however I've got lots of ideas and topics to blog about.
+I hope to make it up to speed in the next few weeks. -- Alex</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6]]></title>
@@ -220,79 +243,6 @@ in your source code, not inside a template here is how:</p>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
 
 <p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: Renaming Model Fields in Django]]></title>
-    <link href="http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/"/>
-    <updated>2013-04-06T01:18:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django</id>
-    <content type="html"><![CDATA[<p>Did you ever have to re-purpose a column in your database schema?
-Here's a quick and easy way to do this if you happen to be using Django.</p>
-
-<h2>Scenario</h2>
-
-<p>I had an integer field in my model called <code>lines</code> which counted the lines of
-code in a particular tar.gz package. I figured the file size is a better indicator
-so decided to start using it. I was not planning to use the old field anymore and
-I didn't care about the data it was holding. So I decided to re-purpose it
-as the <code>size</code> field.</p>
-
-<h2>Possible methods</h2>
-
-<p>Looking around I figured several different ways to do this:</p>
-
-<ol>
-<li>Continue using the existing <code>lines</code> field and keep referencing the old name in the code.
-This is no-brainer but feels awkward and is a disaster waiting to happen;</li>
-<li>Add new <code>size</code> field and remove the old <code>lines</code> field. This involves modification to
-the DB schema and requires at least a backup with possible down time. Not something
-I will jump at right away;</li>
-<li>Add a <code>size</code> property in the model class which will persist to <code>self.lines</code>.
-This is a quick way to go but I'm not sure if one can use the property with the
-Django QuerySet API (objects.filter(), objects.update(), etc.) I suspect not.
-If you don't filter by the property or use it in bulk operations this method is fine though;</li>
-<li>Change the field name to <code>size</code> but continue to use the <code>lines</code> DB column;
-Mind my wording here :);</li>
-<li>Rename the column in the DB schema and then update the model class field.</li>
-</ol>
-
-
-<h2>How I did it</h2>
-
-<p>I decided to go for option 4 above:
-change the field name to <code>size</code> but continue to use the <code>lines</code> DB column.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/models.py b/models.py</span>
-</span><span class='line'><span class="gh">index e06d2b2..18cad6f 100644</span>
-</span><span class='line'><span class="gd">--- a/models.py</span>
-</span><span class='line'><span class="gi">+++ b/models.py</span>
-</span><span class='line'><span class="gu">@@ -667,7 +667,7 @@ class Package(models.Model):</span>
-</span><span class='line'><span class="gd">-    lines = models.IntegerField(default=None, null=True, blank=True)</span>
-</span><span class='line'><span class="gi">+    size  = models.IntegerField(default=None, null=True, blank=True, db_column=&#39;lines&#39;)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<ol>
-<li>Removed all references to <code>lines</code> from the code except the model class. This served as clean up as well.</li>
-<li>Renamed the model field to <code>size</code> but continued using the <code>lines</code> DB column as shown above.
-Django's <em>db_column</em> option makes this possible.</li>
-<li>From the Django shell (./manage.py shell) reset <code>size</code> to None (NULL) for all objects;</li>
-<li>Finally implement my new code and functionality behind the <code>size</code> field.</li>
-</ol>
-
-
-<p>The entire process happened for under 10 minutes. I will also opt for renaming the DB column at a later time.
-This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.</p>
-
-<p>If you were me, how would you do this? Please share in the comments below.</p>
 ]]></content>
   </entry>
   
