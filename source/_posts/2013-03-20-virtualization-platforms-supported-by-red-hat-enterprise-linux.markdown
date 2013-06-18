@@ -15,15 +15,19 @@ Software virtualization solutions
 A guest RHEL operating system is supported if it runs on the following
 platforms:
 
-* Xen
-* KVM
-* [VMware ESX](https://hardware.redhat.com/VMware)
+* Xen shipped with RHEL Server
+* KVM shipped with RHEL Server or RHEV for Servers
+* [VMware](https://hardware.redhat.com/VMware) ESX/vSphere
 * [Microsoft Hyper-V](https://hardware.redhat.com/Microsoft)
+
+Red Hat does not support Citrix XenServer. However, customers can
+[buy RHEL Server](http://otb.bg) and use it with Citrix XenServer
+with the understanding that Red Hat will only support technical
+issues that can be reproduced on bare metal.
 
 The 
 [official virtualization support matrix](http://www.redhat.com/resourcelibrary/articles/enterprise-linux-virtualization-support)
-doesn't specify which versions of Xen and KVM are supported. It is safe to assume that
-only the ones provided with another RHEL version are supported.
+shows which host/guest operating systems combinations are supported.
 
 Hardware partitioning
 ---------------------
