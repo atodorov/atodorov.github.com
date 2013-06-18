@@ -30,9 +30,8 @@ Open Technologies Bulgaria
 
 [Open Technologies Bulgaria, Ltd](http://otb.bg) is a company I founded in 2009 which
 mainly does open source consulting for some local clients and QA services to Red Hat, Inc. It's
-also a [Red Hat re-seller in Bulgaria](http://redhat.force.com/finder/PFPartnerDetail?id=0016000000LxykhAAB).
-At present this company is more like an umbrella company for other of my projects but it had some 
-[cool stuff](http://www.youtube.com/watch?v=7GYbCDGTz-4) in the past itself.
+also an authorized
+[Red Hat re-seller in Bulgaria](http://redhat.force.com/finder/PFPartnerDetail?id=0016000000LxykhAAB).
 
 
 Red Hat
