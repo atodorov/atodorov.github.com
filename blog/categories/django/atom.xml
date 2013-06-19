@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Django | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-06-19T14:11:51+03:00</updated>
+  <updated>2013-06-19T14:48:44+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -14,12 +14,97 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Tip: Caching Large Objects for Celery and Amazon SQS ]]></title>
+    <link href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/"/>
+    <updated>2013-06-19T14:29:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs</id>
+    <content type="html"><![CDATA[<p>Some time ago a guy called Matt
+<a href="https://groups.google.com/forum/?fromgroups=#!topic/celery-users/RFAuGjZwtmg">asked</a>
+about passing large objects through their messaging queue. They were switching from
+RabbitMQ to Amazon SQS which has a limit of 64K total message size.</p>
+
+<p>Recently I've made some changes in <a href="http://www.dif.io">Difio</a> which require passing
+larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
+same problem. Here is the solution using a cache back-end:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">cache</span> <span class="k">as</span> <span class="n">cache_module</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">some_method</span><span class="p">():</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;...</span> <span class="n">skip</span> <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">task_cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">handle_data</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="nd">@task</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">handle_data</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">data</span> <span class="o">=</span> <span class="n">task_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">return</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span> <span class="n">do</span> <span class="n">stuff</span> <span class="o">...</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Objects are persisted in a secondary cache back-end, not the default one, to avoid
+accidental destruction. <code>uuid</code> parameter is a string.</p>
+
+<p>Although the objects passed are smaller than 64K I haven't seen any issues
+with this solution so far. Let me know if you are using something similar in your code
+and how it works for you.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Django Tips: Using Cache for Stateful HTTP]]></title>
     <link href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/"/>
     <updated>2013-06-19T13:50:00+03:00</updated>
     <id>http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http</id>
     <content type="html"><![CDATA[<p>How do you keep state when working with a stateless protocol like HTTP?
-One possible answer is to use a cache backend.</p>
+One possible answer is to use a cache back-end.</p>
 
 <p>I'm working on an IVR application demo with Django and Twilio. The caller
 will make multiple choices using the phone keyboard. All of this needs to be
@@ -314,155 +399,6 @@ mailing list.</p>
 
 <p>That's all folks. If you have other more interesting sorting needs please comment below.
 Thanks!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[django-social-auth tip: Reminder of Login Provider]]></title>
-    <link href="http://atodorov.org/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/"/>
-    <updated>2013-03-14T12:04:00+02:00</updated>
-    <id>http://atodorov.org/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider</id>
-    <content type="html"><![CDATA[<p>Every now and then users forget their passwords. This is why I prefer using
-OAuth and social network accounts like GitHub or Twitter. But what do you do
-when somebody forgets which OAuth provider they used to login to your site?
-Your website needs a reminder. This is how to implement one if using
-django-social-auth.</p>
-
-<h2>Back-end</h2>
-
-<p>Create a similar view on your Django back-end</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>views.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">ajax_social_auth_provider_reminder</span><span class="p">(</span><span class="n">request</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="s">    Remind the user which social auth provider they used to login.</span>
-</span><span class='line'><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;email&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="n">email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-</span><span class='line'><span class="k">if</span> <span class="ow">not</span> <span class="n">email</span> <span class="ow">or</span> <span class="p">(</span><span class="n">email</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;@&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Invalid address!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">try</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;pk&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'><span class="k">except</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No user with address &#39;</span><span class="si">%s</span><span class="s">&#39; found!&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">providers</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'><span class="k">for</span> <span class="n">sa</span> <span class="ow">in</span> <span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;provider&#39;</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">providers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">providers</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">send_templated_mail</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">template_name</span><span class="o">=</span><span class="s">&#39;social_provider_reminder&#39;</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">from_email</span><span class="o">=</span><span class="s">&#39;Difio &amp;lt;reminder@dif.io&amp;gt;&#39;</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">recipient_list</span><span class="o">=</span><span class="p">[</span><span class="n">email</span><span class="p">],</span>
-</span><span class='line'>        <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;providers&#39;</span> <span class="p">:</span> <span class="n">providers</span><span class="p">},</span>
-</span><span class='line'>    <span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Reminder sent to &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</span><span class='line'><span class="k">else</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;User found but no social providers found!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>This example assumes it is called via POST request which contains the email address.
-All responses are handled at the front-end via JavaScript. If a user with the specified
-email address exists this address will receive a reminder listing all social auth providers
-associated with the user account.</p>
-
-<h2>Front-end</h2>
-
-<p>On the browser side I like to use <a href="http://dojotoolkit.org">Dojo</a>.
-Here is a simple script which connects to a form and POSTs the data
-back to the server.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo&quot;</span><span class="p">]);</span>
-</span><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dijit&quot;</span><span class="p">]);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">function</span> <span class="nx">sendReminderForm</span><span class="p">(){</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">form</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;reminderForm&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">dojo</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">form</span><span class="p">,</span> <span class="s2">&quot;onsubmit&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">){</span>
-</span><span class='line'>    <span class="nx">dojo</span><span class="p">.</span><span class="nx">stopEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">dijit</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;dlgForgot&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">xhrArgs</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">form</span><span class="o">:</span> <span class="nx">form</span><span class="p">,</span>
-</span><span class='line'>        <span class="nx">handleAs</span><span class="o">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">data</span><span class="p">);},</span>
-</span><span class='line'>        <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">ioargs</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">ioargs</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);}</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">xhrPost</span><span class="p">(</span><span class="nx">xhrArgs</span><span class="p">);</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">}</span>
-</span><span class='line'><span class="nx">dojo</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="nx">sendReminderForm</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>You can try this out at <a href="http://www.dif.io">Difio</a> and let me know how it works for you!</p>
 ]]></content>
   </entry>
   
