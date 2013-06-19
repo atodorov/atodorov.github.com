@@ -13,7 +13,7 @@ RabbitMQ to Amazon SQS which has a limit of 64K total message size.
 
 Recently I've made some changes in [Difio](http://www.dif.io) which require passing
 larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
-same problem. Here is the solution using a cache backend: 
+same problem. Here is the solution using a cache back-end: 
 
 {% codeblock lang:python %}
 
@@ -42,7 +42,7 @@ def handle_data(uuid):
 
 {% endcodeblock %}
 
-Objects are persisted in a secondary cache backend, not the default one, to avoid
+Objects are persisted in a secondary cache back-end, not the default one, to avoid
 accidental destruction. `uuid` parameter is a string.
 
 Although the objects passed are smaller than 64K I haven't seen any issues
