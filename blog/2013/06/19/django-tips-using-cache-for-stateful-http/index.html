@@ -5,13 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>What Runs Your Start-up - Useful at Night</title>
+  <title>Django Tips: Using Cache for Stateful HTTP</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Useful at Night is a mobile guide for nightlife
-empowering real time discovery of cool locations, allowing nightlife players
-to identify opinion &hellip;">
+  <meta name="description" content="How do you keep state when working with a stateless protocol like HTTP?
+One possible answer is to use a cache backend. I&#8217;m working on an IVR &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@ to identify opinion &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/03/27/what-runs-your-startup-useful-at-night/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -99,7 +98,7 @@ if (uri.indexOf("?") > 0) {
   
   <header>
     
-      <h1 class="entry-title">What Runs Your Start-up - Useful at Night</h1>
+      <h1 class="entry-title">Django Tips: Using Cache for Stateful HTTP</h1>
     
     
       <p class="meta">
@@ -115,7 +114,7 @@ if (uri.indexOf("?") > 0) {
   
 
 
-<time datetime="2013-03-27T12:00:00+02:00" pubdate data-updated="true">Mar 27<span>th</span>, 2013</time>
+<time datetime="2013-06-19T13:50:00+03:00" pubdate data-updated="true">Jun 19<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -124,45 +123,86 @@ if (uri.indexOf("?") > 0) {
   </header>
 
 
-<div class="entry-content"><p><img style="float: left; margin-right: 10px;" src="/images/startup/usefulatnight.png" alt="Useful at Night logo" /></p>
+<div class="entry-content"><p>How do you keep state when working with a stateless protocol like HTTP?
+One possible answer is to use a cache backend.</p>
 
-<p><a href="http://usefulatnight.com/">Useful at Night</a> is a mobile guide for nightlife
-empowering real time discovery of cool locations, allowing nightlife players
-to identify opinion leaders. Through geo-location and data aggregation
-capabilities, the application allows useful exploration of cities, places and
-parties.</p>
+<p>I&#8217;m working on an IVR application demo with Django and Twilio. The caller
+will make multiple choices using the phone keyboard. All of this needs to be
+put together and sent back to another server for processing. In my views
+I&#8217;ve added a simple cache get/set lines to preserve the selection.</p>
 
-<p><a href="http://about.me/velev">Evelin Velev</a> was kind enough to share what technologies
-his team uses to run their star-up.</p>
+<p>Here&#8217;s how it looks with actual application logic omitted</p>
 
-<br/>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">caller_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;From&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;from&#39;</span> <span class="p">:</span> <span class="n">caller_id</span><span class="p">}</span>
+</span><span class='line'>    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;step2.xml&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">step2</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>    <span class="n">state</span><span class="p">[</span><span class="s">&#39;step2_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'>    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;final_step.xml&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">final_step</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>    <span class="n">state</span><span class="p">[</span><span class="s">&#39;final_step_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Backend</span><span class="o">.</span><span class="n">process_user_selections</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;thank_you.xml&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<h2>Main Technologies</h2>
+<p>At each step Django will update the current state associated with this call and return
+a <a href="https://www.twilio.com/docs/api/twiml">TwiML</a> XML response. <code>CallSid</code> is a handy unique
+identifier provided by Twilio.</p>
 
-<p>Main technologies used are Node.js, HTML 5 and NoSQL.</p>
-
-<p>Back-end application servers are written in Node.js and hosted at Heroku,
-coupled with <a href="http://www.redistogo.com/">RedisToGo</a> for caching and
-CouchDB served by <a href="https://cloudant.com/">Cloudant</a> for storage.</p>
-
-<p>Their mobile front-end supports both iOS and Android platforms and is built using
-HTML5 and a homemade UI framework called RAPID. There are some native parts developed
-in Objective-C and Java respectively.</p>
-
-<p>In addition <em>Useful at Night</em> uses MongoDB for metrics data with a custom metrics solution
-written in Node.js; Amazon S3 for storing different assets; and a custom storage solution
-called Divan (simple CouchDB like).</p>
-
-<h2>Why Not Something Else?</h2>
-
-<blockquote><p>We chose Node.js for our application servers, because it enables us to build efficient<br/>distributed systems while sharing significant amounts of code between client and server.<br/>Things get really interesting when you couple Node.js with Redis for data structure<br/>sharing and message passing, as the two technologies play very well together.</p><p>We chose CouchDB as our main back-end because it is the most schema-less data-store that<br/>supports secondary indexing. Once you get fluent with its map-reduce views, you can<br/>compute an index out of practically anything. For comparison, even MongoDB requires<br/>that you design your documents as to enable certain indexing patterns. Put otherwise,<br/>we&#8217;d say CouchDB is a data-store that enables truly lean engineering - we have never had<br/>to re-bake or migrate our data since day one, while we&#8217;re constantly experimenting with<br/>new ways to index, aggregate and query it.</p><p>We chose HTML5 as our front-end technology, because it&#8217;s cross-platform and because we<br/>believe it&#8217;s &#8230; almost ready. Things are still really problematic on Android, but iOS<br/>boasts a gorgeous web presentation platform, and Windows 8 is also joining the game with<br/>a very good web engine. Obviously we&#8217;re constantly running into issues and limitations,<br/>mostly related to the unfortunate fact that in spite of some recent developments,<br/>a web app is still mostly single threaded. However, we&#8217;re getting there, and we&#8217;re proud<br/>to say we&#8217;re running a pretty graphically complex hybrid app with near-native GUI performance<br/>on the iPhone 4S and above.</p></blockquote>
-
-
-<h2>Want More Info?</h2>
-
-<p>If you&#8217;d like to hear more from <em>Useful at Night</em> please comment below. I will ask them
-to follow this thread and reply to your questions.</p>
+<p>I am using the latest <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a> version
+which properly works with directories. When going to production that will likely switch to
+Amazon ElastiCache.</p>
 </div>
 
 
@@ -185,12 +225,12 @@ to follow this thread and reply to your questions.</p>
   
 
 
-<time datetime="2013-03-27T12:00:00+02:00" pubdate data-updated="true">Mar 27<span>th</span>, 2013</time>
+<time datetime="2013-06-19T13:50:00+03:00" pubdate data-updated="true">Jun 19<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/amazon/'>Amazon</a>, <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/couchdb/'>CouchDB</a>, <a class='category' href='/blog/categories/html5/'>HTML5</a>, <a class='category' href='/blog/categories/heroku/'>Heroku</a>, <a class='category' href='/blog/categories/mongodb/'>MongoDB</a>, <a class='category' href='/blog/categories/node-js/'>Node.js</a>, <a class='category' href='/blog/categories/redis/'>Redis</a>, <a class='category' href='/blog/categories/s3/'>S3</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/start-up/'>start-up</a>, <a class='category' href='/blog/categories/what-runs/'>what runs</a>
+    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/twilio/'>Twilio</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
   
 </span>
 
@@ -219,10 +259,8 @@ to follow this thread and reply to your questions.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/03/27/what-runs-your-startup/" title="Previous Post: What Runs Your Start-up">&laquo; What Runs Your Start-up</a>
+        <a class="basic-alignment left" href="/blog/2013/06/18/nibbler-w3c-validator-on-steroids/" title="Previous Post: Nibbler - W3C Validator on Steroids">&laquo; Nibbler - W3C Validator on Steroids</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/03/29/bug-in-the-fridge/" title="Next Post: Bug in the Fridge">Bug in the Fridge &raquo;</a>
       
     </p>
   </footer>
@@ -360,8 +398,8 @@ Some of the links contained within this site have my referral id (e.g., Amazon),
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/03/27/what-runs-your-startup-useful-at-night/';
-        var disqus_url = 'http://atodorov.org/blog/2013/03/27/what-runs-your-startup-useful-at-night/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/';
+        var disqus_url = 'http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/';
         var disqus_script = 'embed.js';
       
     (function () {
