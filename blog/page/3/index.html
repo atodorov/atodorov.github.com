@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="I&#8217;m exploring the possibility to speed-up my cloud database so I&#8217;ve run some
-basic tests against storage options available to Amazon EC2 &hellip;">
+  <meta name="description" content="Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+Amazon SES as my &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -95,6 +96,125 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/">Email Logging for Django on RedHat OpenShift With Amazon SES</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-28T23:19:00+02:00" pubdate data-updated="true">Feb 28<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+<a href="http://aws.amazon.com/ses/">Amazon SES</a> as my email backend. Here is how to
+configure <a href="https://www.djangoproject.com/">Django</a> to send emails to site admins
+when something goes wrong.</p>
+
+<figure class='code'><figcaption><span>settings.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Valid addresses only.</span>
+</span><span class='line'><span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span>
+</span><span class='line'>    <span class="p">(</span><span class="s">&#39;Alexander Todorov&#39;</span><span class="p">,</span> <span class="s">&#39;atodorov@example.com&#39;</span><span class="p">),</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;disable_existing_loggers&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;mail_admins&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&#39;class&#39;</span><span class="p">:</span> <span class="s">&#39;django.utils.log.AdminEmailHandler&#39;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="s">&#39;loggers&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;django.request&#39;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;mail_admins&#39;</span><span class="p">],</span>
+</span><span class='line'>            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&#39;propagate&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Used as the From: address when reporting errors to admins</span>
+</span><span class='line'><span class="c"># Needs to be verified in Amazon SES as a valid sender</span>
+</span><span class='line'><span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&#39;django@example.com&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Amazon Simple Email Service settings</span>
+</span><span class='line'><span class="n">AWS_SES_ACCESS_KEY_ID</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxxxxxx&#39;</span>
+</span><span class='line'><span class="n">AWS_SES_SECRET_ACCESS_KEY</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxx&#39;</span>
+</span><span class='line'><span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">&#39;django_ses.SESBackend&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You also need the <a href="https://github.com/hmarr/django-ses">django-ses</a>
+dependency.</p>
+
+<p>See <a href="http://docs.djangoproject.com/en/dev/topics/logging">http://docs.djangoproject.com/en/dev/topics/logging</a> for
+more details on how to customize your logging configuration.</p>
+
+<p>I am using this configuration successfully at RedHat&#8217;s OpenShift PaaS environment.
+Other users have
+<a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django">reported</a>
+it works for them too. Should work with any other PaaS provider.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1256,6 +1376,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/06/20/even-facebook-has-bugs/">Even Facebook has Bugs</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/">Tip: Caching Large Objects for Celery and Amazon SQS </a>
       </li>
     
@@ -1289,10 +1413,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/">Why VMware Multi-Hypervisor Manager Architecture Is Wrong</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/">Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6</a>
       </li>
     
   </ul>
