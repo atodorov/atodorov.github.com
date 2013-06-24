@@ -6,13 +6,13 @@ comments: true
 categories: ['Twilio', 'Amazon']
 ---
 
-Twilio is a cloud vendor that provides telephony services. It works by redirecting
-calls through HTTP to a web application, which returns XML configuration responses.
-Twilio can download and `<Play>` arbitrary audio files. It will cache the file
-for better performance. The obvious question is
 {% blockquote %}
-Where do I store my files in order to minimize download time and in turn minimize wait time on the call?
+Where do I store my audio files in order to minimize download and call wait time?
 {% endblockquote %}
+
+Twilio is a cloud vendor that provides telephony services. 
+It can download and `<Play>` arbitrary audio files and will cache the files
+for better performance.
 
 Twilio support told me they are not disclosing the location of their servers,
 so from my web application hosted in AWS US East:
