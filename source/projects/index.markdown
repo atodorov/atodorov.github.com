@@ -16,7 +16,7 @@ Difio
 
 <img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
 
-[Difio](http://www.dif.io) is my latest project. This is a service targeted at developers
+[Difio](http://www.dif.io) is my latest venture. This is a service targeted at developers
 who use open source packages and libraries. Difio keeps track of application dependencies
 and tells you when they change. It lets you inspect the changes and make informed decision
 when or what to upgrade because even if an application works, any change in its libraries
