@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
-because of frequent abuse. For that reason I use
-Amazon SES as my &hellip;">
+  <meta name="description" content="Common functionality for websites is the &#8216;DELETE ACCOUNT&#8217; or &#8216;DISABLE ACCOUNT&#8217;
+button. This is how to implement it if using &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -96,6 +95,71 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/">Tip: Delete User Profiles With Django-social-auth</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-06T21:02:00+02:00" pubdate data-updated="true">Mar 6<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Common functionality for websites is the &#8216;DELETE ACCOUNT&#8217; or &#8216;DISABLE ACCOUNT&#8217;
+button. This is how to implement it if using
+<a href="https://github.com/omab/django-social-auth">django-social-auth</a>.</p>
+
+<figure class='code'><figcaption><span>views.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">delete_objects_for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span> <span class="c"># optional</span>
+</span><span class='line'><span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+</span><span class='line'><span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">is_active</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</span><span class='line'><span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s">&#39;django.contrib.auth.views.logout&#39;</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This snippet does the following:</p>
+
+<ul>
+<li>Delete (or archive) all objects for the current user;</li>
+<li>Delete the social auth profile(s) because there is no way to disable them.
+DSA will create new objects if the user logs in again;</li>
+<li>Disable the <code>User</code> object. You could also delete it but mind foreign keys;</li>
+<li>Clear the email for the <code>User</code> object - if a new user is created after deletion
+we don&#8217;t want duplicated email addresses in the database;</li>
+<li>Finally redirect the user to the logout view.</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1365,6 +1429,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/">Twilio is Located in Amazon Web Services US East</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/06/20/even-facebook-has-bugs/">Even Facebook has Bugs</a>
       </li>
     
@@ -1398,10 +1466,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/05/31/call-of-the-open-source-guru/">Call of the Open Source Guru</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/">Why VMware Multi-Hypervisor Manager Architecture Is Wrong</a>
       </li>
     
   </ul>
