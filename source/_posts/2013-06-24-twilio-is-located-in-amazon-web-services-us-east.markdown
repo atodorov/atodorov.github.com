@@ -148,7 +148,8 @@ For comparison here are some internal addresses from my own EC2 systems:
 
 
 After relocating my audio files to an S3 bucket in US East the average call length
-dropped from 2:30 min to 2:00 min for the same IVR choices. My ears could be playing
-games but I think the audio quality has improved as well.
+dropped from 2:30 min to 2:00 min for the same IVR choices. This also minimizes
+the costs since Twilio charges per minute of incoming/outgoing calls.
+I think the audio quality has improved as well.
 
 
