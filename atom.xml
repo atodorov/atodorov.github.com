@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-06-25T00:56:06+03:00</updated>
+  <updated>2013-06-26T23:03:28+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,198 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Performance test: Amazon ElastiCache vs Amazon S3]]></title>
+    <link href="http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/"/>
+    <updated>2013-06-26T21:22:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3</id>
+    <content type="html"><![CDATA[<p>Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ?</p>
+
+<p>Previously I&#8217;ve mentioned about
+<a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/">using Django&#8217;s cache to keep state between HTTP requests</a>.
+In my demo described there I was using <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+It is time to move to production so I decided to measure the performance difference between the two
+cache options available at Amazon Web Services.</p>
+
+<h2>Test infrastructure</h2>
+
+<ul>
+<li>One Amazon S3 bucket, located in US Standard (aka US East) region;</li>
+<li>One Amazon ElastiCache cluster with one Small Cache Node (cache.m1.small) with Moderate I/O capacity;</li>
+<li>One Amazon Elasticache cluster with one Large Cache Node (cache.m1.large) with High I/O Capacity.</li>
+</ul>
+
+
+<h2>Test Scenario</h2>
+
+<p>The test platform is Django. I&#8217;ve created a
+<a href="https://github.com/atodorov/Amazon-ElastiCache-vs-Amazon-S3-Django">skeleton project</a>
+with only <code>CACHES</code> settings
+defined and necessary dependencies installed. A file called <code>test.py</code> holds the
+test cases, which use the standard timeit module. The object which is stored in cache
+is very small - it holds a phone/address identifiers and couple of user made selections.
+The code looks like this:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">timeit</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s3_set</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">for i in range(1000):</span>
+</span><span class='line'><span class="sd">    s3_cache.set(i, MyObject)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">from django.core import cache</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">s3_cache = cache.get_cache(&#39;default&#39;)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">MyObject = {</span>
+</span><span class='line'><span class="sd">    &#39;from&#39; : &#39;359123456789&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;address&#39; : &#39;6afce9f7-acff-49c5-9fbe-14e238f73190&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;hour&#39; : &#39;12:30&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;weight&#39; : 5,</span>
+</span><span class='line'><span class="sd">    &#39;type&#39; : 1,</span>
+</span><span class='line'><span class="sd">}</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s3_get</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">for i in range(1000):</span>
+</span><span class='line'><span class="sd">    MyObject = s3_cache.get(i)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">from django.core import cache</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">s3_cache = cache.get_cache(&#39;default&#39;)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">### skip ###</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tests were executed from the Django shell on my laptop:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell</span>
+</span><span class='line'><span class="n">Python</span> <span class="mf">2.6</span><span class="o">.</span><span class="mi">6</span> <span class="p">(</span><span class="n">r266</span><span class="p">:</span><span class="mi">84292</span><span class="p">,</span> <span class="n">Oct</span> <span class="mi">12</span> <span class="mi">2012</span><span class="p">,</span> <span class="mi">14</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">48</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="n">GCC</span> <span class="mf">4.4</span><span class="o">.</span><span class="mi">6</span> <span class="mi">20120305</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.4</span><span class="o">.</span><span class="mi">6</span><span class="o">-</span><span class="mi">4</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux2</span>
+</span><span class='line'><span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+</span><span class='line'><span class="p">(</span><span class="n">InteractiveConsole</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">test</span> <span class="kn">import</span> <span class="o">*</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">s3_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">534.49202704429626</span><span class="p">,</span> <span class="mf">515.13989496231079</span><span class="p">,</span> <span class="mf">515.26534104347229</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">ecs_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">3.1153659820556641</span><span class="p">,</span> <span class="mf">3.102524995803833</span><span class="p">,</span> <span class="mf">3.1101429462432861</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">ecl_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">3.1070160865783691</span><span class="p">,</span> <span class="mf">3.1004979610443115</span><span class="p">,</span> <span class="mf">3.1082391738891602</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">s3_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">354.0339789390564</span><span class="p">,</span> <span class="mf">383.1578528881073</span><span class="p">,</span> <span class="mf">371.23516583442688</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">ecs_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">3.0982329845428467</span><span class="p">,</span> <span class="mf">3.1075088977813721</span><span class="p">,</span> <span class="mf">3.1198301315307617</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">ecl_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">3.1206800937652588</span><span class="p">,</span> <span class="mf">3.0972812175750732</span><span class="p">,</span> <span class="mf">3.1136119365692139</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Results</h2>
+
+<p>As expected ElastiCache is much faster compared to S3. However the difference
+between the two ElastiCache node types is subtle. I will stay with the smallest
+possible node to minimize costs.</p>
+
+<p>Depending on your objects size or how many set/get operations you perform per
+second you may need to go with the larger nodes. Just test it!</p>
+
+<p>It surprised me how slow django-s3-cache is. A quick look at the code
+of the two backends shows some differences. The one I immediately see is that
+for every cache key django-s3-cache creates an sha1 hash which is used as the
+storage file name. This was modeled after the filesystem backend but I think the
+design is wrong.</p>
+
+<p>Another one is that django-s3-cache time-stamps all objects and uses pickle to serialize them.
+I wonder if it can&#8217;t just write them as binary blobs directly. There&#8217;s definitely lots
+of room for improvement of django-s3-cache. I will let you know my findings once I
+get to it.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Twilio is Located in Amazon Web Services US East]]></title>
@@ -1565,113 +1757,6 @@ worked in your favor or not?</p>
 
 
 <p>If you have more insight on the credit card industry please share with us!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to Deploy Python Hotfix on RedHat OpenShift Cloud]]></title>
-    <link href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/"/>
-    <updated>2013-04-24T11:58:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud</id>
-    <content type="html"><![CDATA[<p>In this article I will show you how to deploy hotfix versions for
-Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
-
-<h2>Background</h2>
-
-<p>You are already running a Python application on your OpenShift instance.
-You are using some 3rd party dependencies when you find a bug in one of them.
-You go forward, fix the bug and submit a
-<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
-You don&#8217;t want to wait for upstream to release a new version but rather
-build a hotfix package yourself and deploy to production immediately.</p>
-
-<h2>Solution</h2>
-
-<p>There are two basic approaches to solving this problem:</p>
-
-<ol>
-<li>Include the hotfix package source code in your application, i.e.
-add it to your git tree or;</li>
-<li>Build the hotfix separately and deploy as a dependency. Don&#8217;t
-include it in your git tree, just add a requirement on the hotfix version.</li>
-</ol>
-
-
-<p>I will talk about the later. The tricky part here is to instruct the cloud environment
-to use your package (including the proper location) and not upstream or their local
-mirror.</p>
-
-<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don&#8217;t support
-<code>requirements.txt</code> which can point to various package sources and even install
-packages directly from GitHub. They support <code>setup.py</code> which fetches packages
-from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
-
-<h2>Building the hotfix</h2>
-
-<p>First of all we&#8217;d like to build a hotfix package. This will be the upstream
-version that we are currently using plus the patch for our critical issue:</p>
-
-<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
-$ tar -xzvf python-magic-0.4.3.tar.gz 
-$ cd python-magic-0.4.3
-$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
-</code></pre>
-
-<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
-increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
-
-<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
-
-<h2>Deploying to OpenShift</h2>
-
-<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
-and will not be on OpenShift&#8217;s local mirror you need to provide the location where it can
-be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here&#8217;s how it looks:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
-</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
-</span><span class='line'><span class="gd">--- a/setup.py</span>
-</span><span class='line'><span class="gi">+++ b/setup.py</span>
-</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
-</span><span class='line'>       author=&#39;Your Name&#39;,
-</span><span class='line'>       author_email=&#39;example@example.com&#39;,
-</span><span class='line'>       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
-</span><span class='line'><span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
-</span><span class='line'><span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
-</span><span class='line'><span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
-</span><span class='line'>      )
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now just git push to OpenShift and observe the console output:</p>
-
-<pre><code>remote: Processing dependencies for YourAppName==1.0
-remote: Searching for python-magic==0.4.3.1
-remote: Best match: python-magic 0.4.3.1
-remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
-remote: Processing python-magic-0.4.3.1.tar.gz
-remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
-remote: zip_safe flag not set; analyzing archive contents...
-remote: Removing python-magic 0.4.3 from easy-install.pth file
-remote: Adding python-magic 0.4.3.1 to easy-install.pth file
-</code></pre>
-
-<p>Congratulations! Your hotfix package has just been deployed.</p>
-
-<p>This approach should work for other cloud providers and other programming languages
-as well. Let me know if you have any experience with that.</p>
 ]]></content>
   </entry>
   

@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Deed is an action-provoking platform for challenging
-yourself and others and also a business solution for improved engagement by the
-corresponding &hellip;">
+  <meta name="description" content="In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat OpenShift PaaS cloud. Background You are already &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -96,6 +95,142 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">How to Deploy Python Hotfix on RedHat OpenShift Cloud</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-24T11:58:00+03:00" pubdate data-updated="true">Apr 24<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+
+<h2>Background</h2>
+
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don&#8217;t want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+
+<h2>Solution</h2>
+
+<p>There are two basic approaches to solving this problem:</p>
+
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don&#8217;t
+include it in your git tree, just add a requirement on the hotfix version.</li>
+</ol>
+
+
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don&#8217;t support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+
+<h2>Building the hotfix</h2>
+
+<p>First of all we&#8217;d like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+
+<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+$ tar -xzvf python-magic-0.4.3.tar.gz 
+$ cd python-magic-0.4.3
+$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
+</code></pre>
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+
+<h2>Deploying to OpenShift</h2>
+
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift&#8217;s local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here&#8217;s how it looks:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
+</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
+</span><span class='line'><span class="gd">--- a/setup.py</span>
+</span><span class='line'><span class="gi">+++ b/setup.py</span>
+</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
+</span><span class='line'>       author=&#39;Your Name&#39;,
+</span><span class='line'>       author_email=&#39;example@example.com&#39;,
+</span><span class='line'>       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+</span><span class='line'><span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
+</span><span class='line'><span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
+</span><span class='line'><span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
+</span><span class='line'>      )
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+
+<pre><code>remote: Processing dependencies for YourAppName==1.0
+remote: Searching for python-magic==0.4.3.1
+remote: Best match: python-magic 0.4.3.1
+remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
+remote: Processing python-magic-0.4.3.1.tar.gz
+remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
+remote: zip_safe flag not set; analyzing archive contents...
+remote: Removing python-magic 0.4.3 from easy-install.pth file
+remote: Adding python-magic 0.4.3.1 to easy-install.pth file
+</code></pre>
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1775,206 +1910,6 @@ back to the server.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/">Python Twitter + Django-social-auth == Hello New User</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-07T21:47:00+02:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I have been experimenting with the <a href="https://pypi.python.org/pypi/twitter">twitter</a>
-module for Python and decided to combine it with
-<a href="https://github.com/omab/django-social-auth">django-social-auth</a> to welcome new
-users who join <a href="http://www.dif.io">Difio</a>. In this post I will show you how to
-tweet on behalf of the user when they join your site and send them a welcome email.</p>
-
-<h2>Configuration</h2>
-
-<p>In django-social-auth the authentication workflow is handled by an operations
-pipeline where custom functions can be added or default items can be removed to
-provide custom behavior. This is how our pipeline looks:</p>
-
-<figure class='code'><figcaption><span>settings.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">SOCIAL_AUTH_PIPELINE</span> <span class="o">=</span> <span class="p">(</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.social_auth_user&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="c">#&#39;social_auth.backends.pipeline.associate.associate_by_email&#39;,</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.get_username&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.create_user&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.associate_user&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.load_extra_data&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.update_user_details&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;myproject.tasks.welcome_new_user&#39;</span>
-</span><span class='line'><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is the default plus an additional method at the end to welcome new users.</p>
-
-<p>You also have to create and configure a Twitter application so that users
-can login with Twitter OAuth to your site.
-<a href="http://django-social-auth.readthedocs.org/en/latest/backends/index.html">RTFM</a>
-for more information on how to do this.</p>
-
-<h2>Custom pipeline actions</h2>
-
-<p>This is how the custom pipeline action should look:</p>
-
-<figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qs</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">welcome_new_user</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">social_user</span><span class="p">,</span> <span class="n">is_new</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">new_association</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="sd">        Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer</span>
-</span><span class='line'><span class="sd">        @backend - social_auth.backends.twitter.TwitterBackend (or other) object</span>
-</span><span class='line'><span class="sd">        @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)</span>
-</span><span class='line'><span class="sd">        @social_user - UserSocialAuth object</span>
-</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">is_new</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">send_welcome_email</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">first_name</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="n">backend</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;twitter&#39;</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">if</span> <span class="n">is_new</span> <span class="ow">or</span> <span class="n">new_association</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">access_token</span> <span class="o">=</span> <span class="n">social_user</span><span class="o">.</span><span class="n">extra_data</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span>
-</span><span class='line'>            <span class="n">parsed_tokens</span> <span class="o">=</span> <span class="n">parse_qs</span><span class="p">(</span><span class="n">access_token</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">oauth_token</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>            <span class="n">oauth_secret</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>            <span class="n">tweet_on_join</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="bp">None</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This code works with django-social-auth==0.7.21 or newer. In older versions the
-<code>new_association</code> parameter is missing as
-<a href="https://groups.google.com/forum/?fromgroups=#!topic/django-social-auth/Nxf-0iRD27Y">I discovered</a>.
-If you use an older version you won&#8217;t be able to distinguish between newly created
-accounts and ones which have associated another OAuth backend. You are warned!</p>
-
-<h2>Tweet &amp; email</h2>
-
-<p>Sending the welcome email is out of the scope of this post. I am using
-<a href="https://github.com/bradwhittington/django-templated-email">django-templated-email</a>
-to define how emails look and sending them via Amazon SES. See
-<a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/">Email Logging for Django on RedHat OpenShift With Amazon SES</a>
-for more information on how to configure emailing with SES.</p>
-
-<p>Here is how the Twitter code looks:</p>
-
-<figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">twitter</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span>
-</span><span class='line'>
-</span><span class='line'><span class="nd">@task</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">tweet_on_join</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">):</span>
-</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="sd">        Tweet when the user is logged in for the first time or</span>
-</span><span class='line'><span class="sd">        when new Twitter account is associated.</span>
-</span><span class='line'>
-</span><span class='line'><span class="sd">        @oauth_token - string</span>
-</span><span class='line'><span class="sd">        @oauth_secret - string</span>
-</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
-</span><span class='line'>    <span class="n">t</span> <span class="o">=</span> <span class="n">twitter</span><span class="o">.</span><span class="n">Twitter</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">auth</span><span class="o">=</span><span class="n">twitter</span><span class="o">.</span><span class="n">OAuth</span><span class="p">(</span>
-</span><span class='line'>                <span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">,</span>
-</span><span class='line'>                <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span>
-</span><span class='line'>            <span class="p">)</span>
-</span><span class='line'>        <span class="p">)</span>
-</span><span class='line'>    <span class="n">t</span><span class="o">.</span><span class="n">statuses</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">&#39;Started following open source changes at http://www.dif.io!&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This will post a new tweet on behalf of the user, telling everyone they joined
-your website!</p>
-
-<p><strong>NOTE:</strong>
-<code>tweet_on_join</code> and <code>send_welcome_email</code> are Celery tasks, not ordinary Python
-functions. This has the advantage of being able to execute these actions async
-and not slow down the user interface.</p>
-
-<p>Are you doing something special when a user joins your website? Please share
-your comments below. Thanks!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -2021,6 +1956,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/">Performance test: Amazon ElastiCache vs Amazon S3</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/">Twilio is Located in Amazon Web Services US East</a>
       </li>
     
@@ -2054,10 +1993,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/06/02/sofiavalley-ui-bug/">SofiaValley UI bug</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/05/31/call-of-the-open-source-guru/">Call of the Open Source Guru</a>
       </li>
     
   </ul>
