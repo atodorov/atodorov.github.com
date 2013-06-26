@@ -37,9 +37,6 @@ module in Python.
 {% codeblock test.py lang:python %}
 #!/usr/bin/python
 
-# (c) 2013 - Alexander Todorov, http://atodorov.org
-# Published under GNU GPLv3
-
 import timeit
 
 t = timeit.Timer(

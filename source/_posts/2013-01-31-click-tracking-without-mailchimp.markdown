@@ -59,9 +59,6 @@ report this visit. Here is the code:
 <html>
 <head>
 <script type="text/javascript">
-// (c) 2013 - Alexander Todorov, http://atodorov.org
-// Published under GNU GPLv3
-
 var uri = window.location.toString();
 var question = uri.indexOf("?");
 var param = uri.substring(question + 1, uri.length)

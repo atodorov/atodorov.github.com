@@ -38,9 +38,6 @@ Place this JavaScript code in the `<head>` section of your pages. Preferably nea
 
 {% codeblock lang:html %}
 <script type="text/javascript">
-// (c) 2013 - Alexander Todorov, http://atodorov.org
-// Published under GNU GPLv3
-
 var uri = window.location.toString();
 if (uri.indexOf("?") > 0) {
     var clean_uri = uri.substring(0, uri.indexOf("?"));
@@ -63,9 +60,6 @@ Here is another approach proposed by reader Kamen Mazdrashki:
 
 {% codeblock lang:html %}
 <script type="text/javascript">
-// (c) 2013 - Alexander Todorov, http://atodorov.org
-// Published under GNU GPLv3
-
 var clean_uri = location.protocol + "//" + location.host + location.pathname;
 /*
 var hash_pos = location.href.indexOf("#");
