@@ -3,7 +3,7 @@ layout: post
 title: "Performance test: Amazon ElastiCache vs Amazon S3"
 date: 2013-06-26 21:22
 comments: true
-categories: ['Amazon', 'Django', 'S3', 'ElastiCache', 'QA', 'performance-testing']
+categories: ['Amazon', 'Django', 'S3', 'ElastiCache', 'QA', 'performance testing']
 ---
 
 Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ?
