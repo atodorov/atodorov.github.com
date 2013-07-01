@@ -9,10 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="I have been experimenting with the twitter
-module for Python and decided to combine it with
-django-social-auth to welcome new
-users who join Difio. &hellip;">
+  <meta name="description" content="Every now and then users forget their passwords. This is why I prefer using
+OAuth and social network accounts like GitHub or Twitter. But what do you &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,19 +75,11 @@ if (uri.indexOf("?") > 0) {
   <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
   
 </ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:atodorov.org" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
 <ul class="main-navigation">
   <li><a href="/">Home</a></li>
   <li><a href="/give-away/">Give Away List</a></li>
   <li><a href="/projects/">Projects</a></li>
-  <li><a href="http://amzn.to/11ep6dD">Now reading: The E-Myth Revisited: Why Most Small Businesses Don't Work ...</a></li>
+  <li><a href="http://amzn.to/17KrXTh">Now reading: Accelerando (Singularity) by Charles Stross</a></li>
 </ul>
 
 </nav>
@@ -97,6 +87,172 @@ if (uri.indexOf("?") > 0) {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/">Django-social-auth Tip: Reminder of Login Provider</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-14T12:04:00+02:00" pubdate data-updated="true">Mar 14<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Every now and then users forget their passwords. This is why I prefer using
+OAuth and social network accounts like GitHub or Twitter. But what do you do
+when somebody forgets which OAuth provider they used to login to your site?
+Your website needs a reminder. This is how to implement one if using
+django-social-auth.</p>
+
+<h2>Back-end</h2>
+
+<p>Create a similar view on your Django back-end</p>
+
+<figure class='code'><figcaption><span>views.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">ajax_social_auth_provider_reminder</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        Remind the user which social auth provider they used to login.</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;email&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">email</span> <span class="ow">or</span> <span class="p">(</span><span class="n">email</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;@&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Invalid address!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;pk&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">except</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No user with address &#39;</span><span class="si">%s</span><span class="s">&#39; found!&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">providers</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">sa</span> <span class="ow">in</span> <span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;provider&#39;</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">providers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">providers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">send_templated_mail</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">template_name</span><span class="o">=</span><span class="s">&#39;social_provider_reminder&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">from_email</span><span class="o">=</span><span class="s">&#39;Difio &lt;reminder@dif.io&gt;&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">recipient_list</span><span class="o">=</span><span class="p">[</span><span class="n">email</span><span class="p">],</span>
+</span><span class='line'>            <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;providers&#39;</span> <span class="p">:</span> <span class="n">providers</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Reminder sent to &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;User found but no social providers found!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This example assumes it is called via POST request which contains the email address.
+All responses are handled at the front-end via JavaScript. If a user with the specified
+email address exists this address will receive a reminder listing all social auth providers
+associated with the user account.</p>
+
+<h2>Front-end</h2>
+
+<p>On the browser side I like to use <a href="http://dojotoolkit.org">Dojo</a>.
+Here is a simple script which connects to a form and POSTs the data
+back to the server.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo&quot;</span><span class="p">]);</span>
+</span><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dijit&quot;</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">sendReminderForm</span><span class="p">(){</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">form</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;reminderForm&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">dojo</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">form</span><span class="p">,</span> <span class="s2">&quot;onsubmit&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">){</span>
+</span><span class='line'>        <span class="nx">dojo</span><span class="p">.</span><span class="nx">stopEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">);</span>
+</span><span class='line'>        <span class="nx">dijit</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;dlgForgot&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">xhrArgs</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">form</span><span class="o">:</span> <span class="nx">form</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">handleAs</span><span class="o">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">data</span><span class="p">);},</span>
+</span><span class='line'>            <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">ioargs</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">ioargs</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">xhrPost</span><span class="p">(</span><span class="nx">xhrArgs</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">dojo</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="nx">sendReminderForm</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can try this out at <a href="http://www.dif.io">Difio</a> and let me know how it works for you!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1574,6 +1730,15 @@ otherwise.</p>
 <aside class="sidebar">
   
     
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
 <section>
   
   <a href="https://github.com/atodorov">@atodorov</a> on GitHub
@@ -1605,6 +1770,10 @@ addthis.box("#addthis_trendingcontent", {
 </section><section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/01/july-events-blackberry-mini-jam-and-devel-conference/">July Events - BlackBerry Mini Jam and Devel Conference</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/">Performance test: Amazon ElastiCache vs Amazon S3</a>
@@ -1640,10 +1809,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/06/07/software-developer-employee-vs-contractor-part-1/">Software Developer - Employee vs. Contractor, Part 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/06/02/sofiavalley-ui-bug/">SofiaValley UI bug</a>
       </li>
     
   </ul>
