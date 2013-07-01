@@ -3,7 +3,7 @@ layout: post
 title: "Upcoming Hackatons in Sofia"
 date: 2013-03-24 22:02
 comments: true
-categories: ['hackaton', 'open government', 'hackfmi']
+categories: ['hackaton', 'open government', 'hackfmi', 'events']
 ---
 
 [Hackatons](https://en.wikipedia.org/wiki/Hackathon)

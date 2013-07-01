@@ -3,7 +3,7 @@ layout: post
 title: "HackFMI Post-mortem"
 date: 2013-04-15 10:27
 comments: true
-categories: ['hackaton', 'hackfmi']
+categories: ['hackaton', 'hackfmi', 'events']
 ---
 
 <img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" />
