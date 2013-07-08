@@ -3,7 +3,7 @@ layout: post
 title: "Twilio is Located in Amazon Web Services US East"
 date: 2013-06-24 23:43
 comments: true
-categories: ['Twilio', 'Amazon']
+categories: ['Twilio', 'Amazon', 'cloud']
 ---
 
 {% blockquote %}

@@ -3,7 +3,7 @@ layout: post
 title: "Click Tracking without MailChimp"
 date: 2013-01-31 21:23
 comments: true
-categories: ['JavaScript', 'Amazon', 'S3', 'SES']
+categories: ['JavaScript', 'Amazon', 'S3', 'SES', 'cloud']
 ---
 
 Here is a standard notification message that users at [Difio](http://www.dif.io)

@@ -3,7 +3,7 @@ layout: post
 title: "Email Logging for Django on RedHat OpenShift with Amazon SES"
 date: 2013-02-28 23:19
 comments: true
-categories: ['tips', 'Django', 'Amazon', 'SES', 'OpenShift']
+categories: ['tips', 'Django', 'Amazon', 'SES', 'OpenShift', 'cloud']
 ---
 
 Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
