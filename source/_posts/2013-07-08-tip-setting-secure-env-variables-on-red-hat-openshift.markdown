@@ -44,3 +44,6 @@ total 4
 [difio-otb.rhcloud.com data]\> 
 
 {% endcodeblock %}
+
+
+Use the defined variables as you wish.
