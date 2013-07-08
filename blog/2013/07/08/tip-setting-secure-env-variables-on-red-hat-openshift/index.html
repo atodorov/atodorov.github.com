@@ -5,11 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: Node.js</title>
+  <title>Tip: Setting Secure ENV variables on Red Hat OpenShift</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Category: Node.js">
+  <meta name="description" content="OpenShift is
+still missing
+the client side tools to set environment variables without exposing the values
+in source code but there is a way to do it &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.orgblog/categories/node-js/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -83,35 +86,161 @@ if (uri.indexOf("?") > 0) {
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Node.js</h1>
+    
+      <h1 class="entry-title">Tip: Setting Secure ENV Variables on Red Hat OpenShift</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-08T21:39:00+03:00" pubdate data-updated="true">Jul 8<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>OpenShift is
+<a href="https://www.openshift.com/content/custom-environment-variables">still missing</a>
+the client side tools to set environment variables without exposing the values
+in source code but there is a way to do it. Here is how.</p>
 
-  
-  <h2>2013</h2>
+<p>First ssh into your application and navigate to the <code>$OPENSHIFT_DATA_DIR</code>.
+Create a file to define your environment.</p>
 
-<article>
-  
-<h1><a href="/blog/2013/03/27/what-runs-your-startup-useful-at-night/">What Runs Your Start-up - Useful at Night</a></h1>
-<time datetime="2013-03-27T12:00:00+02:00" pubdate><span class='month'>Mar</span> <span class='day'>27</span> <span class='year'>2013</span></time>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rhc ssh -a difio
+</span><span class='line'>Password: ***
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> vi myenv.sh
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> cat myenv.sh
+</span><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">MYENV</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> chmod a+x myenv.sh
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">exit</span>
+</span><span class='line'>Connection to difio-otb.rhcloud.com closed.
+</span></code></pre></td></tr></table></div></figure>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/amazon/'>Amazon</a>, <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/couchdb/'>CouchDB</a>, <a class='category' href='/blog/categories/html5/'>HTML5</a>, <a class='category' href='/blog/categories/heroku/'>Heroku</a>, <a class='category' href='/blog/categories/mongodb/'>MongoDB</a>, <a class='category' href='/blog/categories/node-js/'>Node.js</a>, <a class='category' href='/blog/categories/redis/'>Redis</a>, <a class='category' href='/blog/categories/s3/'>S3</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>, <a class='category' href='/blog/categories/start-up/'>start-up</a>, <a class='category' href='/blog/categories/what-runs/'>what runs</a></span>
-</footer>
+
+<p>Now modify your code and git push to OpenShift. Then ssh into the app once
+again to verify that your configuration is still in place.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>atodorov@redbull difio<span class="o">]</span><span class="nv">$ </span>rhc ssh -a difio
+</span><span class='line'>Password: ***
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> ls -l
+</span><span class='line'>total 4
+</span><span class='line'>-rwxr-xr-x. 1 51d32a854382ecf7a9000116 51d32a854382ecf7a9000116 34  8 jul 14,33 myenv.sh
+</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-</article>
-
+<p>Use the defined variables as you wish.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-08T21:39:00+03:00" pubdate data-updated="true">Jul 8<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/openshift/'>OpenShift</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/07/04/give-a-book-get-a-laptop-with-discount/" title="Previous Post: Give a Book, Get a Laptop With Discount">&laquo; Give a Book, Get a Laptop With Discount</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -236,7 +365,10 @@ Some of the links contained within this site have my referral id (e.g., Amazon),
       var disqus_shortname = 'atodorov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/';
+        var disqus_url = 'http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
