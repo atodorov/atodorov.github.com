@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Can a company like Instagram be founded in Europe and successfully exit for
-$ 1 billion? What do you think ? This is precisely the question &hellip;">
+  <meta name="description" content="This article is a step-by-step guide to using two passwords with EncFS.
+The primary password is required and may be used to secure all data;
+the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -52,8 +53,7 @@ $ 1 billion? What do you think ? This is precisely the question &hellip;">
 <div id="logo-container">
 <div id="logo">atodorov.org</div>
 <div id="logo-sub"><em>
-<a href="/blog/categories/django/">django</a>,
-<a href="/blog/categories/qa/">qa</a>,
+<a href="/blog/categories/blackberry/">blackberry</a>,
 <a href="/blog/categories/cloud/">cloud</a>,
 <a href="/blog/categories/rhel/">red hat</a>,
 <a href="/blog/categories/start-up/">start-up</a>
@@ -78,6 +78,236 @@ $ 1 billion? What do you think ? This is precisely the question &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/">Dual Password Encryption With EncFS on Red Hat Enterprise Linux 6</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-14T21:26:00+03:00" pubdate data-updated="true">May 14<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This article is a step-by-step guide to using two passwords with <a href="http://www.arg0.net/encfs">EncFS</a>.
+The primary password is required and may be used to secure all data;
+the secondary password is optional and may be stored on USB stick or
+other removable media and used to secure more sensitive data.</p>
+
+<p><img src="/images/encfs_raleigh.jpg" alt="Article in Raleigh" style="clear:both;display:block;"/>
+The original article in Red Hat&#8217;s Raleigh HQ!</p>
+
+<p>This article has been originally written for and published by
+<a href="http://magazine.redhat.com/2007/06/13/dual-password-encryption-with-encfs/">Red Hat Magazine</a>.
+Here is a shortened version with updated commands for Red Hat Enterprise Linux 6.</p>
+
+<h2>Technical Information</h2>
+
+<p>EncFS provides an encrypted filesystem in user-space. EncFS provides security
+against offline attacks like a stolen notebook.
+EncFS works on files and directories, not an entire block device.
+It modifies file names and contents.
+The data is stored on the underlying filesystem and meta-data is preserved.
+File attributes such as ownership, modification date and permission bits are not encrypted
+and are visible to anybody. EncFS is acting like a translator between the user and
+the filesystem, encrypting and decrypting on the fly.</p>
+
+<p>EncFS is easy to use and requires no special setup. A local user has to be in the ‘fuse’
+group to use EncFS. It does not require ‘root’ privileges.
+EncFS can be used with secondary passwords. This could be used to store a separate set of files on the same encrypted filesystem.
+EncFS ignores files which do not decode properly, so files created with separate passwords will
+only be visible when the filesystem is mounted with the associated password.
+There is the option to read passwords from an external program or stdin (standard input).
+This option combined with custom scripting makes EncFS very flexible.
+By default, all FUSE based filesystems are visible only to the user who mounted them.
+No other users (including root) can view the filesystem contents.</p>
+
+<h2>Installing EncFS</h2>
+
+<p>Install fuse-encfs from <a href="https://fedoraproject.org/wiki/EPEL">EPEL</a>:</p>
+
+<pre><code># yum install fuse-encfs
+</code></pre>
+
+<p>Load the FUSE module:</p>
+
+<pre><code># /sbin/modprobe fuse
+</code></pre>
+
+<p>And, finally, add any users that will use EncFS to group ‘fuse’:</p>
+
+<pre><code># usermod -Gfuse jdoe
+</code></pre>
+
+<h2>Using EncFS</h2>
+
+<p>Using EncFS does not differ from using any other filesystem.
+The only thing you need to do is to mount it somewhere and start creating
+files and directories under the mount point.</p>
+
+<p><strong>Warning:</strong> Use only absolute path names with EncFS!</p>
+
+<p>Create working directories:</p>
+
+<pre><code>$ mkdir -p ~/encrypted ~/plain
+</code></pre>
+
+<ul>
+<li><code>plain/</code> – looks like a normal directory. All files stored here look like normal
+files for the user who mounted this directory with EncFS. This acts like a virtual
+directory performing encryption and decryption.</li>
+<li><code>encrypted/</code> – looks garbled. The actual data is stored here and is encrypted.</li>
+</ul>
+
+
+<p>Now you can mount the new EncFS volume for the first time. This assumes a default configuration:</p>
+
+<pre><code>$ encfs /home/jdoe/encrypted /home/jdoe/plain
+Creating new encrypted volume.
+Please choose from one of the following options:
+ enter "x" for expert configuration mode,
+ enter "p" for pre-configured paranoia mode,
+ anything else, or an empty line will select standard mode.
+?&gt; 
+
+Standard configuration selected.
+
+Configuration finished.  The filesystem to be created has
+the following properties:
+Filesystem cipher: "ssl/aes", version 3:0:2
+Filename encoding: "nameio/block", version 3:0:1
+Key Size: 192 bits
+Block Size: 1024 bytes
+Each file contains 8 byte header with unique IV data.
+Filenames encoded using IV chaining mode.
+File holes passed through to ciphertext.
+
+Now you will need to enter a password for your filesystem.
+You will need to remember this password, as there is absolutely
+no recovery mechanism.  However, the password can be changed
+later using encfsctl.
+
+New Encfs Password: **********
+Verify Encfs Password: **********
+</code></pre>
+
+<p>Create a file:</p>
+
+<pre><code>$ echo "some content" &gt; ~/plain/file.one
+</code></pre>
+
+<p>Check contents in <code>plain/</code>:</p>
+
+<pre><code>$ ls -la ~/plain/
+total 12
+drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
+drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
+-rw-rw-r--. 1 jdoe jdoe   13 May 14 21:31 file.one
+
+$ cat ~/plain/file.one 
+some content
+</code></pre>
+
+<p>Check what’s in <code>encrypted/</code>:</p>
+
+<pre><code>$ ls -la ~/encrypted/
+total 16
+drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
+drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
+-rw-rw-r--. 1 jdoe jdoe 1083 May 14 21:30 .encfs6.xml
+-rw-rw-r--. 1 jdoe jdoe   21 May 14 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
+</code></pre>
+
+<p><strong>Warning:</strong> <code>.encfs6.xml</code> is a special file. When performing backups or restoring data,
+make sure to keep this file!</p>
+
+<p>Inspect the contents of encrypted file:</p>
+
+<pre><code>$ cat ~/encrypted/Wq5NZ6q-yP-fYNWYsjzFhHf9 
+���r�N�M���"p��
+</code></pre>
+
+<p>Unmount the filesystem and mount it again with another password:</p>
+
+<pre><code>$ fusermount -u ~/plain/
+$ encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
+EncFS Password: *****
+</code></pre>
+
+<p><strong>Caution:</strong> We are using the &#8211;anykey option to allow secondary passwords.</p>
+
+<p>Check <code>plain/</code> again. The directory is empty. Previous files were not decoded with the new password.</p>
+
+<pre><code>$ ls -la ~/plain/
+total 8
+drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
+drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
+</code></pre>
+
+<p>Now create another file that will be in “hidden” mode:</p>
+
+<pre><code>$ echo "hidden contents" &gt; ~/plain/file.two
+</code></pre>
+
+<p>Check again what’s in <code>encrypted/</code>. Both files are stored in the same directory:</p>
+
+<pre><code>$ ls -la ~/encrypted/
+total 20
+drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:35 .
+drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
+-rw-rw-r--. 1 jdoe jdoe 1083 May 14 21:30 .encfs6.xml
+-rw-rw-r--. 1 jdoe jdoe   24 May 14 21:35 PfkZHs16YsKkznnTujaVsOuS
+-rw-rw-r--. 1 jdoe jdoe   21 May 14 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
+</code></pre>
+
+<p>Unmount and mount again using the first password:</p>
+
+<pre><code>$ fusermount -u ~/plain/
+$ encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
+EncFS Password: **********
+</code></pre>
+
+<p>Inspect the contents of <code>plain/</code> again. The second file was not decoded properly and is not shown:</p>
+
+<pre><code>$ ls -la ~/plain/
+total 12
+drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:35 .
+drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
+-rw-rw-r--. 1 jdoe jdoe   13 May 14 21:31 file.one
+</code></pre>
+
+<h2>Summary</h2>
+
+<p>You have learned how to use encryption to protect your data.
+There is also a nice graphical application
+for using EncFS with KDE called <a href="http://kde-apps.org/content/show.php?content=54078">K-EncFS</a>.
+I&#8217;ll be happy to answer any questions or comments.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1724,111 +1954,6 @@ a mentor at HackFMI. I am looking forward to this. It will be fun. See you there
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match/">Django QuerySet Tip - Search and Order by Exact Match</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-21T22:56:00+02:00" pubdate data-updated="true">Mar 21<span>st</span>, 2013</time>
-        
-         | <a href="/blog/2013/03/21/django-queryset-tip-search-and-order-by-exact-match/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>How do you order Django QuerySet results so that first item is the
-exact match if using <code>contains</code> or <code>icontains</code> ? Both solutions were proposed on the
-<a href="https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion">django-users</a>
-mailing list.</p>
-
-<figure class='code'><figcaption><span>Solution by Tom Evans, example is mine  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">Q</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Django&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">)</span><span class="o">.</span><span class="n">extra</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">select</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;match&#39;</span> <span class="p">:</span> <span class="s">&#39;name = &quot;Django&quot;&#39;</span><span class="p">}</span>
-</span><span class='line'>    <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;-match&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="p">[</span><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">Django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_cms</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_filer</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">appomatic_django_vcs</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BabelDjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">BDD4Django</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">blanc</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">admin</span><span class="o">-</span><span class="n">skin</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">bootstrap</span><span class="o">-</span><span class="n">django</span><span class="o">-</span><span class="n">forms</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">capistrano</span><span class="o">-</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">ccnmtldjango</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">collective</span><span class="o">.</span><span class="n">django</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">csdjango</span><span class="o">.</span><span class="n">contactform</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangopaste</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">cykooz</span><span class="o">.</span><span class="n">djangorecipe</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">d51</span><span class="o">.</span><span class="n">django</span><span class="o">.</span><span class="n">virtualenv</span><span class="o">.</span><span class="n">test_runner</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">4</span><span class="n">store</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="mi">503</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">absolute</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">abstract</span><span class="o">-</span><span class="n">templates</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Package</span><span class="p">:</span> <span class="n">django</span><span class="o">-</span><span class="n">account</span><span class="o">&gt;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Another one:</p>
-
-<blockquote><p>I&#8217;m not sure this is the right way, but you could drop the Q objects, use<br/>only icontains and sort by the length of &#8216;name&#8217;</p><footer><strong>Gabriel</strong> <cite><a href='https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion'>groups.google.com/d/topic/&hellip;</a></cite></footer></blockquote>
-
-
-
-
-<figure class='code'><figcaption><span>Example is mine  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">packages</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Package</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">&#39;Dancer&#39;</span><span class="p">)]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">)</span>
-</span><span class='line'><span class="p">[</span><span class="s">u&#39;Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;breakdancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;App::Dancer2&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Routes&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">u&#39;DancerX::Routes&#39;</span><span class="p">,</span> <span class="s">u&#39;DancerX::Config&#39;</span><span class="p">,</span> <span class="s">u&#39;Task::DWIM::Dancer&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::CDN&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">u&#39;Dancer::Plugin::Feed&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::LDAP&#39;</span><span class="p">,</span> <span class="s">u&#39;Dancer::Plugin::Lucy&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;...(remaining elements truncated)...&#39;</span><span class="p">]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>That&#8217;s all folks. If you have other more interesting sorting needs please comment below.
-Thanks!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -1884,6 +2009,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/07/13/how-to-get-a-free-blackberry-z10/">How to Get a Free BlackBerry Z10</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/">Tip: Setting Secure ENV variables on Red Hat OpenShift</a>
       </li>
     
@@ -1917,10 +2046,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/06/18/nibbler-w3c-validator-on-steroids/">Nibbler - W3C Validator on Steroids</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/06/14/personal-experience-with-credit-card-fraud-pt2/">Personal Experience With Credit Card Fraud, Part 2</a>
       </li>
     
   </ul>
