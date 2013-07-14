@@ -16,7 +16,7 @@ launched new products, is behind competitors in terms of software eco-system
 and present them with a great application which you will code on their device.
 {% endblockquote %}
 
-<img src="/images/bbz10_tshirt.jpg" alt="BlackBerry Z10 T-Shirt" style="float:left;margin-right:10px" />
+<img src="/images/bbz10_tshirt.jpg" alt="BlackBerry Z10 T-Shirt" style="display:block;clear:both;" />
 
 This week I've been at the BlackBerry 10 Mini Jam in Sofia and I got a
 [BlackBerry Z10](http://amzn.to/12y4ewJ) Dev Alpha B smart-phone.
