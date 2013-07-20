@@ -3,11 +3,12 @@ layout: post
 title: "Text To Speech for Bulgarian"
 date: 2013-07-20 14:06
 comments: true
-categories: 
+categories: ['start-up']
 ---
 
 I've been exploring text-to-speech synthesizers for Bulgarian in the past
-few weeks. I found only three. Here is my review. 
+few weeks. I found only three. Here is my review and oppinion about
+two competitive companies, one of which lost me as a client.
 
 eSpeak
 ------
