@@ -7,7 +7,7 @@ categories: ['start-up']
 ---
 
 I've been exploring text-to-speech synthesizers for Bulgarian in the past
-few weeks. I found only three. Here is my review and oppinion about
+few weeks. I found only three. Here is my review and opinion about
 two competitive companies, one of which lost me as a client.
 
 eSpeak
