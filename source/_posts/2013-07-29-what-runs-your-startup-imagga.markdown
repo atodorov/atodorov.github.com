@@ -25,7 +25,7 @@ Main Technologies
 -----------------
 
 Core functionality is developed in C and C++ with the OpenCV library. 
-Imagga relies havily on own image processing algorithms for their core
+Imagga relies heavily on own image processing algorithms for their core
 features. These were built as a combination of their own research activities
 and publications from other researchers.
 
@@ -47,7 +47,7 @@ Why Not Something Else?
 -----------------------
 
 {% blockquote Georgi Kadrev %}
-As an initally boostrapping startup we chose something that is basically free,
+As an initially bootstrapping start-up we chose something that is basically free,
 reliable and popular - that's why started with the LAMP stack. It proved to be
 stable and convenient for our web needs and we preserved it.
 The use of C++ is a natural choice for computational intensive tasks that we
