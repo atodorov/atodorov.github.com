@@ -3,7 +3,7 @@ layout: post
 title: "What Runs Your Start-up - MaistorPlus"
 date: 2013-04-08 12:52
 comments: true
-categories: ['what runs', 'PHP', 'Symfony', 'PostgreSQL', 'jQuery']
+categories: ['what runs', 'start-up', 'PHP', 'Symfony', 'PostgreSQL', 'jQuery']
 ---
 
 <img src="/images/startup/maistorplus.jpg" alt="MaistorPlus logo" style="float:left; margin-right: 15px;"/>
