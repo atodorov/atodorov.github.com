@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Django | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-08-02T11:25:42+03:00</updated>
+  <updated>2013-08-02T14:59:08+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,33 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Summer Hackathon in Sofia]]></title>
+    <link href="http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia/"/>
+    <updated>2013-08-02T14:45:00+03:00</updated>
+    <id>http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia</id>
+    <content type="html"><![CDATA[<p><img src="http://atodorov.org/images/hackfmi/Logo_SummerHackFMI.png" alt="Summer HackFMI" style="display:block;clear:both" /></p>
+
+<p>A <a href="http://hackfmi.com/spontanen-leten-hachathon/">summer hackathon</a>
+will be held in Sofia between 16th and 22nd of August. The week prior to the
+event (12th to 15th) will be full of lectures and workshops to prepare the students
+for their task.</p>
+
+<p>The goal this time is to create a new system for the Student Council organization
+which will host their new website and also provide more transparency into the
+organization and the work they do. The idea is initiated by the chairman of the
+council which is quite surprising for me to hear. You can read his motivation
+(in Bulgarian) <a href="https://github.com/Hackfmi/SummerHackathon/blob/master/motivation.md">here</a>.</p>
+
+<p>At the moment it is agreed that the system will be written in Python and Django
+and this is where I join. Together with Kiril Vladimirov I will be leading the
+Python/Django lecture and workshop in one of the days, likely 14th of August.</p>
+
+<p>The program is not yet finalized so I can't share more info. Please watch this
+space for more details when they are available.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Performance test: Amazon ElastiCache vs Amazon S3]]></title>
@@ -478,79 +505,6 @@ in your source code, not inside a template here is how:</p>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
 
 <p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: Renaming Model Fields in Django]]></title>
-    <link href="http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/"/>
-    <updated>2013-04-06T01:18:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django</id>
-    <content type="html"><![CDATA[<p>Did you ever have to re-purpose a column in your database schema?
-Here's a quick and easy way to do this if you happen to be using Django.</p>
-
-<h2>Scenario</h2>
-
-<p>I had an integer field in my model called <code>lines</code> which counted the lines of
-code in a particular tar.gz package. I figured the file size is a better indicator
-so decided to start using it. I was not planning to use the old field anymore and
-I didn't care about the data it was holding. So I decided to re-purpose it
-as the <code>size</code> field.</p>
-
-<h2>Possible methods</h2>
-
-<p>Looking around I figured several different ways to do this:</p>
-
-<ol>
-<li>Continue using the existing <code>lines</code> field and keep referencing the old name in the code.
-This is no-brainer but feels awkward and is a disaster waiting to happen;</li>
-<li>Add new <code>size</code> field and remove the old <code>lines</code> field. This involves modification to
-the DB schema and requires at least a backup with possible down time. Not something
-I will jump at right away;</li>
-<li>Add a <code>size</code> property in the model class which will persist to <code>self.lines</code>.
-This is a quick way to go but I'm not sure if one can use the property with the
-Django QuerySet API (objects.filter(), objects.update(), etc.) I suspect not.
-If you don't filter by the property or use it in bulk operations this method is fine though;</li>
-<li>Change the field name to <code>size</code> but continue to use the <code>lines</code> DB column;
-Mind my wording here :);</li>
-<li>Rename the column in the DB schema and then update the model class field.</li>
-</ol>
-
-
-<h2>How I did it</h2>
-
-<p>I decided to go for option 4 above:
-change the field name to <code>size</code> but continue to use the <code>lines</code> DB column.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/models.py b/models.py</span>
-</span><span class='line'><span class="gh">index e06d2b2..18cad6f 100644</span>
-</span><span class='line'><span class="gd">--- a/models.py</span>
-</span><span class='line'><span class="gi">+++ b/models.py</span>
-</span><span class='line'><span class="gu">@@ -667,7 +667,7 @@ class Package(models.Model):</span>
-</span><span class='line'><span class="gd">-    lines = models.IntegerField(default=None, null=True, blank=True)</span>
-</span><span class='line'><span class="gi">+    size  = models.IntegerField(default=None, null=True, blank=True, db_column=&#39;lines&#39;)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<ol>
-<li>Removed all references to <code>lines</code> from the code except the model class. This served as clean up as well.</li>
-<li>Renamed the model field to <code>size</code> but continued using the <code>lines</code> DB column as shown above.
-Django's <em>db_column</em> option makes this possible.</li>
-<li>From the Django shell (./manage.py shell) reset <code>size</code> to None (NULL) for all objects;</li>
-<li>Finally implement my new code and functionality behind the <code>size</code> field.</li>
-</ol>
-
-
-<p>The entire process happened for under 10 minutes. I will also opt for renaming the DB column at a later time.
-This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.</p>
-
-<p>If you were me, how would you do this? Please share in the comments below.</p>
 ]]></content>
   </entry>
   
