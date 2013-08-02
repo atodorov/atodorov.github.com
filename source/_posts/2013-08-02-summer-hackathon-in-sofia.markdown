@@ -14,7 +14,7 @@ event (12th to 15th) will be full of lectures and workshops to prepare the stude
 for their task.
 
 The goal this time is to create a new system for the Student Council organization
-which will host their new website and also provide more transparancy into the 
+which will host their new website and also provide more transparency into the 
 organization and the work they do. The idea is initiated by the chairman of the
 council which is quite surprising for me to hear. You can read his motivation
 (in Bulgarian) [here](https://github.com/Hackfmi/SummerHackathon/blob/master/motivation.md).
