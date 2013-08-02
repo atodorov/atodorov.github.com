@@ -3,7 +3,7 @@ layout: post
 title: "HackFMI Post-mortem"
 date: 2013-04-15 10:27
 comments: true
-categories: ['hackaton', 'hackfmi', 'events']
+categories: ['hackathon', 'hackfmi', 'events']
 ---
 
 <img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" />
@@ -129,7 +129,7 @@ Expect a separate blog post about it.
 
 
 
-If you missed this event you should be sorry. [You were warned](/blog/2013/03/24/upcoming-hackatons-in-sofia/)!
+If you missed this event you should be sorry. [You were warned](/blog/2013/03/24/upcoming-hackathons-in-sofia/)!
 If you attended please share your experience with me. What you liked, what you didn't. 
 
 

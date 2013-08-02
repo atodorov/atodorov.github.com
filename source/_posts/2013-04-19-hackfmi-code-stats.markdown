@@ -28,7 +28,7 @@ Be aware however that Ohloh is known to produce inaccurate statistics for projec
 with lots of code and short development history. Furthermore its
 [COCOMO](https://www.ohloh.net/p/hackfmi2013/estimated_cost) calculations
 are wrong as well due to duplicate code,
-not written during the hackaton such as jQuery or PHP libraries.
+not written during the hackathon such as jQuery or PHP libraries.
 
 
 The Stats

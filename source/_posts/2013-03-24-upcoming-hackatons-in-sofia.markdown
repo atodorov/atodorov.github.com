@@ -1,23 +1,23 @@
 ---
 layout: post
-title: "Upcoming Hackatons in Sofia"
+title: "Upcoming Hackathons in Sofia"
 date: 2013-03-24 22:02
 comments: true
-categories: ['hackaton', 'open government', 'hackfmi', 'events']
+categories: ['hackathon', 'open government', 'hackfmi', 'events']
 ---
 
-[Hackatons](https://en.wikipedia.org/wiki/Hackathon)
+[Hackathons](https://en.wikipedia.org/wiki/Hackathon)
 have been organized in Sofia and generally through Bulgaria for the
 past several years but as far as I know they were mostly underground events.
 There are two upcoming events which are somewhat different. 
 
-"Record Voting" Hackaton
+"Record Voting" Hackathon
 -------------------------
 
-![hackaton logo](/images/opengov.jpg)
+![hackathon logo](/images/opengov.jpg)
 
 Organized by [INSTITUTE FOR PUBLIC ENVIRONMENT DEVELOPMENT](http://iped.bg/en)
-this hackaton is the first I know of, which will focus on government provided data.
+this hackathon is the first I know of, which will focus on government provided data.
 The objective is to process data
 ([sample](http://results.cik.bg/el2011_t1.zip)) from the 2011 elections
 and find persons who were able to vote in the last minute, between 20:00-21:00 hours thus
@@ -49,9 +49,9 @@ FMI stands for *Faculty of Mathematics and Informatics at the Sofia University*
 best, arguably the best, places to study for an IT career. Like most other universities in Bulgaria
 its administration and processes suck big time!
 
-[HackFMI](http://hackfmi.com/) is the first ever hackaton which will focus on students
+[HackFMI](http://hackfmi.com/) is the first ever hackathon which will focus on students
 improving faculty/university systems and processes. This is HUGE! As far as I know it is also the first
-hackaton which is supported by academia. 
+hackathon which is supported by academia. 
 
 I have already [volunteered](https://github.com/Hackfmi/Organization-Details/pull/2) to be
 a mentor at HackFMI. I am looking forward to this. It will be fun. See you there!
