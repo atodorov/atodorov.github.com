@@ -52,6 +52,9 @@ Hardware
     | CPU virtualization    | Yes, full virt     | No                | loading other OS  |
     |                       |                    |                   | ** critical       |
     +-----------------------+--------------------+-------------------+-------------------+
+    | UPDATE 2013-08-03     | Yes                | No,               |** essential       |
+    | USB host mode         |                    | ETA 10.2 Aug 2013 |                   |
+    +-----------------------+--------------------+-------------------+-------------------+
 
 
 **Notes:**
@@ -83,6 +86,12 @@ a proprietary smart-card electronic signature device which needs to continue wor
 I have no problems running a cloud instance but haven't figured out how to do USB
 pass-through between local hardware and cloud instance.
 
+
+* **UPDATE 2013-08-03**: USB host mode is essential for some docking hardware. This means that the phone
+will be able to connect to external USB devices such as USB drives or cameras.
+For more info read
+[here](http://forums.crackberry.com/news-rumors-f40/usb-host-mode-806937/) and
+[here](https://developer.blackberry.com/native/download/roadmap/).
 
 
 Software
