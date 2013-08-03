@@ -25,7 +25,8 @@ each item;
 * Make it possible for people to comment and share the items;
 * Very basic shopping cart which stores the selected items and then
 redirects to a page with order instructions. Actual order is made via
-phone for several reasons which I will explain in another post;
+phone for several reasons which I will explain in
+[another post](/blog/2013/08/01/why-taking-orders-by-phone-works-for-my-start-up/);
 * Add a feedback/contact form;
 * Look nice on mobile devices.
 
