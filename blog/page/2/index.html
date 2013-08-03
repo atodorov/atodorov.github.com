@@ -9,10 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Some time ago a guy called Matt
-asked
-about passing large objects through their messaging queue. They were switching from
-RabbitMQ to Amazon SQS &hellip;">
+  <meta name="description" content="Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ? Previously I&#8217;ve mentioned about
+using Django&#8217;s cache to keep &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +78,603 @@ RabbitMQ to Amazon SQS &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/">Performance Test: Amazon ElastiCache vs Amazon S3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-26T21:22:00+03:00" pubdate data-updated="true">Jun 26<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ?</p>
+
+<p>Previously I&#8217;ve mentioned about
+<a href="/blog/2013/06/19/django-tips-using-cache-for-stateful-http/">using Django&#8217;s cache to keep state between HTTP requests</a>.
+In my demo described there I was using <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+It is time to move to production so I decided to measure the performance difference between the two
+cache options available at Amazon Web Services.</p>
+
+<p><strong>Update 2013-07-01</strong>: my initial test may have been false since I had not configured
+ElastiCache access properly. I saw no errors but discovered the issue today on another
+system which was failing to store the cache keys but didn&#8217;t show any errors either.
+I&#8217;ve re-run the tests and updated times are shown below.</p>
+
+<h2>Test infrastructure</h2>
+
+<ul>
+<li>One Amazon S3 bucket, located in US Standard (aka US East) region;</li>
+<li>One Amazon ElastiCache cluster with one Small Cache Node (cache.m1.small) with Moderate I/O capacity;</li>
+<li>One Amazon Elasticache cluster with one Large Cache Node (cache.m1.large) with High I/O Capacity;</li>
+<li><strong>Update:</strong> I&#8217;ve tested both <code>python-memcached</code> and <code>pylibmc</code> client libraries for Django;</li>
+<li><strong>Update:</strong> Test is executed from an EC2 node in the us-east-1a availability zone;</li>
+<li><strong>Update:</strong> Cache clusters are in the us-east-1a availability zone.</li>
+</ul>
+
+
+<h2>Test Scenario</h2>
+
+<p>The test platform is Django. I&#8217;ve created a
+<a href="https://github.com/atodorov/Amazon-ElastiCache-vs-Amazon-S3-Django">skeleton project</a>
+with only <code>CACHES</code> settings
+defined and necessary dependencies installed. A file called <code>test.py</code> holds the
+test cases, which use the standard timeit module. The object which is stored in cache
+is very small - it holds a phone/address identifiers and couple of user made selections.
+The code looks like this:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">timeit</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s3_set</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">for i in range(1000):</span>
+</span><span class='line'><span class="sd">    my_cache.set(i, MyObject)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">from django.core import cache</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">MyObject = {</span>
+</span><span class='line'><span class="sd">    &#39;from&#39; : &#39;359123456789&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;address&#39; : &#39;6afce9f7-acff-49c5-9fbe-14e238f73190&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;hour&#39; : &#39;12:30&#39;,</span>
+</span><span class='line'><span class="sd">    &#39;weight&#39; : 5,</span>
+</span><span class='line'><span class="sd">    &#39;type&#39; : 1,</span>
+</span><span class='line'><span class="sd">}</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s3_get</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">for i in range(1000):</span>
+</span><span class='line'><span class="sd">    MyObject = my_cache.get(i)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">from django.core import cache</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">### skip ###</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tests were executed from the Django shell <del>on my laptop</del>
+on an EC2 instance in the us-east-1a availability zone. ElastiCache nodes
+were freshly created/rebooted before test execution. S3 bucket had no objects.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell</span>
+</span><span class='line'><span class="n">Python</span> <span class="mf">2.6</span><span class="o">.</span><span class="mi">8</span> <span class="p">(</span><span class="n">unknown</span><span class="p">,</span> <span class="n">Mar</span> <span class="mi">14</span> <span class="mi">2013</span><span class="p">,</span> <span class="mi">09</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">22</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="n">GCC</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span> <span class="mi">20111027</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux2</span>
+</span><span class='line'><span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+</span><span class='line'><span class="p">(</span><span class="n">InteractiveConsole</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">test</span> <span class="kn">import</span> <span class="o">*</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">s3_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">68.089607000350952</span><span class="p">,</span> <span class="mf">70.806712865829468</span><span class="p">,</span> <span class="mf">72.49261999130249</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">s3_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">43.778793096542358</span><span class="p">,</span> <span class="mf">43.054368019104004</span><span class="p">,</span> <span class="mf">36.19232702255249</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">0.40637087821960449</span><span class="p">,</span> <span class="mf">0.3568730354309082</span><span class="p">,</span> <span class="mf">0.35815882682800293</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">0.35759496688842773</span><span class="p">,</span> <span class="mf">0.35180497169494629</span><span class="p">,</span> <span class="mf">0.39198613166809082</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">0.3902890682220459</span><span class="p">,</span> <span class="mf">0.30157709121704102</span><span class="p">,</span> <span class="mf">0.30596804618835449</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">0.28874802589416504</span><span class="p">,</span> <span class="mf">0.30520200729370117</span><span class="p">,</span> <span class="mf">0.29050207138061523</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">1.0291709899902344</span><span class="p">,</span> <span class="mf">0.31709098815917969</span><span class="p">,</span> <span class="mf">0.32010698318481445</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="mf">0.2957158088684082</span><span class="p">,</span> <span class="mf">0.29067802429199219</span><span class="p">,</span> <span class="mf">0.29692888259887695</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Results</h2>
+
+<p>As expected ElastiCache is much faster (10x) compared to S3. However the difference
+between the two ElastiCache node types is subtle. I will stay with the smallest
+possible node to minimize costs. Also as seen, pylibmc is a bit faster compared to
+the pure Python implementation.</p>
+
+<p>Depending on your objects size or how many set/get operations you perform per
+second you may need to go with the larger nodes. Just test it!</p>
+
+<p><del>It surprised me how slow django-s3-cache is.</del>
+The false test showed django-s3-cache to be 100x slower but new results are better.
+10x decrease in performance sounds about right for a filesystem backed cache.</p>
+
+<p>A quick look at the code
+of the two backends shows some differences. The one I immediately see is that
+for every cache key django-s3-cache creates an sha1 hash which is used as the
+storage file name. This was modeled after the filesystem backend but I think the
+design is wrong - the memcached backends don&#8217;t do this.</p>
+
+<p>Another one is that django-s3-cache time-stamps all objects and uses pickle to serialize them.
+I wonder if it can&#8217;t just write them as binary blobs directly. There&#8217;s definitely lots
+of room for improvement of django-s3-cache. I will let you know my findings once I
+get to it.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/">Twilio Is Located in Amazon Web Services US East</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-24T23:43:00+03:00" pubdate data-updated="true">Jun 24<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><blockquote><p>Where do I store my audio files in order to minimize download and call wait time?</p></blockquote>
+
+
+<p>Twilio is a cloud vendor that provides telephony services.
+It can download and <code>&lt;Play&gt;</code> arbitrary audio files and will cache the files
+for better performance.</p>
+
+<p>Twilio support told me they are not disclosing the location of their servers,
+so from my web application hosted in AWS US East:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>ivr-otb.rhcloud.com logs<span class="o">]</span><span class="se">\&gt;</span> grep TwilioProxy access_log-* | cut -f 1 -d <span class="s1">&#39;-&#39;</span> | sort | uniq
+</span><span class='line'>10.125.90.172
+</span><span class='line'>10.214.183.239
+</span><span class='line'>10.215.187.220
+</span><span class='line'>10.245.155.18
+</span><span class='line'>10.255.119.159
+</span><span class='line'>10.31.197.102
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now let&#8217;s map these addresses to host names. From another EC2 system, also in Amazon US East:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>ec2-user@ip-10-29-206-86 ~<span class="o">]</span><span class="nv">$ </span>dig -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102
+</span><span class='line'>
+</span><span class='line'>; &lt;&lt;&gt;&gt; DiG 9.8.2rc1-RedHat-9.8.2-0.17.rc1.29.amzn1 &lt;&lt;&gt;&gt; -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102
+</span><span class='line'>;; global options: +cmd
+</span><span class='line'>;; Got answer:
+</span><span class='line'>;; -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 43245</span>
+</span><span class='line'><span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; QUESTION SECTION:</span>
+</span><span class='line'><span class="s">;172.90.125.10.in-addr.arpa.    IN      PTR</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; ANSWER SECTION:</span>
+</span><span class='line'><span class="s">172.90.125.10.in-addr.arpa. 113 IN      PTR     ip-10-125-90-172.ec2.internal.</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Query time: 1 msec</span>
+</span><span class='line'><span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+</span><span class='line'><span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+</span><span class='line'><span class="s">;; MSG SIZE  rcvd: 87</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Got answer:</span>
+</span><span class='line'><span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 52693
+</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+</span><span class='line'>
+</span><span class='line'>;; QUESTION SECTION:
+</span><span class='line'>;239.183.214.10.in-addr.arpa.   IN      PTR
+</span><span class='line'>
+</span><span class='line'>;; ANSWER SECTION:
+</span><span class='line'>239.183.214.10.in-addr.arpa. 42619 IN   PTR     domU-12-31-39-0B-B0-01.compute-1.internal.
+</span><span class='line'>
+</span><span class='line'>;; Query <span class="nb">time</span>: 0 msec
+</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
+</span><span class='line'>;; MSG SIZE  rcvd: 100
+</span><span class='line'>
+</span><span class='line'>;; Got answer:
+</span><span class='line'>;; -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 25255</span>
+</span><span class='line'><span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; QUESTION SECTION:</span>
+</span><span class='line'><span class="s">;220.187.215.10.in-addr.arpa.   IN      PTR</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; ANSWER SECTION:</span>
+</span><span class='line'><span class="s">220.187.215.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-0C-B8-2E.compute-1.internal.</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Query time: 0 msec</span>
+</span><span class='line'><span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+</span><span class='line'><span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+</span><span class='line'><span class="s">;; MSG SIZE  rcvd: 100</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Got answer:</span>
+</span><span class='line'><span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 15099
+</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+</span><span class='line'>
+</span><span class='line'>;; QUESTION SECTION:
+</span><span class='line'>;18.155.245.10.in-addr.arpa.    IN      PTR
+</span><span class='line'>
+</span><span class='line'>;; ANSWER SECTION:
+</span><span class='line'>18.155.245.10.in-addr.arpa. 840 IN      PTR     ip-10-245-155-18.ec2.internal.
+</span><span class='line'>
+</span><span class='line'>;; Query <span class="nb">time</span>: 0 msec
+</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
+</span><span class='line'>;; MSG SIZE  rcvd: 87
+</span><span class='line'>
+</span><span class='line'>;; Got answer:
+</span><span class='line'>;; -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 28878</span>
+</span><span class='line'><span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; QUESTION SECTION:</span>
+</span><span class='line'><span class="s">;159.119.255.10.in-addr.arpa.   IN      PTR</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; ANSWER SECTION:</span>
+</span><span class='line'><span class="s">159.119.255.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-01-70-51.compute-1.internal.</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Query time: 0 msec</span>
+</span><span class='line'><span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+</span><span class='line'><span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+</span><span class='line'><span class="s">;; MSG SIZE  rcvd: 100</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">;; Got answer:</span>
+</span><span class='line'><span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 28727
+</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+</span><span class='line'>
+</span><span class='line'>;; QUESTION SECTION:
+</span><span class='line'>;102.197.31.10.in-addr.arpa.    IN      PTR
+</span><span class='line'>
+</span><span class='line'>;; ANSWER SECTION:
+</span><span class='line'>102.197.31.10.in-addr.arpa. 840 IN      PTR     ip-10-31-197-102.ec2.internal.
+</span><span class='line'>
+</span><span class='line'>;; Query <span class="nb">time</span>: 0 msec
+</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
+</span><span class='line'>;; MSG SIZE  rcvd: 87
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In short:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ip-10-125-90-172.ec2.internal.
+</span><span class='line'>ip-10-245-155-18.ec2.internal.
+</span><span class='line'>ip-10-31-197-102.ec2.internal.
+</span><span class='line'>domU-12-31-39-01-70-51.compute-1.internal.
+</span><span class='line'>domU-12-31-39-0B-B0-01.compute-1.internal.
+</span><span class='line'>domU-12-31-39-0C-B8-2E.compute-1.internal.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>ip-*.ec2.internal</code> are clearly in US East. The <code>domU-*.computer-1.internal</code> also
+look like US East although I&#8217;m not 100% sure what is the difference between the two.
+The later ones look like HVM guests while the former ones are para-virtualized.</p>
+
+<p>For comparison here are some internal addresses from my own EC2 systems:</p>
+
+<ul>
+<li>ip-10-228-237-207.eu-west-1.compute.internal - EU Ireland</li>
+<li>ip-10-248-19-46.us-west-2.compute.internal - US West Oregon</li>
+<li>ip-10-160-58-141.us-west-1.compute.internal - US West N. California</li>
+</ul>
+
+
+<p>After relocating my audio files to an S3 bucket in US East the average call length
+dropped from 2:30 min to 2:00 min for the same IVR choices. This also minimizes
+the costs since Twilio charges per minute of incoming/outgoing calls.
+I think the audio quality has improved as well.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/20/even-facebook-has-bugs/">Even Facebook Has Bugs</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-20T10:17:00+03:00" pubdate data-updated="true">Jun 20<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/06/20/even-facebook-has-bugs/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/facebook_ui_bug.png" alt="Faceook bug" style="float:left; margin-right: 10px;"/></p>
+
+<p>Here&#8217;s a small but very visible UI bug in Facebook. While selecting for which
+applications to receive or not notifications there is a small progress bar image
+that appears left of the checkbox element. The trouble is this image displaces the
+checkbox and it appears to float right and left during the AJAX call. This is annoying.</p>
+
+<p>There&#8217;s an easy fix - either fix the progress image and checkbox positions so they don&#8217;t move
+or place the image to the right.</p>
+
+<p>In my practice these types of bugs are common. I usually classify them with High priority,
+because they tend to annoy the user and generate support calls or just look unprofessional.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1850,314 +2445,6 @@ worked in your favor or not?</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">How to Deploy Python Hotfix on RedHat OpenShift Cloud</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-24T11:58:00+03:00" pubdate data-updated="true">Apr 24<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In this article I will show you how to deploy hotfix versions for
-Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
-
-<h2>Background</h2>
-
-<p>You are already running a Python application on your OpenShift instance.
-You are using some 3rd party dependencies when you find a bug in one of them.
-You go forward, fix the bug and submit a
-<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
-You don&#8217;t want to wait for upstream to release a new version but rather
-build a hotfix package yourself and deploy to production immediately.</p>
-
-<h2>Solution</h2>
-
-<p>There are two basic approaches to solving this problem:</p>
-
-<ol>
-<li>Include the hotfix package source code in your application, i.e.
-add it to your git tree or;</li>
-<li>Build the hotfix separately and deploy as a dependency. Don&#8217;t
-include it in your git tree, just add a requirement on the hotfix version.</li>
-</ol>
-
-
-<p>I will talk about the later. The tricky part here is to instruct the cloud environment
-to use your package (including the proper location) and not upstream or their local
-mirror.</p>
-
-<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don&#8217;t support
-<code>requirements.txt</code> which can point to various package sources and even install
-packages directly from GitHub. They support <code>setup.py</code> which fetches packages
-from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
-
-<h2>Building the hotfix</h2>
-
-<p>First of all we&#8217;d like to build a hotfix package. This will be the upstream
-version that we are currently using plus the patch for our critical issue:</p>
-
-<pre><code>$ wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
-$ tar -xzvf python-magic-0.4.3.tar.gz 
-$ cd python-magic-0.4.3
-$ curl https://github.com/ahupp/python-magic/pull/31.patch | patch 
-</code></pre>
-
-<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
-increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
-
-<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
-
-<h2>Deploying to OpenShift</h2>
-
-<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
-and will not be on OpenShift&#8217;s local mirror you need to provide the location where it can
-be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here&#8217;s how it looks:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/setup.py b/setup.py</span>
-</span><span class='line'><span class="gh">index c6e837c..2daa2a9 100644</span>
-</span><span class='line'><span class="gd">--- a/setup.py</span>
-</span><span class='line'><span class="gi">+++ b/setup.py</span>
-</span><span class='line'><span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
-</span><span class='line'>       author=&#39;Your Name&#39;,
-</span><span class='line'>       author_email=&#39;example@example.com&#39;,
-</span><span class='line'>       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
-</span><span class='line'><span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
-</span><span class='line'><span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
-</span><span class='line'><span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
-</span><span class='line'>      )
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now just git push to OpenShift and observe the console output:</p>
-
-<pre><code>remote: Processing dependencies for YourAppName==1.0
-remote: Searching for python-magic==0.4.3.1
-remote: Best match: python-magic 0.4.3.1
-remote: Downloading https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz
-remote: Processing python-magic-0.4.3.1.tar.gz
-remote: Running python-magic-0.4.3.1/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/egg-dist-tmp-R_Nxie
-remote: zip_safe flag not set; analyzing archive contents...
-remote: Removing python-magic 0.4.3 from easy-install.pth file
-remote: Adding python-magic 0.4.3.1 to easy-install.pth file
-</code></pre>
-
-<p>Congratulations! Your hotfix package has just been deployed.</p>
-
-<p>This approach should work for other cloud providers and other programming languages
-as well. Let me know if you have any experience with that.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/23/what-runs-your-startup-deed/">What Runs Your Start-up - Deed</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-23T10:56:00+03:00" pubdate data-updated="true">Apr 23<span>rd</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/23/what-runs-your-startup-deed/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/startup/deed.jpg" alt="Deed" style="float:left; margin-right: 15px;" /></p>
-
-<p><a href="http://www.ideedit.com/">Deed</a> is an action-provoking platform for challenging
-yourself and others and also a business solution for improved engagement by the
-corresponding communities. It solves the problem of passivity by converting people
-who “Like” to people who “Act. The challenge format gives businesses an effective,
-fresh and low-cost solution to maintain active connection with their communities
-and measure engagement.</p>
-
-<p>Emil Stoychev explains their technical background.</p>
-
-<h2>Main Technologies</h2>
-
-<p>Deed is built around Microsoft technologies plus some open source libraries.</p>
-
-<p>Their web application and API is built with ASP.NET MVC 3 using MS SQL 2008 database engine.
-Deed is hosted on a single cloud server at Rackspace and uses Akamai CDN for static files
-distribution. At the moment the team is testing Windows Azure cloud platform and plans
-migrating there.</p>
-
-<p>A native Windows Phone application also exists.</p>
-
-<p>Lots of JavaScript and CSS frameworks come to play at the  web interface layer like
-jQuery, <a href="http://handlebarsjs.com/">Handlebars</a> for templates and <a href="http://lesscss.org/">Less CSS</a>.</p>
-
-<p>IDE of choice is Microsoft Visual Studio 2012 for C# and Vim for everything else.
-Source code revision control is managed with Mercurial and build scripts are written in Python.</p>
-
-<h2>Why Not Something Else?</h2>
-
-<blockquote><p>The Deed team had experience with Microsoft technologies initially so it was natural<br/>for us to choose this stack. While not perfect and costly in terms of hosting fees,<br/>it serves its purpose for the moment. When you start a new project and you want to get<br/>up and running fast your best choice is to use what you already mastered.<br/>That in our case was the Microsoft stack.</p><footer><strong>Emil Stoychev</strong></footer></blockquote>
-
-
-<p>Indeed I strongly support this! Always use technologies you are a master at and change and
-adapt along the way if necessary.</p>
-
-<h2>Want More Info?</h2>
-
-<p>If you’d like to hear more from <em>Deed</em> please comment below.
-I will ask them to follow this thread and reply to your questions.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/19/hackfmi-code-stats/">HackFMI Code Stats</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-19T10:00:00+03:00" pubdate data-updated="true">Apr 19<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/19/hackfmi-code-stats/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>It&#8217;s Friday - five days after the first <a href="http://hackfmi.com">HackFMI</a>
-event was held. I have some interesting statistics derived from the
-source code of all projects. Read on!</p>
-
-<p><img src="/images/hackfmi/hackfmi2013_cocomo.png" title="HackFMI stats" alt="&quot;HackFMI stats&quot;" /></p>
-
-<h2>How The Stats Were Calculated</h2>
-
-<p>I&#8217;ve used <a href="http://ohloh.net">Ohloh</a> to analyze the source code of all projects.
-A simple Ohloh project called <a href="https://www.ohloh.net/p/hackfmi2013">HackFMI 2013</a>
-enlists and tracks <a href="https://www.ohloh.net/p/hackfmi2013/enlistments">18</a>
-different repositories as if they were one big project.
-Not all teams had repositories and some didn&#8217;t sent information back to me although
-I asked them. Two projects sent me tarballs with their code, which I&#8217;ve pushed to GitHub
-for the purpose of tracking stats.</p>
-
-<p>Be aware however that Ohloh is known to produce inaccurate statistics for projects
-with lots of code and short development history. Furthermore its
-<a href="https://www.ohloh.net/p/hackfmi2013/estimated_cost">COCOMO</a> calculations
-are wrong as well due to duplicate code,
-not written during the hackathon such as jQuery or PHP libraries.</p>
-
-<h2>The Stats</h2>
-
-<p>During the weekend sprint <strong>759,453 lines of code</strong> were written by
-<strong>56 contributors</strong> spread across <strong>768 commits</strong>.</p>
-
-<p><img src="/images/hackfmi/hackfmi2013_top_contributors.png" title="HackFMI top contributors" alt="&quot;HackFMI top contributors&quot;" /></p>
-
-<p>From the top 10 contributors 5 had Python as their primary language.
-Which is to say Python developers have good development practices with Git.</p>
-
-<p>None of the contributors (excluding myself) were recognized by Ohloh,
-meaning either they have not contributed to any other open source project
-or their contributors were not under their name or
-they&#8217;ve used a different name/email combination. Whatever the case go
-claim your contributions and track your kudos rank across the open source community.</p>
-
-<p><strong>19 different</strong> programming languages
-<a href="https://www.ohloh.net/p/hackfmi2013/analyses/latest/languages_summary#dingus-row">were used</a>.</p>
-
-<p><img src="/images/hackfmi/hackfmi2013_languages.png" title="HackFMI top languages" alt="&quot;HackFMI top languages&quot;" /></p>
-
-<p>The most popular ones are XML, JavaScript, HTML, PHP, CSS and ActionScript. This is nearly 97%
-of the source code. All the rest languages have been used under 1% per language.
-The languages used are pretty standard and expected.</p>
-
-<h2>Estimated Cost</h2>
-
-<p>The <a href="https://www.ohloh.net/p/hackfmi2013/estimated_cost">estimated development cost</a>
-is 205 person-years valued at $ 11,251,680. This is too high because of all duplicated
-libraries and extra files tracked.</p>
-
-<p>Ohloh allows files and directories to be excluded on per-repository basis.
-I&#8217;d appreciate your help if you preview the projects and create the exclusion rules. Thanks!</p>
-
-<p>The stats and repositories are public. If you manage to extract other interesting details
-don&#8217;t hesitate to share them in the comments.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -2213,6 +2500,18 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/08/05/exploring-blackberry-10-environment-variables/">Exploring BlackBerry 10 - Environment Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/04/exploring-blackberry-10-application-security-model/">Exploring BlackBerry 10 - Application Security Model</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/03/quick-update-laptop-vs-smartphone-updated/">Quick Update: Laptop vs Smartphone Updated</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/08/02/summer-hackathon-in-sofia/">Summer Hackathon in Sofia</a>
       </li>
     
@@ -2238,18 +2537,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/07/29/what-runs-your-startup-retidoc/">What Runs Your Start-up - RETiDoc</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/07/20/text-to-speech-for-bulgarian/">Text To Speech for Bulgarian</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/">SSH from Linux to BlackBerry Z10</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/07/18/git-history-stats-and-project-cost-estimation/">git History Stats and Project Cost Estimation</a>
       </li>
     
   </ul>
