@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "How to Find Your Red Hat Account Number"
+title: "Tip: How to Find Your Red Hat Account Number"
 date: 2013-08-23 11:55
 comments: true
-categories: ['RHEL']
+categories: ['RHEL', 'tips']
 ---
 
 <img src="/images/redhat_account_number.png" style="float:left;display:inline-block;margin-right:10px;" />
