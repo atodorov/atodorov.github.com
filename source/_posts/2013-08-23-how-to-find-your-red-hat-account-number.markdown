@@ -12,4 +12,7 @@ One thing you need to know when ordering Red Hat subscriptions is your
 account number. It is available in the drop down menu at the top right
 corner after you login at <https://access.redhat.com>.
 
+New accounts don't have an account number. It will be generated after
+the first subscription activation.
+
 If you need to know more about Red Hat's ordering process just ask me!
