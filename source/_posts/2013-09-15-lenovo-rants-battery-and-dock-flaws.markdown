@@ -27,9 +27,6 @@ got this right?
 ThinkPad Mini Dock Design Flaw
 ------------------------------
 
-Note: this section has previously been published
-[here](http://otb.bg/blog/2012/06/14/thinkpad-mini-dock-design-flaw/).
-
 I'm using a [ThinkPad Mini Dock Series 3](http://amzn.to/15tjUYi) docking station
 with my X220 laptop. Being a QA engineer for so long I immediately
 noticed something that wasn't quite right. The buttons on the left and the mechanism
