@@ -3,11 +3,11 @@ layout: post
 title: "USB multi-seat on Red Hat Enterprise Linux 6"
 date: 2011-03-14 20:10
 comments: true
-categories: ['multi-seat', 'rhel']
+categories: ['rhel']
 ---
 Multiseat configurations are well known in the Linux community and have been used for a number of years now. In the last few years USB docking stations emerged on the market and are becoming popular among multiseat enthusiasts. 
 
-Open Technologies Bulgaria, Ltd. offers full support of USB multiseat for Red Hat Enterprise Linux 6 as a downstream vendor. We use the name SUMU (simple usb multi user) to refer to the entire multiseat bundle and in this article I'm going to describe the current state of technologies surrounding multiseat, how that works on RHEL6 and some practical observations.
+My company [Open Technologies Bulgaria, Ltd.](http://otb.bg) offers full support of USB multiseat for Red Hat Enterprise Linux 6 as a downstream vendor. We use the name SUMU (simple usb multi user) to refer to the entire multiseat bundle and in this article I'm going to describe the current state of technologies surrounding multiseat, how that works on RHEL 6 and some practical observations.
 
 COMPONENTS
 ----------
@@ -234,7 +234,7 @@ Pictures from one of our deployments can be found on Facebook (no login required
 <http://www.facebook.com/album.php?aid=54571&id=180150925328433>.
 A demonstration video from the same deployment can be found at <http://www.youtube.com/watch?v=7GYbCDGTz-4>
 
-If you are interested in commercial support please <a href="/contact">contact us</a>!
+If you are interested in commercial support please contact me!
 
 FUTURE
 ------
