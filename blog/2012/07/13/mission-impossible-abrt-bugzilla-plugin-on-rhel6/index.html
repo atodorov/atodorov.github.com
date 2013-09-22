@@ -1,0 +1,430 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Mission Impossible - ABRT Bugzilla Plugin on RHEL6</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux
+platform. This is a nice tool which lets users report &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+<a href="/blog/categories/blackberry/">blackberry</a>,
+<a href="/blog/categories/cloud/">cloud</a>,
+<a href="/blog/categories/rhel/">red hat</a>,
+<a href="/blog/categories/start-up/">start-up</a>
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="http://amzn.to/12zvEDF">Now reading: DevOps for Developers</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Mission Impossible - ABRT Bugzilla Plugin on RHEL6</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-13T13:21:00+03:00" pubdate data-updated="true">Jul 13<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux
+platform. This is a nice tool which lets users report bugs easily to Red Hat.
+However one of the plugins in the latest version doesn&#8217;t seem usable at all.</p>
+
+<p>First make sure you have <code>libreport-plugin-bugzilla</code> package installed. This is the plugin to
+report bugs directly to <a href="https://bugzilla.redhat.com">Bugzilla</a>. It may not be installed by default
+because customers are supposed to report issues to Support first - this is why they pay anyway.
+If you are a tech savvy user though, you may want to skip Support and go straight to the developers.</p>
+
+<p>To enable Bugzilla plugin:</p>
+
+<ul>
+<li><p>Edit the file <code>/etc/libreport/events.d/bugzilla_event.conf</code> change the line</p>
+
+<pre><code>  EVENT=report_Bugzilla analyzer=libreport reporter-bugzilla -b
+</code></pre></li>
+</ul>
+
+
+<p>to</p>
+
+<pre><code>    EVENT=report_Bugzilla reporter-bugzilla -b
+</code></pre>
+
+<ul>
+<li><p>Make sure ABRT will collect meaningful backtrace. If debuginfo is missing it will not let you continue.
+Edit the file <code>/etc/libreport/events.d/ccpp_event.conf</code>. There should be something like this:</p>
+
+<pre><code>  EVENT=analyze_LocalGDB analyzer=CCpp
+          abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+          abrt-action-generate-backtrace &amp;&amp;
+          abrt-action-analyze-backtrace
+          (
+              bug_id=$(reporter-bugzilla -h `cat duphash`) &amp;&amp;
+              if test -n "$bug_id"; then
+                  abrt-bodhi -r -b $bug_id
+              fi
+          )
+</code></pre></li>
+<li><p>Change it to look like this - i.e. add the missing <code>/usr/libexec/</code> line:</p>
+
+<pre><code>  EVENT=analyze_LocalGDB analyzer=CCpp
+          abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+          /usr/libexec/abrt-action-install-debuginfo-to-abrt-cache --size_mb=4096 &amp;&amp;
+          abrt-action-generate-backtrace &amp;&amp;
+          abrt-action-analyze-backtrace &amp;&amp;
+          (
+              bug_id=$(reporter-bugzilla -h `cat duphash`) &amp;&amp;
+              if test -n "$bug_id"; then
+                  abrt-bodhi -r -b $bug_id
+              fi
+          )
+</code></pre></li>
+</ul>
+
+
+<p>Supposedly after everything is configured properly ABRT will install missing debuginfo packages,
+generate the backtrace and let you report it to Bugzilla. Because of
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=759443">bug 759443</a> this will not happen.</p>
+
+<p>To work around the problem you can try to manually install the missing debuginfo packages.
+Go to your system profile in RHN and subscribe the system to all appropriate debuginfo channels.
+Then install the packages. In my case:</p>
+
+<pre><code>    # debuginfo-install firefox
+</code></pre>
+
+<p>And finally - <a href="https://bugzilla.redhat.com/show_bug.cgi?id=800754">bug 800754</a> which was already reported!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-13T13:21:00+03:00" pubdate data-updated="true">Jul 13<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/rhel/'>rhel</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/07/12/combining-pdf-files-on-the-command-line/" title="Previous Post: Combining PDF Files On The Command Line">&laquo; Combining PDF Files On The Command Line</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/01/28/hello-world/" title="Next Post: Hello World">Hello World &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
+<section>
+  
+  <a href="https://github.com/atodorov">@atodorov</a> on GitHub
+  
+</section>
+
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>Trending Posts</h1>
+<!-- AddThis Trending Content BEGIN -->
+<div id="addthis_trendingcontent"></div>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<script type="text/javascript">
+addthis.box("#addthis_trendingcontent", {
+    feed_title : "",
+    feed_type : "trending",
+    feed_period : "month",
+    num_links : 5,
+    height : "auto",
+    width : "auto"});
+</script>
+<!-- AddThis Trending Content END -->
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/">Lenovo Rants: Battery and Dock Flaws</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/">Upcoming Talk: Fedora Test Days in Sofia</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/02/bug-analysis-of-rhbz-1337/">Bug Analysis Of RHBZ #1337</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/red-hats-bugzilla-hits-one-million-bugs/">Red Hat's Bugzilla Hits One Million Bugs</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/small-but-annoying-twitter-bug/">Small But Annoying Twitter Bug</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/">Tip: How to Find Your Red Hat Account Number</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/13/the-rise-of-io-domains-for-well-crafted-web-services/">The Rise of .io Domains for Well Crafted Web Services</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/07/notes-from-two-interesting-guadec-talks/">Notes From Two Interesting GUADEC Talks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/07/the-51st-annual-meeting-of-the-association-for-computational-linguistics/">The 51st Annual Meeting of the Association for Computational Linguistics</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/05/exploring-blackberry-10-environment-variables/">Exploring BlackBerry 10 - Environment Variables</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+<section>
+<h1></h1>
+<iframe width="260" height="420" scrolling="no" frameborder="no" allowtransparency="true" src="http://www.econt.com/voffice/en/240x400/?mediator=http%3A%2F%2Fatodorov.org"></iframe>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2013 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/';
+        var disqus_url = 'http://atodorov.org/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
