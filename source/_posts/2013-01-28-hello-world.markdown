@@ -28,3 +28,7 @@ license and all source code is under the [MIT](http://opensource.org/licenses/MI
 otherwise.
 
 I hope you find it interesting and helpful.
+
+**Update 2013-09-22:**
+I have migrated some older blog posts and materials scattered around various places
+to this site as well. So this isn't the very first post anymore!
