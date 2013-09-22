@@ -1,0 +1,502 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>OpenShift Cron Takes Over Celerybeat</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="Celery is an asynchronous task queue/job queue
+based on distributed message passing. You can define tasks as Python functions,
+execute them in the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2012/03/14/openshift-cron-takes-over-celerybeat/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+<a href="/blog/categories/blackberry/">blackberry</a>,
+<a href="/blog/categories/cloud/">cloud</a>,
+<a href="/blog/categories/rhel/">red hat</a>,
+<a href="/blog/categories/start-up/">start-up</a>
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="http://amzn.to/12zvEDF">Now reading: DevOps for Developers</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">OpenShift Cron Takes Over Celerybeat</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-14T20:48:00+02:00" pubdate data-updated="true">Mar 14<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://celeryproject.org/"><em>Celery</em></a> is an asynchronous task queue/job queue
+based on distributed message passing. You can define tasks as Python functions,
+execute them in the background and in a periodic fashion.
+<a href="http://www.dif.io"><em>Difio</em></a> uses <em>Celery</em> for virtually everything.
+Some of the tasks are scheduled after some event takes place (like user pressed a button)
+or scheduled periodically.</p>
+
+<p><em>Celery</em> provides several components of which <em>celerybeat</em> is the periodic task scheduler.
+When combined with <a href="http://djangoproject.com"><em>Django</em></a> it gives you a very nice admin interface
+which allows periodic tasks to be added to the scheduler.</p>
+
+<h2>Why change</h2>
+
+<p><em>Difio</em> has relied on <em>celerybeat</em> for a couple of months. Back then, when <em>Difio</em> launched,
+there was no cron support for OpenShift so running <em>celerybeat</em> sounded reasonable.
+It used to run on a dedicated virtual server and for most of the time that was fine.</p>
+
+<p>There were a number of issues which <em>Difio</em> faced during its first months:</p>
+
+<ul>
+<li><p><em>celerybeat</em> would sometime die due to no free memory on the virtual instance.
+When that happened no new tasks were scheduled and data was left unprocessed.
+Let alone that higher memory instance and the processing power which comes with it
+cost extra money.</p></li>
+<li><p><em>Difio</em> is split into several components which need to have the same code base
+locally - the most important are database settings and the periodic tasks
+code. At least in one occasion <em>celerybeat</em> failed to start because of a buggy
+task code. The offending code was fixed in the application server on OpenShift but
+not properly synced to the <em>celerybeat</em> instance. Keeping code in sync is a priority
+for distributed projects which rely on <em>Celery</em>.</p></li>
+<li><p><em>Celery</em> and <em>django-celery</em> seem to be updated quite often. This poses a significant risk
+of ending up with different versions on the scheduler, worker nodes and the app server. This will
+bring the whole application to a halt if at some point a backward incompatible change is introduced
+and not properly tested and updated. Keeping infrastructure components in sync can be a big challenge
+and I try to minimize this effort as much as possible.</p></li>
+<li><p>Having to navigate to the admin pages every time I add a new task or want to change the execution
+frequency doesn&#8217;t feel very natural for a console user like myself and IMHO is less productive.
+For the record I primarily use <em>mcedit</em>. I wanted to have something more close to the
+write, commit and push work-flow.</p></li>
+</ul>
+
+
+<h2>The take over</h2>
+
+<p>It&#8217;s been some time since OpenShift
+<a href="https://www.redhat.com/openshift/community/blogs/getting-started-with-cron-jobs-on-openshift">introduced</a>
+the cron cartridge and I decided to give it a try.</p>
+
+<p>The first thing I did is to write a simple script which can execute any task from the difio.tasks module
+by piping it to the Django shell (a Python shell actually).</p>
+
+<figure class='code'><figcaption><span>run_celery_task </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># Copyright (c) 2012, Alexander Todorov &lt;atodorov@nospam.otb.bg&gt;</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># This script is symlinked to from the hourly/minutely, etc. directories</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># SYNOPSIS</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># ./run_celery_task cron_search_dates</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># OR</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c"># ln -s run_celery_task cron_search_dates</span>
+</span><span class='line'><span class="c"># ./cron_search_dates</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">TASK_NAME</span><span class="o">=</span><span class="nv">$1</span>
+</span><span class='line'><span class="o">[</span> -z <span class="s2">&quot;$TASK_NAME&quot;</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">TASK_NAME</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$0</span><span class="k">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$OPENSHIFT_APP_DIR&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">    </span><span class="nb">source</span> <span class="nv">$OPENSHIFT_APP_DIR</span>/virtenv/bin/activate
+</span><span class='line'>    <span class="nb">export </span><span class="nv">PYTHON_EGG_CACHE</span><span class="o">=</span><span class="nv">$OPENSHIFT_DATA_DIR</span>/.python-eggs
+</span><span class='line'>    <span class="nv">REPO_DIR</span><span class="o">=</span><span class="nv">$OPENSHIFT_REPO_DIR</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'><span class="k">    </span><span class="nv">REPO_DIR</span><span class="o">=</span><span class="k">$(</span>dirname <span class="nv">$0</span><span class="k">)</span><span class="s2">&quot;/../../..&quot;</span>
+</span><span class='line'><span class="k">fi</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;import difio.tasks; difio.tasks.$TASK_NAME.delay()&quot;</span> | <span class="nv">$REPO_DIR</span>/wsgi/difio/manage.py shell
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a multicall script which allows symlinks with different names to point to it.
+Thus to add a new task to cron I just need to make a symlink to the script from one of the
+hourly/, minutely/, daily/, etc. directories under cron/.</p>
+
+<p>The script accepts a parameter as well which allows me to execute it locally for debugging purposes
+or to schedule some tasks out of band.
+This is how it looks like on the file system:</p>
+
+<pre><code>$ ls -l .openshift/cron/hourly/
+some_task_name -&gt; ../tasks/run_celery_task
+another_task -&gt; ../tasks/run_celery_task
+</code></pre>
+
+<p>After having done these preparations I only had to embed the cron cartridge and git push to OpenShift:</p>
+
+<pre><code>rhc-ctl-app -a difio -e add-cron-1.4 &amp;&amp; git push
+</code></pre>
+
+<h2>What&#8217;s next</h2>
+
+<p>At present OpenShift can schedule your jobs every minute, hour, day, week or month and does so using the
+<em>run-parts</em> script. You can&#8217;t schedule a script to execute at 4:30 every Monday or every 45 minutes for example.
+See <a href="https://bugzilla.redhat.com/show_bug.cgi?id=803485">rhbz #803485</a> if you want to follow the
+progress. Luckily <em>Difio</em> doesn&#8217;t use this sort of job scheduling for the moment.</p>
+
+<p><em>Difio</em> is scheduling periodic tasks from OpenShift cron for a few days already.
+It seems to work reliably and with no issues. One less component to maintain and worry about.
+More time to write code.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-14T20:48:00+02:00" pubdate data-updated="true">Mar 14<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/openshift/'>OpenShift</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/03/09/how-to-get-to-the-openshift-shell/" title="Previous Post: Tip: How to Get to the OpenShift Shell">&laquo; Tip: How to Get to the OpenShift Shell</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/04/17/using-openshift-as-amazon-cloudfront-origin-server/" title="Next Post: Using OpenShift as Amazon CloudFront Origin Server">Using OpenShift as Amazon CloudFront Origin Server &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
+<section>
+  
+  <a href="https://github.com/atodorov">@atodorov</a> on GitHub
+  
+</section>
+
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>Trending Posts</h1>
+<!-- AddThis Trending Content BEGIN -->
+<div id="addthis_trendingcontent"></div>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<script type="text/javascript">
+addthis.box("#addthis_trendingcontent", {
+    feed_title : "",
+    feed_type : "trending",
+    feed_period : "month",
+    num_links : 5,
+    height : "auto",
+    width : "auto"});
+</script>
+<!-- AddThis Trending Content END -->
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/">Lenovo Rants: Battery and Dock Flaws</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/">Upcoming Talk: Fedora Test Days in Sofia</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/02/bug-analysis-of-rhbz-1337/">Bug Analysis Of RHBZ #1337</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/red-hats-bugzilla-hits-one-million-bugs/">Red Hat's Bugzilla Hits One Million Bugs</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/small-but-annoying-twitter-bug/">Small But Annoying Twitter Bug</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/">Tip: How to Find Your Red Hat Account Number</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/13/the-rise-of-io-domains-for-well-crafted-web-services/">The Rise of .io Domains for Well Crafted Web Services</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/07/notes-from-two-interesting-guadec-talks/">Notes From Two Interesting GUADEC Talks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/07/the-51st-annual-meeting-of-the-association-for-computational-linguistics/">The 51st Annual Meeting of the Association for Computational Linguistics</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/05/exploring-blackberry-10-environment-variables/">Exploring BlackBerry 10 - Environment Variables</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+<section>
+<h1></h1>
+<iframe width="260" height="420" scrolling="no" frameborder="no" allowtransparency="true" src="http://www.econt.com/voffice/en/240x400/?mediator=http%3A%2F%2Fatodorov.org"></iframe>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2013 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2012/03/14/openshift-cron-takes-over-celerybeat/';
+        var disqus_url = 'http://atodorov.org/blog/2012/03/14/openshift-cron-takes-over-celerybeat/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
