@@ -33,6 +33,8 @@ edit the wiki;
 What You Need Before The Test Day
 ----------------------------------
 
+* Know how to properly
+[report a bug](https://fedoraproject.org/wiki/Bugs_and_feature_requests);
 * Installation ISO (DVD) or Live CD depending on what you want to test;
 * Nightly LiveCD ISOs can be found
 [here](http://alt.fedoraproject.org/pub/alt/nightly-composes/);
