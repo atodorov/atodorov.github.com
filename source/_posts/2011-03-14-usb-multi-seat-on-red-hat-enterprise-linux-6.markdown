@@ -3,7 +3,7 @@ layout: post
 title: "USB multi-seat on Red Hat Enterprise Linux 6"
 date: 2011-03-14 20:10
 comments: true
-categories: ['rhel']
+categories: ['RHEL']
 ---
 Multiseat configurations are well known in the Linux community and have been used for a number of years now. In the last few years USB docking stations emerged on the market and are becoming popular among multiseat enthusiasts. 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Combining PDF Files On The Command Line"
 date: 2012-07-12 11:06
 comments: true
-categories: ['tips', 'rhel']
+categories: ['tips', 'RHEL']
 ---
 
 **VERSION**

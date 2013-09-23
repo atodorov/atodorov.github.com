@@ -3,7 +3,7 @@ layout: post
 title: "Mission Impossible - ABRT Bugzilla Plugin on RHEL6"
 date: 2012-07-13 13:21
 comments: true
-categories: ['QA', 'rhel']
+categories: ['QA', 'RHEL']
 ---
 
 Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux
