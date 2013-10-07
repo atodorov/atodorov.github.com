@@ -12,6 +12,7 @@ Thursday (10th Oct)! Local community in Sofia will gather at
 
 If you have no idea what I'm talking about check my
 [previous posts](/blog/categories/fedora/) and the announcement at init Lab's website:
+
 * <http://initlab.org/event/testing-fedora-20-virtualization-test-day>
 * <http://initlab.org/event/gnome-test-day>
 
