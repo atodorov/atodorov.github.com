@@ -3,7 +3,7 @@ layout: post
 title: "Fedora Test Days are Coming to Sofia"
 date: 2013-09-23 14:27
 comments: true
-categories: ['QA']
+categories: ['Fedora', 'QA']
 ---
 
 As I [mentioned earlier](/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/)
