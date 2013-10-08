@@ -6,6 +6,8 @@ comments: true
 categories: ['Fedora', 'QA']
 ---
 
+!["Fedora 20 banner"](/images/fedora/fedora20-banner.png "Fedora 20 banner")
+
 Here is a quick summary of the first Fedora Test Day in Sofia I hosted at
 [init Lab](http://initlab.org) today.
 
