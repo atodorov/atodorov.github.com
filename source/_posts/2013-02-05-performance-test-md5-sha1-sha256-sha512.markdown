@@ -3,7 +3,7 @@ layout: post
 title: "Performance test of MD5, SHA1, SHA256 and SHA512"
 date: 2013-02-05 10:33
 comments: true
-categories: ['Python', 'performance testing', 'QA', 'Amazon', 'S3', 'Django']
+categories: ['Python', 'performance testing', 'QA']
 ---
 
 A few months ago I wrote
