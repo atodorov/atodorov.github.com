@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-10-11T15:50:46+03:00</updated>
+  <updated>2013-10-11T23:15:05+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -54,33 +54,6 @@ anymore! I will give the new feature a go very soon.</p>
 <a href="https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps">https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps</a>.</p>
 
 <p>Have you found anything interesting this week? Please share in the comments below! Thanks!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Summer Hackathon in Sofia]]></title>
-    <link href="http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia/"/>
-    <updated>2013-08-02T14:45:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia</id>
-    <content type="html"><![CDATA[<p><img src="http://atodorov.org/images/hackfmi/Logo_SummerHackFMI.png" alt="Summer HackFMI" style="display:block;clear:both" /></p>
-
-<p>A <a href="http://hackfmi.com/spontanen-leten-hachathon/">summer hackathon</a>
-will be held in Sofia between 16th and 22nd of August. The week prior to the
-event (12th to 15th) will be full of lectures and workshops to prepare the students
-for their task.</p>
-
-<p>The goal this time is to create a new system for the Student Council organization
-which will host their new website and also provide more transparency into the
-organization and the work they do. The idea is initiated by the chairman of the
-council which is quite surprising for me to hear. You can read his motivation
-(in Bulgarian) <a href="https://github.com/Hackfmi/SummerHackathon/blob/master/motivation.md">here</a>.</p>
-
-<p>At the moment it is agreed that the system will be written in Python and Django
-and this is where I join. Together with Kiril Vladimirov I will be leading the
-Python/Django lecture and workshop in one of the days, likely 14th of August.</p>
-
-<p>The program is not yet finalized so I can't share more info. Please watch this
-space for more details when they are available.</p>
 ]]></content>
   </entry>
   
@@ -336,6 +309,130 @@ in your source code, not inside a template here is how:</p>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
 
 <p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Performance test of MD5, SHA1, SHA256 and SHA512]]></title>
+    <link href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/"/>
+    <updated>2013-02-05T10:33:00+02:00</updated>
+    <id>http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512</id>
+    <content type="html"><![CDATA[<p>A few months ago I wrote
+<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+This is Amazon Simple Storage Service (S3) cache backend for Django
+which uses hashed file names.
+django-s3-cache uses <code>sha1</code> instead of <code>md5</code> which appeared to be
+faster at the time. I recall that my testing wasn't very robust so I did another
+round.</p>
+
+<h2>Test Data</h2>
+
+<p>The file <a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz">urls.txt</a>
+contains 10000 unique paths from the <a href="http://www.dif.io">dif.io</a>
+website and looks like this:</p>
+
+<pre><code>/updates/Django-1.3.1/Django-1.3.4/7858/
+/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
+/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
+/updates/Data::Compare-1.22/Data::Compare-Type/8313/
+/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
+</code></pre>
+
+<h2>Test Automation</h2>
+
+<p>I used the standard <a href="http://docs.python.org/2/library/timeit.html">timeit</a>
+module in Python.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>test.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="err">!</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">timeit</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">t</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">import hashlib</span>
+</span><span class='line'><span class="sd">for line in url_paths:&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;pre&gt;&lt;code&gt;h = hashlib.md5(line).hexdigest()</span>
+</span><span class='line'><span class="sd">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha1(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha256(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;h1&gt;h = hashlib.sha512(line).hexdigest()&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;p&gt;&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">url_paths = []</span>
+</span><span class='line'><span class="sd">f = open(&#39;urls.txt&#39;, &#39;r&#39;)</span>
+</span><span class='line'><span class="sd">for l in f.readlines():&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;pre&gt;&lt;code&gt;url_paths.append(l)</span>
+</span><span class='line'><span class="sd">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">&lt;p&gt;f.close()</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">print</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Test Results</h2>
+
+<p>The main statement hashes all 10000 entries one by one. This statement is
+executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
+on my system. After every test run the system was rebooted.
+Execution time in seconds is available below.</p>
+
+<pre><code>MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
+SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
+SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
+SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
+</code></pre>
+
+<p>Looks like I was wrong the first time! MD5 is still faster but not that much.
+I will stick with SHA1 for the time being.</p>
+
+<p>As always I’d love to hear your thoughts and feedback. Please use the comment form below.</p>
 ]]></content>
   </entry>
   
