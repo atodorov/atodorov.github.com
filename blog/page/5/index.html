@@ -9,8 +9,11 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Did you know there is a start-up company producing men&#8217;s shoes? Me neither,
-and I love good quality shoes. Beckett Simonon launched in 2012, &hellip;">
+  <meta name="description" content="Image CC-BY-SA,
+Red Hat From time to time I happen to remotely
+install Red Hat Enterprise Linux
+servers via the Internet.
+When the system &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +81,166 @@ and I love good quality shoes. Beckett Simonon launched in 2012, &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/">Secure VNC Installation of Red Hat Enterprise Linux 6</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-13T15:40:00+02:00" pubdate data-updated="true">Feb 13<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/rhel6_welcome.png" alt="RHEL 6 welcome screen" />
+Image CC-BY-SA,
+<a href="https://access.redhat.com/knowledge/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Installation_Guide/sn-welcome-s390.html">Red Hat</a></p>
+
+<p>From time to time I happen to remotely
+<a href="http://otb.bg">install Red Hat Enterprise Linux</a>
+servers via the Internet.
+When the system configuration is not decided upfront you need
+to use interactive mode. This means VNC in my case.</p>
+
+<p>In this tutorial I will show you how to make VNC installations more secure
+when using public networks to connect to the server.</p>
+
+<h2>Meet your tools</h2>
+
+<p>Starting with Red Hat Enterprise Linux 6 and all the latest Fedora releases, the
+installer supports SSH connections during install.</p>
+
+<blockquote><p>Note that by default, root has a blank password.</p><p>If you don&#8217;t want any user to be able to ssh in and have full access to your hardware, <br/>you must specify sshpw for username root. Also note that if Anaconda fails to parse the <br/>kickstart file, it will allow anyone to login as root and have full access to your hardware.</p><footer><strong>Fedora</strong> <cite><a href='https://fedoraproject.org/wiki/Anaconda/Kickstart#sshpw'>Kickstart Manual</a></cite></footer></blockquote>
+
+
+<h2>Preparation</h2>
+
+<p>We are going to use SSH port forwarding and tunnel VNC traffic through it.
+Create a kickstart file as shown below:</p>
+
+<figure class='code'><figcaption><span>ks.cfg </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='cfg'><span class='line'><span class="err">install</span>
+</span><span class='line'><span class="err">url</span> <span class="err">--url</span> <span class="err">http://example.com/path/to/rhel6</span>
+</span><span class='line'><span class="err">lang</span> <span class="err">en_US.UTF-8</span>
+</span><span class='line'><span class="err">keyboard</span> <span class="err">us</span>
+</span><span class='line'><span class="err">network</span> <span class="err">--onboot</span> <span class="err">yes</span> <span class="err">--device</span> <span class="err">eth0</span> <span class="err">--bootproto</span> <span class="err">dhcp</span>
+</span><span class='line'><span class="na">vnc --password</span><span class="o">=</span><span class="s">s3cr3t</span>
+</span><span class='line'><span class="na">sshpw --user</span><span class="o">=</span><span class="s">root s3cr3t</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first 5 lines configure the loader portion of the installer. They will setup
+networking and fetch the installer image called stage2. This is completely automated.
+<strong>NB:</strong> If you miss some of the lines or have a syntax error the installer will prompt for
+values. You either need a remote console access or somebody present at the server console!</p>
+
+<p>The last 2 lines configure passwords for VNC and SSH respectively.</p>
+
+<p>Make this file
+<a href="https://fedoraproject.org/wiki/Anaconda/Kickstart#Chapter_6._Making_the_Kickstart_File_Available">available</a>
+over HTTP(S), FTP or NFS.</p>
+
+<p><strong>NB:</strong> Make sure that the file is available on the same network where your server is,
+or use HTTPS if on public networks.</p>
+
+<h2>Installation</h2>
+
+<p>Now, using your favorite installation media start the
+installation process like this:</p>
+
+<pre><code>boot: linux sshd=1 ks=http://example.com/ks.cfg
+</code></pre>
+
+<p>After a minute or more the installer will load stage2, with the
+interactive VNC session. You need to know the IP address or hostname
+of the server. Either look into DHCP logs, have somebody look at the
+server console and tell you that (it&#8217;s printed on tty1) or script it in
+a <a href="https://fedoraproject.org/wiki/Anaconda/Kickstart#Chapter_4._Pre-installation_Script">%pre</a>
+script which will send you an email for example.</p>
+
+<p>When ready, redirect one of your local ports through SSH to the VNC port on the server:</p>
+
+<pre><code>$ ssh -L 5902:localhost:5901 -N root@server.example.com
+</code></pre>
+
+<p>Now connect to DISPLAY :2 on your system to begin the installation:</p>
+
+<pre><code>$ vncviewer localhost:2 &amp;
+</code></pre>
+
+<h2>Warning Bugs Present</h2>
+
+<p>As it happens, I find bugs everywhere. This is no exception.
+Depending on your network/DHCP configuration IP address during install may
+change mid-air and cause VNC client connection to freeze.</p>
+
+<p>The reason for this bug is evident from the code (rhel6-branch):</p>
+
+<figure class='code'><figcaption><span>iw/timezone_gui.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">anaconda</span><span class="o">.</span><span class="n">isKickstart</span><span class="p">:</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">utcCheckbox</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="ow">not</span> <span class="n">hasWindows</span><span class="p">(</span><span class="n">anaconda</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">bootloader</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>textw/timezone_text.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">anaconda</span><span class="o">.</span><span class="n">isKickstart</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hasWindows</span><span class="p">(</span><span class="n">anaconda</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">bootloader</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">asUtc</span> <span class="o">=</span> <span class="bp">True</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because we are using a kickstart file Anaconda will assume the system clock <strong>DOES NOT</strong>
+use UTC. If you forget to configure it manually you may see time on the server shifting
+back or forward (depending on your timezone) while installing. If your DHCP is configured
+for short lease time the address will expire before the installation completes. When new
+address is requested from DHCP it may be different and this will cause your VNC connection
+to freeze.</p>
+
+<p>To workaround this issue select the appropriate value for the system clock settings during install
+and possibly use static IP address during the installation.</p>
+
+<h2>Feedback</h2>
+
+<p>As always I&#8217;d love to hear your feedback in the comments section below. Let me know
+your tips and tricks to perform secure remote installations using public networks.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2273,6 +2436,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/10/11/this-week-python-chris-dibona-openshift/">This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/">Fedora 20 Virtualization Test Day Post-mortem</a>
       </li>
     
@@ -2306,10 +2473,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/08/23/small-but-annoying-twitter-bug/">Small But Annoying Twitter Bug</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/">Tip: How to Find Your Red Hat Account Number</a>
       </li>
     
   </ul>
