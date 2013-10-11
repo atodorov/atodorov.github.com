@@ -27,8 +27,9 @@ You can see the other test results and bugs on the
 There are two things I didn't like in particular
 
 * GNOME 3 as well as its classic mode - simply not the environment I'm used to;
-* Having to record test results in the wiki! I'm writing to the Fedora QA
-mailing list about that as we speak.
+* Having to record test results in the wiki! I'm
+[writing](https://lists.fedoraproject.org/pipermail/test/2013-October/118284.html)
+to the Fedora QA mailing list about that as we speak.
 
 
 At one time I was engaged in a discussion about which Bulgarian keyboard layout
