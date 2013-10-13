@@ -1,0 +1,561 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Tip: Extending Btrfs Filesystem for Fedora Virtual Machine</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="I was testing Fedora 20 inside a KVM guest this week when the disk
+space run out. The system was configured to use Btrfs filesystem and this is how &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+<a href="/blog/categories/rhel/">red hat</a>,
+<a href="/blog/categories/cloud/">cloud</a>,
+<a href="/blog/categories/fedora/">fedora</a>,
+<a href="/blog/categories/qa/">qa</a>,
+<a href="/blog/categories/start-up/">start-up</a>
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="http://amzn.to/12zvEDF">Now reading: DevOps for Developers</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Tip: Extending Btrfs Filesystem for Fedora Virtual Machine</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-13T14:53:00+03:00" pubdate data-updated="true">Oct 13<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I was testing Fedora 20 inside a KVM guest this week when the disk
+space run out. The system was configured to use Btrfs filesystem and this is how
+to extend it.</p>
+
+<p>First you have to extend the underlying guest storage. On the host I&#8217;m using LVM
+so this is a no brainer:</p>
+
+<pre><code># pvs
+  PV                                                    VG              Fmt  Attr PSize   PFree  
+  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 134,11g
+
+# lvs
+  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
+  vm_fedora     vg_redbull_mini -wi-ao---  15,00g                                             
+
+# lvextend -L +5G /dev/mapper/vg_redbull_mini-vm_fedora 
+  Extending logical volume vm_fedora to 20,00 GiB
+  Logical volume vm_fedora successfully resized
+
+# lvs
+  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
+  vm_fedora     vg_redbull_mini -wi-ao---  20,00g                                             
+
+# pvs
+  PV                                                    VG              Fmt  Attr PSize   PFree  
+  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 129,11g
+</code></pre>
+
+<p>On the VM we have a default Btrfs layout:</p>
+
+<pre><code># blkid
+/dev/vda1: UUID="410ee563-e701-42ff-9d5f-5805dd103e35" TYPE="ext4" PARTUUID="0000330f-01" 
+/dev/vda2: UUID="f4addad4-a0fc-482e-ad5a-240864b76f09" TYPE="swap" PARTUUID="0000330f-02" 
+/dev/vda3: LABEL="fedora" UUID="f0b589ce-061c-4ac3-826e-7f3f8c8a6d30" UUID_SUB="11aa8414-3ce1-4fe7-a506-9a4f91ba5c30" TYPE="btrfs" PARTUUID="0000330f-03" 
+
+# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        13G   11G  1.4G  89% /
+devtmpfs        996M     0  996M   0% /dev
+tmpfs          1002M   80K 1002M   1% /dev/shm
+tmpfs          1002M  668K 1002M   1% /run
+tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
+tmpfs          1002M   16K 1002M   1% /tmp
+/dev/vda3        13G   11G  1.4G  89% /home
+/dev/vda1       477M   72M  376M  17% /boot
+</code></pre>
+
+<p>Now power-off (not reboot) and power-on the VM guest so that it sees the new size
+of the underlying storage. See the fdisk header (line 9 below), vda is now 20GiB!</p>
+
+<p>Before extending the filesystem you have to extend the underlying disk partition! This is the
+trickiest part. Using fdisk or parted you have to delete the partition and add it again.
+Make sure to use the <strong>SAME</strong> starting sector for the new partition (line 33)!</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># fdisk /dev/vda
+</span><span class='line'>
+</span><span class='line'>Welcome to fdisk (util-linux 2.24-rc1).
+</span><span class='line'>Changes will remain in memory only, until you decide to write them.
+</span><span class='line'>Be careful before using the write command.
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>Command (m for help): p
+</span><span class='line'>Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+</span><span class='line'>Units: sectors of 1 * 512 = 512 bytes
+</span><span class='line'>Sector size (logical/physical): 512 bytes / 512 bytes
+</span><span class='line'>I/O size (minimum/optimal): 512 bytes / 512 bytes
+</span><span class='line'>Disk label type: dos
+</span><span class='line'>Disk identifier: 0x0000330f
+</span><span class='line'>
+</span><span class='line'>Device    Boot     Start       End   Blocks  Id System
+</span><span class='line'>/dev/vda1 *         2048   1026047   512000  83 Linux
+</span><span class='line'>/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
+</span><span class='line'>/dev/vda3        5253120  31457279 13102080  83 Linux
+</span><span class='line'>
+</span><span class='line'>Command (m for help): d
+</span><span class='line'>Partition number (1-3, default 3): 3
+</span><span class='line'>
+</span><span class='line'>Partition 3 is deleted
+</span><span class='line'>
+</span><span class='line'>Command (m for help): n
+</span><span class='line'>
+</span><span class='line'>Partition type:
+</span><span class='line'>   p   primary (2 primary, 0 extended, 2 free)
+</span><span class='line'>   e   extended
+</span><span class='line'>Select (default p): p
+</span><span class='line'>Partition number (3,4, default 3): 3
+</span><span class='line'>First sector (5253120-41943039, default 5253120): 
+</span><span class='line'>Last sector, +sectors or +size{K,M,G,T,P} (5253120-41943039, default 41943039): 
+</span><span class='line'>
+</span><span class='line'>Created a new partition 3 of type 'Linux' and of size 17,5 GiB.
+</span><span class='line'>
+</span><span class='line'>Command (m for help): p
+</span><span class='line'>Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+</span><span class='line'>Units: sectors of 1 * 512 = 512 bytes
+</span><span class='line'>Sector size (logical/physical): 512 bytes / 512 bytes
+</span><span class='line'>I/O size (minimum/optimal): 512 bytes / 512 bytes
+</span><span class='line'>Disk label type: dos
+</span><span class='line'>Disk identifier: 0x0000330f
+</span><span class='line'>
+</span><span class='line'>Device    Boot     Start       End   Blocks  Id System
+</span><span class='line'>/dev/vda1 *         2048   1026047   512000  83 Linux
+</span><span class='line'>/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
+</span><span class='line'>/dev/vda3        5253120  41943039 18344960  83 Linux
+</span><span class='line'>
+</span><span class='line'>Command (m for help): w
+</span><span class='line'>
+</span><span class='line'>The partition table has been altered.
+</span><span class='line'>Calling ioctl() to re-read partition table.
+</span><span class='line'>Re-reading the partition table failed.: Device or resource busy
+</span><span class='line'>
+</span><span class='line'>The kernel still uses the old table. The new table will be used at the next reboot or after you run partprobe(8) or kpartx(8).
+</span><span class='line'>
+</span><span class='line'># partprobe
+</span><span class='line'>Error: Partition(s) 3 on /dev/vda have been written, but we have been unable to inform the kernel of the change, probably because it/they are in use.  As a result, the old partition(s) will remain in use.  You should reboot now before making further changes.
+</span><span class='line'>
+</span><span class='line'># reboot</span></code></pre></td></tr></table></div></figure>
+
+
+<p>See lines 36 and 49 above. The new partition has a greater size.
+After reboot just resize the filesystem and verify the new space has been added</p>
+
+<pre><code># btrfs filesystem resize max /
+Resize '/' of 'max'
+
+# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        18G   11G  6.4G  63% /
+devtmpfs        996M     0  996M   0% /dev
+tmpfs          1002M   80K 1002M   1% /dev/shm
+tmpfs          1002M  660K 1002M   1% /run
+tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
+tmpfs          1002M   16K 1002M   1% /tmp
+/dev/vda3        18G   11G  6.4G  63% /home
+/dev/vda1       477M   72M  376M  17% /boot
+</code></pre>
+
+<p>This is it, more disk space available for the virtual machine. Let me know how it works
+for you.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-13T14:53:00+03:00" pubdate data-updated="true">Oct 13<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/" title="Previous Post: Tip: Installing Missing debuginfo Packages for ABRT">&laquo; Tip: Installing Missing debuginfo Packages for ABRT</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
+<section>
+  
+  <a href="https://github.com/atodorov">@atodorov</a> on GitHub
+  
+</section>
+
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>Trending Posts</h1>
+<!-- AddThis Trending Content BEGIN -->
+<div id="addthis_trendingcontent"></div>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<script type="text/javascript">
+addthis.box("#addthis_trendingcontent", {
+    feed_title : "",
+    feed_type : "trending",
+    feed_period : "month",
+    num_links : 5,
+    height : "auto",
+    width : "auto"});
+</script>
+<!-- AddThis Trending Content END -->
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/">Tip: Extending Btrfs Filesystem for Fedora Virtual Machine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/">Tip: Installing Missing debuginfo Packages for ABRT</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/">Fedora 20 GNOME 3.10 Test Day Post-mortem</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/10/11/this-week-python-chris-dibona-openshift/">This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/">Fedora 20 Virtualization Test Day Post-mortem</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/">Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/23/facebook-ui-bug-strikes-again-at-hackfmi/">Facebook UI Bug Strikes Again at HackFMI</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/23/fedora-test-days-are-coming-to-sofia/">Fedora Test Days are Coming to Sofia</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/">Lenovo Rants: Battery and Dock Flaws</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/">Upcoming Talk: Fedora Test Days in Sofia</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+<section>
+<h1></h1>
+<iframe width="260" height="420" scrolling="no" frameborder="no" allowtransparency="true" src="http://www.econt.com/voffice/en/240x400/?mediator=http%3A%2F%2Fatodorov.org"></iframe>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2013 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/';
+        var disqus_url = 'http://atodorov.org/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
