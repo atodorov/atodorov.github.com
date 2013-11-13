@@ -5,12 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Fedora 20 Virtualization Test Day Post-mortem</title>
+  <title>Keeping Backwards Compatibility for pykickstart</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Here is a quick summary of the first Fedora Test Day in Sofia I hosted at
-init Lab today. Attendance was quite poor, actually nobody else except me &hellip;">
+  <meta name="description" content="Consider the following scenario: I&#8217;m using SNAKE templates as part of my
+installation testing work;
+SNAKE has a dependency on pykickstart;
+To &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +21,7 @@ init Lab today. Attendance was quite poor, actually nobody else except me &helli
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -82,7 +84,7 @@ init Lab today. Attendance was quite poor, actually nobody else except me &helli
   
   <header>
     
-      <h1 class="entry-title">Fedora 20 Virtualization Test Day Post-mortem</h1>
+      <h1 class="entry-title">Keeping Backwards Compatibility for Pykickstart</h1>
     
     
       <p class="meta">
@@ -98,7 +100,7 @@ init Lab today. Attendance was quite poor, actually nobody else except me &helli
   
 
 
-<time datetime="2013-10-08T22:01:00+03:00" pubdate data-updated="true">Oct 8<span>th</span>, 2013</time>
+<time datetime="2013-11-13T23:59:00+02:00" pubdate data-updated="true">Nov 13<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -107,45 +109,38 @@ init Lab today. Attendance was quite poor, actually nobody else except me &helli
   </header>
 
 
-<div class="entry-content"><p><img src="/images/fedora/fedora20-banner.png" title="Fedora 20 banner" alt="&quot;Fedora 20 banner&quot;" /></p>
+<div class="entry-content"><p>Consider the following scenario:</p>
 
-<p>Here is a quick summary of the first Fedora Test Day in Sofia I hosted at
-<a href="http://initlab.org">init Lab</a> today.</p>
+<ul>
+<li>I&#8217;m using <a href="https://fedorahosted.org/snake/">SNAKE</a> templates as part of my
+installation testing work;</li>
+<li>SNAKE has a dependency on pykickstart;</li>
+<li>To test the latest and greatest kickstart features in Fedora we need the
+latest version of pykickstart;</li>
+<li>Latest pykickstart needs Python 2.7</li>
+<li>Python 2.7 is not available on RHEL 6 which is used to host the test
+infrastructure.</li>
+</ul>
 
-<p>Attendance was quite poor, actually nobody else except me participated but
-almost nobody else visited the hackespace as well. I get that it is a
-working day and Test Days conflict with regular business hours but this
-is not going to change anyway. On the other hand where were all the freelancers
-and non-office job workers who usually hang around in the Lab? I have no idea!</p>
 
-<p>On IRC there was much better activity, 5 or 6 people were testing across
-Asia, Europe and USA time zones. You can see the test results
-<a href="http://209.132.184.192/testdays/show_event?event_id=7">here</a>.
-I&#8217;ve started filing quite a few bugs in the morning and continued well into the
-afternoon. I&#8217;ve managed to file a total of
-<a href="https://bugzilla.redhat.com/buglist.cgi?bug_id=1016435,1016449,1016488,1016530,1016604,1016613,1016648,1016663,1016704,1016715">10 bugs</a>.
-Some of them were not related to virtualization and some of them turned out to be
-duplicates or not a bug. I even managed to file 2 duplicate bugs which likely have the
-same root cause myself :).</p>
+<p>Just yesterday I hit an issue with the above setup and figured Fedora QA is
+in a kind of strange situation - we always need the latest but need it
+conservative enough to run on RHEL 6. See the original thread at
+<a href="https://www.redhat.com/archives/kickstart-list/2013-November/msg00001.html">kickstart-list</a>.</p>
 
-<p>I&#8217;ve also experienced two bugs filed by other people:
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=967371">RHBZ #967371</a> for MATE desktop
-and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1015636">RHBZ #1015636</a> for
-virt-manager&#8217;s Save/Restore functionality.</p>
+<p>In this particular case the solution will be to remove the offending code
+and implement the same functionality in backward-compatible manner. Also add
+more tests. I will be working on this tomorrow (there&#8217;s an older patch already).</p>
 
-<p>I&#8217;ve tried ARM on x86_64 but that didn&#8217;t get anywhere near a running system.
-I will make another post about ARM and what I&#8217;ve discovered there.</p>
+<p>The BIG question remains though - how do you manage software evolution and still
+keep it compatible with older execution stacks? Please share your experience in
+the comments section.</p>
 
-<p>The one thing I liked is the
-<a href="http://209.132.184.192/testdays/show_event?event_id=7">test results application</a>.
-It is not what I&#8217;m used to when dealing with RHEL, has far less features but is
-very fast and easy to use and suits the Test Days participants just fine.
-And is definitely much easier to use compared to filing results in the wiki.</p>
+<hr />
 
-<p>Overall Fedora 20 virtualization status according to me is pretty good.</p>
-
-<p>I hope to see more attendance <a href="http://initlab.org/event/gnome-test-day">on Thursday</a>
-when we&#8217;re going to test GNOME 3.10.</p>
+<p>PP: Spoiler - this is part of an ongoing effort to bring open source installation
+testing expertise (my domain) into Fedora world, plus establish a community supported
+test infrastructure. More info TBA soon.</p>
 </div>
 
 
@@ -168,7 +163,7 @@ when we&#8217;re going to test GNOME 3.10.</p>
   
 
 
-<time datetime="2013-10-08T22:01:00+03:00" pubdate data-updated="true">Oct 8<span>th</span>, 2013</time>
+<time datetime="2013-11-13T23:59:00+02:00" pubdate data-updated="true">Nov 13<span>th</span>, 2013</time>
       
 
 <span class="categories">
@@ -202,10 +197,8 @@ when we&#8217;re going to test GNOME 3.10.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/" title="Previous Post: Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week">&laquo; Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week</a>
+        <a class="basic-alignment left" href="/blog/2013/11/01/my-first-article-for-opensource-dot-com/" title="Previous Post: My First Article for OpenSource.com">&laquo; My First Article for OpenSource.com</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/10/11/this-week-python-chris-dibona-openshift/" title="Next Post: This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables">This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables &raquo;</a>
       
     </p>
   </footer>
@@ -351,8 +344,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/';
-        var disqus_url = 'http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/';
+        var disqus_url = 'http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/';
         var disqus_script = 'embed.js';
       
     (function () {
