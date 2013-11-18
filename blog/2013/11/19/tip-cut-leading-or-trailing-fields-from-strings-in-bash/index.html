@@ -5,13 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Spinning-up a Development Instance on OpenShift</title>
+  <title>Tip: Cut Leading or Trailing Fields From Strings in Bash</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Difio is hosted on OpenShift.
-During development I often need to spin-up another copy of Difio to use for testing and development.
-With OpenShift &hellip;">
+  <meta name="description" content="Today I was looking for a command sequence to cut a string in two by predefined
+delimiter (e.g. like cut does). I wanted to get the last field only &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@ With OpenShift &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -83,7 +82,7 @@ With OpenShift &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Spinning-up a Development Instance on OpenShift</h1>
+      <h1 class="entry-title">Tip: Cut Leading or Trailing Fields From Strings in Bash</h1>
     
     
       <p class="meta">
@@ -99,7 +98,7 @@ With OpenShift &hellip;">
   
 
 
-<time datetime="2012-02-10T21:19:00+02:00" pubdate data-updated="true">Feb 10<span>th</span>, 2012</time>
+<time datetime="2013-11-19T00:16:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -108,38 +107,33 @@ With OpenShift &hellip;">
   </header>
 
 
-<div class="entry-content"><p><a href="http://www.dif.io">Difio</a> is hosted on <a href="http://openshift.redhat.com">OpenShift</a>.
-During development I often need to spin-up another copy of Difio to use for testing and development.
-With OpenShift this is easy and fast. Here&#8217;s how:</p>
+<div class="entry-content"><p>Today I was looking for a command sequence to cut a string in two by predefined
+delimiter (e.g. like <code>cut</code> does). I wanted to get the last field only and all
+fields but the last as separate variables.</p>
 
-<ol>
-<li><p>Create another application on OpenShift. This will be your development instance.</p>
+<p>The proposed solutions I&#8217;ve found suggested using <code>awk</code> but I don&#8217;t like it.
+Here&#8217;s a simple solution using <code>cut</code> and <code>rev</code> which can extract arbitrary
+field counts from the end of the string.</p>
 
-<pre><code> rhc-create-app -a myappdevel -t python-2.6
-</code></pre></li>
-<li><p>Find out the git URL for the production application:</p>
+<pre><code>$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f1 -d. | rev
+org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-2 -d. | rev
+fedoraproject.org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-3 -d. | rev
+phx2.fedoraproject.org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f2- -d. | rev
+buildvm-08.phx2.fedoraproject
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f3- -d. | rev
+buildvm-08.phx2
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f4- -d. | rev
+buildvm-08
+</code></pre>
 
-<pre><code> $ rhc-user-info
- Application Info
- ================
- myapp
-     Framework: python-2.6
-      Creation: 2012-02-10T12:39:53-05:00
-          UUID: 723f0331e17041e8b34228f87a6cf1f5
-       Git URL: ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-    Public URL: http://myapp-mydomain.rhcloud.com/
-</code></pre></li>
-<li><p>Push the current code base from the production instance to devel instance:</p>
+<p>The magic here is done by <code>rev</code> which reverses the order of characters in every
+line. It comes with the <em>util-linux-ng</em> package.</p>
 
-<pre><code> cd myappdevel
- git remote add production -m master ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
- git pull -s recursive -X theirs production master
- git push
-</code></pre></li>
-<li><p>Now your <code>myappdevel</code> is the same as your production instance. You will probably want to
-modify your database connection settings at this point and start adding new features.</p></li>
-</ol>
-
+<p><strong>Note to Self:</strong> <em>util-linux-ng</em> appears to contain more useful commands which
+I wasn&#8217;t aware of. Need to RTFM a little bit.</p>
 </div>
 
 
@@ -162,12 +156,12 @@ modify your database connection settings at this point and start adding new feat
   
 
 
-<time datetime="2012-02-10T21:19:00+02:00" pubdate data-updated="true">Feb 10<span>th</span>, 2012</time>
+<time datetime="2013-11-19T00:16:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/openshift/'>OpenShift</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
   
 </span>
 
@@ -196,10 +190,8 @@ modify your database connection settings at this point and start adding new feat
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2011/09/15/protected-rpm-repositories-with-yum-and-ssl/" title="Previous Post: Protected RPM repositories with yum and SSL">&laquo; Protected RPM repositories with yum and SSL</a>
+        <a class="basic-alignment left" href="/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/" title="Previous Post: Keeping Backwards Compatibility for pykickstart">&laquo; Keeping Backwards Compatibility for pykickstart</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2012/02/18/how-to-update-dependencies-on-openshift/" title="Next Post: How to Update Dependencies on OpenShift">How to Update Dependencies on OpenShift &raquo;</a>
       
     </p>
   </footer>
@@ -345,8 +337,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/';
-        var disqus_url = 'http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/';
+        var disqus_url = 'http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/';
         var disqus_script = 'embed.js';
       
     (function () {

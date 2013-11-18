@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-11-14T00:13:31+02:00</updated>
+  <updated>2013-11-19T00:30:27+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,41 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Cut Leading or Trailing Fields From Strings in Bash]]></title>
+    <link href="http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/"/>
+    <updated>2013-11-19T00:16:00+02:00</updated>
+    <id>http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash</id>
+    <content type="html"><![CDATA[<p>Today I was looking for a command sequence to cut a string in two by predefined
+delimiter (e.g. like <code>cut</code> does). I wanted to get the last field only and all
+fields but the last as separate variables.</p>
+
+<p>The proposed solutions I've found suggested using <code>awk</code> but I don't like it.
+Here's a simple solution using <code>cut</code> and <code>rev</code> which can extract arbitrary
+field counts from the end of the string.</p>
+
+<pre><code>$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f1 -d. | rev
+org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-2 -d. | rev
+fedoraproject.org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-3 -d. | rev
+phx2.fedoraproject.org
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f2- -d. | rev
+buildvm-08.phx2.fedoraproject
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f3- -d. | rev
+buildvm-08.phx2
+$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f4- -d. | rev
+buildvm-08
+</code></pre>
+
+<p>The magic here is done by <code>rev</code> which reverses the order of characters in every
+line. It comes with the <em>util-linux-ng</em> package.</p>
+
+<p><strong>Note to Self:</strong> <em>util-linux-ng</em> appears to contain more useful commands which
+I wasn't aware of. Need to RTFM a little bit.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Keeping Backwards Compatibility for pykickstart]]></title>
@@ -309,53 +344,6 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
 /var/tmp/abrt/ccpp-2013-10-10-15:55:18-15533
 # cat backtrace | grep lib | tr -s ' ' | cut -f4 -d' ' | sort | uniq | grep "/" | xargs rpm -qf --qf "%{name}\n" | xargs debuginfo-install -y
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fedora 20 GNOME 3.10 Test Day Post-mortem]]></title>
-    <link href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/"/>
-    <updated>2013-10-11T12:25:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem</id>
-    <content type="html"><![CDATA[<p><img src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" alt="&quot;Fedora sausage banner&quot;" /></p>
-
-<p>Here is my summary of the second Fedora Test Day hosted at
-<a href="http://initlab.org">init Lab</a> yesterday.</p>
-
-<p>Local attendance was a total disaster, in fact I was testing once again by my own.
-This time
-there were more people in the lab, all busy with their daily routines and tasks.
-There were no people who came for the testing :(. I will have to try different
-venues in the future and see if the situation improves.</p>
-
-<p>On the testing front I managed to score 5 bugs against
-<a href="https://bugzilla.gnome.org/buglist.cgi?bug_id=709797,709799,709806,709810">GNOME</a>
-and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1017807">Fedora</a>.
-You can see the other test results and bugs on the
-<a href="https://fedoraproject.org/wiki/Test_Day:2013-10-10_Gnome_3.10">wiki</a>.</p>
-
-<p>There are two things I didn't like in particular</p>
-
-<ul>
-<li>GNOME 3 as well as its classic mode - simply not the environment I'm used to;</li>
-<li>Having to record test results in the wiki! I'm
-<a href="https://lists.fedoraproject.org/pipermail/test/2013-October/118284.html">writing</a>
-to the Fedora QA mailing list about that as we speak.</li>
-</ul>
-
-
-<p>At one time I was engaged in a discussion about which Bulgarian keyboard layout
-should be the default in GNOME simply because of
-<a href="https://bugzilla.gnome.org/show_bug.cgi?id=709799">GNOME #709799</a>. The default
-keyboard layout will be Bulgarian (traditional phonetic) aka bg+phonetic.</p>
-
-<p><blockquote><p>(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?<br/>(16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default<br/>(16,16,34) atodorov: rtcm: I'm a Bulgarian, however I can't tell which one. Both Phonetic and standard (BDS) are common<br/>(16,16,54) atodorov: a safe bet is to go with phonetic I guess.<br/>(16,19,46) rtcm: atodorov: can you tell me which one is it in XKB terms? is it "bg", "bg+bas_phonetic" or "bg+phonetic" ?<br/>(16,20,51) rtcm: they're labeled as "Bulgarian", "Bulgarian (new phonetic)" and "Bulgarian (traditional phonetic)"<br/>(16,21,30) atodorov: bg+phonetic is the traditional phonetic<br/>(16,22,04) atodorov: bg labeled as "Bulgarian" is the standard one I guess. Here we call it BDS after the standardization institute<br/>(16,22,34) atodorov: bg+bas_phonetic is created from the Bulgarian Academy of Science and is not very popular as far as I know. I've never seen it in use<br/>(16,23,15) rtcm: atodorov: all I want to know is what most people would expect? like what does windows do by default? that's a good bet<br/>(16,27,46) atodorov: rtcm: I'm just being told that new Windows releases use yet another layout by default, which is like phonetic but with some characters in new places and people don't like that<br/>(16,27,53) atodorov: my safe bet goes to bg+phonetic<br/>(16,29,05) rtcm: ok, thanks</p></blockquote></p>
-
-<p>It is a rare occasion when you get to make a decision that affects a large group
-of people and I hope you don't hate me for that!</p>
-
-<p>Do you want to see more Fedora Test Days happening in Sofia? Join me and I will
-organize some more!</p>
 ]]></content>
   </entry>
   
