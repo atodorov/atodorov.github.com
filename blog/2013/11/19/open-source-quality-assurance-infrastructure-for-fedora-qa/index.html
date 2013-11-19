@@ -5,12 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>The Silicon Prairie Movie</title>
+  <title>Open Source Quality Assurance Infrastructure for Fedora QA</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Not all innovation needs to come out of Silicon Valley! I&#8217;ve just watched Silicon Prairie
-(download for free or as much as you can afford). &hellip;">
+  <meta name="description" content="In the last few weeks I&#8217;ve been working together with
+Tim Flink and
+Kamil Paral from the Fedora QA
+team on bringing some installation testing &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/03/25/the-silicon-prairie-movie/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -82,7 +84,7 @@
   
   <header>
     
-      <h1 class="entry-title">The Silicon Prairie Movie</h1>
+      <h1 class="entry-title">Open Source Quality Assurance Infrastructure for Fedora QA</h1>
     
     
       <p class="meta">
@@ -98,7 +100,7 @@
   
 
 
-<time datetime="2013-03-25T11:44:00+02:00" pubdate data-updated="true">Mar 25<span>th</span>, 2013</time>
+<time datetime="2013-11-19T14:12:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -107,49 +109,128 @@
   </header>
 
 
-<div class="entry-content"><blockquote><p>Not all innovation needs to come out of Silicon Valley!</p></blockquote>
+<div class="entry-content"><p><img src="/images/fedora/beaker.png" title="Beaker test lab" alt="&quot;Beaker test lab&quot;" /></p>
+
+<p>In the last few weeks I&#8217;ve been working together with
+<a href="https://fedoraproject.org/wiki/User:Tflink">Tim Flink</a> and
+<a href="https://fedoraproject.org/wiki/User:Kparal">Kamil Paral</a> from the Fedora QA
+team on bringing some installation testing expertise to Fedora and establishing
+an <a href="http://beaker.fedoraproject.org/bkr/">open source test lab</a>
+to perform automated testing in. The infrastructure is
+already in relatively usable condition so I&#8217;ve decided to share this information
+with the community.</p>
+
+<h2>Beaker is Running Our Test Lab</h2>
+
+<p><a href="http://beaker-project.org/">Beaker</a> is the software suite that powers the test
+lab infrastructure. It is quite complex, with many components and sometimes not
+very straight-forward to set up. Tim has been working on that with me giving it
+a try and reporting issues as they have been discovered and fixed.</p>
+
+<p>In the process of working on this I&#8217;ve managed to create
+<a href="http://gerrit.beaker-project.org/#/q/owner:%22Alexander+Todorov%22,n,z">couple of patches</a>
+against Beaker and friends. They are still pending release in a future version
+because of more urgent bug fixes which need to released first.</p>
+
+<h2>SNAKE is The Kickstart Template Server</h2>
+
+<p><a href="https://fedorahosted.org/snake/">SNAKE</a> is a client/server Python framework used
+to support Anaconda installations. It supports plain text ks.cfg files, IIRC those
+were static templates, no variable substitution.</p>
+
+<p>The other possibility is Python templates based on Pykickstart:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">pykickstart.constants</span> <span class="kn">import</span> <span class="n">KS_SCRIPT_POST</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">pykickstart.parser</span> <span class="kn">import</span> <span class="n">Script</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">installdefaults</span> <span class="kn">import</span> <span class="n">InstallKs</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">ks</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&#39;&#39;&#39;Anaconda autopart&#39;&#39;&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ks</span><span class="o">=</span><span class="n">InstallKs</span><span class="p">()</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;@base&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">clearpart</span><span class="p">(</span><span class="n">initAll</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">autopart</span><span class="p">(</span><span class="n">autopart</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">script</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+</span><span class='line'><span class="s">cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || </span><span class="se">\</span>
+</span><span class='line'><span class="s">cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg</span>
+</span><span class='line'><span class="s">&#39;&#39;&#39;</span>
+</span><span class='line'>    <span class="n">post</span> <span class="o">=</span> <span class="n">Script</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">KS_SCRIPT_POST</span><span class="p">,</span> <span class="n">inChroot</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">scripts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ks</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>I&#8217;ve just watched <a href="http://www.siliconprairiefilm.com/">Silicon Prairie</a>
-(download for free or as much as you can afford).
-Last fall, a team of journalists and activists joined reddit&#8217;s Internet 2012 Bus Tour
-and traveled from Denver, CO to Danville, KY to capture the Internet’s role in the
-US Midwest&#8217;s growing Silicon Prairie. Nimblebot, a digital agency, shot and produced a
-mini-documentary showcasing the journey. I particularly liked several companies listed
-below.</p>
+<p>At the moment SNAKE is essentially abandoned but feature complete.
+I&#8217;m thinking about adopting the project just in case we need to make some fixes.
+Will let you know more about this when it happens.</p>
 
-<h2>AgLocal</h2>
+<h2>Open Source Test Suite</h2>
 
-<p><a href="https://www.aglocal.com/">AgLocal</a> connects quality meat producers with high-margin
-buyers. This can work very well in Bulgaria. Most food and agriculture producers in
-the country are small and mid-sized farms who struggle to sell their produce or work with
-middlemen for a low margin. On the other hand there are more and more people, especially in
-big cities who would like to pay for locally produced food but don&#8217;t know where to buy it from
-or don&#8217;t have the time to visit a farm to buy it (like myself). Last but not least what big supermarket
-chains sell is simply too expensive and crappy.</p>
+<p>I have been working on opening up several test cases for what we (QE) call
+a tier #1 installation test suite. They can be found in
+<a href="http://taskbot.cloud.fedoraproject.org/cgit/fedora-beaker-tests/">git</a>.
+The tests are base on <a href="https://fedorahosted.org/beakerlib/">beakerlib</a> and
+the legacy RHTS framework which is now part of Beaker.</p>
 
-<p>As far as I know there are several attempts at such kind of companies/organizations here
-but they are small and not widely popular.</p>
+<p>This effort has been coordinated with Kamil as part of a pilot
+project he&#8217;s responsible for. I&#8217;ve been executing the same test suite against
+earlier Fedora 20 snapshots but using an internal environment. Now everything
+is going out in the open.</p>
 
-<h2>Homes For Hackers</h2>
+<h2>Executing The Tests</h2>
 
-<p><a href="http://www.homesforhackers.com/">Homes For Hackers</a> in Kansas City is offering 3 months
-of rent-free, Google Fiber-connected start-up space to entrepreneurs. I have already heard
-several people discussing similar ideas in Bulgaria, mostly because cost of living here,
-hence cost of failure is very low. I wish them good luck.</p>
+<p>Well you can&#8217;t do that - YET! There are command line client tools for Fedora
+but Beaker and SNAKE are not well suited for use outside a restricted network
+like LAN or VPN. There are issues with authentication most notably for SNAKE.</p>
 
-<h2>SparkFun Electronics</h2>
+<p>At the moment I have to ssh through two different systems to get proper access.
+However this is been worked on. I&#8217;ve read about a rewrite which will allow Beaker
+to utilize a custom authentication framework like FAS for example. Hopefully that
+will be implemented soon enough.</p>
 
-<p><a href="https://www.sparkfun.com/">SparkFun</a> is an online retail store that sells the bits and
-pieces to make your electronics projects possible. According to the movie they create
-open source hardware and even shipped to Antarctica which is cool.</p>
+<p>I will also like to see the test systems have direct access to the Internet for
+various reasons but this is not without its risks either. This is still to be
+decided.</p>
 
-<p>Once again this business model can work in Bulgaria. We had lots of electronics produce back in the
-past and still have. There is still talented people in this area
-who will be looking for a job if their companies close shop due to Chinese competition.</p>
+<p>If you are interested anyway see the <code>kick-tests.sh</code> file in the test suite for
+examples and command line options.</p>
 
-<p>Watch the movie and tell me which ones you like ? Do you think Bulgaria can have its
-Silicon areas outside <a href="http://sofiavalley.com">Sofia Valley</a> ?</p>
+<h2>Test Results</h2>
+
+<p>The first successfully completed
+<a href="http://beaker.fedoraproject.org/bkr/jobs/">test jobs</a> are jobs 50 to 58.
+There&#8217;s a failure in one of the test cases, namely SELinux related
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1027148">RHBZ #1027148</a>.</p>
+
+<p>From what I can tell the lab is now working as expected and we can start doing
+some testing against Fedora development snapshots.</p>
+
+<p>Ping me or join #fedora-qa on irc.freenode.net if you&#8217;d like to join Fedora QA!</p>
 </div>
 
 
@@ -172,12 +253,12 @@ Silicon areas outside <a href="http://sofiavalley.com">Sofia Valley</a> ?</p>
   
 
 
-<time datetime="2013-03-25T11:44:00+02:00" pubdate data-updated="true">Mar 25<span>th</span>, 2013</time>
+<time datetime="2013-11-19T14:12:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/start-up/'>start-up</a>
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/qa/'>QA</a>
   
 </span>
 
@@ -206,10 +287,8 @@ Silicon areas outside <a href="http://sofiavalley.com">Sofia Valley</a> ?</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/03/24/upcoming-hackatons-in-sofia/" title="Previous Post: Upcoming Hackathons in Sofia">&laquo; Upcoming Hackathons in Sofia</a>
+        <a class="basic-alignment left" href="/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/" title="Previous Post: Tip: Cut Leading or Trailing Fields From Strings in Bash">&laquo; Tip: Cut Leading or Trailing Fields From Strings in Bash</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/03/26/to-fork-or-not-to-fork-the-mate-story/" title="Next Post: To fork or not to fork - the MATE story">To fork or not to fork - the MATE story &raquo;</a>
       
     </p>
   </footer>
@@ -355,8 +434,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/03/25/the-silicon-prairie-movie/';
-        var disqus_url = 'http://atodorov.org/blog/2013/03/25/the-silicon-prairie-movie/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/';
+        var disqus_url = 'http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/';
         var disqus_script = 'embed.js';
       
     (function () {
