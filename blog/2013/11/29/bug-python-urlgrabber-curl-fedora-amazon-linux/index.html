@@ -5,13 +5,22 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Call of the Open Source Guru</title>
+  <title>Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="This week (28.05.2013) I&#8217;ve attended an interesting
-event, called
-“Call of the Guru”, that was held at the Faculty of Mathematics and &hellip;">
+  <meta name="description" content="Accidentally I have discovered a bug for Python&#8217;s
+URLGrabber module which has to do with change in behavior in libcurl. 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +29,7 @@ event, called
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/05/31/call-of-the-open-source-guru/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -83,7 +92,7 @@ event, called
   
   <header>
     
-      <h1 class="entry-title">Call of the Open Source Guru</h1>
+      <h1 class="entry-title">Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</h1>
     
     
       <p class="meta">
@@ -99,7 +108,7 @@ event, called
   
 
 
-<time datetime="2013-05-31T12:12:00+03:00" pubdate data-updated="true">May 31<span>st</span>, 2013</time>
+<time datetime="2013-11-29T14:05:00+02:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -108,94 +117,61 @@ event, called
   </header>
 
 
-<div class="entry-content"><p>This week (28.05.2013) I&#8217;ve attended an interesting
-<a href="https://www.facebook.com/events/244624942345762/248165165325073/">event</a>, called
-“Call of the Guru”, that was held at the Faculty of Mathematics and Informatics at
-Sofia University. The idea was to get a group of IT professionals (gurus) to talk to
-young students on topics related to work, academia, start-up and open source.</p>
+<div class="entry-content"><p>Accidentally I have discovered a bug for Python&#8217;s
+URLGrabber module which has to do with change in behavior in libcurl.</p>
 
-<p><img src="/images/students_listening_to_gurus.jpg" alt="Students" style="float:left; display:block;margin-right:50px"/>
-<img src="/images/gurus_talking.jpg" alt="Gurus" style="float:left;display:block;clear:right;"/>
-Images from <a href="http://radorado.me/call-of-the-guru-materials/">RadoRado&#8217;s Place</a> and
-<a href="http://sofiavalley.com/students-professionals-meetup/">SofiaValley</a>.
-Check their event reviews as well.</p>
-
-<p>In <a href="/blog/2013/05/27/it-jobs-prediction-quality-engineering-devops-augmented-reality/">another post</a>
-I&#8217;ve already shared my thoughts on future IT jobs. Here I will talk about what open source
-means for students.</p>
-
-<h2>Why hack open source</h2>
-
-<p>That&#8217;s the number one question students will ask. The answer is simple</p>
-
-<blockquote><p>It gives you experience and you become a hacker!</p></blockquote>
-
-
-<p>There is absolutely no way one could graduate in their early 20s, not work
-during study and have 3-5 years of experience as required by many job offers.
-Unless one hacks open source.</p>
-
-<ul>
-<li>Open source is real world, not a play project. There are many interesting problems
-to be solved; There&#8217;s always work to be done;</li>
-<li>Complex software teaches you software design/architecture patterns;</li>
-<li>Larger projects like Linux distributions can also teach you about software release
-cycle and release processes;</li>
-<li>You work with a team, which drives you forward and you gain experience;</li>
-<li>You learn to be patient as your work is reviewed by others and mistakes pointed out;</li>
-<li>Larger projects use several different languages so you learn them; or alternatively
-hack on different projects;</li>
-<li>You communicate - via email and IRC mostly but that teaches you communication
-skills. To see the difference between how educated people talk and how politicians
-talk listen to <a href="http://www.youtube.com/watch?v=VVJldn_MmMY">this video</a>;</li>
-<li>You make friends and connections which may benefit you later in your career;</li>
-<li>Many open source companies recruit right from the community. I know lots of
-people who landed their dream job by hacking for fun.</li>
-</ul>
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
+</span><span class='line'>    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
+</span><span class='line'>    <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
+</span><span class='line'><span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>As a student, if you can afford not getting a job it&#8217;s better to use your time on
-open source projects. This is what I did as a young student and a junior developer.
-The rest is history!</p>
+<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
+newer. As explained by
+<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
+the reason is an internal change in libcurl which doesn&#8217;t accept a value of 1 anymore!</p>
 
-<h2>What to do</h2>
+<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
+from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
+Fedora and Amazon Linux already have the fix.</p>
 
-<p>There are many things one can do in open source - write code, test software and
-find bugs, write automated test cases, translate to local languages,
-design user interfaces and project websites,
-maintain wiki articles, provide help to users on forums or IRC channels, help organize
-events, etc. All of this is respected in the community and gives credibility.</p>
-
-<h2>Where to start</h2>
-
-<p>If you haven&#8217;t already read <a href="http://www.catb.org/~esr/faqs/hacker-howto.html">How To Become A Hacker</a> by
-Eric Raymond you should do so right away. Then come back and finish this article.</p>
-
-<p>For those who&#8217;d like to start coding but have no idea where to start take a look at
-<a href="http://openhatch.org/">OpenHatch</a>.</p>
-
-<blockquote><p>OpenHatch is a non-profit dedicated to matching prospective free software contributors with communities, tools, and education.</p></blockquote>
-
-
-<p>If you still like to be a developer but don&#8217;t feel confident enough to hack on the core of
-the project I&#8217;d recommend you start by writing automated test cases. Writing test cases doesn&#8217;t
-require much previous experience in programming and lets you explore and learn the internals
-of the software you&#8217;re testing. With that knowledge you will become more confident and start
-writing on the core features if you like. I am myself a QA but regularly contribute patches to
-software I test because I know how it works or why it doesn&#8217;t and it&#8217;s easy for me to fix it.</p>
-
-<p>If you&#8217;d better start as a translator check <a href="https://www.transifex.com">Transifex</a>.
-It&#8217;s used by both commercial and open source entities and has become the de-facto standard in
-open source translation tools. Btw the entire Transifex company was build after trying to
-solve a particular problem in the Fedora Project and they are an open source company.</p>
-
-<p>For general news about open source check <a href="http://opensource.com/">OpenSource.com</a>.</p>
-
-<h2>Have questions? I have answers</h2>
-
-<p>Don&#8217;t hesitate to ask me anything about open source and/or how to get involved with it.
-I will gladly share my experience (learned the hard-way in the old days) or point you
-to other folks who may know more on the topic.</p>
+<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
+there aren&#8217;t any updates released on PyPI though!</p>
 </div>
 
 
@@ -218,8 +194,14 @@ to other folks who may know more on the topic.</p>
   
 
 
-<time datetime="2013-05-31T12:12:00+03:00" pubdate data-updated="true">May 31<span>st</span>, 2013</time>
+<time datetime="2013-11-29T14:05:00+02:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>
+  
+</span>
 
 
     </p>
@@ -246,10 +228,8 @@ to other folks who may know more on the topic.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/" title="Previous Post: Why VMware Multi-Hypervisor Manager Architecture Is Wrong">&laquo; Why VMware Multi-Hypervisor Manager Architecture Is Wrong</a>
+        <a class="basic-alignment left" href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/" title="Previous Post: Open Source Quality Assurance Infrastructure for Fedora QA">&laquo; Open Source Quality Assurance Infrastructure for Fedora QA</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/06/02/sofiavalley-ui-bug/" title="Next Post: SofiaValley UI bug">SofiaValley UI bug &raquo;</a>
       
     </p>
   </footer>
@@ -395,8 +375,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/05/31/call-of-the-open-source-guru/';
-        var disqus_url = 'http://atodorov.org/blog/2013/05/31/call-of-the-open-source-guru/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/';
+        var disqus_url = 'http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/';
         var disqus_script = 'embed.js';
       
     (function () {
