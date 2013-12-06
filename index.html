@@ -9,18 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Accidentally I have discovered a bug for Python&#8217;s
-URLGrabber module which has to do with change in behavior in libcurl. 1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11 &hellip;">
+  <meta name="description" content="Beware if using Amazon Simple Queue Service to send email messages!
+Sometime SQS messages are duplicated which results in multiple copies of
+the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -89,6 +80,102 @@ URLGrabber module which has to do with change in behavior in libcurl. 1
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/">Duplicate Amazon SQS Messages Cause Multiple Emails</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-06T22:47:00+02:00" pubdate data-updated="true">Dec 6<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Beware if using Amazon Simple Queue Service to send email messages!
+Sometime SQS messages are duplicated which results in multiple copies of
+the messages being sent. This happened today at <a href="http://www.dif.io">Difio</a>
+and is really annoying to users. In this post I will explain why there is no easy
+way of fixing it.</p>
+
+<blockquote><p>Q: Can a deleted message be received again?</p><p>Yes, under rare circumstances you might receive a previously deleted message again.<br/>This can occur in the rare situation in which a DeleteMessage operation doesn&#8217;t<br/>delete all copies of a message because one of the servers in the distributed<br/>Amazon SQS system isn&#8217;t available at the time of the deletion. That message copy<br/>can then be delivered again. You should design your application so that no errors<br/>or inconsistencies occur if you receive a deleted message again.</p><footer><strong>Amazon FAQ</strong></footer></blockquote>
+
+
+<p>In my case the cron scheduler logs say:</p>
+
+<pre><code>&gt;&gt;&gt; &lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&gt;
+</code></pre>
+
+<p>While on the worker nodes the logs say:</p>
+
+<pre><code>[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]
+[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]
+</code></pre>
+
+<p>This clearly shows the same message (see the UUID) has been processed twice!
+This resulted in hundreds of duplicate emails :(.</p>
+
+<h2>Why This Is Hard To Fix</h2>
+
+<p>There are two basic approaches to solve this issue:</p>
+
+<ul>
+<li>Check some log files or database for previous record of the message having
+been processed;</li>
+<li>Use idempotent operations that if you process the message again, you
+get the same results, and that those results don&#8217;t create duplicate files/records.</li>
+</ul>
+
+
+<p>The problem with checking for duplicate messages is:</p>
+
+<ul>
+<li>There is a race condition between marking the message as processed and the
+second check;</li>
+<li>You need to use some sort of locking mechanism to safe-guard against the race condition;</li>
+<li>In the event of an eventual consistency of the log/DB you can&#8217;t guarantee that
+the previous attempt will show up and so can&#8217;t guarantee that you won&#8217;t process
+the message twice.</li>
+</ul>
+
+
+<p>All of the above don&#8217;t seem to work well for distributed applications not to mention
+Difio processes millions of messages per month, per node and the logs are quite big.</p>
+
+<p>The second option is to have control of the Message-Id or some other email header
+so that the second message will be discarded either at the server (Amazon SES in my case)
+or at the receiving MUA. I like this better but I don&#8217;t think it is technically possible
+with the current environment. Need to check though.</p>
+
+<p>I&#8217;ve asked AWS support to look into
+<a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782">this thread</a> and hopefully
+they will have some more hints. If you have any other ideas please post in the comments!
+Thanks!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1581,53 +1668,6 @@ see how long it takes for them to fix it!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/">Tip: How to Find Your Red Hat Account Number</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-23T11:55:00+03:00" pubdate data-updated="true">Aug 23<span>rd</span>, 2013</time>
-        
-         | <a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/redhat_account_number.png" style="float:left;display:inline-block;margin-right:10px;" /></p>
-
-<p>One thing you need to know when ordering Red Hat subscriptions is your
-account number. It is available in the drop down menu at the top right
-corner after you login at <a href="https://access.redhat.com">https://access.redhat.com</a>.</p>
-
-<p>New accounts don&#8217;t have an account number. It will be generated after
-the first subscription activation.</p>
-
-<p>If you need to know more about Red Hat&#8217;s ordering process just ask me!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1681,6 +1721,10 @@ addthis.box("#addthis_trendingcontent", {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/">Duplicate Amazon SQS Messages Cause Multiple Emails</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/">Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</a>
       </li>
     
@@ -1714,10 +1758,6 @@ addthis.box("#addthis_trendingcontent", {
     
       <li class="post">
         <a href="/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/">Fedora 20 GNOME 3.10 Test Day Post-mortem</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/10/11/this-week-python-chris-dibona-openshift/">This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables</a>
       </li>
     
   </ul>

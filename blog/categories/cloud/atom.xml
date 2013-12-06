@@ -4,7 +4,7 @@
   <title><![CDATA[Category: cloud | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/cloud/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-11-29T14:27:25+02:00</updated>
+  <updated>2013-12-06T23:26:46+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,72 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Duplicate Amazon SQS Messages Cause Multiple Emails]]></title>
+    <link href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/"/>
+    <updated>2013-12-06T22:47:00+02:00</updated>
+    <id>http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails</id>
+    <content type="html"><![CDATA[<p>Beware if using Amazon Simple Queue Service to send email messages!
+Sometime SQS messages are duplicated which results in multiple copies of
+the messages being sent. This happened today at <a href="http://www.dif.io">Difio</a>
+and is really annoying to users. In this post I will explain why there is no easy
+way of fixing it.</p>
+
+<p><blockquote><p>Q: Can a deleted message be received again?</p></p><p><p>Yes, under rare circumstances you might receive a previously deleted message again.<br/>This can occur in the rare situation in which a DeleteMessage operation doesn't<br/>delete all copies of a message because one of the servers in the distributed<br/>Amazon SQS system isn't available at the time of the deletion. That message copy<br/>can then be delivered again. You should design your application so that no errors<br/>or inconsistencies occur if you receive a deleted message again.</p><footer><strong>Amazon FAQ</strong></footer></blockquote></p>
+
+<p>In my case the cron scheduler logs say:</p>
+
+<pre><code>&gt;&gt;&gt; &lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&gt;
+</code></pre>
+
+<p>While on the worker nodes the logs say:</p>
+
+<pre><code>[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]
+[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]
+</code></pre>
+
+<p>This clearly shows the same message (see the UUID) has been processed twice!
+This resulted in hundreds of duplicate emails :(.</p>
+
+<h2>Why This Is Hard To Fix</h2>
+
+<p>There are two basic approaches to solve this issue:</p>
+
+<ul>
+<li>Check some log files or database for previous record of the message having
+been processed;</li>
+<li>Use idempotent operations that if you process the message again, you
+get the same results, and that those results don't create duplicate files/records.</li>
+</ul>
+
+
+<p>The problem with checking for duplicate messages is:</p>
+
+<ul>
+<li>There is a race condition between marking the message as processed and the
+second check;</li>
+<li>You need to use some sort of locking mechanism to safe-guard against the race condition;</li>
+<li>In the event of an eventual consistency of the log/DB you can't guarantee that
+the previous attempt will show up and so can't guarantee that you won't process
+the message twice.</li>
+</ul>
+
+
+<p>All of the above don't seem to work well for distributed applications not to mention
+Difio processes millions of messages per month, per node and the logs are quite big.</p>
+
+<p>The second option is to have control of the Message-Id or some other email header
+so that the second message will be discarded either at the server (Amazon SES in my case)
+or at the receiving MUA. I like this better but I don't think it is technically possible
+with the current environment. Need to check though.</p>
+
+<p>I've asked AWS support to look into
+<a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782">this thread</a> and hopefully
+they will have some more hints. If you have any other ideas please post in the comments!
+Thanks!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Bug in Python URLGrabber/cURL on Fedora and Amazon Linux]]></title>
@@ -471,260 +537,6 @@ design is wrong - the memcached backends don't do this.</p>
 I wonder if it can't just write them as binary blobs directly. There's definitely lots
 of room for improvement of django-s3-cache. I will let you know my findings once I
 get to it.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Twilio is Located in Amazon Web Services US East]]></title>
-    <link href="http://atodorov.org/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/"/>
-    <updated>2013-06-24T23:43:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east</id>
-    <content type="html"><![CDATA[<p><blockquote><p>Where do I store my audio files in order to minimize download and call wait time?</p></blockquote></p>
-
-<p>Twilio is a cloud vendor that provides telephony services.
-It can download and <code>&lt;Play&gt;</code> arbitrary audio files and will cache the files
-for better performance.</p>
-
-<p>Twilio support told me they are not disclosing the location of their servers,
-so from my web application hosted in AWS US East:
-<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>ivr-otb.rhcloud.com logs<span class="o">]</span>&gt; grep TwilioProxy access_log-* | cut -f 1 -d <span class="s1">&#39;-&#39;</span> | sort | uniq
-</span><span class='line'>10.125.90.172
-</span><span class='line'>10.214.183.239
-</span><span class='line'>10.215.187.220
-</span><span class='line'>10.245.155.18
-</span><span class='line'>10.255.119.159
-</span><span class='line'>10.31.197.102
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Now let's map these addresses to host names. From another EC2 system, also in Amazon US East:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>ec2-user@ip-10-29-206-86 ~<span class="o">]</span><span class="nv">$ </span>dig -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;; &amp;lt;&amp;lt;&gt;&gt; DiG 9.8.2rc1-RedHat-9.8.2-0.17.rc1.29.amzn1 &amp;lt;&amp;lt;&gt;&gt; -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102
-</span><span class='line'>;; global options: +cmd
-</span><span class='line'>;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 43245
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;172.90.125.10.in-addr.arpa.    IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>172.90.125.10.in-addr.arpa. 113 IN      PTR     ip-10-125-90-172.ec2.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 1 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 87&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 52693
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;239.183.214.10.in-addr.arpa.   IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>239.183.214.10.in-addr.arpa. 42619 IN   PTR     domU-12-31-39-0B-B0-01.compute-1.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 0 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 100&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 25255
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;220.187.215.10.in-addr.arpa.   IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>220.187.215.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-0C-B8-2E.compute-1.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 0 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 100&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 15099
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;18.155.245.10.in-addr.arpa.    IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>18.155.245.10.in-addr.arpa. 840 IN      PTR     ip-10-245-155-18.ec2.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 0 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 87&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 28878
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;159.119.255.10.in-addr.arpa.   IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>159.119.255.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-01-70-51.compute-1.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 0 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 100&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Got answer:
-</span><span class='line'>;; -&gt;&gt;HEADER&amp;lt;&amp;lt;- opcode: QUERY, status: NOERROR, id: 28727
-</span><span class='line'>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; QUESTION SECTION:
-</span><span class='line'>;102.197.31.10.in-addr.arpa.    IN      PTR&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; ANSWER SECTION:
-</span><span class='line'>102.197.31.10.in-addr.arpa. 840 IN      PTR     ip-10-31-197-102.ec2.internal.&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;;; Query <span class="nb">time</span>: 0 msec
-</span><span class='line'>;; SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
-</span><span class='line'>;; WHEN: Mon Jun 24 20:48:21 2013
-</span><span class='line'>;; MSG SIZE  rcvd: 87
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>In short:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ip-10-125-90-172.ec2.internal.
-</span><span class='line'>ip-10-245-155-18.ec2.internal.
-</span><span class='line'>ip-10-31-197-102.ec2.internal.
-</span><span class='line'>domU-12-31-39-01-70-51.compute-1.internal.
-</span><span class='line'>domU-12-31-39-0B-B0-01.compute-1.internal.
-</span><span class='line'>domU-12-31-39-0C-B8-2E.compute-1.internal.</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>The <code>ip-*.ec2.internal</code> are clearly in US East. The <code>domU-*.computer-1.internal</code> also
-look like US East although I'm not 100% sure what is the difference between the two.
-The later ones look like HVM guests while the former ones are para-virtualized.</p>
-
-<p>For comparison here are some internal addresses from my own EC2 systems:</p>
-
-<ul>
-<li>ip-10-228-237-207.eu-west-1.compute.internal - EU Ireland</li>
-<li>ip-10-248-19-46.us-west-2.compute.internal - US West Oregon</li>
-<li>ip-10-160-58-141.us-west-1.compute.internal - US West N. California</li>
-</ul>
-
-
-<p>After relocating my audio files to an S3 bucket in US East the average call length
-dropped from 2:30 min to 2:00 min for the same IVR choices. This also minimizes
-the costs since Twilio charges per minute of incoming/outgoing calls.
-I think the audio quality has improved as well.</p>
 ]]></content>
   </entry>
   
