@@ -25,6 +25,12 @@ This is both for easier tracking of requests and for transparency sake! You are 
 <img src="/images/subscribe.png" alt="subscribe via email" style="display:inline;border:none;margin:0;padding:0;vertical-align:text-bottom;"/>
 to get notified when I add new items!
 
+**UPDATE Dec 2013**
+
+I finally made the time to donate some books for 
+[children in foster care](/blog/2013/07/04/give-a-book-get-a-laptop-with-discount/)
+and this page is updated accordingly. Many of the books I donated are not on this list though.
+
 Books in English
 ----------------
 
@@ -62,10 +68,10 @@ Books about living small
 
 * `borrow` - <a href="http://www.amazon.com/gp/product/4770029993/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=4770029993&linkCode=as2&tag=atodorovorg-20">The Very Small Home: Japanese Ideas for Living Well in Limited Space</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=4770029993" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> - Azby Brown
 * `borrow` - <a href="http://www.amazon.com/gp/product/1554072425/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1554072425&linkCode=as2&tag=atodorovorg-20">How to Live in Small Spaces: Design, Furnishing, Decoration and Detail for the Smaller Home</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1554072425" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> - Terrence Conran
-* `borrow` - <a href="http://www.amazon.com/gp/product/3822841765/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=3822841765&linkCode=as2&tag=atodorovorg-20">Small Houses</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=3822841765" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 * `borrow` - <a href="http://www.amazon.com/gp/product/3822841781/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=3822841781&linkCode=as2&tag=atodorovorg-20">Small Apartments</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=3822841781" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-* `borrow` - <a href="http://www.amazon.com/gp/product/B001TJEJ9O/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001TJEJ9O&linkCode=as2&tag=atodorovorg-20">Small Eco-Houses</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001TJEJ9O" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 * `borrow` - <a href="http://www.amazon.com/gp/product/3822827932/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=3822827932&linkCode=as2&tag=atodorovorg-20">500 Ideas for Small Spaces</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=3822827932" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+* `donated to` <http://podaretekniga.org>, `borrow` - <a href="http://www.amazon.com/gp/product/3822841765/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=3822841765&linkCode=as2&tag=atodorovorg-20">Small Houses</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=3822841765" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+* `donated to` <http://podaretekniga.org>, `borrow` - <a href="http://www.amazon.com/gp/product/B001TJEJ9O/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001TJEJ9O&linkCode=as2&tag=atodorovorg-20">Small Eco-Houses</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001TJEJ9O" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 
 
 
@@ -86,7 +92,7 @@ Books in Bulgarian
 * `taken by Даниела Бояджиева`, `give-away` - [Успешните презентации](http://www.mobilis.bg/mobilis/uspeshnite-prezentacii.html) - изд. Мениджър
 * `taken by Даниела Бояджиева`, `give-away` - [Успешните преговори](http://www.mobilis.bg/mobilis/uspeshnite-pregovori-1.html) - изд. Мениджър
 * `taken by unknown`@ [UseTogether event](http://www.usetogether.com/), `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
-* `reserved by Боби Рали`, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
+* `donated to` <http://podaretekniga.org>, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
 * `borrow` - [Дегустацията, или как да опознаем виното](http://www.mobilis.bg/mobilis/degustacijata-ili-kak-da-opoznaem-vinoto-1.html) - Неда Проданова
 
 
