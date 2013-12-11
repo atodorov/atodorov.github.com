@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-12-09T12:23:04+02:00</updated>
+  <updated>2013-12-11T23:59:06+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Idempotent Django Email Sender with Amazon SQS and Memcache]]></title>
+    <link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/"/>
+    <updated>2013-12-11T23:29:00+02:00</updated>
+    <id>http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache</id>
+    <content type="html"><![CDATA[<p>Recently I wrote about my problem with
+<a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/">duplicate Amazon SQS messages causing multiple emails</a>
+for <a href="http://www.dif.io">Difio</a>. After considering several options and
+feedback from
+<a href="https://twitter.com/atodorov_/status/409429840820199424">@Answers4AWS</a>
+I wrote a small decorator to fix this.</p>
+
+<p>It uses the cache backend to prevent the task from executing twice
+during the specified time frame. The code is available at
+<a href="https://djangosnippets.org/snippets/3010/">https://djangosnippets.org/snippets/3010/</a>.</p>
+
+<p>As stated on Twitter you should use Memcache (or ElastiCache) for this.
+If using Amazon S3 with my
+<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a> don't use the
+<code>us-east-1</code> region because it is eventually consistent.</p>
+
+<p>The solution is fast and simple on the development side and uses my existing
+cache infrastructure so it doesn't cost anything more!</p>
+
+<p>There is still a race condition between marking the message as processed
+and the second check but nevertheless this should minimize the possibility of
+receiving duplicate emails to an accepted level. Only time will tell though!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Bug in Python URLGrabber/cURL on Fedora and Amazon Linux]]></title>
@@ -376,43 +406,6 @@ remote: Adding python-magic 0.4.3.1 to easy-install.pth file
 
 <p>This approach should work for other cloud providers and other programming languages
 as well. Let me know if you have any experience with that.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Using Django built-in template tags and filters in code]]></title>
-    <link href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/"/>
-    <updated>2013-04-06T22:26:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code</id>
-    <content type="html"><![CDATA[<p>In case you are wondering how to use Django's
-<a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
-in your source code, not inside a template here is how:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
-</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
-</span><span class='line'><span class="s">u&#39;1.0 KB&#39;</span>
-</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
-</span><span class='line'><span class="s">u&#39;1020 bytes&#39;</span>
-</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
-</span><span class='line'><span class="s">u&#39;97.7 MB&#39;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
-
-<p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
 ]]></content>
   </entry>
   
