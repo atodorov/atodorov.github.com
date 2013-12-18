@@ -4,7 +4,7 @@
   <title><![CDATA[Category: RHEL | atodorov.org]]></title>
   <link href="http://atodorov.org/blog/categories/rhel/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2013-12-11T23:59:06+02:00</updated>
+  <updated>2013-12-18T23:56:11+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,40 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Can I Use Android Phone as Smart Card Reader]]></title>
+    <link href="http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/"/>
+    <updated>2013-12-18T23:09:00+02:00</updated>
+    <id>http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader</id>
+    <content type="html"><![CDATA[<p>Today I had troubles with my Omnikey CardMan 6121 smart card reader.
+For some reason it will not detect the card inside and was unusable.
+<code>/var/log/messages</code> was filled with  <em>Card Not Powered</em> messages:</p>
+
+<pre><code>Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
+Dec 18 11:18:01 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+Dec 18 11:18:02 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+</code></pre>
+
+<p><img src="http://atodorov.org/images/omnikey_cardman_6121.gif" style="float:right;margin-left:20px;" /></p>
+
+<p>I've found the solution in
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=531998">RHBZ #531998</a>.</p>
+
+<p><blockquote><p></p></p><p><p>I've found the problem, and it's purely mechanical.<br/>Omnikey has simply screwed up when they designed this reader.<br/>When the reader is inserted into the ExpressCard slot, it gets slightly<br/>compressed. This is enough to trigger the mechanical switch that detects<br/>insertions. If I jam something in there and force it apart, then pcscd<br/>starts reporting that the slot is empty.</p><footer><strong>Pierre Ossman</strong> <cite><a href='https://bugzilla.redhat.com/show_bug.cgi?id=531998#c12'>Comment #12</a></cite></footer></blockquote></p>
+
+<p>So I tried moving the smart card a millimeter back and forth inside the reader and
+that fixed it for me.</p>
+
+<p>This smart card is standard SIM size and I wonder if it is possible to use
+<a href="http://amzn.to/1dnl2gN">dual SIM</a> smart phones and <a href="http://amzn.to/18XpWlp">tablets</a>
+as a reader? I will be happy to work on the software side if there is an open source
+project already (e.g. OpenSC + drivers for Android). If not, why not?</p>
+
+<p>If you happen to have information on the subject please share it in the comments.
+Thanks!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Red Hat's Bugzilla Hits One Million Bugs]]></title>
@@ -403,40 +437,6 @@ available through Samba on its wireless IP address. I've tried it, works for me!
 <p>My intention is to use either USB networking or Wi-Fi to
 <a href="http://supportforums.blackberry.com/t5/Testing-and-Deployment/How-to-use-blackberry-connect-to-Enable-SSH-Access/ta-p/1515447">connect to the Z10 shell</a>
 and explore it in more details.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6]]></title>
-    <link href="http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/"/>
-    <updated>2013-05-30T13:07:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6</id>
-    <content type="html"><![CDATA[<p>Install related packages and make configuration changes:</p>
-
-<pre><code>yum -y install vsftp policycoreutils-python
-sed -i "s/#anon_upload_enable=YES/anon_upload_enable=YES/" /etc/vsftpd/vsftpd.conf
-</code></pre>
-
-<p>Configure writable directory for uploads:</p>
-
-<pre><code>mkdir /var/ftp/pub/upload
-chgrp ftp /var/ftp/pub/upload
-chmod 730 /var/ftp/pub/upload
-</code></pre>
-
-<p>Configure SELinux - this is <strong><a href="https://bugzilla.redhat.com/show_bug.cgi?id=968935">MISSING</a></strong>
-from Red Hat's official docs:</p>
-
-<pre><code>setsebool -P allow_ftpd_anon_write=1
-semanage fcontext -a -t public_content_rw_t '/var/ftp/pub/upload(/.*)'
-chcon -t public_content_rw_t /var/ftp/pub/upload
-</code></pre>
-
-<p>Start the service:</p>
-
-<pre><code>chkconfig vsftpd on
-service vsftpd start
-</code></pre>
 ]]></content>
   </entry>
   

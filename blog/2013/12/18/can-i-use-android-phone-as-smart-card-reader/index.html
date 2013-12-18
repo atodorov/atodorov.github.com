@@ -5,14 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Bug in the Fridge</title>
+  <title>Can I Use Android Phone as Smart Card Reader</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Once you&#8217;ve been into
-Quality Assurance
-for 5+ years you start to notice bugs everywhere
-and develop a sixth sense for it. Today I found a bug &hellip;">
+  <meta name="description" content="Today I had troubles with my Omnikey CardMan 6121 smart card reader.
+For some reason it will not detect the card inside and was unusable.
+/var/log/ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +20,7 @@ and develop a sixth sense for it. Today I found a bug &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/">
+  <link rel="canonical" href="http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -84,7 +83,7 @@ and develop a sixth sense for it. Today I found a bug &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Bug in the Fridge</h1>
+      <h1 class="entry-title">Can I Use Android Phone as Smart Card Reader</h1>
     
     
       <p class="meta">
@@ -100,7 +99,7 @@ and develop a sixth sense for it. Today I found a bug &hellip;">
   
 
 
-<time datetime="2013-03-29T15:09:00+02:00" pubdate data-updated="true">Mar 29<span>th</span>, 2013</time>
+<time datetime="2013-12-18T23:09:00+02:00" pubdate data-updated="true">Dec 18<span>th</span>, 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -109,42 +108,33 @@ and develop a sixth sense for it. Today I found a bug &hellip;">
   </header>
 
 
-<div class="entry-content"><p><img src="/images/liebherr_kbgb_3864.jpg" alt="Liebherr KBGB 3864" style="float:left; margin-right: 20px;" /></p>
+<div class="entry-content"><p>Today I had troubles with my Omnikey CardMan 6121 smart card reader.
+For some reason it will not detect the card inside and was unusable.
+<code>/var/log/messages</code> was filled with  <em>Card Not Powered</em> messages:</p>
 
-<p>Once you&#8217;ve been into
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=quality%20assurance&linkCode=ur2&rh=i%3Aaps%2Ck%3Aquality%20assurance&sprefix=quality%20ass%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Daps">Quality Assurance</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-for 5+ years you start to notice <a href="/blog/categories/bugs/">bugs everywhere</a>
-and develop a sixth sense for it. Today I found a bug in my
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=liebherr&linkCode=ur2&rh=n%3A2619525011%2Ck%3Aliebherr&sprefix=Liebherr%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Dappliances">Liebherr</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-KBGB 3864 refrigerator, caused by what looks like a race-condition.</p>
+<pre><code>Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
+Dec 18 11:18:01 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+Dec 18 11:18:02 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+</code></pre>
 
-<p>This appliance starts beeping in case the door is left open for more than 60 seconds.
-The alarm stops if door is closed or can be muted manually while the door is still open.</p>
+<p><img src="/images/omnikey_cardman_6121.gif" style="float:right;margin-left:20px;" /></p>
 
-<h2>The Bug</h2>
+<p>I&#8217;ve found the solution in
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=531998">RHBZ #531998</a>.</p>
 
-<p>It happened so that I had the door open for nearly one minute and as it was closing
-I heard a beep. This time however the beeping didn&#8217;t stop after the door had closed.
-The alarm continued beeping with the door closed so I tried to re-open and close it again.
-It didn&#8217;t stop! I had to open the door and manually mute the alarm for it to stop.</p>
-
-<div style="display:block; clear:both;">&nbsp;</div>
+<blockquote><p>I&#8217;ve found the problem, and it&#8217;s purely mechanical.<br/>Omnikey has simply screwed up when they designed this reader.<br/>When the reader is inserted into the ExpressCard slot, it gets slightly<br/>compressed. This is enough to trigger the mechanical switch that detects<br/>insertions. If I jam something in there and force it apart, then pcscd<br/>starts reporting that the slot is empty.</p><footer><strong>Pierre Ossman</strong> <cite><a href='https://bugzilla.redhat.com/show_bug.cgi?id=531998#c12'>Comment #12</a></cite></footer></blockquote>
 
 
-<h2>The Root Cause</h2>
+<p>So I tried moving the smart card a millimeter back and forth inside the reader and
+that fixed it for me.</p>
 
-<p>While not entirely sure, I think the reason for this malfunction
-was a race-condition. The alarm went on at nearly the same time when the
-controlling timer should have gone off (when closing the door).</p>
+<p>This smart card is standard SIM size and I wonder if it is possible to use
+<a href="http://amzn.to/1dnl2gN">dual SIM</a> smart phones and <a href="http://amzn.to/18XpWlp">tablets</a>
+as a reader? I will be happy to work on the software side if there is an open source
+project already (e.g. OpenSC + drivers for Android). If not, why not?</p>
 
-<h2>Steps To Reproduce</h2>
-
-<p>I tried reproducing several times afterwards by opening and closing the door
-at the last possible moment. I used a stop-watch to time my actions. However
-I wasn&#8217;t able to reproduce twice. Every time I tried, there was only one single
-beep as the door was closing and no more.</p>
-
-<p>I guess then, like we say in QE, <em>WORKS FOR ME</em>!</p>
+<p>If you happen to have information on the subject please share it in the comments.
+Thanks!</p>
 </div>
 
 
@@ -167,12 +157,12 @@ beep as the door was closing and no more.</p>
   
 
 
-<time datetime="2013-03-29T15:09:00+02:00" pubdate data-updated="true">Mar 29<span>th</span>, 2013</time>
+<time datetime="2013-12-18T23:09:00+02:00" pubdate data-updated="true">Dec 18<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>
   
 </span>
 
@@ -201,10 +191,8 @@ beep as the door was closing and no more.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/03/27/what-runs-your-startup-useful-at-night/" title="Previous Post: What Runs Your Start-up - Useful at Night">&laquo; What Runs Your Start-up - Useful at Night</a>
+        <a class="basic-alignment left" href="/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/" title="Previous Post: Idempotent Django Email Sender with Amazon SQS and Memcache">&laquo; Idempotent Django Email Sender with Amazon SQS and Memcache</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/04/03/what-runs-your-startup-ucha.se/" title="Next Post: What Runs Your Start-up - Ucha.se">What Runs Your Start-up - Ucha.se &raquo;</a>
       
     </p>
   </footer>
@@ -350,8 +338,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/';
-        var disqus_url = 'http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/';
+        var disqus_identifier = 'http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/';
+        var disqus_url = 'http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/';
         var disqus_script = 'embed.js';
       
     (function () {
