@@ -48,10 +48,14 @@ Test Suite Existence
 ---------------------
 
 A quick grep for either `test/` or `tests/` directories in the package sources revealed
-**880** SRPM packages in the source DVD which are very likely to have a test suite.
-This is **34,2%**. I wasn't able to inspect the `Everything/` directory with this script
+**870** SRPM packages in the source DVD which are very likely to have a test suite.
+This is **33,8%**. <strike>I wasn't able to inspect the `Everything/` directory with this script
 because it takes too long to execute and my system crashed out of memory.
-I will update this post later with that info.
+I will update this post later with that info.</strike>
+
+*UPDATE 2014-01-02*: 
+In the `Everything/` directory only **4481** (**31,2%**) SRPM packages appear to have
+test suites.
 
 The scripts and raw output are available at <https://github.com/atodorov/fedora-scripts>.
 
