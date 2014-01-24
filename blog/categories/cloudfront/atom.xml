@@ -4,7 +4,7 @@
   <title><![CDATA[Category: CloudFront | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/cloudfront/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-01-24T22:10:12+02:00</updated>
+  <updated>2014-01-24T22:12:52+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -110,44 +110,31 @@ while keeping the old content until it expires.</p>
 
 <p><em>Dojo</em> makes this very easy:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo/io/script&quot;</span><span class="p">],</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="kd">function</span><span class="p">(</span><span class="nx">script</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">script</span><span class="p">.</span><span class="nx">get</span><span class="p">({</span>
-</span><span class='line'>            <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;https://xyz.cloudfront.net/api/json/updates/1234&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="nx">callbackParamName</span><span class="o">:</span> <span class="s2">&quot;callback&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="nx">content</span><span class="o">:</span> <span class="p">{</span><span class="nx">t</span><span class="o">:</span> <span class="nx">timeStamp</span><span class="p">},</span>
-</span><span class='line'>            <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">jsonData</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>                <span class="p">....</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">....</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:js %}
+require(["dojo/io/script"],</p>
+
+<pre><code>function(script) {
+        script.get({
+            url: "https://xyz.cloudfront.net/api/json/updates/1234",
+            callbackParamName: "callback",
+            content: {t: timeStamp},
+            load: function(jsonData) {
+                ....
+            },
+</code></pre>
+
+<p>....
+{% endcodeblock %}</p>
 
 <p>The <em>content</em> property allows additional key/value pairs to be sent in the query string. The
 <em>timeStamp</em> parameter serves only to control <em>Amazon CloudFront</em> cache. It's not processed server side.</p>
 
 <p>On the server-side we have:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">response</span><span class="p">[</span><span class="s">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;max-age=31536000&#39;</span>
-</span><span class='line'><span class="n">response</span><span class="p">[</span><span class="s">&#39;Expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">+</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">31536000</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:python %}
+response['Cache-Control'] = 'max-age=31536000'
+response['Expires'] = (datetime.now()+timedelta(seconds=31536000)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+{% endcodeblock %}</p>
 
 <h2>Benefits</h2>
 

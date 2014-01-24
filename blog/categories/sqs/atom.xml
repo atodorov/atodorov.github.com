@@ -4,7 +4,7 @@
   <title><![CDATA[Category: SQS | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/sqs/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-01-24T22:10:12+02:00</updated>
+  <updated>2014-01-24T22:12:52+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -54,7 +54,16 @@ the messages being sent. This happened today at <a href="http://www.dif.io">Difi
 and is really annoying to users. In this post I will explain why there is no easy
 way of fixing it.</p>
 
-<p><blockquote><p>Q: Can a deleted message be received again?</p></p><p><p>Yes, under rare circumstances you might receive a previously deleted message again.<br/>This can occur in the rare situation in which a DeleteMessage operation doesn't<br/>delete all copies of a message because one of the servers in the distributed<br/>Amazon SQS system isn't available at the time of the deletion. That message copy<br/>can then be delivered again. You should design your application so that no errors<br/>or inconsistencies occur if you receive a deleted message again.</p><footer><strong>Amazon FAQ</strong></footer></blockquote></p>
+<p>{% blockquote Amazon FAQ %}
+Q: Can a deleted message be received again?</p>
+
+<p>Yes, under rare circumstances you might receive a previously deleted message again.
+This can occur in the rare situation in which a DeleteMessage operation doesn't
+delete all copies of a message because one of the servers in the distributed
+Amazon SQS system isn't available at the time of the deletion. That message copy
+can then be delivered again. You should design your application so that no errors
+or inconsistencies occur if you receive a deleted message again.
+{% endblockquote %}</p>
 
 <p>In my case the cron scheduler logs say:</p>
 
@@ -123,67 +132,36 @@ RabbitMQ to Amazon SQS which has a limit of 64K total message size.</p>
 larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
 same problem. Here is the solution using a cache back-end:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">cache</span> <span class="k">as</span> <span class="n">cache_module</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">some_method</span><span class="p">():</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;...</span> <span class="n">skip</span> <span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="n">task_cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">handle_data</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="nd">@task</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">handle_data</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="n">data</span> <span class="o">=</span> <span class="n">task_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">return</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">...</span> <span class="n">do</span> <span class="n">stuff</span> <span class="o">...</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock lang:python %}</p>
+
+<p>from celery.task import task
+from django.core import cache as cache_module</p>
+
+<p>def some_method():</p>
+
+<pre><code>... skip ...
+
+task_cache = cache_module.get_cache('taskq')
+task_cache.set(uuid, data, 3600)
+
+handle_data.delay(uuid)
+
+... skip ...
+</code></pre>
+
+<p>@task
+def handle_data(uuid):</p>
+
+<pre><code>task_cache = cache_module.get_cache('taskq')
+data = task_cache.get(uuid)
+
+if data is None:
+    return
+
+... do stuff ...
+</code></pre>
+
+<p>{% endcodeblock %}</p>
 
 <p>Objects are persisted in a secondary cache back-end, not the default one, to avoid
 accidental destruction. <code>uuid</code> parameter is a string.</p>
