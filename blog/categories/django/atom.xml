@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Django | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-01-24T22:12:52+02:00</updated>
+  <updated>2014-01-29T00:04:17+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -20,7 +20,7 @@
     <id>http://atodorov.org/blog/2013/12/22/django-template-tag-inheritance-howto</id>
     <content type="html"><![CDATA[<p>While working on open-sourcing <a href="http://www.dif.io">Difio</a> I needed to remove
 all hard-coded URL references from the templates. My solution was to essentially
-inherit from the standard <code>{% raw %}{% url %}{% endraw %}</code> template tag. Here is how to do it.</p>
+inherit from the standard <code>{% url %}</code> template tag. Here is how to do it.</p>
 
 <h2>Background History</h2>
 
@@ -36,7 +36,7 @@ go link to my PaaS provider.</p>
 
 <h2>The Solution</h2>
 
-<p>The solution I came up with is to override the standard <code>{% raw %}{% url %}{% endraw %}</code>
+<p>The solution I came up with is to override the standard <code>{% url %}</code>
 tag and use it everywhere in my templates. The new tag will produce absolute URLs containing
 the specified protocol plus domain name and view path. For this to work you have to
 inherit the standard <code>URLNode</code> class and override the <code>render()</code> method to include the new
@@ -50,10 +50,10 @@ object to the new class.</p>
 
 <p>To use in your templates simply add</p>
 
-<p>{% codeblock %}{% raw %}
-{% load fqdn_url from fqdn_url %}
-<a href="{% fqdn_url 'dashboard' %}">Dashboard</a>
-{% endraw %}{% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{% load fqdn_url from fqdn_url %}
+</span><span class='line'>&lt;a href="{% fqdn_url 'dashboard' %}">Dashboard&lt;/a></span></code></pre></td></tr></table></div></figure></notextile></div></p>
 ]]></content>
   </entry>
   
@@ -102,45 +102,85 @@ I've added a simple cache get/set lines to preserve the selection.</p>
 
 <p>Here's how it looks with actual application logic omitted</p>
 
-<p>{% codeblock lang:python %}</p>
-
-<p>def incoming_call(request):</p>
-
-<pre><code>call_sid = request.GET.get('CallSid', '')
-caller_id = request.GET.get('From', '')
-
-state = {'from' : caller_id}
-cache.set(call_sid, state)
-
-return render(request, 'step2.xml')
-</code></pre>
-
-<p>def step2(request):</p>
-
-<pre><code>call_sid = request.GET.get('CallSid', '')
-selection = int(request.GET.get('Digits', 0))
-
-state = cache.get(call_sid, {})
-state['step2_selection'] = selection
-cache.set(call_sid, state)
-
-return render(request, 'final_step.xml')
-</code></pre>
-
-<p>def final_step(request):</p>
-
-<pre><code>call_sid = request.GET.get('CallSid', '')
-selection = int(request.GET.get('Digits', 1))
-
-state = cache.get(call_sid, {})
-state['final_step_selection'] = selection
-
-Backend.process_user_selections(state)
-
-return render(request, 'thank_you.xml')
-</code></pre>
-
-<p>{% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">caller_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;From&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;from&#39;</span> <span class="p">:</span> <span class="n">caller_id</span><span class="p">}</span>
+</span><span class='line'><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;step2.xml&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">step2</span><span class="p">(</span><span class="n">request</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'><span class="n">state</span><span class="p">[</span><span class="s">&#39;step2_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;final_step.xml&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">final_step</span><span class="p">(</span><span class="n">request</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'><span class="n">state</span><span class="p">[</span><span class="s">&#39;final_step_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Backend</span><span class="o">.</span><span class="n">process_user_selections</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;thank_you.xml&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
 <p>At each step Django will update the current state associated with this call and return
 a <a href="https://www.twilio.com/docs/api/twiml">TwiML</a> XML response. <code>CallSid</code> is a handy unique
@@ -161,17 +201,29 @@ Amazon ElastiCache.</p>
 <a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
 in your source code, not inside a template here is how:</p>
 
-<p>{% codeblock lang:python %}</p>
-
-<blockquote><blockquote><blockquote><p>from django.template.defaultfilters import *
-filesizeformat(1024)
-u'1.0 KB'
-filesizeformat(1020)
-u'1020 bytes'
-filesizeformat(102412354)
-u'97.7 MB'</p>
-
-<p>{% endcodeblock %}</p></blockquote></blockquote></blockquote>
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1.0 KB&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;1020 bytes&#39;</span>
+</span><span class='line'><span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
+</span><span class='line'><span class="s">u&#39;97.7 MB&#39;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
 
 <p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
 ]]></content>
@@ -218,15 +270,21 @@ Mind my wording here :);</li>
 <p>I decided to go for option 4 above:
 change the field name to <code>size</code> but continue to use the <code>lines</code> DB column.</p>
 
-<p>{% codeblock lang:diff %}
-diff --git a/models.py b/models.py
-index e06d2b2..18cad6f 100644
---- a/models.py
-+++ b/models.py
-@@ -667,7 +667,7 @@ class Package(models.Model):
--    lines = models.IntegerField(default=None, null=True, blank=True)
-+    size  = models.IntegerField(default=None, null=True, blank=True, db_column='lines')
-{% endcodeblock %}</p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/models.py b/models.py</span>
+</span><span class='line'><span class="gh">index e06d2b2..18cad6f 100644</span>
+</span><span class='line'><span class="gd">--- a/models.py</span>
+</span><span class='line'><span class="gi">+++ b/models.py</span>
+</span><span class='line'><span class="gu">@@ -667,7 +667,7 @@ class Package(models.Model):</span>
+</span><span class='line'><span class="gd">-    lines = models.IntegerField(default=None, null=True, blank=True)</span>
+</span><span class='line'><span class="gi">+    size  = models.IntegerField(default=None, null=True, blank=True, db_column=&#39;lines&#39;)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
 <ol>
 <li>Removed all references to <code>lines</code> from the code except the model class. This served as clean up as well.</li>
