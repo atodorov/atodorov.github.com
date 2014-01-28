@@ -31,6 +31,10 @@ I finally made the time to donate some books for
 [children in foster care](/blog/2013/07/04/give-a-book-get-a-laptop-with-discount/)
 and this page is updated accordingly. Many of the books I donated are not on this list though.
 
+**UPDATE Jan 2014**
+
+Added book Първите в българския интернет.
+
 Books in English
 ----------------
 
@@ -94,5 +98,5 @@ Books in Bulgarian
 * `taken by unknown`@ [UseTogether event](http://www.usetogether.com/), `give-away` - [Метро 2033](http://www.mobilis.bg/mobilis/metro-2033.html) - Дмитрий Глуховски
 * `donated to` <http://podaretekniga.org>, `give-away` - [Да научим сами японски език](http://www.mobilis.bg/mobilis/da-nauchim-sami-japonski-ezik.html) - Братислав Иванов
 * `borrow` - [Дегустацията, или как да опознаем виното](http://www.mobilis.bg/mobilis/degustacijata-ili-kak-da-opoznaem-vinoto-1.html) - Неда Проданова
-
+* `give-away` - [Първите в българския интернет](https://www.goodreads.com/book/show/13398350) - Горица Белогушева, Жюстин Томс
 
