@@ -4,7 +4,7 @@
   <title><![CDATA[Category: cloud | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/cloud/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-02-03T23:38:06+02:00</updated>
+  <updated>2014-02-07T01:01:00+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,70 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[AWS Tip: Shrinking EBS Root Volume Size]]></title>
+    <link href="http://atodorov.org/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/"/>
+    <updated>2014-02-07T00:23:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size</id>
+    <content type="html"><![CDATA[<p>Amazon's Elastic Block Store volumes are easy to use and expand but notoriously
+hard to shrink once their size has grown. Here is my tip for shrinking EBS size
+and saving some money from over-provisioned storage. I'm assuming that you want to
+shrink the root volume which is on EBS.</p>
+
+<ul>
+<li>Write down the block device name for the root volume (/dev/sda1) - <em>from AWS console:
+Instances; Select instance; Look at Details tab; See Root device or Block devices</em>;</li>
+<li>Write down the availability zone of your instance - <em>from AWS console: Instances;
+column Availability Zone</em>;</li>
+<li>Stop instance;</li>
+<li>Create snapshot of the root volume;</li>
+<li>From the snapshot, create a second volume, in the <strong>same availability zone</strong> as
+your instance (you will have to attach it later). This will be your pristine source;</li>
+<li>Create new empty EBS volume (not based on a snapshot), with smaller size,
+in the same availability zone - <em>from AWS console: Volumes; Create Volume;
+Snapshot == No Snapshot</em>; <strong>IMPORTANT</strong> - size should be large enough to hold
+all the files from the source file system (try <code>df -h</code> on the source first);</li>
+<li>Attach both volumes to instance while taking note of the block devices names
+you assign for them in the AWS console;</li>
+</ul>
+
+
+<p>For example: In my case <code>/dev/sdc1</code> is the source snapshot and <code>/dev/sdd1</code> is the
+empty target.</p>
+
+<ul>
+<li>Start instance;</li>
+<li>Optionally check the source file system with <code>e2fsck -f /dev/sdc1</code>;</li>
+<li>Create a file system for the empty volume - <code>mkfs.ext4 /dev/sdd1</code>;</li>
+<li>Mount volumes at <code>/source</code> and <code>/target</code> respectively;</li>
+<li>Now sync the files: <code>rsync -aHAXxSP /source/ /target</code>. <strong>Note the missing slash (/)
+after <code>/target</code></strong>. If you add it you will end up with files inside <code>/target/source/</code>
+which you don't want;</li>
+<li>Quickly verify the new directory structure with <code>ls -l /target</code>;</li>
+<li>Unmount <code>/target</code>;</li>
+<li>Optionally check the new file system for consistency <code>e2fsck -f /dev/sdd1</code>;</li>
+<li><strong>IMPORTANT</strong> - check how <code>/boot/grub/grub.conf</code> specifies the root volume -
+by UUID, by LABEL, by device name, etc. You will have to duplicate the same for the
+new smaller volume or update <code>/target/boot/grub/grub.conf</code> to match the new volume.
+Check <code>/target/etc/fstab</code> as well!</li>
+</ul>
+
+
+<p>In my case I had to <code>e2label /dev/sdd1 /</code> because both <code>grub.conf</code> and <code>fstab</code> were
+using the device label.</p>
+
+<ul>
+<li>Shutdown the instance;</li>
+<li>Detach all volumes;</li>
+<li><strong>IMPORTANT</strong> - attach the new smaller volume to the instance using the same block device
+name from the first step (e.g. <code>/dev/sda1</code>);</li>
+<li>Start the instance and verify it is working correctly;</li>
+<li>DELETE auxiliary volumes and snapshots so they don't take space and accumulate costs!</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Idempotent Django Email Sender with Amazon SQS and Memcache]]></title>
@@ -254,78 +318,6 @@ anymore! I will give the new feature a go very soon.</p>
 <a href="https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps">https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps</a>.</p>
 
 <p>Have you found anything interesting this week? Please share in the comments below! Thanks!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: Setting Secure ENV variables on Red Hat OpenShift]]></title>
-    <link href="http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/"/>
-    <updated>2013-07-08T21:39:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift</id>
-    <content type="html"><![CDATA[<p>OpenShift is
-<a href="https://www.openshift.com/content/custom-environment-variables">still missing</a>
-the client side tools to set environment variables without exposing the values
-in source code but there is a way to do it. Here is how.</p>
-
-<p>First ssh into your application and navigate to the <code>$OPENSHIFT_DATA_DIR</code>.
-Create a file to define your environment.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rhc ssh -a difio
-</span><span class='line'>Password: ***&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;<span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span>&gt; <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt; vi myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt; cat myenv.sh&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;h1&gt;!/bin/bash&lt;/h1&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;export <span class="nv">MYENV</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span>&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;<span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt; chmod a+x myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt; <span class="nb">exit</span>
-</span><span class='line'>Connection to difio-otb.rhcloud.com closed.
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Now modify your code and git push to OpenShift. Then ssh into the app once
-again to verify that your configuration is still in place.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>atodorov@redbull difio<span class="o">]</span><span class="nv">$ </span>rhc ssh -a difio
-</span><span class='line'>Password: ***&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;<span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span>&gt; <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt; ls -l
-</span><span class='line'>total 4
-</span><span class='line'>-rwxr-xr-x. 1 51d32a854382ecf7a9000116 51d32a854382ecf7a9000116 34  8 jul 14,33 myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span>&gt;&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Use the defined variables as you wish.</p>
 ]]></content>
   </entry>
   
