@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tips | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/tips/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-02-07T01:01:00+02:00</updated>
+  <updated>2014-02-07T12:06:54+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,94 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: How to Build updates.img for Fedora]]></title>
+    <link href="http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/"/>
+    <updated>2014-02-07T11:01:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora</id>
+    <content type="html"><![CDATA[<p>Anaconda the Fedora, CentOS and Red Hat Enterprise Linux installer has the
+capability to incorporate
+<a href="https://fedoraproject.org/wiki/Anaconda/Updates">updates at runtime</a>.
+These updates are generally distributed as an <code>updates.img</code> file. Here is how
+to easily build one from a working installation tree.</p>
+
+<p>Instead of using the git sources to build an updates.img I prefer using the SRPM
+from the tree which I am installing. This way the resulting updates image will be
+more consistent with the anaconda version already available in the tree. And in theory
+everything you need to build it should already be available as well. The following steps
+work for me on a Fedora 20 system.</p>
+
+<ul>
+<li>Download the source RPM for anaconda from the tree and extract the sources to a working
+directory. Then;</li>
+</ul>
+
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">cd </span>anaconda-20.25.15
+</span><span class='line'>git init
+</span><span class='line'>git add .
+</span><span class='line'>git commit -m <span class="s2">&quot;initial import&quot;</span>
+</span><span class='line'>git tag anaconda-20.25.15
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<ul>
+<li><p>The above steps will create a local git repository and tag the initial contents before
+modification. The tag is required later by the script which creates the updates image;</p></li>
+<li><p>After making your changes commit them and from the top anaconda directory execute:</p></li>
+</ul>
+
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>./scripts/makeupdates -t anaconda-20.25.15
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>You can also add RPM contents to the updates.img but you need to download the packages first:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>yumdownloader python-coverage python-setuptools&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;./scripts/makeupdates -t anaconda-20.25.15 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm
+</span><span class='line'>BUILDDIR /home/atodorov/anaconda-20.25.15
+</span><span class='line'>Including anaconda
+</span><span class='line'>2 RPMs added manually:
+</span><span class='line'>python-setuptools-1.4.2-1.fc20.noarch.rpm
+</span><span class='line'>python-coverage-3.7-1.fc20.x86_64.rpm
+</span><span class='line'><span class="nb">cd</span> /home/atodorov/anaconda-20.25.15/updates &amp;amp;&amp;amp; rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
+</span><span class='line'>3534 blocks
+</span><span class='line'><span class="nb">cd</span> /home/atodorov/anaconda-20.25.15/updates &amp;amp;&amp;amp; rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
+</span><span class='line'>1214 blocks
+</span><span class='line'>&lt;stdin&gt; to &lt;stdout&gt; 4831 blocks&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;updates.img ready
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In the above example I have only modified the top level anaconda file (<code>/usr/sbin/anaconda</code>
+inside the installation environment) experimenting with
+<a href="http://nedbatchelder.com/code/coverage/">python-coverage</a> integration.</p>
+
+<p>You are done! Make the <code>updates.img</code> available to Anaconda and start using it!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AWS Tip: Shrinking EBS Root Volume Size]]></title>
@@ -346,24 +434,6 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
 /var/tmp/abrt/ccpp-2013-10-10-15:55:18-15533
 # cat backtrace | grep lib | tr -s ' ' | cut -f4 -d' ' | sort | uniq | grep "/" | xargs rpm -qf --qf "%{name}\n" | xargs debuginfo-install -y
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: How to Find Your Red Hat Account Number]]></title>
-    <link href="http://atodorov.org/blog/2013/08/23/how-to-find-your-red-hat-account-number/"/>
-    <updated>2013-08-23T11:55:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/08/23/how-to-find-your-red-hat-account-number</id>
-    <content type="html"><![CDATA[<p><img src="http://atodorov.org/images/redhat_account_number.png" style="float:left;display:inline-block;margin-right:10px;" /></p>
-
-<p>One thing you need to know when ordering Red Hat subscriptions is your
-account number. It is available in the drop down menu at the top right
-corner after you login at <a href="https://access.redhat.com">https://access.redhat.com</a>.</p>
-
-<p>New accounts don't have an account number. It will be generated after
-the first subscription activation.</p>
-
-<p>If you need to know more about Red Hat's ordering process just ask me!</p>
 ]]></content>
   </entry>
   
