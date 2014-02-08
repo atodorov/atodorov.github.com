@@ -13,10 +13,13 @@ These updates are generally distributed as an `updates.img` file. Here is how
 to easily build one from a working installation tree.
 
 Instead of using the git sources to build an updates.img I prefer using the SRPM
-from the tree which I am installing. This way the resulting updates image will be
+from the tree which I am installing. <strike>This way the resulting updates image will be
 more consistent with the anaconda version already available in the tree. And in theory
-everything you need to build it should already be available as well. The following steps
-work for me on a Fedora 20 system. 
+everything you need to build it should already be available as well.</strike>
+**UPDATE 2014-02-08:** You can also build the `updates.img` from the git source tree
+which is shown at the bottom of this article. 
+
+The following steps work for me on a Fedora 20 system. 
 
 * Download the source RPM for anaconda from the tree and extract the sources to a working
 directory. Then;
@@ -63,3 +66,18 @@ inside the installation environment) experimenting with
 [python-coverage](http://nedbatchelder.com/code/coverage/) integration.
 
 You are done! Make the `updates.img` available to Anaconda and start using it!
+
+**UPDATE 2014-02-08:** If you prefer working with the anaconda source tree here's
+how to do it:
+
+{% codeblock lang:bash %}
+git clone git://git.fedorahosted.org/git/anaconda.git
+cd anaconda/
+git checkout anaconda-20.25.15-1 -b my_feature-branch
+
+... make changes ...
+
+git commit -a -m "Fixed something"
+
+./scripts/makeupdates -t anaconda-20.25.15-1
+{% endcodeblock %}
