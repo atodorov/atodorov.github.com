@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Here are two articles which I found very useful and interesting this week: Git Submodules: Adding, Using, Removing, Updating
-is a clear description &hellip;">
+  <meta name="description" content="I&#8217;ve seen a fair amount of stories about moving away from Amazon&#8217;s EBS volumes
+to ephemeral instance storage. I&#8217;ve decided to give &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -75,6 +75,155 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp From EBS to Instance Storage</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T13:48:00+02:00" pubdate data-updated="true">Feb 10<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&#8217;ve seen a fair amount of stories about moving away from Amazon&#8217;s EBS volumes
+to ephemeral instance storage. I&#8217;ve decided to give it a try starting with <code>/tmp</code>
+directory where <a href="http://www.dif.io">Difio</a> operates.</p>
+
+<p>It should be noted that although instance storage may be available for some instance
+types it may not be attached by default. Use this command to check:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>root
+</span><span class='line'>swap
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the above example there is no instance storage present.</p>
+
+<p>You can attach one either when launching the EC2 instance or when creating a customized AMI
+(instance storage devices are pre-defined in the AMI). When creating an AMI you can attach more ephemeral devices
+but they will not available when instance is launched. The maximum number of available
+instance storage devices can be found in the
+<a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#StorageOnInstanceTypes">docs</a>.
+That is to say if you have an AMI which defines 2 ephemeral devices and launch a
+standard m1.small instance there will be only one ephemeral device present.</p>
+
+<p>Also note that for M3 instances, you must specify instance store volumes in the
+block device mapping for the instance. When you launch an M3 instance, Amazon ignores
+any instance store volumes specified in the block device mapping for the AMI.</p>
+
+<p>As far as I can see the AWS Console doesn&#8217;t indicate if instance storage is attached
+or not. For instance with 1 ephemeral volume:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>root
+</span><span class='line'>swap
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
+</span><span class='line'>sdb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ephemeral devices can be mounted in <code>/media/ephemeralX/</code>, but not all volumes.
+I&#8217;ve found that usually only <code>ephemeral0</code> is mounted automatically.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>ephemeral1
+</span><span class='line'>root
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>ls -l /media/
+</span><span class='line'>drwxr-xr-x 3 root root 4096 21 ное  2009 ephemeral0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For Difio I have an init.d script which executes when the system
+boots. To enable <code>/tmp</code> on ephemeral storage I just added the following snippet:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;Mounting /tmp on ephemeral storage:&quot;</span>
+</span><span class='line'><span class="k">for </span>ef in <span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2&gt;/dev/null | grep ephemeral<span class="sb">`</span>; <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="nv">disk</span><span class="o">=</span><span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="nv">$ef</span> 2&gt;/dev/null<span class="sb">`</span>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;Unmounting /dev/$disk&quot;</span>
+</span><span class='line'>    umount /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;mkfs /dev/$disk&quot;</span>
+</span><span class='line'>    mkfs.ext4 -q /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;Mounting /dev/$disk&quot;</span>
+</span><span class='line'>    mount -t ext4 /dev/<span class="nv">$disk</span> /tmp <span class="o">&amp;&amp;</span> chmod 1777 /tmp <span class="o">&amp;&amp;</span> success <span class="o">||</span> failure
+</span><span class='line'><span class="k">done</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>NB:</strong> success and failure are from <code>/etc/rc.d/init.d/functions</code>.
+If you are using LVM or RAID you need to reconstruct your block devices
+accordingly!</p>
+
+<p>If everything goes right I should be able to reduce my AWS costs by saving on
+provisioned storage and I/O requests. I&#8217;ll keep you posted on this after a month or two.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1790,243 +1939,6 @@ cool stuff! See you there!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/">Tip: Extending Btrfs Filesystem for Fedora Virtual Machine</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-10-13T14:53:00+03:00" pubdate data-updated="true">Oct 13<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I was testing Fedora 20 inside a KVM guest this week when the disk
-space run out. The system was configured to use Btrfs filesystem and this is how
-to extend it.</p>
-
-<p>First you have to extend the underlying guest storage. On the host I&#8217;m using LVM
-so this is a no brainer:</p>
-
-<pre><code># pvs
-  PV                                                    VG              Fmt  Attr PSize   PFree  
-  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 134,11g
-
-# lvs
-  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
-  vm_fedora     vg_redbull_mini -wi-ao---  15,00g                                             
-
-# lvextend -L +5G /dev/mapper/vg_redbull_mini-vm_fedora 
-  Extending logical volume vm_fedora to 20,00 GiB
-  Logical volume vm_fedora successfully resized
-
-# lvs
-  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
-  vm_fedora     vg_redbull_mini -wi-ao---  20,00g                                             
-
-# pvs
-  PV                                                    VG              Fmt  Attr PSize   PFree  
-  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 129,11g
-</code></pre>
-
-<p>On the VM we have a default Btrfs layout:</p>
-
-<pre><code># blkid
-/dev/vda1: UUID="410ee563-e701-42ff-9d5f-5805dd103e35" TYPE="ext4" PARTUUID="0000330f-01" 
-/dev/vda2: UUID="f4addad4-a0fc-482e-ad5a-240864b76f09" TYPE="swap" PARTUUID="0000330f-02" 
-/dev/vda3: LABEL="fedora" UUID="f0b589ce-061c-4ac3-826e-7f3f8c8a6d30" UUID_SUB="11aa8414-3ce1-4fe7-a506-9a4f91ba5c30" TYPE="btrfs" PARTUUID="0000330f-03" 
-
-# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vda3        13G   11G  1.4G  89% /
-devtmpfs        996M     0  996M   0% /dev
-tmpfs          1002M   80K 1002M   1% /dev/shm
-tmpfs          1002M  668K 1002M   1% /run
-tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
-tmpfs          1002M   16K 1002M   1% /tmp
-/dev/vda3        13G   11G  1.4G  89% /home
-/dev/vda1       477M   72M  376M  17% /boot
-</code></pre>
-
-<p>Now power-off (not reboot) and power-on the VM guest so that it sees the new size
-of the underlying storage. See the fdisk header (line 9 below), vda is now 20GiB!</p>
-
-<p>Before extending the filesystem you have to extend the underlying disk partition! This is the
-trickiest part. Using fdisk or parted you have to delete the partition and add it again.
-Make sure to use the <strong>SAME</strong> starting sector for the new partition (line 33)!</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'># fdisk /dev/vda
-</span><span class='line'>
-</span><span class='line'>Welcome to fdisk (util-linux 2.24-rc1).
-</span><span class='line'>Changes will remain in memory only, until you decide to write them.
-</span><span class='line'>Be careful before using the write command.
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>Command (m for help): p
-</span><span class='line'>Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
-</span><span class='line'>Units: sectors of 1 * 512 = 512 bytes
-</span><span class='line'>Sector size (logical/physical): 512 bytes / 512 bytes
-</span><span class='line'>I/O size (minimum/optimal): 512 bytes / 512 bytes
-</span><span class='line'>Disk label type: dos
-</span><span class='line'>Disk identifier: 0x0000330f
-</span><span class='line'>
-</span><span class='line'>Device    Boot     Start       End   Blocks  Id System
-</span><span class='line'>/dev/vda1 *         2048   1026047   512000  83 Linux
-</span><span class='line'>/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
-</span><span class='line'>/dev/vda3        5253120  31457279 13102080  83 Linux
-</span><span class='line'>
-</span><span class='line'>Command (m for help): d
-</span><span class='line'>Partition number (1-3, default 3): 3
-</span><span class='line'>
-</span><span class='line'>Partition 3 is deleted
-</span><span class='line'>
-</span><span class='line'>Command (m for help): n
-</span><span class='line'>
-</span><span class='line'>Partition type:
-</span><span class='line'>   p   primary (2 primary, 0 extended, 2 free)
-</span><span class='line'>   e   extended
-</span><span class='line'>Select (default p): p
-</span><span class='line'>Partition number (3,4, default 3): 3
-</span><span class='line'>First sector (5253120-41943039, default 5253120): 
-</span><span class='line'>Last sector, +sectors or +size{K,M,G,T,P} (5253120-41943039, default 41943039): 
-</span><span class='line'>
-</span><span class='line'>Created a new partition 3 of type 'Linux' and of size 17,5 GiB.
-</span><span class='line'>
-</span><span class='line'>Command (m for help): p
-</span><span class='line'>Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
-</span><span class='line'>Units: sectors of 1 * 512 = 512 bytes
-</span><span class='line'>Sector size (logical/physical): 512 bytes / 512 bytes
-</span><span class='line'>I/O size (minimum/optimal): 512 bytes / 512 bytes
-</span><span class='line'>Disk label type: dos
-</span><span class='line'>Disk identifier: 0x0000330f
-</span><span class='line'>
-</span><span class='line'>Device    Boot     Start       End   Blocks  Id System
-</span><span class='line'>/dev/vda1 *         2048   1026047   512000  83 Linux
-</span><span class='line'>/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
-</span><span class='line'>/dev/vda3        5253120  41943039 18344960  83 Linux
-</span><span class='line'>
-</span><span class='line'>Command (m for help): w
-</span><span class='line'>
-</span><span class='line'>The partition table has been altered.
-</span><span class='line'>Calling ioctl() to re-read partition table.
-</span><span class='line'>Re-reading the partition table failed.: Device or resource busy
-</span><span class='line'>
-</span><span class='line'>The kernel still uses the old table. The new table will be used at the next reboot or after you run partprobe(8) or kpartx(8).
-</span><span class='line'>
-</span><span class='line'># partprobe
-</span><span class='line'>Error: Partition(s) 3 on /dev/vda have been written, but we have been unable to inform the kernel of the change, probably because it/they are in use.  As a result, the old partition(s) will remain in use.  You should reboot now before making further changes.
-</span><span class='line'>
-</span><span class='line'># reboot</span></code></pre></td></tr></table></div></figure>
-
-
-<p>See lines 36 and 49 above. The new partition has a greater size.
-After reboot just resize the filesystem and verify the new space has been added</p>
-
-<pre><code># btrfs filesystem resize max /
-Resize '/' of 'max'
-
-# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vda3        18G   11G  6.4G  63% /
-devtmpfs        996M     0  996M   0% /dev
-tmpfs          1002M   80K 1002M   1% /dev/shm
-tmpfs          1002M  660K 1002M   1% /run
-tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
-tmpfs          1002M   16K 1002M   1% /tmp
-/dev/vda3        18G   11G  6.4G  63% /home
-/dev/vda1       477M   72M  376M  17% /boot
-</code></pre>
-
-<p>This is it, more disk space available for the virtual machine. Let me know how it works
-for you.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2064,6 +1976,10 @@ for you.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp from EBS to Instance Storage</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/">Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
       </li>
     
@@ -2097,10 +2013,6 @@ for you.</p>
     
       <li class="post">
         <a href="/blog/2013/12/22/django-template-tag-inheritance-howto/">Django Template Tag Inheritance How-to</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/">Can I Use Android Phone as Smart Card Reader</a>
       </li>
     
   </ul>

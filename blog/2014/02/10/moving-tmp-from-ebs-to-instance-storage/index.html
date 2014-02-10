@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Moving /tmp from EBS to Instance Storage</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="I&#8217;ve seen a fair amount of stories about moving away from Amazon&#8217;s EBS volumes
+to ephemeral instance storage. I&#8217;ve decided to give &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+you can logoff, but you can never leave
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="http://amzn.to/1erRrnb">Previous: Hooked: How to Build Habit-Forming Products</a></li>
+  <li><a href="http://amzn.to/1fi1KeE">Previous: UX for Lean Startups</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Moving /tmp From EBS to Instance Storage</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T13:48:00+02:00" pubdate data-updated="true">Feb 10<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I&#8217;ve seen a fair amount of stories about moving away from Amazon&#8217;s EBS volumes
+to ephemeral instance storage. I&#8217;ve decided to give it a try starting with <code>/tmp</code>
+directory where <a href="http://www.dif.io">Difio</a> operates.</p>
+
+<p>It should be noted that although instance storage may be available for some instance
+types it may not be attached by default. Use this command to check:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>root
+</span><span class='line'>swap
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the above example there is no instance storage present.</p>
+
+<p>You can attach one either when launching the EC2 instance or when creating a customized AMI
+(instance storage devices are pre-defined in the AMI). When creating an AMI you can attach more ephemeral devices
+but they will not available when instance is launched. The maximum number of available
+instance storage devices can be found in the
+<a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#StorageOnInstanceTypes">docs</a>.
+That is to say if you have an AMI which defines 2 ephemeral devices and launch a
+standard m1.small instance there will be only one ephemeral device present.</p>
+
+<p>Also note that for M3 instances, you must specify instance store volumes in the
+block device mapping for the instance. When you launch an M3 instance, Amazon ignores
+any instance store volumes specified in the block device mapping for the AMI.</p>
+
+<p>As far as I can see the AWS Console doesn&#8217;t indicate if instance storage is attached
+or not. For instance with 1 ephemeral volume:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>root
+</span><span class='line'>swap
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
+</span><span class='line'>sdb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ephemeral devices can be mounted in <code>/media/ephemeralX/</code>, but not all volumes.
+I&#8217;ve found that usually only <code>ephemeral0</code> is mounted automatically.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>ephemeral1
+</span><span class='line'>root
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>ls -l /media/
+</span><span class='line'>drwxr-xr-x 3 root root 4096 21 ное  2009 ephemeral0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For Difio I have an init.d script which executes when the system
+boots. To enable <code>/tmp</code> on ephemeral storage I just added the following snippet:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;Mounting /tmp on ephemeral storage:&quot;</span>
+</span><span class='line'><span class="k">for </span>ef in <span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2&gt;/dev/null | grep ephemeral<span class="sb">`</span>; <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="nv">disk</span><span class="o">=</span><span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="nv">$ef</span> 2&gt;/dev/null<span class="sb">`</span>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;Unmounting /dev/$disk&quot;</span>
+</span><span class='line'>    umount /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;mkfs /dev/$disk&quot;</span>
+</span><span class='line'>    mkfs.ext4 -q /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nb">echo</span> <span class="s2">$&quot;Mounting /dev/$disk&quot;</span>
+</span><span class='line'>    mount -t ext4 /dev/<span class="nv">$disk</span> /tmp <span class="o">&amp;&amp;</span> chmod 1777 /tmp <span class="o">&amp;&amp;</span> success <span class="o">||</span> failure
+</span><span class='line'><span class="k">done</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>NB:</strong> success and failure are from <code>/etc/rc.d/init.d/functions</code>.
+If you are using LVM or RAID you need to reconstruct your block devices
+accordingly!</p>
+
+<p>If everything goes right I should be able to reduce my AWS costs by saving on
+provisioned storage and I/O requests. I&#8217;ll keep you posted on this after a month or two.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T13:48:00+02:00" pubdate data-updated="true">Feb 10<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/amazon/'>Amazon</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/" title="Previous Post: Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA">&laquo; Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>You Can Find Me At</h1>
+    <p>
+        I'm in Sofia. Ping me for a beer.
+    </p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp from EBS to Instance Storage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/">Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/">Tip: How to Build updates.img for Fedora</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">AWS Tip: Shrinking EBS Root Volume Size</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014 Report - Day #2 Testing and Automation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/28/book-review-january-2014/">Book Review - January 2014</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/02/book-review-of-2013/">Book Review of 2013</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/">Upstream Test Suite Status of Fedora 20</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/22/django-template-tag-inheritance-howto/">Django Template Tag Inheritance How-to</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2011-2014 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+  &diams;
+  Popular categories:
+<a href="/blog/categories/rhel/">Red Hat</a>,
+<a href="/blog/categories/cloud/">Cloud</a>,
+<a href="/blog/categories/fedora/">Fedora</a>,
+<a href="/blog/categories/qa/">QA</a>,
+<a href="/blog/categories/start-up/">Start-up</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/';
+        var disqus_url = 'http://atodorov.org/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

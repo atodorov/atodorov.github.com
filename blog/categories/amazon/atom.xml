@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Amazon | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/amazon/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-02-08T23:28:13+02:00</updated>
+  <updated>2014-02-10T14:18:32+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,126 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Moving /tmp from EBS to Instance Storage]]></title>
+    <link href="http://atodorov.org/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/"/>
+    <updated>2014-02-10T13:48:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage</id>
+    <content type="html"><![CDATA[<p>I've seen a fair amount of stories about moving away from Amazon's EBS volumes
+to ephemeral instance storage. I've decided to give it a try starting with <code>/tmp</code>
+directory where <a href="http://www.dif.io">Difio</a> operates.</p>
+
+<p>It should be noted that although instance storage may be available for some instance
+types it may not be attached by default. Use this command to check:
+<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>root
+</span><span class='line'>swap
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In the above example there is no instance storage present.</p>
+
+<p>You can attach one either when launching the EC2 instance or when creating a customized AMI
+(instance storage devices are pre-defined in the AMI). When creating an AMI you can attach more ephemeral devices
+but they will not available when instance is launched. The maximum number of available
+instance storage devices can be found in the
+<a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#StorageOnInstanceTypes">docs</a>.
+That is to say if you have an AMI which defines 2 ephemeral devices and launch a
+standard m1.small instance there will be only one ephemeral device present.</p>
+
+<p>Also note that for M3 instances, you must specify instance store volumes in the
+block device mapping for the instance. When you launch an M3 instance, Amazon ignores
+any instance store volumes specified in the block device mapping for the AMI.</p>
+
+<p>As far as I can see the AWS Console doesn't indicate if instance storage is attached
+or not. For instance with 1 ephemeral volume:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>root
+</span><span class='line'>swap&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
+</span><span class='line'>sdb
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Ephemeral devices can be mounted in <code>/media/ephemeralX/</code>, but not all volumes.
+I've found that usually only <code>ephemeral0</code> is mounted automatically.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+</span><span class='line'>ami
+</span><span class='line'>ephemeral0
+</span><span class='line'>ephemeral1
+</span><span class='line'>root&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>ls -l /media/
+</span><span class='line'>drwxr-xr-x 3 root root 4096 21 ное  2009 ephemeral0
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>For Difio I have an init.d script which executes when the system
+boots. To enable <code>/tmp</code> on ephemeral storage I just added the following snippet:
+<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;Mounting /tmp on ephemeral storage:&quot;</span>
+</span><span class='line'><span class="k">for </span>ef in &lt;code&gt;curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2&amp;gt;/dev/null | grep ephemeral&lt;/code&gt;; <span class="k">do</span>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;disk<span class="o">=</span><span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="nv">$ef</span> 2&amp;gt;/dev/null<span class="sb">`</span>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;Unmounting /dev/$disk&quot;</span>
+</span><span class='line'>umount /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;mkfs /dev/$disk&quot;</span>
+</span><span class='line'>mkfs.ext4 -q /dev/<span class="nv">$disk</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">$&quot;Mounting /dev/$disk&quot;</span>
+</span><span class='line'>mount -t ext4 /dev/<span class="nv">$disk</span> /tmp &amp;amp;&amp;amp; chmod 1777 /tmp &amp;amp;&amp;amp; success <span class="o">||</span> failure
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;done
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><strong>NB:</strong> success and failure are from <code>/etc/rc.d/init.d/functions</code>.
+If you are using LVM or RAID you need to reconstruct your block devices
+accordingly!</p>
+
+<p>If everything goes right I should be able to reduce my AWS costs by saving on
+provisioned storage and I/O requests. I'll keep you posted on this after a month or two.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AWS Tip: Shrinking EBS Root Volume Size]]></title>
@@ -240,58 +360,6 @@ based site which is exported as static HTML.</p>
 <p>This helps me with faster deployment/management as everything is stored
 in git, allows templates inheritance and also makes the site ready to
 add more functionality if required.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[What Runs Your Start-up - Imagga]]></title>
-    <link href="http://atodorov.org/blog/2013/07/29/what-runs-your-startup-imagga/"/>
-    <updated>2013-07-29T12:32:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/07/29/what-runs-your-startup-imagga</id>
-    <content type="html"><![CDATA[<p><img src="http://atodorov.org/images/startup/imagga.png" alt="Imagga" style="float:left; margin-right:10px;" /></p>
-
-<p><a href="http://imagga.com/">Imagga</a> is a cloud platform that helps businesses and
-individuals organize their images in a fast and cost-effective way. They
-develop a range of advanced proprietary image recognition and image processing
-technologies, which are built into several services such as smart image
-cropping, color extraction and multi-color search, visual similarity search and
-auto-tagging.</p>
-
-<p>During
-<a href="/blog/2013/05/23/balkan-venture-forum-sofia-post-mortem/">Balkan Venture Forum</a>
-in Sofia I sat down with Georgi Kadrev to talk about technology.
-Surprisingly this hi-tech service is built on top of standard low-tech components
-and lots of hard work.</p>
-
-<h2>Main Technologies</h2>
-
-<p>Core functionality is developed in C and C++ with the OpenCV library.
-Imagga relies heavily on own image processing algorithms for their core
-features. These were built as a combination of their own research activities
-and publications from other researchers.</p>
-
-<p>Image processing is executed by worker nodes configured with their own
-software stack. Nodes are distributed among Amazon EC2 and other data centers.</p>
-
-<p>Client libraries to access Imagga API are available in PHP, Ruby and Java.</p>
-
-<p>Imagga has built several websites to showcase their technology.
-<a href="http://cropp.me/">Cropp.me</a>, <a href="http://colorslike.me/">ColorsLike.me</a>,
-<a href="http://www.stockpodium.com">StockPodium</a> and <a href="http://autotag.me/">AutoTag.me</a>
-were built with PHP, JavaScript and jQuery above a standard LAMP stack.</p>
-
-<p>Recently Imagga also started using GPU computing with nVidia Tesla cards.
-They use C++ and Python bindings for
-<a href="https://developer.nvidia.com/what-cuda">CUDA</a>.</p>
-
-<h2>Why Not Something Else?</h2>
-
-<p><blockquote><p>As an initially bootstrapping start-up we chose something that is basically free,<br/>reliable and popular - that's why started with the LAMP stack. It proved to be<br/>stable and convenient for our web needs and we preserved it.<br/>The use of C++ is a natural choice for computational intensive tasks that we<br/>need to perform for the purpose of our core expertise - image processing.<br/>Though we initially wrote the whole core technology code from scratch, we later<br/>switched to OpenCV for some of the building blocks as it is very well optimized<br/>and continuously extended image processing library.</p></p><p><p>With the raise of affordable high-performance GPU processors and their availability<br/>in server instances, we decided it's time to take advantage of this highly parallel<br/>architecture, perfectly suitable for image processing tasks.</p><footer><strong>Georgi Kadrev</strong></footer></blockquote></p>
-
-<h2>Want More Info?</h2>
-
-<p>If you’d like to hear more from Imagga please comment below.
-I will ask them to follow this thread and reply to your questions.</p>
 ]]></content>
   </entry>
   
