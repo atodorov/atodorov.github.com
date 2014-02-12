@@ -25,11 +25,11 @@ The following steps work for me on a Fedora 20 system.
 directory. Then;
 
 {% codeblock lang:bash %}
-cd anaconda-20.25.15
+cd anaconda-20.25.16-1
 git init
 git add .
 git commit -m "initial import"
-git tag anaconda-20.25.15
+git tag anaconda-20.25.16-1
 {% endcodeblock %}
 
 * The above steps will create a local git repository and tag the initial contents before
@@ -38,7 +38,7 @@ modification. The tag is required later by the script which creates the updates 
 * After making your changes commit them and from the top anaconda directory execute:
 
 {% codeblock lang:bash %}
-./scripts/makeupdates -t anaconda-20.25.15
+./scripts/makeupdates -t anaconda-20.25.16-1
 {% endcodeblock %}
 
 You can also add RPM contents to the updates.img but you need to download the packages first:
@@ -46,15 +46,15 @@ You can also add RPM contents to the updates.img but you need to download the pa
 {% codeblock lang:bash %}
 yumdownloader python-coverage python-setuptools
 
-./scripts/makeupdates -t anaconda-20.25.15 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
-BUILDDIR /home/atodorov/anaconda-20.25.15
+./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
+BUILDDIR /home/atodorov/anaconda-20.25.16-1
 Including anaconda
 2 RPMs added manually:
 python-setuptools-1.4.2-1.fc20.noarch.rpm
 python-coverage-3.7-1.fc20.x86_64.rpm
-cd /home/atodorov/anaconda-20.25.15/updates && rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
+cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
 3534 blocks
-cd /home/atodorov/anaconda-20.25.15/updates && rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
+cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
 1214 blocks
 <stdin> to <stdout> 4831 blocks
 
@@ -73,11 +73,11 @@ how to do it:
 {% codeblock lang:bash %}
 git clone git://git.fedorahosted.org/git/anaconda.git
 cd anaconda/
-git checkout anaconda-20.25.15-1 -b my_feature-branch
+git checkout anaconda-20.25.16-1 -b my_feature-branch
 
 ... make changes ...
 
 git commit -a -m "Fixed something"
 
-./scripts/makeupdates -t anaconda-20.25.15-1
+./scripts/makeupdates -t anaconda-20.25.16-1
 {% endcodeblock %}
