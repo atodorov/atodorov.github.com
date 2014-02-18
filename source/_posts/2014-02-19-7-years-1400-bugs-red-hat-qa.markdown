@@ -94,7 +94,7 @@ While initially this was rejected (Fedora 6/7), it was [implemented](https://fed
 few years later (Fedora 9) and then removed once again during the big Anaconda rewrite.
 
 I've spent my time working extensively on RHEL 5 battling with multi-lib issues, SELinux denials and
-generally making the 5 family less rough. Because I was still onboarding I generally worked
+generally making the 5 family less rough. Because I was still on-boarding I generally worked
 on everything I could get my hands on and also did some work on RHEL3-U9 (latest release
 before EOL) and some RHEL4-U6 testing.
 
@@ -190,10 +190,10 @@ My most productive year with 1+ bugs per day.
 narrative throughout the year.
 As a matter of fact I did a small experiment and found around **50000**
 (you read that right, fifty thousand) potentially
-conflicting files, mostly between multi-lib packages, which were being ingored by RPM
+conflicting files, mostly between multi-lib packages, which were being ignored by RPM
 due to its multi-lib policies. However these were primarily man pages or documentation
 and most of them didn't get fixed. The proper fix would have been to introduce a
--docs subpackage and split these files from the actual binaries. Fortunately the world
+-docs sub-package and split these files from the actual binaries. Fortunately the world
 migrated to 64bit only and this isn't an issue anymore.
 
 By that time RHEL 6 development was running at its peak capacity and there were Beta
@@ -302,13 +302,13 @@ It's very frustrating when the tool which is supposed to help you file bugs
 doesn't work properly, see [RHBZ #903591](https://bugzilla.redhat.com/show_bug.cgi?id=903591).
 It's a known fact that
 [ABRT has problems](/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/)
-and for the this scenario I may have a 
+and for this scenario I may have a 
 [tip](/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/) for you.
 
 [RHBZ #923416](https://bugzilla.redhat.com/show_bug.cgi?id=923416) - another one of these
 100% CPU bugs. As I said they happen from time to time and mostly go by unfixed or
 partially fixed because of their nature. Btw as I'm writing this post and have
-a few bugs open in Firefox it keeps using between 15% and 20% CPU and the CPU
+a few tabs open in Firefox it keeps using between 15% and 20% CPU and the CPU
 temperature is over 90 degrees C. And all I'm doing is writing text in the console.
 Help!
 
@@ -321,8 +321,8 @@ Developer Toolset. It wasn't a tough job and was a refreshing break away from th
 installation testing.
 
 While I stopped working actively on the various RHEL families which are under development
-or still supported I happened to be one of top 10 bug reporters for high/urgent bugs
-for RHEL 7. In appreciation Red Hat sent me lots of swag and the Platform QE hoodie
+or still supported I happened to be one of top 10 bug reporters for high/urgent priority bugs
+for RHEL 7. In appreciation Red Hat sent me lots of corporate gifts and the Platform QE hoodie
 pictured at the top of the page. Many thanks!
 
 In the summer Red Hat's 
@@ -331,7 +331,7 @@ The closest I come to this milestone is
 [RHBZ #999941](https://bugzilla.redhat.com/show_bug.cgi?id=999941).
 
 I finally managed to transfer most of my responsibilities to co-workers and joined
-the Fedora QA team as a part-time contributor. I has some highs and lows with
+the Fedora QA team as a part-time contributor. I had some highs and lows with
 [Fedora test days in Sofia](/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/)
 as well. Good thing is I scored another 15 bugs across the
 [virtualization stack](/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/)
@@ -344,8 +344,8 @@ The year wraps up with another series of identical bugs,
 [RHBZ #1025289](https://bugzilla.redhat.com/show_bug.cgi?id=1025289) for example.
 As it [turned out](/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/)
 lots of packages don't have any test suites at all and those
-which do don't always execute it automatically in %check. I've promised myself
-to work on improving this but still haven't had time to work on it. Hopefully by
+which do don't always execute them automatically in %check. I've promised myself
+to improve this but still haven't had time to work on it. Hopefully by
 March I will have something in the works.
 
 2014 - Fedora QA improvement
@@ -371,9 +371,19 @@ Let's see how well that plays out!
 What do I do now
 ----------------
 
-During the last year I have gradually changed my responsibilities to work more on Fedora
-as a volunteer in the Fedora QA team. As part of Fedora QA I'm regularly testing installation
+During the last year I have gradually changed my responsibilities to work more on Fedora.
+As a volunteer in the Fedora QA I'm regularly testing installation
 of Rawhide trees and try to work closely with the community. I still have to
 manage RHEL 5 test cycles where I don't expect nothing disruptive at this stage in the
 product life-cycle!
+
+I'm open to any ideas and help which can improve test coverage and quality of software
+in Fedora. If you're just joining the open source world this is an excellent
+opportunity to do some good, get noticed and even maybe get a job. I will definitely
+help you get through the process if you're willing to commit your time to this.
+
+I hope this long post has been useful and fun to read. Please use the comments form to tell
+me if I'm missing something or you'd like to know more.
+
+*Looking forward to the next 7 years!*
 
