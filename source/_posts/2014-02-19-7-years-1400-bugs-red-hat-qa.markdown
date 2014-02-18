@@ -1,12 +1,12 @@
 ---
 layout: post
 title: "7 Years and 1400 Bugs Later as Red Hat QA"
-date: 2014-02-15 10:43
+date: 2014-02-19 10:43
 comments: true
 categories: ['RHEL', 'Fedora', 'QA']
 ---
 
-Today I celebrate my 7th year working in Red Hat's Quality Engineering department.
+Today I celebrate my 7th year working at Red Hat's Quality Engineering department.
 Here's my story!
 
 ![Platform QE](/images/redhat_platform_qe.jpg "Platform QE")
@@ -30,15 +30,13 @@ What do I do exactly
 
 From all QE teams in Red Hat, Release Test Team is the first one and
 last one to test a release. The team has both technical function and a more managerial one.
-Our focus is on the core Red Hat Enterprise Linux product and sometimes additional
-layered products as required. 
-Unfortunately I can't go into much details about how exactly the team functions
-because it is not a public facing unit.
+Our focus is on the core Red Hat Enterprise Linux product. 
+Unfortunately I can't go into much details because this is not a public facing unit.
 I will limit myself to **public and/or non-sensitive information**.
 
 
 We are the first to test a new nightly build or a
-snapshot of the upcoming RHEL release. If all goes well other QA teams take over
+snapshot of the upcoming RHEL release. If the tree is installable other teams take over
 and do their magic. At the end when bits are published live we're the last to
 verify that content is published where it is expected to be. In short this is
 covering the work of the release engineering team which is to build a product and
@@ -47,10 +45,10 @@ publish the contents for consumption.
 The same principles apply to Fedora although the engagement here is less demanding.
 
 Personally I have been and continue to be responsible for Red Hat Enterprise Linux 5
-family of releases. It's up to me to give the go ahead for further testing. This position
+family of releases. It's up to me to give the go ahead for further testing or request
+a re-spin. This position
 also has the power to block and delay the GA release if not happy with testing or
-there is a considerable risk of failure until things are sorted out -
-which is a hard decision to make.
+there is a considerable risk of failure until things are sorted out.
 
 
 Like in other QA teams I create test plan documents, write test case scenarios,
@@ -59,8 +57,11 @@ plans and test cases, find and report any new bugs and verify old ones are fixed
 Most importantly make sure RHEL installs and is usable for further testing :).
 
 Sometimes I have to deal with capacity planning and as RHEL 5 installation 
-tech lead I have to organize and manage (for a lack of better word) the entire
-installation testing campaign for that product.
+test lead I have to organize and manage the entire installation testing campaign
+for that product.
+
+My favorite testing technique is
+[exploratory testing](https://en.wikipedia.org/wiki/Exploratory_testing).
 
 
 Stats and Numbers
@@ -131,7 +132,7 @@ which continued to resurface occasionally during the next 5 years.
 This is the year when I took over responsibility for the general installation
 testing of RHEL 5 from James Laska and will continue to do so until it reaches end-of-life!
 
-I've also worked on RHEL 4, Fedora and even the OLCP project. On the testing side of things
+I've also worked on RHEL 4, Fedora and even the OLPC project. On the testing side of things
 I've participated in testing
 [Fedora networking on the XO](https://fedoraproject.org/wiki/QA/TestPlans/Networking)
 hardware and worked on translation and general issues.
@@ -187,7 +188,8 @@ My most productive year with 1+ bugs per day.
 
 2010 starts with a bug about file conflicts (private one) and continues with the same
 narrative throughout the year.
-As a matter of fact I did a small experiment and found around 50 thousand potentially
+As a matter of fact I did a small experiment and found around **50000**
+(you read that right, fifty thousand) potentially
 conflicting files, mostly between multi-lib packages, which were being ingored by RPM
 due to its multi-lib policies. However these were primarily man pages or documentation
 and most of them didn't get fixed. The proper fix would have been to introduce a
@@ -240,7 +242,7 @@ before its release which I can now relate to the
 talk at FOSDEM 2014.
 
 In 2011 I've started using the cloud and most notably Red Hat's OpenShift PaaS service.
-First internally as an early adopter and later externally after the product being announced
+First internally as an early adopter and later externally after the product was announced
 to the public. There are a few interesting bugs here but they are private and I'm not
 at liberty to share although they've all been fixed since then.
 
@@ -265,7 +267,7 @@ back again to comment. I'd love to hear from you.
 
 
 What do you do when you see an error message saying: 
-*Your system may be seriously compromised! /usr/sbin/NetworkManager tried to load a kernel module.*
+**Your system may be seriously compromised! /usr/sbin/NetworkManager tried to load a kernel module.**
 This is the scariest error message I've ever seen. Luckily its just
 SELinux overreacting, see [RHBZ #704090](https://bugzilla.redhat.com/show_bug.cgi?id=704090).
 
@@ -274,8 +276,8 @@ SELinux overreacting, see [RHBZ #704090](https://bugzilla.redhat.com/show_bug.cg
 -----------------------
 
 While the number of reported bugs dropped significantly compared to previous
-years this the year when I've reported almost exclusively high priority and
-urgent bugs the first one being 
+years this is the year when I've reported almost exclusively high priority and
+urgent bugs, the first one being 
 [RHBZ #771901](https://bugzilla.redhat.com/show_bug.cgi?id=771901).
 
 [RHBZ #799384](https://bugzilla.redhat.com/show_bug.cgi?id=799384)(against Fedora)
@@ -283,10 +285,9 @@ is one of the rare cases when I was able to contribute
 (although just by raising awareness) to localization and improved support for
 Bulgarian and Cyrillic. 
 The other one case was [last year](http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/).
-
-Btw I find it strange that although
-[invented by Bulgarians](https://en.wikipedia.org/wiki/Cyrillic_script)
-we didn't (or still don't) have a native speaker font co-maintainer.
+Btw I find it strange that although 
+[Cyrillic was invented by Bulgarians](https://en.wikipedia.org/wiki/Cyrillic_script)
+we didn't (or still don't) have a native font co-maintainer.
 Somebody please step up!
 
 The red zone bugs continue to span till the end of the year across RHEL 5, 6 and
