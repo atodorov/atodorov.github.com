@@ -50,7 +50,7 @@ your blocks first, configure *env.skip_blocks* and render the entire template
 without the specified blocks.
 
 
-{% codeblock lang:python jinja-render %}
+{% codeblock lang:python jinja2-render %}
 #!/usr/bin/env python
 
 import os
