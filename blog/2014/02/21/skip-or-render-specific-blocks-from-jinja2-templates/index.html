@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Skip or Render Specific Blocks from Jinja2 Templates</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="I wasn&#8217;t able to find detailed information on how to skip rendering
+or only render specific blocks from Jinja2 templates so here&#8217;s my &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-37979549-1', 'atodorov.org');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+you can logoff, but you can never leave
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="http://amzn.to/1jnUsYD">Now reading: Lean UX</a></li>
+  <li><a href="http://amzn.to/1erRrnb">Previous: Hooked: How to Build Habit-Forming Products</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Skip or Render Specific Blocks From Jinja2 Templates</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-21T00:08:00+02:00" pubdate data-updated="true">Feb 21<span>st</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I wasn&#8217;t able to find detailed information on how to skip rendering
+or only render specific blocks from Jinja2 templates so here&#8217;s my solution.
+Hopefully you find it useful too.</p>
+
+<p>With below template I want to be able to render <strong>only</strong> <em>kernel_options</em> block
+as a single line and then render the rest of the template <strong>excluding</strong> <em>kernel_options</em>.</p>
+
+<figure class='code'><figcaption><span>base.j2 </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='jinja'><span class='line'><span class="cp">{%</span> <span class="k">block</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'><span class="x">console=tty0</span>
+</span><span class='line'><span class="x">    </span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">debug</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'><span class="x">        debug=1</span>
+</span><span class='line'><span class="x">    </span><span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'><span class="cp">{%</span> <span class="k">endblock</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">==</span> <span class="m">5</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'><span class="x">key --skip</span>
+</span><span class='line'><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x">%packages</span>
+</span><span class='line'><span class="x">@base</span>
+</span><span class='line'><span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">&gt;</span> <span class="m">5</span> <span class="cp">%}</span><span class="x"></span>
+</span><span class='line'><span class="x">%end</span>
+</span><span class='line'><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To render a particular block you have to use the low level Jinja API
+<em><a href="http://jinja.pocoo.org/docs/api/#jinja2.Template.blocks">template.blocks</a></em>.
+This will return a dict of block rendering functions which need a <em>Context</em> to work with.</p>
+
+<p>The second part is trickier. To remove a block we have to create an extension
+which will filter it out. The provided <em>SkipBlockExtension</em> class does
+exactly this.</p>
+
+<p>Last but not least - if you&#8217;d like to use both together you have to disable
+caching in the <em>Environment</em> (so you get a fresh template every time), render
+your blocks first, configure <em>env.skip_blocks</em> and render the entire template
+without the specified blocks.</p>
+
+<figure class='code'><figcaption><span>jinja2-render </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c">#!/usr/bin/env python</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">os</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">jinja2.ext</span> <span class="kn">import</span> <span class="n">Extension</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SkipBlockExtension</span><span class="p">(</span><span class="n">Extension</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">SkipBlockExtension</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">environment</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">skip_blocks</span><span class="o">=</span><span class="p">[])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">filter_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">block_level</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="n">skip_level</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">False</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;block_begin&#39;</span><span class="p">):</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s">&#39;block&#39;</span><span class="p">):</span>
+</span><span class='line'>                    <span class="n">block_level</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">look</span><span class="p">()</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">skip_blocks</span><span class="p">):</span>
+</span><span class='line'>                        <span class="n">skip_level</span> <span class="o">=</span> <span class="n">block_level</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s">&#39;endblock&#39;</span> <span class="p">):</span>
+</span><span class='line'>                <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">True</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="n">skip_level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>                <span class="k">yield</span> <span class="n">token</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;block_end&#39;</span><span class="p">):</span>
+</span><span class='line'>                <span class="k">if</span> <span class="n">in_endblock</span><span class="p">:</span>
+</span><span class='line'>                    <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">False</span>
+</span><span class='line'>                    <span class="n">block_level</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="k">if</span> <span class="n">skip_level</span> <span class="o">==</span> <span class="n">block_level</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
+</span><span class='line'>                        <span class="n">skip_level</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;OS_MAJOR&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s">&#39;ARCH&#39;</span> <span class="p">:</span> <span class="s">&#39;x86_64&#39;</span><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">abs_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span class='line'>    <span class="n">dir_name</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">base_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">loader</span> <span class="o">=</span> <span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">dir_name</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">SkipBlockExtension</span><span class="p">],</span>
+</span><span class='line'>                <span class="n">cache_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c"># disable cache b/c we do 2 get_template()</span>
+</span><span class='line'>            <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># first render only the block we want</span>
+</span><span class='line'>    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">blocks</span><span class="p">[</span><span class="s">&#39;kernel_options&#39;</span><span class="p">](</span><span class="n">template</span><span class="o">.</span><span class="n">new_context</span><span class="p">(</span><span class="n">context</span><span class="p">)):</span>
+</span><span class='line'>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;Boot Args:&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;---------------------------&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># now instruct SkipBlockExtension which blocks we don&#39;t want</span>
+</span><span class='line'>    <span class="c"># and get a new instance of the template with these blocks removed</span>
+</span><span class='line'>    <span class="n">env</span><span class="o">.</span><span class="n">skip_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;kernel_options&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;---------------------------&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above code results in the following output:</p>
+
+<pre><code>$ ./jinja2-render ./base.j2 
+Boot Args: console=tty0 debug=1 
+---------------------------
+
+key --skip
+
+%packages
+@base
+---------------------------
+</code></pre>
+
+<p>Teaser: this is part of my effort to replace SNAKE with a client side
+kickstart template engine for
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Beaker</a>
+so stay tuned!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-21T00:08:00+02:00" pubdate data-updated="true">Feb 21<span>st</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/python/'>Python</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/" title="Previous Post: 7 Years and 1400 Bugs Later as Red Hat QA">&laquo; 7 Years and 1400 Bugs Later as Red Hat QA</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>You Can Find Me At</h1>
+    <p>
+        I'm in Sofia. Ping me for a beer.
+    </p>
+
+    <p>
+        <a href="http://railsgirls.com/sofia">Rails Girls Sofia</a> - March 8th
+    </p>
+
+    <p>
+        <a href="http://hackfmi.com">HackFMI Sofia</a> - April 25th, 26th, 27th
+    </p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/">Skip or Render Specific Blocks from Jinja2 Templates</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">7 Years and 1400 Bugs Later as Red Hat QA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp from EBS to Instance Storage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/">Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/">Tip: How to Build updates.img for Fedora</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">AWS Tip: Shrinking EBS Root Volume Size</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014 Report - Day #2 Testing and Automation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/28/book-review-january-2014/">Book Review - January 2014</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/02/book-review-of-2013/">Book Review of 2013</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2011-2014 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+  &diams;
+  Popular categories:
+<a href="/blog/categories/rhel/">Red Hat</a>,
+<a href="/blog/categories/cloud/">Cloud</a>,
+<a href="/blog/categories/fedora/">Fedora</a>,
+<a href="/blog/categories/qa/">QA</a>,
+<a href="/blog/categories/start-up/">Start-up</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/';
+        var disqus_url = 'http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
