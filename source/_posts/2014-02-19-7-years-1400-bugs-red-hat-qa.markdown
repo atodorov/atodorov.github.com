@@ -108,6 +108,14 @@ In 2008 Time went backwards
 My first bug in 2008 is [RHBZ #428280](https://bugzilla.redhat.com/show_bug.cgi?id=428280).
 glibc introduced SHA-256/512 hashes for hashing passwords with crypt but that wasn't documented.
 
+**UPDATE 2014-02-21**
+While testing 5.1 to 5.2 updates I found
+[RHBZ #435475](https://bugzilla.redhat.com/show_bug.cgi?id=435475) - a severe
+**performance degradation** in the package installation process. Upgrades
+took almost twice as much time to complete, rising **from 4 hours to 7 hours**
+depending on hardware and package set. This was a tough one to test and verify.
+**END UPDATE**
+
 
 While dogfooding the 5.2 beta in March I hit
 [RHBZ #437252](https://bugzilla.redhat.com/show_bug.cgi?id=437252) - kernel: Timer ISR/0: Time went backwards.
