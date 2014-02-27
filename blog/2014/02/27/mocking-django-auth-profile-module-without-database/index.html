@@ -1,0 +1,506 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Mocking Django AUTH_PROFILE_MODULE without a Database</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="Difio is a Django based service which uses a profile
+model to provide site-specific, per-user information.
+In the process of open sourcing Difio its &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-37979549-1', 'atodorov.org');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+you can logoff, but you can never leave
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="/domains/">Domains</a></li>
+  <li><a href="http://is.gd/OqPzoZ">Now reading: The Singularity is Near</a></li>
+  <li><a href="http://amzn.to/1jnUsYD">Previous: Lean UX</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Mocking Django AUTH_PROFILE_MODULE Without a Database</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-27T16:18:00+02:00" pubdate data-updated="true">Feb 27<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://www.dif.io">Difio</a> is a Django based service which uses a profile
+model to provide site-specific, per-user information.
+In the process of <a href="https://github.com/difio/difio">open sourcing Difio</a> its core
+functionality becomes available as a Django app. The trouble is that the
+<code>UserProfile</code> model contains site-specific and proprietary data which doesn&#8217;t
+make sense to the public nor I want to release it.</p>
+
+<p>The solution is to have a <code>MockProfile</code> model and work with
+that by default while <a href="http://www.dif.io">www.dif.io</a> and other implementations
+override it as needed.
+<strong>How do you do that without creating useless table and records in the database
+but still have the profiles created automatically for every user?</strong></p>
+
+<p>It turns out the solution is quite simple. See my comments inside the code below.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        Any AUTH_PROFILE_MODULE model should inherit this</span>
+</span><span class='line'><span class="sd">        and override the default methods.</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">        This model provides the FK to User!</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">is_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">True</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># no DB table created b/c model is abstract</span>
+</span><span class='line'>        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">MockProfileManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        This manager creates MockProfile&#39;s on the fly without</span>
+</span><span class='line'><span class="sd">        touching the database. It is needed by User.get_profile()</span>
+</span><span class='line'><span class="sd">        b/c we can&#39;t have an abstract base class as AUTH_PROFILE_MODULE.</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">self</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">            User.get_profile() calls .using(...).get(user_id__exact=X)</span>
+</span><span class='line'><span class="sd">            so we instrument it here to return a MockProfile() with</span>
+</span><span class='line'><span class="sd">            user_id=X parameter. Anything else may break!!!</span>
+</span><span class='line'><span class="sd">        &quot;&quot;&quot;</span>
+</span><span class='line'>        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+</span><span class='line'>            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># this creates an object in memory. To save it to DB</span>
+</span><span class='line'>        <span class="c"># call obj.save() which we DON&#39;T do anyway!</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">MockProfile</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">MockProfile</span><span class="p">(</span><span class="n">AbstractMockProfile</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        In-memory (fake) profile class used by default for</span>
+</span><span class='line'><span class="sd">        the AUTH_PROFILE_MODULE setting.</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">objects</span> <span class="o">=</span> <span class="n">MockProfileManager</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># DB table is NOT created automatically</span>
+</span><span class='line'>        <span class="c"># when managed = False</span>
+</span><span class='line'>        <span class="n">managed</span> <span class="o">=</span> <span class="bp">False</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In Difio core the user profile is always used like this</p>
+
+<pre><code>profile = request.user.get_profile()
+if profile.is_subscribed():
+    pass
+</code></pre>
+
+<p>and by default</p>
+
+<pre><code>AUTH_PROFILE_MODULE = "difio.MockProfile"
+</code></pre>
+
+<p>Voila!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-27T16:18:00+02:00" pubdate data-updated="true">Feb 27<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/django/'>Django</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/" title="Previous Post: Skip or Render Specific Blocks from Jinja2 Templates">&laquo; Skip or Render Specific Blocks from Jinja2 Templates</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<br/>
+<section>
+  <p>
+    I am a QA contractor at Red Hat responsible for over
+    <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1400 bugs</a>,
+    a general purpose open source developer, Red Hat Certified professional,
+    cloud hacker and an <a href="/projects/">entrepreneur</a>.
+  </p>
+
+  <p>
+    I'm living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+    which is emerging as a busy place for start-up founders and tech enthusiasts
+    in Eastern Europe! You can find more about me <a href="/about/">here</a>.
+  </p>
+</section>
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+<section>
+    <h1>You Can Find Me At</h1>
+    <p>
+        I'm in Sofia. Ping me for a beer.
+    </p>
+
+    <p>
+        <a href="http://railsgirls.com/sofia">Rails Girls Sofia</a> - March 8th - visitor
+    </p>
+
+    <p>
+        <a href="http://hackfmi.com">HackFMI Sofia</a> - April 25th, 26th, 27th - mentor
+    </p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/27/mocking-django-auth-profile-module-without-database/">Mocking Django AUTH_PROFILE_MODULE without a Database</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/">Skip or Render Specific Blocks from Jinja2 Templates</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">7 Years and 1400 Bugs Later as Red Hat QA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp from EBS to Instance Storage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/">Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/">Tip: How to Build updates.img for Fedora</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">AWS Tip: Shrinking EBS Root Volume Size</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014 Report - Day #2 Testing and Automation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/28/book-review-january-2014/">Book Review - January 2014</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2011-2014 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+  &diams;
+  Popular categories:
+<a href="/blog/categories/rhel/">Red Hat</a>,
+<a href="/blog/categories/cloud/">Cloud</a>,
+<a href="/blog/categories/fedora/">Fedora</a>,
+<a href="/blog/categories/qa/">QA</a>,
+<a href="/blog/categories/start-up/">Start-up</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/';
+        var disqus_url = 'http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
