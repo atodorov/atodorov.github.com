@@ -68,6 +68,6 @@ It will be interesting to see if this can be removed from `rpm` altogether.
 I don't think it will happen soon but if we don't use it why have it there? 
 
 My script for the test is
-[https://github.com/atodorov/fedora-scripts/blob/master/test-rpm-url-field.sh](here).
+[here](https://github.com/atodorov/fedora-scripts/blob/master/test-rpm-url-field.sh).
 
 
