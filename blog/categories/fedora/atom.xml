@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-03-03T18:59:41+02:00</updated>
+  <updated>2014-03-04T22:02:35+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,48 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[How do You Test Fonts]]></title>
+    <link href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/"/>
+    <updated>2014-03-04T21:30:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts</id>
+    <content type="html"><![CDATA[<p><a href="/blog/2014/03/03/last-week-in-fedora-qa/">Previously</a> I mentioned about testing
+fonts but didn't have any idea how this is done. Authors
+Khaled Hosny of <a href="http://www.amirifont.org/">Amiri Font</a> and Steve White of
+<a href="http://www.gnu.org/software/freefont/">GNU FreeFont</a> provided valuable insight
+and material for further reading. I've asked them:</p>
+
+<ul>
+<li>What is your approach for testing ?</li>
+<li>What kind of problems is your test suite designed for ?</li>
+</ul>
+
+
+<p>Here's what they say:</p>
+
+<p><blockquote><p>Currently my test suite consists of text strings (or lists of code<br/>points) and expected output glyph sequences and then use HarfBuzz<br/>(through its hb-shape command line tool) to check that the fonts always<br/>output the expected sequence of glyphs, sometimes with the expected<br/>positioning as well. Amiri is a complex font that have many glyph<br/>substitution and positioning rules, so the test suite is designed to<br/>make sure those rules are always executed correctly to catch regressions<br/>in the font (or in HarfBuzz, which sometimes happens since the things I<br/>do in my fonts are not always that common).</p></p><p><p>I think Lohit project do similar testing for their fonts, and HarfBuzz<br/>itself has a similar test suite with a bunch of nice scripts (though<br/>they are not installed when building HarfBuzz, yet[1]).</p></p><p><p>Recently I added more kinds of tests, namely checking that OTS[2]<br/>sanitizes the fonts successfully as this is important for using them on<br/>the web, and a test for a common mistakes I made in my feature files<br/>that result in unexpected blank glyphs in the fonts.</p><footer><strong>Khaled Hosny</strong> <cite>Amiri Font</cite></footer></blockquote></p>
+
+<ol>
+<li><a href="https://github.com/behdad/harfbuzz/pull/12">https://github.com/behdad/harfbuzz/pull/12</a></li>
+<li><a href="https://github.com/khaledhosny/ots">https://github.com/khaledhosny/ots</a></li>
+</ol>
+
+
+<p><blockquote><p>The answer is complicated.  I'll do what I can to answer.</p></p><p><p>First, the FontForge application has a "verification" function which<br/>can be run from a script, and which identifies numerous technical<br/>problems.</p></p><p><p>FontForge also has a "Find Problems" function that I run by hand.</p></p><p><p>The monospaced face has special restrictions, first that all glyphs of<br/>non-zero width must be of the same width, and second, that all glyphs<br/>lie within the vertical bounds of the font.</p></p><p><p>Beside this, I have several other scripts that check for a few things<br/>that FontForge doesn't (duplicate names, that glyph slots agree with<br/>Unicode code within Unicode character blocks).</p></p><p><p>Several tests scripts have yet to be uploaded to the version control<br/>system -- because I'm unsure of them.</p></p><p><p>There is a more complicated check of TrueType tables, which attempts<br/>to find cases of tables that have been "shadowed" by the<br/>script/language specification of another table.  This is helpful, but<br/>works imperfectly.</p></p><p><p>ALL THAT SAID,</p></p><p><p>In the end, every script used in the font has to be visually checked.<br/>This process takes me weeks, and there's nothing systematic about it,<br/>except that I look at printout of documents in each language to see if<br/>things have gone awry.</p></p><p><p>For a few documents in a few languages, I have images of how text<br/><em>should</em> look, and can compare that visually (especially important for<br/>complex scripts.)</p></p><p><p>A few years back, somebody wrote a clever script that generated images<br/>of text and compared them pixel-by-pixel.  This was a great idea, and<br/>I wish I could use it more effectively, but the problem was that it<br/>was much too sensitive.  A small change to the font (e.g. PostScript<br/>parameters) would cause a small but global change in the rendering.<br/>Also the rendering could vary from one version of the rendering<br/>software to another.  So I don't use this anymore.</p></p><p><p>That's all I can think of right now.</p></p><p><p>In fact, testing has been a big problem in getting releases out.  In<br/>the past, each release has taken at least two weeks to test, and then<br/>another week to fix and bundle...if I was lucky.  And for the past<br/>couple of years, I just haven't been able to justify the time<br/>expenditure.  (Besides this, there are still a few serious problems<br/>with the fonts--once again, a matter of time.)</p></p><p><p>Have a look at the bugs pages, to get an idea of work being done.</p><footer><strong>Steve White</strong> <cite>GNU FreeFont</cite></footer></blockquote></p>
+
+<p><a href="http://savannah.gnu.org/bugs/?group=freefont">http://savannah.gnu.org/bugs/?group=freefont</a></p>
+
+<p>I'm not sure if ImageMagic or PIL can help solve the rendering and compare
+problem Steve is talking about. They can definitely be used for
+<a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">image comparison</a>
+so maybe coupled with some rendering library it's worth a quick try.</p>
+
+<p>If you happen to know more about fonts, please join me in
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improving overall test coverage in Fedora</a>
+by designing test suites for fonts packages.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Last Week in Fedora QA]]></title>
@@ -741,120 +783,6 @@ help you get through the process if you're willing to commit your time to this.<
 me if I'm missing something or you'd like to know more.</p>
 
 <p><em>Looking forward to the next 7 years!</em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: How to Build updates.img for Fedora]]></title>
-    <link href="http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/"/>
-    <updated>2014-02-07T11:01:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora</id>
-    <content type="html"><![CDATA[<p>Anaconda the Fedora, CentOS and Red Hat Enterprise Linux installer has the
-capability to incorporate
-<a href="https://fedoraproject.org/wiki/Anaconda/Updates">updates at runtime</a>.
-These updates are generally distributed as an <code>updates.img</code> file. Here is how
-to easily build one from a working installation tree.</p>
-
-<p>Instead of using the git sources to build an updates.img I prefer using the SRPM
-from the tree which I am installing. <strike>This way the resulting updates image will be
-more consistent with the anaconda version already available in the tree. And in theory
-everything you need to build it should already be available as well.</strike>
-<strong>UPDATE 2014-02-08:</strong> You can also build the <code>updates.img</code> from the git source tree
-which is shown at the bottom of this article.</p>
-
-<p>The following steps work for me on a Fedora 20 system.</p>
-
-<ul>
-<li>Download the source RPM for anaconda from the tree and extract the sources to a working
-directory. Then;</li>
-</ul>
-
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">cd </span>anaconda-20.25.16-1
-</span><span class='line'>git init
-</span><span class='line'>git add .
-</span><span class='line'>git commit -m <span class="s2">&quot;initial import&quot;</span>
-</span><span class='line'>git tag anaconda-20.25.16-1
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<ul>
-<li><p>The above steps will create a local git repository and tag the initial contents before
-modification. The tag is required later by the script which creates the updates image;</p></li>
-<li><p>After making your changes commit them and from the top anaconda directory execute:</p></li>
-</ul>
-
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>./scripts/makeupdates -t anaconda-20.25.16-1
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>You can also add RPM contents to the updates.img but you need to download the packages first:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>yumdownloader python-coverage python-setuptools&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm
-</span><span class='line'>BUILDDIR /home/atodorov/anaconda-20.25.16-1
-</span><span class='line'>Including anaconda
-</span><span class='line'>2 RPMs added manually:
-</span><span class='line'>python-setuptools-1.4.2-1.fc20.noarch.rpm
-</span><span class='line'>python-coverage-3.7-1.fc20.x86_64.rpm
-</span><span class='line'><span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates &amp;amp;&amp;amp; rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
-</span><span class='line'>3534 blocks
-</span><span class='line'><span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates &amp;amp;&amp;amp; rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
-</span><span class='line'>1214 blocks
-</span><span class='line'>&lt;stdin&gt; to &lt;stdout&gt; 4831 blocks&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;updates.img ready
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>In the above example I have only modified the top level anaconda file (<code>/usr/sbin/anaconda</code>
-inside the installation environment) experimenting with
-<a href="http://nedbatchelder.com/code/coverage/">python-coverage</a> integration.</p>
-
-<p>You are done! Make the <code>updates.img</code> available to Anaconda and start using it!</p>
-
-<p><strong>UPDATE 2014-02-08:</strong> If you prefer working with the anaconda source tree here's
-how to do it:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>git clone git://git.fedorahosted.org/git/anaconda.git
-</span><span class='line'><span class="nb">cd </span>anaconda/
-</span><span class='line'>git checkout anaconda-20.25.16-1 -b my_feature-branch&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;... make changes ...&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;git commit -a -m <span class="s2">&quot;Fixed something&quot;</span>&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;./scripts/makeupdates -t anaconda-20.25.16-1
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 ]]></content>
   </entry>
   
