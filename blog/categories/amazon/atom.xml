@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Amazon | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/amazon/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-03-04T22:44:11+02:00</updated>
+  <updated>2014-03-07T17:49:44+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,101 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Reducing AWS Cloud Costs - Real Money Example]]></title>
+    <link href="http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/"/>
+    <updated>2014-03-07T17:14:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example</id>
+    <content type="html"><![CDATA[<p><a href="http://aws.amazon.com/ebs/pricing/effective-february-2014/">Last month</a> Amazon
+reduced by 50% prices for EBS storage. This, combined with
+<a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">shrinking EBS root volume size</a> and
+<a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">moving /tmp to instance storage</a>
+allowed me to reduce EBS related costs behind <a href="http://www.dif.io">Difio</a> by around 50%.
+Following are the real figures from my AWS Bill.</p>
+
+<p>EBS costs for Difio were gradually rising up with every new node added to the cluster and
+increased package processing (resulting in more I/O):</p>
+
+<ul>
+<li>November 2013 - $7.38</li>
+<li>December 2013 - $10.55</li>
+<li>January 2014 - $11.97</li>
+</ul>
+
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>January 2014 </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>EBS
+</span><span class='line'>$0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
+</span><span class='line'>$0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
+</span><span class='line'>$0.10  per 1 million I/O requests               9,405,243 IOs   $0.94&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>                                                    Total: $11.97
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In February there was one new system added to process additional requests
+(cluster nodes run as spot instances) and an increased number of temporary
+instances (although I haven't counted them) while I was restructuring AMI
+internals to accommodate the <a href="https://github.com/difio/difio">open source</a>
+version of Difio. My assumption (based on historical data) is this would
+have driven the costs up in the region of $15 per month only for EBS.</p>
+
+<p>After implementing the stated minimal improvements and having Amazon reduced the prices by
+half the bill looks like this:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>February 2014 </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>EBS
+</span><span class='line'>$0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
+</span><span class='line'>$0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
+</span><span class='line'>$0.05  per 1 million I/O requests               5,704,482 IOs   $0.29&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>                                                    Total:  $4.01
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Explanation</h2>
+
+<p><em>Snapshot data stored</em> is the volume of snapshots (AMIs, backups, etc) which
+I have. This is fairly constant.</p>
+
+<p><em>Provisioned storage</em> is the volume of EBS storage provisioned for running
+instances (e.g. root file system, data partitions, etc.). This was reduced
+mainly because of shrinking the root volumes. (Previously I've used larger
+root volumes for a bigger /tmp).</p>
+
+<p><em>I/O requests</em> is the number of I/O requests associated with your EBS volumes.
+As far as I understand Amazon doesn't charge for I/O related to ephemeral storage.
+Moving /tmp from EBS to instance storage is the reason this was reduced roughly by half.</p>
+
+<h2>Where To Next</h2>
+
+<p>I've reduced the root volumes back to the 8GB defaults but this has still room for
+improvement b/c the AMI is quite minimal. This will bring the largest improvements.
+Another thing is the still relatively high I/O rate that touches EBS volumes.
+I haven't investigated where this comes from though.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Moving /tmp from EBS to Instance Storage]]></title>
@@ -290,76 +385,6 @@ with the current environment. Need to check though.</p>
 <a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782">this thread</a> and hopefully
 they will have some more hints. If you have any other ideas please post in the comments!
 Thanks!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How I Created a Website In Two Days Without Coding]]></title>
-    <link href="http://atodorov.org/blog/2013/07/31/how-i-created-a-website-in-two-days-without-coding/"/>
-    <updated>2013-07-31T21:55:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/07/31/how-i-created-a-website-in-two-days-without-coding</id>
-    <content type="html"><![CDATA[<p><img src="/images/logos/obuvki41plus_header.png" title="header image" alt="header image" /></p>
-
-<p>This is a simple story about a website I helped create without using any
-programming at all. It took me two days because of the images and the logo
-design which I've commissioned to a friend.</p>
-
-<p>The website is <a href="http://obuvki41plus.com/">obuvki41plus.com</a> which is a
-re-seller business my spouse runs. It specializes in large size, elegant
-ladies shoes - Europe size 41 plus (hard to find in Bulgaria),
-hence the name.</p>
-
-<h2>Required Functionality</h2>
-
-<ul>
-<li>Display a catalog of items for sale with detailed information about
-each item;</li>
-<li>Make it possible for people to comment and share the items;</li>
-<li>Very basic shopping cart which stores the selected items and then
-redirects to a page with order instructions. Actual order is made via
-phone for several reasons which I will explain in
-<a href="/blog/2013/08/01/why-taking-orders-by-phone-works-for-my-start-up/">another post</a>;</li>
-<li>Add a feedback/contact form;</li>
-<li>Look nice on mobile devices.</li>
-</ul>
-
-
-<h2>Technology</h2>
-
-<ul>
-<li>The website is static, all pages are simple HTML and is hosted in
-Amazon S3;</li>
-<li>Comments are provided by Facebook's
-<a href="https://developers.facebook.com/docs/reference/plugins/comments/">Comments Box</a>
-plug-in;</li>
-<li>Social media buttons and tracking are provided by
-<a href="https://www.addthis.com/">AddThis</a>;</li>
-<li>Visitors analytics is standard and is from
-<a href="http://www.google.com/analytics/">Google Analytics</a>;</li>
-<li>Template is from <a href="http://pages.github.com/">GitHub Pages</a> with slight
-modifications; Works on mobile too;</li>
-<li>Logo is custom designed by my friend
-<a href="https://www.facebook.com/aluinpoli">Polina Valerieva</a>;</li>
-<li>Feedback/contact form is by <a href="https://www.uservoice.com/">UserVoice</a>;</li>
-<li>Shopping cart is by <a href="http://simplecartjs.org/">simpleCart(js)</a>.
-I've created a simple animation effect when pressing the "ADD TO CART"
-link to visually alert the user. This is done with jQuery.</li>
-</ul>
-
-
-<p>I could have used some JavaScript templating engine like
-<a href="http://handlebarsjs.com/">Handlebars</a> but at the time I didn't know about
-it and I prefer not to write JavaScript if possible :).</p>
-
-<h2>Colophon</h2>
-
-<p>I did some coding after the initial release eventually.
-I've transformed the website to a Django
-based site which is exported as static HTML.</p>
-
-<p>This helps me with faster deployment/management as everything is stored
-in git, allows templates inheritance and also makes the site ready to
-add more functionality if required.</p>
 ]]></content>
   </entry>
   
