@@ -10,7 +10,7 @@ footer: true
 I have accumulated some items which I don't need or will not use anymore.
 Some of them I am willing to give away while others can be borrowed for a while.
 
-**Rules Of Engagement** (added on 2013-04-05 21:45 EEST)
+**Rules Of Engagement**
 
 * Items are tagged with a `prefix`. It is self explanatory;
 * Requests are served in a [FIFO](https://en.wikipedia.org/wiki/FIFO) fashion;
@@ -25,15 +25,12 @@ This is both for easier tracking of requests and for transparency sake! You are 
 <img src="/images/subscribe.png" alt="subscribe via email" style="display:inline;border:none;margin:0;padding:0;vertical-align:text-bottom;"/>
 to get notified when I add new items!
 
-**UPDATE Dec 2013**
+Free e-Books
+------------
 
-I finally made the time to donate some books for 
-[children in foster care](/blog/2013/07/04/give-a-book-get-a-laptop-with-discount/)
-and this page is updated accordingly. Many of the books I donated are not on this list though.
-
-**UPDATE Jan 2014**
-
-Added book Първите в българския интернет.
+* [Accelerando (Singularity)](http://amzn.to/19Ctnk8) by Charles Stross - Creative Commons version available
+* [What Is DevOps?](http://amzn.to/1eXk3JN) by Mike Loukide
+* [Building a DevOps Culture](http://amzn.to/19KobFn) by Mandi Walls
 
 Books in English
 ----------------
