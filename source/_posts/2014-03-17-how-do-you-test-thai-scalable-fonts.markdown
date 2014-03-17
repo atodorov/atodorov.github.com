@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How Do You Test That Scalable Fonts"
+title: "How Do You Test Thai Scalable Fonts"
 date: 2014-03-17 22:51
 comments: true
 categories: ['Fedora', 'QA']
