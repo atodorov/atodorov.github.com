@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="VERSION Red Hat Enterprise Linux 6 PROBLEM You have to create a single PDF file by combining multiple files -
-for example individually scanned pages &hellip;">
+  <meta name="description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux
+platform. This is a nice tool which lets users report &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -75,6 +75,111 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/">Mission Impossible - ABRT Bugzilla Plugin on RHEL6</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-13T13:21:00+03:00" pubdate data-updated="true">Jul 13<span>th</span>, 2012</time>
+        
+         | <a href="/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux
+platform. This is a nice tool which lets users report bugs easily to Red Hat.
+However one of the plugins in the latest version doesn&#8217;t seem usable at all.</p>
+
+<p>First make sure you have <code>libreport-plugin-bugzilla</code> package installed. This is the plugin to
+report bugs directly to <a href="https://bugzilla.redhat.com">Bugzilla</a>. It may not be installed by default
+because customers are supposed to report issues to Support first - this is why they pay anyway.
+If you are a tech savvy user though, you may want to skip Support and go straight to the developers.</p>
+
+<p>To enable Bugzilla plugin:</p>
+
+<ul>
+<li><p>Edit the file <code>/etc/libreport/events.d/bugzilla_event.conf</code> change the line</p>
+
+<pre><code>  EVENT=report_Bugzilla analyzer=libreport reporter-bugzilla -b
+</code></pre></li>
+</ul>
+
+
+<p>to</p>
+
+<pre><code>    EVENT=report_Bugzilla reporter-bugzilla -b
+</code></pre>
+
+<ul>
+<li><p>Make sure ABRT will collect meaningful backtrace. If debuginfo is missing it will not let you continue.
+Edit the file <code>/etc/libreport/events.d/ccpp_event.conf</code>. There should be something like this:</p>
+
+<pre><code>  EVENT=analyze_LocalGDB analyzer=CCpp
+          abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+          abrt-action-generate-backtrace &amp;&amp;
+          abrt-action-analyze-backtrace
+          (
+              bug_id=$(reporter-bugzilla -h `cat duphash`) &amp;&amp;
+              if test -n "$bug_id"; then
+                  abrt-bodhi -r -b $bug_id
+              fi
+          )
+</code></pre></li>
+<li><p>Change it to look like this - i.e. add the missing <code>/usr/libexec/</code> line:</p>
+
+<pre><code>  EVENT=analyze_LocalGDB analyzer=CCpp
+          abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+          /usr/libexec/abrt-action-install-debuginfo-to-abrt-cache --size_mb=4096 &amp;&amp;
+          abrt-action-generate-backtrace &amp;&amp;
+          abrt-action-analyze-backtrace &amp;&amp;
+          (
+              bug_id=$(reporter-bugzilla -h `cat duphash`) &amp;&amp;
+              if test -n "$bug_id"; then
+                  abrt-bodhi -r -b $bug_id
+              fi
+          )
+</code></pre></li>
+</ul>
+
+
+<p>Supposedly after everything is configured properly ABRT will install missing debuginfo packages,
+generate the backtrace and let you report it to Bugzilla. Because of
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=759443">bug 759443</a> this will not happen.</p>
+
+<p>To work around the problem you can try to manually install the missing debuginfo packages.
+Go to your system profile in RHN and subscribe the system to all appropriate debuginfo channels.
+Then install the packages. In my case:</p>
+
+<pre><code>    # debuginfo-install firefox
+</code></pre>
+
+<p>And finally - <a href="https://bugzilla.redhat.com/show_bug.cgi?id=800754">bug 800754</a> which was already reported!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1548,6 +1653,10 @@ A demonstration video from the same deployment can be found at <a href="http://w
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/03/19/sms-pin-verification-with-twilio-and-django/">SMS PIN Verification with Twilio and Django</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How Do You Test Thai Scalable Fonts</a>
       </li>
     
@@ -1581,10 +1690,6 @@ A demonstration video from the same deployment can be found at <a href="http://w
     
       <li class="post">
         <a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">Moving /tmp from EBS to Instance Storage</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/02/08/articles-week-git-submodules-stopping-spam-without-captcha/">Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA</a>
       </li>
     
   </ul>
