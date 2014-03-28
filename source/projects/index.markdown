@@ -23,6 +23,17 @@ when or what to upgrade because even if an application works, any change in its 
 or the versions of those libraries can break the application.
 
 
+Shoes 41 Plus
+--------------
+
+<img style="float: left; margin-right: 10px;" src="/images/logos/obuvki41plus.png" alt="obuvki41plus" />
+
+[Shoes 41 Plus](http://obuvki41plus.com) is niche oriented business selling ladies shoes with
+sizes EU 41 and up, which are very hard to find in Bulgaria. This is driven by my spouse while
+I provide some tech support.
+<br />
+
+
 Open Technologies Bulgaria
 ---------------------------
 
