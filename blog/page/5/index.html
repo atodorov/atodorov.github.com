@@ -9,8 +9,10 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Install related packages and make configuration changes: yum -y install vsftp policycoreutils-python
-sed -i "s/#anon_upload_enable=YES/ &hellip;">
+  <meta name="description" content="Today I&#8217;ve visited the annual
+VMware Open House Event in Sofia.
+One of the sessions discussed their product
+vCenter Multi-Hypervisor Manager &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -75,6 +77,93 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/">Why VMware Multi-Hypervisor Manager Architecture Is Wrong</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-30T23:36:00+03:00" pubdate data-updated="true">May 30<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Today I&#8217;ve visited the annual
+<a href="http://www.openhouse.vmware-bulgaria.com/">VMware Open House Event</a> in Sofia.
+One of the sessions discussed their product
+<a href="http://www.vmware.com/support/mhm/doc/vcenter-multi-hypervisor-manager-10-release-notes.html">vCenter Multi-Hypervisor Manager</a>
+and the developers explained their architecture and technology behind it.
+I think they are wrong.</p>
+
+<p><img src="/images/vmware_mhm_architecture.png" alt="MHM Architecture" style="clear:both;display:block;"/>
+Image taken from product release notes.</p>
+
+<p>As shown above the purple-orange components are the MHM ones. They are designed as
+plug-ins to the vCenter product and can not function as stand alone products.
+vCenter MHM Server is responsible for communicating with 3rd party hypervisors
+and then talks back to the MHM Extension in vCenter which feeds the MHM Plug-In (the UI).
+I see three bad design decisions here:</p>
+
+<p>1) The plugin architecture makes both the management layer and the UI a separate module.
+As was shown in a demo session the user can not manage/visualize ESX and Hyper-V hosts/VMs
+at the same time. They are managed and visualized in separate views.
+This leads to non uniform user experience. Not to mention both UIs are different because the
+supported hypervisor capabilities are different. -1 for user experience.</p>
+
+<p>2) From what I understand both vCenter and MHM Extension provide API access. MHM one is not public yet.
+Customers are using this API to build their own scripts around the infrastructure. For a customer
+this means duplicating effort and maintaining scripts that talk to two separate APIs, although they
+will be very similar to one another. -1 for making it easy on the customer.</p>
+
+<p>3) From development point of view the top two components are not necessary. They introduce
+extra development and management costs to the product. -1 for product maintainability.</p>
+
+<h2>The Alternative</h2>
+
+<p>One could design the same product in the fashion that <a href="http://libvirt.org">libvirt</a> does -
+abstract all hypervisor details and provide a common API to build applications against.
+In this case vCenter Server will be the application on top.
+This interface will also report hypervisor capabilities so that the UI will be disabled
+where appropriate.</p>
+
+<p><img src="/images/libvirt-driver-arch.png" alt="Libvirt Driver Architecture" style="clear:both;display:block;"/>
+Image taken from <a href="http://libvirt.org/api.html">http://libvirt.org/api.html</a></p>
+
+<p>I think libvirt&#8217;s approach is much cleaner and easier to maintain in the long term.</p>
+
+<p>Indeed I&#8217;ve asked the question why not use libvirt -
+it already supports ESX and Hyper-V as well as bunch of other hypervisors. I didn&#8217;t get a clear
+answer on that, just that the team was looking at it, evaluated libvirt but opted to go
+another way.</p>
+
+<p>I still feel VMware has not learned how to do the open source dance as well as others do.
+What do you think?</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1964,82 +2053,6 @@ beep as the door was closing and no more.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/27/what-runs-your-startup-useful-at-night/">What Runs Your Start-up - Useful at Night</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-27T12:00:00+02:00" pubdate data-updated="true">Mar 27<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/03/27/what-runs-your-startup-useful-at-night/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img style="float: left; margin-right: 10px;" src="/images/startup/usefulatnight.png" alt="Useful at Night logo" /></p>
-
-<p><a href="http://usefulatnight.com/">Useful at Night</a> is a mobile guide for nightlife
-empowering real time discovery of cool locations, allowing nightlife players
-to identify opinion leaders. Through geo-location and data aggregation
-capabilities, the application allows useful exploration of cities, places and
-parties.</p>
-
-<p><a href="http://about.me/velev">Evelin Velev</a> was kind enough to share what technologies
-his team uses to run their star-up.</p>
-
-<br/>
-
-
-<h2>Main Technologies</h2>
-
-<p>Main technologies used are Node.js, HTML 5 and NoSQL.</p>
-
-<p>Back-end application servers are written in Node.js and hosted at Heroku,
-coupled with <a href="http://www.redistogo.com/">RedisToGo</a> for caching and
-CouchDB served by <a href="https://cloudant.com/">Cloudant</a> for storage.</p>
-
-<p>Their mobile front-end supports both iOS and Android platforms and is built using
-HTML5 and a homemade UI framework called RAPID. There are some native parts developed
-in Objective-C and Java respectively.</p>
-
-<p>In addition <em>Useful at Night</em> uses MongoDB for metrics data with a custom metrics solution
-written in Node.js; Amazon S3 for storing different assets; and a custom storage solution
-called Divan (simple CouchDB like).</p>
-
-<h2>Why Not Something Else?</h2>
-
-<blockquote><p>We chose Node.js for our application servers, because it enables us to build efficient<br/>distributed systems while sharing significant amounts of code between client and server.<br/>Things get really interesting when you couple Node.js with Redis for data structure<br/>sharing and message passing, as the two technologies play very well together.</p><p>We chose CouchDB as our main back-end because it is the most schema-less data-store that<br/>supports secondary indexing. Once you get fluent with its map-reduce views, you can<br/>compute an index out of practically anything. For comparison, even MongoDB requires<br/>that you design your documents as to enable certain indexing patterns. Put otherwise,<br/>we&#8217;d say CouchDB is a data-store that enables truly lean engineering - we have never had<br/>to re-bake or migrate our data since day one, while we&#8217;re constantly experimenting with<br/>new ways to index, aggregate and query it.</p><p>We chose HTML5 as our front-end technology, because it&#8217;s cross-platform and because we<br/>believe it&#8217;s &#8230; almost ready. Things are still really problematic on Android, but iOS<br/>boasts a gorgeous web presentation platform, and Windows 8 is also joining the game with<br/>a very good web engine. Obviously we&#8217;re constantly running into issues and limitations,<br/>mostly related to the unfortunate fact that in spite of some recent developments,<br/>a web app is still mostly single threaded. However, we&#8217;re getting there, and we&#8217;re proud<br/>to say we&#8217;re running a pretty graphically complex hybrid app with near-native GUI performance<br/>on the iPhone 4S and above.</p></blockquote>
-
-
-<h2>Want More Info?</h2>
-
-<p>If you&#8217;d like to hear more from <em>Useful at Night</em> please comment below. I will ask them
-to follow this thread and reply to your questions.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/6/">&larr; Older</a>
@@ -2091,6 +2104,10 @@ to follow this thread and reply to your questions.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans/">Positive Biological Effects of Open Source on Humans</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/04/01/happy-april-fools-day/">Happy April Fools Day</a>
       </li>
     
@@ -2124,10 +2141,6 @@ to follow this thread and reply to your questions.</p>
     
       <li class="post">
         <a href="/blog/2014/02/27/mocking-django-auth-profile-module-without-database/">Mocking Django AUTH_PROFILE_MODULE without a Database</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/">Skip or Render Specific Blocks from Jinja2 Templates</a>
       </li>
     
   </ul>
