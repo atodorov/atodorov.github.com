@@ -9,9 +9,7 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Recently I watched a talk by Simon Sinek
-about leadership. He talks about Endorphins, Dopamine, Serotonin and Oxytocin
-and how they make us feel and &hellip;">
+  <meta name="description" content="Beware if you are using code like this: models.DateTimeField(default=datetime.now()) i.e. passing a function return value as the default option for a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +74,85 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/">Beware of Django Default Model Field Option When Using datetime.now()</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-15T15:54:00+03:00" pubdate data-updated="true">Apr 15<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Beware if you are using code like this:</p>
+
+<pre><code>models.DateTimeField(default=datetime.now())
+</code></pre>
+
+<p>i.e. passing a function return value as the default option for a model field in Django.
+In some cases the value will be calculated once when the application starts or
+the module is imported and will not be updated later. The most common scenario
+is DateTime fields which default to now(). The correct way is to use a callable:</p>
+
+<pre><code>models.DateTimeField(default=datetime.now)
+</code></pre>
+
+<p>I&#8217;ve hit this issue on a low volume application which uses cron to collect its own
+metrics by calling an internal URL. The app was running as WSGI app and I wondered
+why I got records with duplicate dates in the DB. A more detailed (correct) example follows:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Metrics</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+</span><span class='line'>    <span class="n">added_on</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">added_on_as_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_strftime</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="http://www.dif.io">Difio</a> also had the same bug but didn&#8217;t exhibit the problem
+because all objects with default date-time values were created on the backend nodes
+which get updated and restarted very often.</p>
+
+<p>For more info read this
+<a href="http://david.feinzeig.com/blog/2011/12/06/how-to-properly-set-a-default-value-for-a-datetimefield-in-django/">blog</a>.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2530,134 +2607,6 @@ you there if you&#8217;re coming.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/02/book-review-of-2013/">Book Review of 2013</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-01-02T10:07:00+02:00" pubdate data-updated="true">Jan 2<span>nd</span>, 2014</time>
-        
-         | <a href="/blog/2014/01/02/book-review-of-2013/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Happy New Year everyone! I was able to complete reading a few books in the last
-days so this first post will be a quick review of
-<a href="https://www.goodreads.com/review/list/16191345-alexander-todorov?read_at=2013&amp;view=covers">all twelve books I&#8217;ve read in 2013</a>.</p>
-
-<h2>Technical Blogging</h2>
-
-<p>I&#8217;ve started the year with
-<a href="http://amzn.to/1a2QySD">Technical Blogging: Turn Your Expertise into a Remarkable Online Presence</a>
-by Antonio Cangiano. This is the book which prompted me to start this blog. It is
-targeted primarily at technical blogging but could be useful to non-tech bloggers as well.
-I strongly recommend this book to anyone who is writing for the web.</p>
-
-<h2>The 4-Hour Workweek</h2>
-
-<p><a href="http://amzn.to/1ivu2q4">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a>
-by Timothy Ferriss. This book I found at a local
-<a href="/blog/2013/01/30/startup-talk-5-book-list/">start-up event</a> and is one of my
-all time favorites. The basic idea is to ditch the traditional working space and
-work less utilizing more automation. This is something I&#8217;ve been doing to an extent
-during the last 5+ years and I am still changing my life and working habits to
-reach the moment where I work only a few hours a week.</p>
-
-<p>A must read for any entrepreneur, freelancer or work from home folks.</p>
-
-<h2>The E-Myth Revisited</h2>
-
-<p><a href="http://amzn.to/1d0j5ee">The E-Myth Revisited: Why Most Small Businesses Don&#8217;t Work and What to Do About It</a>
-by Michael Gerber is the second book I&#8217;ve found at the same start-up event mentioned
-previously. I found this one particularly hard to read. What I took from it was
-that you should think about your business as a franchise and document processes
-so that others can do it for you in the same way you would do it yourself.</p>
-
-<h2>Culture and Wine</h2>
-
-<p>Next two books are in Bulgarian and can be found at my
-<a href="https://www.goodreads.com/review/list/16191345-alexander-todorov?read_at=2013&amp;view=covers">Goodreads list</a>.
-They are about culture and religion and wine tasting 101.</p>
-
-<h2>Accelerando</h2>
-
-<p><a href="http://amzn.to/19Ctnk8">Accelerando (Singularity)</a> by Charles Stross is also one
-of my favorites. I&#8217;ve heard about it at a local CloudFoundry conference a few years
-back and finally had the time to read it. This is a fiction book where events start
-in the near future and drive forward to dismantling the planets in the Solar system,
-uploading lobsters minds on the Internet, space travel, aliens and family
-relationships. I will definitely recommend it, the book is a very relaxing read.</p>
-
-<h2>DevOps</h2>
-
-<p><a href="http://amzn.to/1eXk3JN">What Is DevOps?</a> by Mike Loukides and
-<a href="http://amzn.to/19KobFn">Building a DevOps Culture</a> by Mandi Walls are two short
-free books for Kindle. They just touch base on the topic of DevOps and what it
-takes to create a DevOps organization. Definitely worth reading even if you&#8217;re
-not deeply interested in this topic.</p>
-
-<p><a href="http://amzn.to/1dVvQmE">DevOps for Developers</a> by Michael Huttermann is a
-practical books about DevOps. It talks about processes and tools and lists
-lots of examples. The tools part is Ruby centric though.
-I found it a bit hard to read at times and it took me a while
-to complete it. I&#8217;m not sure if the book is really helpful if one decides to
-change an exiting organization to a DevOps like structure but it is definitely
-a starting point.</p>
-
-<p>The days of waterfall software development are gone and knowingly or not most of
-us work in a DevOps like environment these days. I think it&#8217;s worth at least skimming
-through this book and taking some essentials from it.</p>
-
-<h2>UX For Lean Startups</h2>
-
-<p><a href="http://amzn.to/1fi1KeE">UX for Lean Startups</a> by Laura Klein is a very good book
-about designing user experience and validation which I&#8217;ve
-<a href="/blog/2013/12/09/book-review-ux-for-lean-startups/">reviewed previously</a>.
-I strongly recommend this book to everyone who is building a product of some sort.</p>
-
-<h2>Bulgarian Comics</h2>
-
-<p>At the end of the year I&#8217;ve managed to read two comics books, both in Bulgarian.
-The first one is a brief history of the comics arts in the country in the past 150
-years with lots of references to good old stories which I&#8217;ve read when I was a kid.</p>
-
-<p>The second one is a special edition (ebook only, print edition is out of stock) of
-the popular Daga (Rainbow) magazine which ceased to exist 20 years ago. There are
-some new episodes of the old stories drawn by the original artists.</p>
-
-<p>Both books seem to be a turning point in Bulgarian comics art and market. Hopefully
-we&#8217;ll see more cool stuff in the future. These books are not available on Amazon
-but there are some <a href="http://amzn.to/19Cw6tV">free comics books for Kindle</a> which
-you may give a try.</p>
-
-<p>I hope you find something interesting to read in my list. Also feel free to comment
-and share your favorite books in the comments below.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2707,6 +2656,10 @@ and share your favorite books in the comments below.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/">Beware of Django default Model Field Option When Using datetime.now()</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans/">Positive Biological Effects of Open Source on Humans</a>
       </li>
     
@@ -2740,10 +2693,6 @@ and share your favorite books in the comments below.</p>
     
       <li class="post">
         <a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">Call to Action: Improving Overall Test Coverage in Fedora</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/02/27/mocking-django-auth-profile-module-without-database/">Mocking Django AUTH_PROFILE_MODULE without a Database</a>
       </li>
     
   </ul>
