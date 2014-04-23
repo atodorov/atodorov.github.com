@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Open Source Existing Proprietary Code in 10 Steps"
+title: "Spoiler: How to Open Source Existing Proprietary Code in 10 Steps"
 date: 2014-04-23 22:47
 comments: true
 categories: ['Fedora', 'Django']
