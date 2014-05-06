@@ -5,13 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Email Logging for Django on RedHat OpenShift with Amazon SES</title>
+  <title>OpenSource.com article - 10 steps to migrate your closed software to open source</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
-because of frequent abuse. For that reason I use
-Amazon SES as my &hellip;">
+  <meta name="description" content="Difio is a Django based application that keeps track of packages and tells you when they change.Difio was created as closed software, then I decided &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +18,7 @@ Amazon SES as my &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +77,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Email Logging for Django on RedHat OpenShift With Amazon SES</h1>
+      <h1 class="entry-title">OpenSource.com Article - 10 Steps to Migrate Your Closed Software to Open Source</h1>
     
     
       <p class="meta">
@@ -95,7 +93,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-02-28T23:19:00+02:00" pubdate data-updated="true">Feb 28<span>th</span>, 2013</time>
+<time datetime="2014-05-06T16:14:00+03:00" pubdate data-updated="true">May 6<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,88 +102,15 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
-because of frequent abuse. For that reason I use
-<a href="http://aws.amazon.com/ses/">Amazon SES</a> as my email backend. Here is how to
-configure <a href="https://www.djangoproject.com/">Django</a> to send emails to site admins
-when something goes wrong.</p>
-
-<figure class='code'><figcaption><span>settings.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Valid addresses only.</span>
-</span><span class='line'><span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span>
-</span><span class='line'>    <span class="p">(</span><span class="s">&#39;Alexander Todorov&#39;</span><span class="p">,</span> <span class="s">&#39;atodorov@example.com&#39;</span><span class="p">),</span>
-</span><span class='line'><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>    <span class="s">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;disable_existing_loggers&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
-</span><span class='line'>    <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="s">&#39;mail_admins&#39;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&#39;class&#39;</span><span class="p">:</span> <span class="s">&#39;django.utils.log.AdminEmailHandler&#39;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="s">&#39;loggers&#39;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="s">&#39;django.request&#39;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>            <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;mail_admins&#39;</span><span class="p">],</span>
-</span><span class='line'>            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&#39;propagate&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Used as the From: address when reporting errors to admins</span>
-</span><span class='line'><span class="c"># Needs to be verified in Amazon SES as a valid sender</span>
-</span><span class='line'><span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&#39;django@example.com&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Amazon Simple Email Service settings</span>
-</span><span class='line'><span class="n">AWS_SES_ACCESS_KEY_ID</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxxxxxx&#39;</span>
-</span><span class='line'><span class="n">AWS_SES_SECRET_ACCESS_KEY</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxx&#39;</span>
-</span><span class='line'><span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">&#39;django_ses.SESBackend&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="entry-content"><blockquote><p>Difio is a Django based application that keeps track of packages and tells you when they change.<br/>Difio was created as closed software, then I decided to migrate it to open source &#8230;.</p></blockquote>
 
 
-<p>You also need the <a href="https://github.com/hmarr/django-ses">django-ses</a>
-dependency.</p>
+<p>Read more at
+<a href="http://opensource.com/business/14/5/10-steps-migrate-closed-to-open-source">OpenSource.com</a></p>
 
-<p>See <a href="http://docs.djangoproject.com/en/dev/topics/logging">http://docs.djangoproject.com/en/dev/topics/logging</a> for
-more details on how to customize your logging configuration.</p>
-
-<p>I am using this configuration successfully at RedHat&#8217;s OpenShift PaaS environment.
-Other users have
-<a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django">reported</a>
-it works for them too. Should work with any other PaaS provider.</p>
+<p>Btw I&#8217;m wondering if Telerik will share their experience opening up
+the core of their Kendo UI framework on the
+<a href="http://www.telerik.com/campaigns/kendo-ui-build-free">webinar tomorrow</a>.</p>
 </div>
 
 
@@ -208,12 +133,12 @@ it works for them too. Should work with any other PaaS provider.</p>
   
 
 
-<time datetime="2013-02-28T23:19:00+02:00" pubdate data-updated="true">Feb 28<span>th</span>, 2013</time>
+<time datetime="2014-05-06T16:14:00+03:00" pubdate data-updated="true">May 6<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/amazon/'>Amazon</a>, <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/openshift/'>OpenShift</a>, <a class='category' href='/blog/categories/ses/'>SES</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/fedora/'>Fedora</a>
   
 </span>
 
@@ -242,10 +167,8 @@ it works for them too. Should work with any other PaaS provider.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/" title="Previous Post: Performance Test: Amazon EBS vs. Instance Storage, Pt.1">&laquo; Performance Test: Amazon EBS vs. Instance Storage, Pt.1</a>
+        <a class="basic-alignment left" href="/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/" title="Previous Post: Screen Magnifier and Smart Phone! Has Anyone Used It ?">&laquo; Screen Magnifier and Smart Phone! Has Anyone Used It ?</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/" title="Next Post: Tip: Delete User Profiles with django-social-auth">Tip: Delete User Profiles with django-social-auth &raquo;</a>
       
     </p>
   </footer>
@@ -391,8 +314,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/';
-        var disqus_url = 'http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/';
+        var disqus_identifier = 'http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/';
+        var disqus_url = 'http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/';
         var disqus_script = 'embed.js';
       
     (function () {
