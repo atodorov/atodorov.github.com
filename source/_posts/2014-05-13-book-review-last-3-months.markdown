@@ -3,7 +3,7 @@ layout: post
 title: "Book Review - Last 3 Months"
 date: 2014-05-13 23:57
 comments: true
-categories: ['Fedora']
+categories: ['Fedora', 'books']
 ---
 
 Hello folks, this is my book list for the past 3 months. It ranges from
