@@ -9,8 +9,10 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="How do you keep state when working with a stateless protocol like HTTP?
-One possible answer is to use a cache back-end. I&#8217;m working on an IVR &hellip;">
+  <meta name="description" content="Some time ago a guy called Matt
+asked
+about passing large objects through their messaging queue. They were switching from
+RabbitMQ to Amazon SQS &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,8 +68,8 @@ you can logoff, but you can never leave
   <li><a href="/give-away/">Give Away List</a></li>
   <li><a href="/projects/">Projects</a></li>
   <li><a href="/domains/">Domains</a></li>
-  <li><a href="http://is.gd/OqPzoZ">Now reading: The Singularity is Near</a></li>
-  <li><a href="http://amzn.to/1nfGomp">Previous: Ronia, the Robber's Daughter</a></li>
+  <li><a href="http://amzn.to/1qQ8WIg">Now Reading: Daring Greatly</a></li>
+  <li><a href="http://amzn.to/1nZCKjx">Previous: The Singularity is Near</a></li>
 </ul>
 
 </nav>
@@ -75,6 +77,105 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/">Tip: Caching Large Objects for Celery and Amazon SQS</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-19T14:29:00+03:00" pubdate data-updated="true">Jun 19<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Some time ago a guy called Matt
+<a href="https://groups.google.com/forum/?fromgroups=#!topic/celery-users/RFAuGjZwtmg">asked</a>
+about passing large objects through their messaging queue. They were switching from
+RabbitMQ to Amazon SQS which has a limit of 64K total message size.</p>
+
+<p>Recently I&#8217;ve made some changes in <a href="http://www.dif.io">Difio</a> which require passing
+larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
+same problem. Here is the solution using a cache back-end:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">cache</span> <span class="k">as</span> <span class="n">cache_module</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">some_method</span><span class="p">():</span>
+</span><span class='line'>    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">task_cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">handle_data</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@task</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">handle_data</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">task_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">...</span> <span class="n">do</span> <span class="n">stuff</span> <span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Objects are persisted in a secondary cache back-end, not the default one, to avoid
+accidental destruction. <code>uuid</code> parameter is a string.</p>
+
+<p>Although the objects passed are smaller than 64K I haven&#8217;t seen any issues
+with this solution so far. Let me know if you are using something similar in your code
+and how it works for you.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2054,65 +2155,6 @@ don&#8217;t hesitate to share them in the comments.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/16/quick-script-for-khan-academy/">Quick Script for Khan Academy - Looking for Contributors</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-16T22:20:00+03:00" pubdate data-updated="true">Apr 16<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/16/quick-script-for-khan-academy/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>The Bulgarian translators team behind
-<a href="https://www.khanacademy.org/">Khan Academy</a> asked for help some time ago
-on a local mailing list. I promised to help but had nearly forgotten about that.
-The guys are no developers, they simply wanted a script which will give them information
-if a particular video has Bulgarian subtitles and the completion percentage.</p>
-
-<p>They gave me a spread sheet file with a list of video URLs (3000 + of them).
-Using Python&#8217;s <em>BeautifulSoup</em> module I hacked a small script to produce the
-desired output.
-Everything can be found at <a href="https://github.com/atodorov/Khan-Academy-Find-Subtitles">https://github.com/atodorov/Khan-Academy-Find-Subtitles</a>.</p>
-
-<p>The script is very fresh, just run it today against the given input and produced
-some results. Lots of the URLs were skipped, around 500 entries produced results,
-100 more failed. I have no idea what happened to the rest.</p>
-
-<p>This is an ideal side project for students (I&#8217;m looking at you #HackFMI participants)
-which will teach you something about screen scraping and extracting data from
-the web. It will also boost your karma by helping a project which
-lacks developers but is open source in nature.</p>
-
-<p>If you have some Python skills and would like to help please ping me as I
-may not have the time to maintain this project in the long term.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/6/">&larr; Older</a>
@@ -2164,6 +2206,10 @@ may not have the time to maintain this project in the long term.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/19/i-want-to-be-a-robot-book-review-the-singularity-is-near/">I Want to Be a Robot - Book Review: The Singularity Is Near</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/13/book-review-last-3-months/">Book Review - Last 3 Months</a>
       </li>
     
@@ -2197,10 +2243,6 @@ may not have the time to maintain this project in the long term.</p>
     
       <li class="post">
         <a href="/blog/2014/04/01/happy-april-fools-day/">Happy April Fools Day</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/03/28/i-need-an-app-to-connect-with-my-facebook-page-fans/">I Need an App to Connect With My Facebook Page Fans</a>
       </li>
     
   </ul>
