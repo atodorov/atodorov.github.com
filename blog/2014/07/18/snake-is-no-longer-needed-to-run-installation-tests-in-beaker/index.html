@@ -5,12 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Lenovo Rants: Battery and Dock Flaws</title>
+  <title>SNAKE is no Longer Needed to Run Installation Tests in Beaker</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="To all my readers - sorry for not being able to blog more frequently lately.
-Here&#8217;s an easy read about my favourite laptop brand Lenovo and &hellip;">
+  <meta name="description" content="This is a quick status update for one of the pieces of
+Fedora QA infrastructure
+and mostly a self-note. Previously to control the kickstart &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +20,7 @@ Here&#8217;s an easy read about my favourite laptop brand Lenovo and &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +80,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Lenovo Rants: Battery and Dock Flaws</h1>
+      <h1 class="entry-title">SNAKE Is No Longer Needed to Run Installation Tests in Beaker</h1>
     
     
       <p class="meta">
@@ -95,7 +96,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-09-15T10:23:00+03:00" pubdate data-updated="true">Sep 15<span>th</span>, 2013</time>
+<time datetime="2014-07-18T23:05:00+03:00" pubdate data-updated="true">Jul 18<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,53 +105,47 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>To all my readers - sorry for not being able to blog more frequently lately.
-Here&#8217;s an easy read about my favourite laptop brand Lenovo and some of their
-design flaws I&#8217;ve found.</p>
+<div class="entry-content"><p>This is a quick status update for one of the pieces of
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
+and mostly a self-note.</p>
 
-<h2>X220 and T60 Batterries are ALMOST Identical</h2>
+<p>Previously to control the kickstart configuration used during installation in Beaker one
+had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
+a kickstart configuration from a Python template.</p>
 
-<p><img src="/images/lenovo_x220_t60_battery.jpg" title="X220 and T60 batteries" alt="&quot;X220 and T60 batteries&quot;" /></p>
+<p>SNAKE presented challenges when deploying and using
+<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
+virtually unmaintained.</p>
 
-<p>As you can see the <a href="http://amzn.to/12y5hwp">X220</a> and
-<a href="http://amzn.to/183SgiR">T60</a> batteries are nearly identical with the notable
-exception of the connector placement. The end result - I have to purchase yet another
-battery as a backup for long travel/work on the go. Not what I want.</p>
+<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
+generate a kickstart configuration when provisioning the system. This is already
+available in beaker-client-0.17.1.</p>
 
-<p>I wish all Lenovo models had the same batteries so people can swap them around
-as they wish. Is this too much to ask for? Have you seen another brand which
-got this right?</p>
+<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
+very complex ones. You can even include snippets from one template into another if required.
+The standard context that is passed to the template is:</p>
 
-<h2>ThinkPad Mini Dock Design Flaw</h2>
+<ul>
+<li><strong>DISTRO</strong> - if specified, the distro name</li>
+<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
+<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
+<li><strong>VARIANT</strong> - if specified</li>
+<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
+<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
+</ul>
 
-<p>I&#8217;m using a <a href="http://amzn.to/15tjUYi">ThinkPad Mini Dock Series 3</a> docking station
-with my X220 laptop. Being a QA engineer for so long I immediately
-noticed something that wasn&#8217;t quite right. The buttons on the left and the mechanism
-next to them are blocking the hot air exhaust from the CPU fan. This model of docking
-station is made to fit several models of laptops and those which dock in position 2 are
-less affected from those which dock in possition 1. Mine was not a lucky one.</p>
 
-<p><img src="/images/dock/alone.jpg" title="docking station in position 2" alt="docking station in position 2" /></p>
+<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
+have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
 
-<p>On the pictures below it is clearly visible that most of the hot air coming out of the CPU
-fan is blocked.</p>
+<p>This workflow also has the ability to return boot arguments for the installer if needed.
+If any, they should be defined in a {% block kernel_options %}{% endblock %}
+block inside the template. A simpler variant is to define a comment line that stars with
+<em>## kernel_options:</em></p>
 
-<p><img src="/images/dock/top.jpg" title="top view" alt="top view" />
-<img src="/images/dock/back.jpg" title="back view" alt="back view" />
-<img src="/images/dock/side.jpg" title="side view" alt="side view" /></p>
-
-<p>In order to reduce laptop heating and provide better cooling I decided to remove the
-1/2 position switch mechanism. To do that you have to unscrew all screws from the docking
-station and carefully split the top and bottom halves. The offending piece of plastic is
-screwed with two tiny screws at the bottom. Once they are removed everything comes off.</p>
-
-<p><img src="/images/dock/removed.jpg" title="blocking part removed" alt="blocking part removed" /></p>
-
-<p>Even with this piece removed my laptop still hets up too much! I guess 80 C is just
-normal for the Core i7 processors :(.</p>
-
-<p>Have you found something not quite right in your hardware design? Please share in the
-comments.</p>
+<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
+can be used by the general public though. I will be writing another post about that
+so stay tuned.</p>
 </div>
 
 
@@ -173,12 +168,12 @@ comments.</p>
   
 
 
-<time datetime="2013-09-15T10:23:00+03:00" pubdate data-updated="true">Sep 15<span>th</span>, 2013</time>
+<time datetime="2014-07-18T23:05:00+03:00" pubdate data-updated="true">Jul 18<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/qa/'>QA</a>
   
 </span>
 
@@ -207,10 +202,8 @@ comments.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/" title="Previous Post: Upcoming Talk: Fedora Test Days in Sofia">&laquo; Upcoming Talk: Fedora Test Days in Sofia</a>
+        <a class="basic-alignment left" href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/" title="Previous Post: Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com">&laquo; Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/09/23/fedora-test-days-are-coming-to-sofia/" title="Next Post: Fedora Test Days are Coming to Sofia">Fedora Test Days are Coming to Sofia &raquo;</a>
       
     </p>
   </footer>
@@ -356,8 +349,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/';
-        var disqus_url = 'http://atodorov.org/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/';
+        var disqus_identifier = 'http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/';
+        var disqus_url = 'http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/';
         var disqus_script = 'embed.js';
       
     (function () {

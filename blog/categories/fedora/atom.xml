@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-07-12T23:37:54+03:00</updated>
+  <updated>2014-07-18T23:51:01+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,55 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[SNAKE is no Longer Needed to Run Installation Tests in Beaker]]></title>
+    <link href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/"/>
+    <updated>2014-07-18T23:05:00+03:00</updated>
+    <id>http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker</id>
+    <content type="html"><![CDATA[<p>This is a quick status update for one of the pieces of
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
+and mostly a self-note.</p>
+
+<p>Previously to control the kickstart configuration used during installation in Beaker one
+had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
+a kickstart configuration from a Python template.</p>
+
+<p>SNAKE presented challenges when deploying and using
+<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
+virtually unmaintained.</p>
+
+<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
+generate a kickstart configuration when provisioning the system. This is already
+available in beaker-client-0.17.1.</p>
+
+<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
+very complex ones. You can even include snippets from one template into another if required.
+The standard context that is passed to the template is:</p>
+
+<ul>
+<li><strong>DISTRO</strong> - if specified, the distro name</li>
+<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
+<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
+<li><strong>VARIANT</strong> - if specified</li>
+<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
+<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
+</ul>
+
+
+<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
+have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
+
+<p>This workflow also has the ability to return boot arguments for the installer if needed.
+If any, they should be defined in a {% block kernel_options %}{% endblock %}
+block inside the template. A simpler variant is to define a comment line that stars with
+<em>## kernel_options:</em></p>
+
+<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
+can be used by the general public though. I will be writing another post about that
+so stay tuned.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Book Review - Last 3 Months]]></title>
@@ -170,119 +219,6 @@ were:</p>
 
 <p>Do you want to know more? Use the comments and tell me what exactly!
 I'm writing a longer version of this article so stay tuned!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Positive Biological Effects of Open Source on Humans]]></title>
-    <link href="http://atodorov.org/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans/"/>
-    <updated>2014-04-08T16:45:00+03:00</updated>
-    <id>http://atodorov.org/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans</id>
-    <content type="html"><![CDATA[<p>Recently I watched a <a href="http://www.youtube.com/watch?v=ReRcHdeUG9Y">talk by Simon Sinek</a>
-about leadership. He talks about Endorphins, Dopamine, Serotonin and Oxytocin
-and how they make us feel and act a particular way. Then I though - maybe that's why working
-in the open source field always felt great and natural to me. Maybe we humans
-are programmed to follow the open source way!</p>
-
-<p>This article scratches the surface where body chemistry and open source intersect.
-I hope it will help both volunteers and community managers get an insight of the
-driving forces in our bodies, how they relate to the open source world and promt
-further exploration. By seeking to better understand the positive effects and avoid
-the negative ones we can become better contributors and leaders which ultimately
-helps our communities.</p>
-
-<h2>Endorphins</h2>
-
-<p>Endorphins stand for endurance. Their job is to mask physical pain and it has been
-suggested to have evolutionary roots based on the theory that they helped with the
-survival of early humans. Athletes experience so called Runner's high.</p>
-
-<p>In the open source world one may work on a feature or task for hours and hours
-without feeling exhausted. The task itself keeps you going and excited.
-This is endorphins going through your brain.</p>
-
-<p>In software one may experience an endorphin rush during public release days for example. For large
-projects like Fedora the release process includes many steps and may take several hours.
-During all that time the release engineer is usually available regardless of their native
-time zone.</p>
-
-<p>Effects of endorphins could potentially increase the likelihood of injury or extreme exhaustion,
-as pain sensation could be more easily ignored. Work and rest cycles need to be properly balanced.</p>
-
-<h2>Dopamine</h2>
-
-<p>This is the feeling when we achieve our goals or found something we were looking for.
-Dopamine helps us get things done! This is why we're told to write down our goals and then
-cross them off. It makes people more productive.</p>
-
-<p>Getting dopamine through open source is very easy - all you need to do is fix a bug,
-then another one, and another one, and another one ... After every task you complete the body
-gets a small dopamine fix. "Release early, release often ..." and you get your fix :).</p>
-
-<p>Dopamine however is highly addictive and destructive if unbalanced. It has the same negative
-effects as any other addiction - alcohol, drugs, etc. Be aware of that and don't fall for the
-performance trap.</p>
-
-<p>Endorphins and Dopamine are so called selfish chemicals. You can get them without external help.
-The next two are the social chemicals.</p>
-
-<h2>Serotonin</h2>
-
-<p>It is responsible for feelings of pride and status and assessing social rank.
-Serotonin is produced when you are recognized for achievements by the open source community
-or credited by somebody (e.g. Johnny Bravo mentioned a great idea on IRC today).</p>
-
-<p>As a contributor one may work on items which will help you get recognition but ultimately this
-is not for you to decide. However practice shows that credit and recognition are relatively easy
-to get in the open source world provided one has contributed to make the project and the
-community better in some sort.</p>
-
-<p>In software this is being granted commit rights to a repository, being in the top spot of
-some metrics, having your blog read by other members or simply people asking for help or
-what you think about some topic.</p>
-
-<p>Serotonin is considered the leadership chemical. As one becomes a leader recognized by the
-community there's a catch - the more your status goes up the more work you have to
-do. The more people recognize you as the leader the more they expect you to sacrifice yourself
-in case it all goes Pete Tong. If you are not ready to step up find a more suitable place in
-the community instead.</p>
-
-<h2>Oxytocin</h2>
-
-<p>Oxytocin is responsible for feelings of love, trust and friendship. It makes us feel safe.
-It is also very good for the body because it makes us healthier, boosts our
-immune system, increases ability to solve problems and increases creativity.</p>
-
-<p>One way to get Oxytocin is by physical touch - e.g. a hand shake. This is probably one of
-the reasons beer gatherings are so popular among open source developers.
-Working digitally we need a way to
-reinforce human bonds in our communities. Knowing the person on the other end of the wire
-ultimately makes us feel safer. If you are in open source just go for that conference or a
-local beer bash you wanted to go - it is good for you (but don't get drunk).</p>
-
-<p>Another way to get Oxytocin is by performing or witnessing acts of human generosity.
-This comes natural in open source world where people give up their free time and energy to work towards
-a shared goal. Just by working in an open source environment you get all that goodness for you.</p>
-
-<p>The best thing about Oxytocin is that it is not addictive and slowly builds up in the body.
-The bad side is that it takes a while to build up. This is why you have to stay a little longer
-in open source before it starts feeling safe and welcoming.</p>
-
-<h2>Cortisol</h2>
-
-<p>The last chemical Simon talks about is Cortisol. It is bad, very bad. It will crash your body.
-Cortisol means stress. It is designed to keep humans (and animals) alive by hyper tuning
-our senses in case of danger. Trouble is you are not supposed to have it in your body for
-long periods of time because it shuts down non-essential systems to deliver that extra energy.</p>
-
-<p>Luckily most open source projects are not stressful and I think can be considered a safe place
-to work in. In the end one can always shift to another role or move to another project if it
-becomes too pressing.</p>
-
-<p>By committing
-to help another member or perform service to the community our bodies get all the good
-stuff and beat the negative. Service to a community is exactly what open source does!
-See, humans are programmed to live and work the open source way!</p>
 ]]></content>
   </entry>
   
