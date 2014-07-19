@@ -5,12 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Tip: Renaming Model Fields in Django</title>
+  <title>Book Review: How to Win Friends</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Did you ever have to re-purpose a column in your database schema?
-Here&#8217;s a quick and easy way to do this if you happen to be using Django. &hellip;">
+  <meta name="description" content="How to Win Friends &amp; Influence People
+by Dale Carnegie teaches you how to deal with people. The book briefly explains
+some easy to use principles &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +20,7 @@ Here&#8217;s a quick and easy way to do this if you happen to be using Django. &
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/07/19/book-review-how-to-win-friends/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +80,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Tip: Renaming Model Fields in Django</h1>
+      <h1 class="entry-title">Book Review: How to Win Friends</h1>
     
     
       <p class="meta">
@@ -95,7 +96,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-04-06T01:18:00+03:00" pubdate data-updated="true">Apr 6<span>th</span>, 2013</time>
+<time datetime="2014-07-19T18:05:00+03:00" pubdate data-updated="true">Jul 19<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,72 +105,86 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>Did you ever have to re-purpose a column in your database schema?
-Here&#8217;s a quick and easy way to do this if you happen to be using Django.</p>
+<div class="entry-content"><p><a href="http://www.amazon.com/gp/product/0091906350/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0091906350&linkCode=as2&tag=atodorovorg-20&linkId=Q2DBNO4UJBZ6HQX2">How to Win Friends &amp; Influence People</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0091906350" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+by Dale Carnegie teaches you how to deal with people. The book briefly explains
+some easy to use principles, why and how they work and then provides tons of
+real life examples behind those principles. This book is a must for everyone but
+especially parents and teachers and folks in sales, management or business leaders.</p>
 
-<h2>Scenario</h2>
+<p>I will only highlight the key points. What follows are direct quotes from the book.</p>
 
-<p>I had an integer field in my model called <code>lines</code> which counted the lines of
-code in a particular tar.gz package. I figured the file size is a better indicator
-so decided to start using it. I was not planning to use the old field anymore and
-I didn&#8217;t care about the data it was holding. So I decided to re-purpose it
-as the <code>size</code> field.</p>
+<h2>Part One: Fundamental Techniques in Handling People</h2>
 
-<h2>Possible methods</h2>
+<p><em>&#8216;If You Want to Gather Honey, Don&#8217;t Kick Over the Beehive&#8217;</em> - PRINCIPLE 1: Don&#8217;t criticise, condemn or complain.</p>
 
-<p>Looking around I figured several different ways to do this:</p>
+<p><em>The Big Secret of Dealing with People</em> - PRINCIPLE 2: Give honest and sincere appreciation.</p>
 
-<ol>
-<li>Continue using the existing <code>lines</code> field and keep referencing the old name in the code.
-This is no-brainer but feels awkward and is a disaster waiting to happen;</li>
-<li>Add new <code>size</code> field and remove the old <code>lines</code> field. This involves modification to
-the DB schema and requires at least a backup with possible down time. Not something
-I will jump at right away;</li>
-<li>Add a <code>size</code> property in the model class which will persist to <code>self.lines</code>.
-This is a quick way to go but I&#8217;m not sure if one can use the property with the
-Django QuerySet API (objects.filter(), objects.update(), etc.) I suspect not.
-If you don&#8217;t filter by the property or use it in bulk operations this method is fine though;</li>
-<li>Change the field name to <code>size</code> but continue to use the <code>lines</code> DB column;
-Mind my wording here :);</li>
-<li>Rename the column in the DB schema and then update the model class field.</li>
-</ol>
+<p><em>&#8216;He Who Can Do This Has the Whole World with Him. He Who Cannot Walks a Lonely Way&#8217;</em> -
+PRINCIPLE 3: Arouse in the other person an eager want.</p>
 
+<h2>Part Two: Six Ways to Make People Like You</h2>
 
-<h2>How I did it</h2>
+<p><em>Do This and You&#8217;ll Be Welcome Anywhere</em> - PRINCIPLE 1: Become genuinely interested in other people.</p>
 
-<p>I decided to go for option 4 above:
-change the field name to <code>size</code> but continue to use the <code>lines</code> DB column.</p>
+<p><em>A Simple Way to Make a Good First Impression</em> - PRINCIPLE 2: Smile.</p>
 
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/models.py b/models.py</span>
-</span><span class='line'><span class="gh">index e06d2b2..18cad6f 100644</span>
-</span><span class='line'><span class="gd">--- a/models.py</span>
-</span><span class='line'><span class="gi">+++ b/models.py</span>
-</span><span class='line'><span class="gu">@@ -667,7 +667,7 @@ class Package(models.Model):</span>
-</span><span class='line'><span class="gd">-    lines = models.IntegerField(default=None, null=True, blank=True)</span>
-</span><span class='line'><span class="gi">+    size  = models.IntegerField(default=None, null=True, blank=True, db_column=&#39;lines&#39;)</span>
-</span></code></pre></td></tr></table></div></figure>
+<p><em>If You Don&#8217;t Do This, You Are Headed for Trouble</em> - PRINCIPLE 3:
+Remember that a person&#8217;s name is to that person the sweetest and most important sound in any language.</p>
 
+<p><em>An Easy Way to Become a Good Conversationalist</em> - PRINCIPLE 4: Be a good listener.
+Encourage others to talk about themselves.</p>
 
-<ol>
-<li>Removed all references to <code>lines</code> from the code except the model class. This served as clean up as well.</li>
-<li>Renamed the model field to <code>size</code> but continued using the <code>lines</code> DB column as shown above.
-Django&#8217;s <em>db_column</em> option makes this possible.</li>
-<li>From the Django shell (./manage.py shell) reset <code>size</code> to None (NULL) for all objects;</li>
-<li>Finally implement my new code and functionality behind the <code>size</code> field.</li>
-</ol>
+<p><em>How to Interest People</em> - PRINCIPLE 5: Talk in terms of the other person&#8217;s interests.</p>
 
+<p><em>How to Make People Like You Instantly</em> - PRINCIPLE 6: Make the other person feel important – and do it sincerely.</p>
 
-<p>The entire process happened for under 10 minutes. I will also opt for renaming the DB column at a later time.
-This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.</p>
+<h2>Part Three: How to Win People to Your Way of Thinking</h2>
 
-<p>If you were me, how would you do this? Please share in the comments below.</p>
+<p><em>You Can&#8217;t Win an Argument</em> - PRINCIPLE 1: The only way to get the best of an argument is to avoid it.</p>
+
+<p><em>A Sure Way of Making Enemies – and How to Avoid It</em> - PRINCIPLE 2: Show respect for the other person&#8217;s opinions.
+Never say, &#8216;You&#8217;re wrong&#8217;.</p>
+
+<p><em>If You&#8217;re Wrong, Admit It</em> - PRINCIPLE 3: If you are wrong, admit it quickly and emphatically.</p>
+
+<p><em>A Drop of Honey</em> - PRINCIPLE 4: Begin in a friendly way.</p>
+
+<p><em>The Secret of Socrates</em> - PRINCIPLE 5: Get the other person saying &#8216;yes, yes&#8217; immediately.</p>
+
+<p><em>The Safety Valve in Handling Complaints</em> - PRINCIPLE 6: Let the other person do a great deal of the talking.</p>
+
+<p><em>How to Get Cooperation</em> - PRINCIPLE 7: Let the other person feel that the idea is his or hers.</p>
+
+<p><em>A Formula That Will Work Wonders for You</em> - PRINCIPLE 8: Try honestly to see things from the other person&#8217;s point of view.</p>
+
+<p><em>What Everybody Wants</em> - PRINCIPLE 9: Be sympathetic with the other person&#8217;s ideas and desires.</p>
+
+<p><em>An Appeal That Everybody Likes</em> - PRINCIPLE 10: Appeal to the nobler motives.</p>
+
+<p><em>The Movies Do It. TV Does It. Why Don&#8217;t You Do It?</em> - PRINCIPLE 11: Dramatise your ideas.</p>
+
+<p><em>When Nothing Else Works, Try This</em> - PRINCIPLE 12: Throw down a challenge.</p>
+
+<h2>Part Four: Be a Leader: How to Change People Without Giving Offense or Arousing Resentment</h2>
+
+<p><em>If You Must Find Fault, This Is the Way to Begin</em> - PRINCIPLE 1: Begin with praise and honest appreciation.</p>
+
+<p><em>How to Criticise – and Not Be Hated for It</em> - PRINCIPLE 2: Call attention to people&#8217;s mistakes indirectly.</p>
+
+<p><em>Talk About Your Own Mistakes First</em> - PRINCIPLE 3: Talk about your own mistakes before criticising the other person.</p>
+
+<p><em>No One Likes to Take Orders</em> - PRINCIPLE 4: Ask questions instead of giving direct orders.</p>
+
+<p><em>Let the Other Person Save Face</em> - PRINCIPLE 5: Let the other person save face.</p>
+
+<p><em>How to Spur People On to Success</em> - PRINCIPLE 6: Praise the slightest improvement and
+praise every improvement. Be &#8216;hearty in your approbation and lavish in your praise&#8217;.</p>
+
+<p><em>Give a Dog a Good Name</em> - PRINCIPLE 7: Give the other person a fine reputation to live up to.</p>
+
+<p><em>Make the Fault Seem Easy to Correct</em> - PRINCIPLE 8: Use encouragement. Make the fault seem easy to correct.</p>
+
+<p><em>Making People Glad to Do What You Want</em> - PRINCIPLE 9: Make the other person happy about doing the thing you suggest.</p>
 </div>
 
 
@@ -192,12 +207,12 @@ This is to sync the naming used in Python code and in MySQL in case I ever need 
   
 
 
-<time datetime="2013-04-06T01:18:00+03:00" pubdate data-updated="true">Apr 6<span>th</span>, 2013</time>
+<time datetime="2014-07-19T18:05:00+03:00" pubdate data-updated="true">Jul 19<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/books/'>books</a>
   
 </span>
 
@@ -226,10 +241,8 @@ This is to sync the naming used in Python code and in MySQL in case I ever need 
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/04/03/what-runs-your-startup-ucha.se/" title="Previous Post: What Runs Your Start-up - Ucha.se">&laquo; What Runs Your Start-up - Ucha.se</a>
+        <a class="basic-alignment left" href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/" title="Previous Post: SNAKE is no Longer Needed to Run Installation Tests in Beaker">&laquo; SNAKE is no Longer Needed to Run Installation Tests in Beaker</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" title="Next Post: Using Django built-in template tags and filters in code">Using Django built-in template tags and filters in code &raquo;</a>
       
     </p>
   </footer>
@@ -375,8 +388,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/';
-        var disqus_url = 'http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/';
+        var disqus_identifier = 'http://atodorov.org/blog/2014/07/19/book-review-how-to-win-friends/';
+        var disqus_url = 'http://atodorov.org/blog/2014/07/19/book-review-how-to-win-friends/';
         var disqus_script = 'embed.js';
       
     (function () {
