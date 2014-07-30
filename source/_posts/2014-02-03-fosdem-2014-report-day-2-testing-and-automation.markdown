@@ -81,7 +81,8 @@ stay current with the software this is definitely the place to start.
 Automation in the Foreman Infrastructure
 ----------------------------------------
 
-The last talk I've listened to. Definitely the best one from a general testing approach
+The last [talk](http://ftp.osuosl.org/pub/fosdem//2014/previews/fosdem/fosdem_2014/dv/UD2218A/2014-02-02/12_51_36.ogv)
+I've listened to. Definitely the best one from a general testing approach
 point of view. Greg talked about starting with Foreman unit tests, then testing the merged PR,
 then integration tests, then moving on to test the package build and then the resulting packages themselves. 
 
