@@ -11,17 +11,6 @@ I am working on several projects and I'm usually affiliated with more than one
 organization at any given time. This list contains my current projects and
 some of the more interesting previous ones.
 
-Difio
------
-
-<img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
-
-[Difio](http://www.dif.io) is my latest venture. This is a service targeted at developers
-who use open source packages and libraries. Difio keeps track of application dependencies
-and tells you when they change. It lets you inspect the changes and make informed decision
-when or what to upgrade because even if an application works, any change in its libraries
-or the versions of those libraries can break the application.
-
 
 Shoes 41 Plus
 --------------
@@ -56,6 +45,19 @@ is making sure Red Hat Enterprise Linux (and some other products) get to custome
 many bugs and behave as quality software. I'm highly biased towards all Red Hat products but
 a) they didn't fail me once and b) I know how much hard work is done into making these products
 kick ass.
+
+
+
+Difio
+-----
+
+<img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
+
+[Difio](http://www.dif.io) was a service targeted at developers
+who use open source packages and libraries. Difio keeps track of application dependencies
+and tells you when they change. It lets you inspect the changes and make informed decision
+when or what to upgrade because even if an application works, any change in its libraries
+or the versions of those libraries can break the application.
 
 
 One Laptop Per Child Bulgarian Chapter
