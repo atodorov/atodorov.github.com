@@ -7,9 +7,9 @@ sharing: true
 footer: true
 ---
 
-I am working on several projects and I'm usually affiliated with more than one
-organization at any given time. This list contains my current projects and
-some of the more interesting previous ones.
+I am usually working on several things at a time or affiliated with more than one
+organization. This list contains current ventures and some of the more interesting
+previous ones.
 
 
 Shoes 41 Plus
@@ -18,8 +18,8 @@ Shoes 41 Plus
 <img style="float: left; margin-right: 10px;" src="/images/logos/obuvki41plus.png" alt="obuvki41plus" />
 
 [Shoes 41 Plus](http://obuvki41plus.com) is niche oriented business selling ladies shoes with
-sizes EU 41 and up, which are very hard to find in Bulgaria. This is driven by my spouse while
-I provide some tech support.
+sizes EU 41 and up, which are very hard to find in Bulgaria. We're also not shy to sell to men
+who prefer ladies shoes!
 <br />
 
 
@@ -54,11 +54,8 @@ Difio
 <img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
 
 [Difio](http://www.dif.io) was a service targeted at developers
-who use open source packages and libraries. Difio keeps track of application dependencies
-and tells you when they change. It lets you inspect the changes and make informed decision
-when or what to upgrade because even if an application works, any change in its libraries
-or the versions of those libraries can break the application.
-
+who use open source packages and libraries. It shut down on Sept 10th 2014.
+<br /><br />
 
 One Laptop Per Child Bulgarian Chapter
 --------------------------------------
