@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Twilio meetup and DigitalK 2014 Day 1</title>
+  <title>Speeding up Celery Backends, Part 1</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="The conference season (this week) is officially open! So here&#8217;s my report about it. It started by accident last evening with a
-warm-up event &hellip;">
+  <meta name="description" content="I&#8217;m working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@ warm-up event &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2014/05/29/twilio-meetup-and-digitalk-2014-day-1/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +79,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Twilio Meetup and DigitalK 2014 Day 1</h1>
+      <h1 class="entry-title">Speeding Up Celery Backends, Part 1</h1>
     
     
       <p class="meta">
@@ -95,7 +95,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2014-05-29T22:31:00+03:00" pubdate data-updated="true">May 29<span>th</span>, 2014</time>
+<time datetime="2014-11-05T15:20:00+02:00" pubdate data-updated="true">Nov 5<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,57 +104,97 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>The conference season (this week) is officially open! So here&#8217;s my report about it.</p>
+<div class="entry-content"><p>I&#8217;m working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
 
-<p>It started by accident last evening with a
-<a href="https://www.facebook.com/events/629009950539772/">warm-up event</a>
-sponsored by Twilio at betahaus Sofia. I had the pleasure to have a long chat
-with <a href="https://twitter.com/lilaineurope">Lisa from Twilio</a> over a few beers.</p>
-
-<p>Today was Day #1 of <a href="http://digitalk.bg/">DigitalK</a> which is the leading SEE
-technology event. I&#8217;ve also visited the event last year and must say that this
-time it is bigger. The main hall was totally packed. The WiFi connectivity has been
-improved since last year but still sucked. I had more success using my 3G instead.</p>
-
-<p>The most interesting part of Day #1 was the mini Seedcamp session which presented
-10 startups. In order of appearance they are</p>
-
-<ol>
-<li><a href="http://www.adtapsy.com/">AdTapsy</a></li>
-<li><a href="https://bitcoini.com/">Bitcoini.com</a></li>
-<li><a href="http://ikollect.net/">iKollect</a></li>
-<li><a href="http://www.rocketads.co/">RocketAds</a></li>
-<li><a href="http://www.scalewhale.eu/">ScaleWhale</a></li>
-<li><a href="https://angel.co/smartoken">Smartoken</a></li>
-<li><a href="http://stepsss.co/">Stepsss</a></li>
-<li><a href="https://play.google.com/store/apps/details?id=co.talkie_kids.talkie">Talkie</a></li>
-<li><a href="http://viblast.com/">Viblast</a></li>
-<li><a href="http://wiziva.com">Wiziva</a></li>
-</ol>
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
 
 
-<p>Viblast, Stepsss and Talkie were the 3 finalists who also presented at the main hall.
-Needless to say the coolest one from technology point of view is Viblast, which is
-a peer-to-peer video streaming platform, utilizing WebRTC. They were also strong at the
-presentation and look very strong at the business level as well. I wish them good luck.</p>
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn&#8217;t much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
 
-<p>Stepsss is essentially a shoe sole with sensors paired with smart-phone apps to
-give runners more info and feedback. I like it because they are a hardware company
-although there&#8217;s lots of competition in this space. I&#8217;d like to beta test their product
-and see what happens when I go dancing all night long :).</p>
+<h2>Why is Celery slow ?</h2>
 
-<p>Talkie is an educational app for children which helps them learn new languages. I had the
-pleasure to see it in action before the actual presentation. The design is very cool
-and the app does seem usable and complete. However I don&#8217;t see much of a technological
-challenge here and I&#8217;m not sure how will they deal with the strong competition in the ed-tech
-space. We&#8217;ll have to wait and see.</p>
+<p>Using <code>celery_load_test.py</code> together with
+<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
 
-<p>From the rest ScaleWhale and Smartoken do seem interesting but I really failed to get how things
-will be organized on the technology side. Both ideas are run by a single person team, which
-is a recipe for disaster (judging from my own experience).</p>
+<ul>
+<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</li>
+</ul>
 
-<p>Tomorrow is Day #2 of DigitalK and on Saturday I&#8217;m moderating one of the rooms at
-<a href="http://bulgariawebsummit.com/">Bulgaria Web Summit</a>. Expect more reports soon.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="nd">@cached_property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">None</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</li>
+</ul>
+
+
+<p>It&#8217;s clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance.</p>
+
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I&#8217;m not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I&#8217;ll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
 </div>
 
 
@@ -177,12 +217,12 @@ is a recipe for disaster (judging from my own experience).</p>
   
 
 
-<time datetime="2014-05-29T22:31:00+03:00" pubdate data-updated="true">May 29<span>th</span>, 2014</time>
+<time datetime="2014-11-05T15:20:00+02:00" pubdate data-updated="true">Nov 5<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/events/'>events</a>
+    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/qa/'>QA</a>
   
 </span>
 
@@ -211,10 +251,8 @@ is a recipe for disaster (judging from my own experience).</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/05/19/i-want-to-be-a-robot-book-review-the-singularity-is-near/" title="Previous Post: I Want to Be a Robot - Book Review: The Singularity Is Near">&laquo; I Want to Be a Robot - Book Review: The Singularity Is Near</a>
+        <a class="basic-alignment left" href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/" title="Previous Post: Performance Profiling in Python with cProfile">&laquo; Performance Profiling in Python with cProfile</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/06/01/digitalk-day-2-report/" title="Next Post: DigitalK Day 2 Report">DigitalK Day 2 Report &raquo;</a>
       
     </p>
   </footer>
@@ -360,8 +398,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2014/05/29/twilio-meetup-and-digitalk-2014-day-1/';
-        var disqus_url = 'http://atodorov.org/blog/2014/05/29/twilio-meetup-and-digitalk-2014-day-1/';
+        var disqus_identifier = 'http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/';
+        var disqus_url = 'http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-11-05T15:04:01+02:00</updated>
+  <updated>2014-11-05T16:36:44+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,130 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Speeding up Celery Backends, Part 1]]></title>
+    <link href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/"/>
+    <updated>2014-11-05T15:20:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends</id>
+    <content type="html"><![CDATA[<p>I'm working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
+
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
+
+
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn't much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
+
+<h2>Why is Celery slow ?</h2>
+
+<p>Using <code>celery_load_test.py</code> together with
+<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
+
+<ul>
+<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</li>
+</ul>
+
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nd">@cached_property</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">None</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<ul>
+<li>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:
+<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">s</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">s</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<ul>
+<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</li>
+</ul>
+
+
+<p>It's clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance.</p>
+
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I'm not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I'll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Performance Profiling in Python with cProfile]]></title>
@@ -423,110 +547,6 @@ cache infrastructure so it doesn't cost anything more!</p>
 <p>There is still a race condition between marking the message as processed
 and the second check but nevertheless this should minimize the possibility of
 receiving duplicate emails to an accepted level. Only time will tell though!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Bug in Python URLGrabber/cURL on Fedora and Amazon Linux]]></title>
-    <link href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/"/>
-    <updated>2013-11-29T14:05:00+02:00</updated>
-    <id>http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux</id>
-    <content type="html"><![CDATA[<p>Accidentally I have discovered a bug for Python's
-URLGrabber module which has to do with change in behavior in libcurl.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
-</span><span class='line'><span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
-</span><span class='line'><span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="n">init</span><span class="o">&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
-
-<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
-newer. As explained by
-<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
-the reason is an internal change in libcurl which doesn't accept a value of 1 anymore!</p>
-
-<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
-from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
-Fedora and Amazon Linux already have the fix.</p>
-
-<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
-there aren't any updates released on PyPI though!</p>
 ]]></content>
   </entry>
   

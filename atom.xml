@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-11-05T15:04:01+02:00</updated>
+  <updated>2014-11-05T16:36:44+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,105 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Speeding up Celery Backends, Part 1]]></title>
+    <link href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/"/>
+    <updated>2014-11-05T15:20:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends</id>
+    <content type="html"><![CDATA[<p>I&#8217;m working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
+
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
+
+
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn&#8217;t much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
+
+<h2>Why is Celery slow ?</h2>
+
+<p>Using <code>celery_load_test.py</code> together with
+<a href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
+
+<ul>
+<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="nd">@cached_property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">None</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</li>
+</ul>
+
+
+<p>It&#8217;s clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance.</p>
+
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I&#8217;m not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I&#8217;ll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Performance Profiling in Python with cProfile]]></title>
@@ -1329,77 +1428,6 @@ class by adding a BooleanField using the object primary key as the name.</p>
 
 
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[HackFMI 3.0 Post-mortem]]></title>
-    <link href="http://atodorov.org/blog/2014/04/30/hackfmi-post-mortem/"/>
-    <updated>2014-04-30T00:03:00+03:00</updated>
-    <id>http://atodorov.org/blog/2014/04/30/hackfmi-post-mortem</id>
-    <content type="html"><![CDATA[<p><img src="http://atodorov.org/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" /></p>
-
-<p>The fourth <a href="http://hackfmi.com/hackfmi3-winners/">HackFMI</a>,
-now traditional, hackathon was held this weekend.
-It is over and I still can&#8217;t wrap my head around what happened during these 3 nights. Here&#8217;s
-bits of code, beer, energy drinks and fun as I saw it.</p>
-
-<p>A big thanks goes to Lilly and Misha who were running around like
-<a href="https://www.youtube.com/watch?v=uL6e3co4Qqc">robots</a> managing the day-to-day activities.
-Kudos to the rest of the team as well because they&#8217;ve established HackFMI as a tradition
-and people already ask when is going to be the next event.</p>
-
-<h2>What</h2>
-
-<p>This year the topic was <em>Hack for charity</em> and immediate goal of raising money for
-a sick kid. Most of the teams got to work to meet these goals. Only a few had worked
-on slightly different charity (broadly defined) ideas.</p>
-
-<p>My favorite two apps were Blago-darenie and SMShelp although they were not
-developed with Django.</p>
-
-<p><a href="http://blago-darenie.outernetnotes.com/">Blago-darenie</a> is a simple WordPress
-site listing donation campaigns. Instead of directly donating money one needs to
-promise something (an action, an object, etc) and put a price tag on it. When the
-promise is claimed the two parties donate the money to that particular campaign
-and exchange the promised goods or services. I&#8217;ve promised to cook dinner
-involving tasty meatballs from horse meat and serve one of my wine bottles to whoever
-decides to donate 25 EUR. (disclaimer: I&#8217;m a good cook and love wine more than code).</p>
-
-<p><a href="http://ganev.bg/project-8/">SMShelp</a> is an aggregator of donation campaigns via SMS
-which are very popular in the country but lack a central repository for all of them.
-A simple web site, live Android app and wonderful design secured the team the first place!
-BTW Team 8 was <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/">Adrian and Vihren</a>
-who took part in all previous editions as well.</p>
-
-<h2>TODO</h2>
-
-<p>I&#8217;m glad both organizers and teams had listened to some of my feedback but there are
-still things to improve. The most obvious one was that a quick communication channel
-to all the teams is needed. Facebook and email just didn&#8217;t cut it.</p>
-
-<p>I already have couple of quick ideas involving Django and Twilio&#8217;s cloud services.
-Let me take a few more days to get it clear before going any further.</p>
-
-<h2>/me</h2>
-
-<p>I found myself mentoring as much as I could helping folks with Django or just
-with general ideal or concepts, serving cake provided by <a href="http://www.chaosgroup.com">Chaos Group</a>
-and opening stacks of energy drinks, going door to door and letting teams know deployment and presentation
-details for the last day.</p>
-
-<p>What surprised me a bit was that there were many new teams (some involving previous contestants)
-who were very diverse in their technological background. This presented a challenge to
-some of them as they had to use a technology which nobody on the team knew very well
-and had to make a working app with that. One team even changed from Python to PHP in the
-middle of day 2.</p>
-
-<p>On Sunday I was pretty much helping the HackFMI team with whatever I can,
-checking on my favorite teams from time to time and giving access to cloud servers
-left and right to people who needed them.</p>
-
-<p>Unfortunately I missed the Grand Finale due to unexpected hardware problems involving
-big iron and 150 litters of loose water :(. See you next time!</p>
 ]]></content>
   </entry>
   
