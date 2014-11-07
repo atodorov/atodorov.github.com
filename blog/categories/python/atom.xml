@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-11-05T16:36:44+02:00</updated>
+  <updated>2014-11-07T16:30:15+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,85 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Speeding up Celery Backends, Part 2]]></title>
+    <link href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/"/>
+    <updated>2014-11-07T15:48:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2</id>
+    <content type="html"><![CDATA[<p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+post I looked at a few celery backends and discovered they didn't meet my needs.
+Why is the Celery stack slow? How slow is it actually?</p>
+
+<h2>How slow is Celery in practice</h2>
+
+<ul>
+<li>Queue: 500`000 msg/sec</li>
+<li>Kombu:  14`000 msg/sec</li>
+<li>Celery:  2`000 msg/sec</li>
+</ul>
+
+
+<h2>Detailed test description</h2>
+
+<p>There are three main components of the Celery stack:</p>
+
+<ul>
+<li>Celery itself</li>
+<li>Kombu which handles the transport layer</li>
+<li>Python Queue()'s underlying everything</li>
+</ul>
+
+
+<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
+run for 1 000 000 messages I got the following results:</p>
+
+<ul>
+<li>Raw Python Queue: Msgs per sec: 500`000</li>
+<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
+
+<ul>
+<li>with json serializer: Msgs per sec: 5`988</li>
+<li>with pickle serializer: Msgs per sec: 12`820</li>
+<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
+Msgs per sec: 14`492</li>
+</ul>
+</li>
+</ul>
+
+
+<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I've observed similar behavior
+with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
+exceptions. This is probably the main reason performance becomes saturated over a longer
+execution.</p>
+
+<ul>
+<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
+</ul>
+
+
+<p>Another interesting this worth outlining - in the kombu test there are these lines:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>for j in range(1000000):
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
+construct which is executed every time a new task is published. Next I will be looking
+into this to figure out exactly where the slowliness comes from.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Speeding up Celery Backends, Part 1]]></title>
@@ -517,36 +596,6 @@ Red Hat for more cherry beer!</p>
 
 <p>Report of the second day of FOSDEM'14 on Sunday is
 <a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Idempotent Django Email Sender with Amazon SQS and Memcache]]></title>
-    <link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/"/>
-    <updated>2013-12-11T23:29:00+02:00</updated>
-    <id>http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache</id>
-    <content type="html"><![CDATA[<p>Recently I wrote about my problem with
-<a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/">duplicate Amazon SQS messages causing multiple emails</a>
-for <a href="http://www.dif.io">Difio</a>. After considering several options and
-feedback from
-<a href="https://twitter.com/atodorov_/status/409429840820199424">@Answers4AWS</a>
-I wrote a small decorator to fix this.</p>
-
-<p>It uses the cache backend to prevent the task from executing twice
-during the specified time frame. The code is available at
-<a href="https://djangosnippets.org/snippets/3010/">https://djangosnippets.org/snippets/3010/</a>.</p>
-
-<p>As stated on Twitter you should use Memcache (or ElastiCache) for this.
-If using Amazon S3 with my
-<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a> don't use the
-<code>us-east-1</code> region because it is eventually consistent.</p>
-
-<p>The solution is fast and simple on the development side and uses my existing
-cache infrastructure so it doesn't cost anything more!</p>
-
-<p>There is still a race condition between marking the message as processed
-and the second check but nevertheless this should minimize the possibility of
-receiving duplicate emails to an accepted level. Only time will tell though!</p>
 ]]></content>
   </entry>
   

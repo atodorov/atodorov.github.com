@@ -5,11 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: RHEL</title>
+  <title>Speeding up Celery Backends, Part 2</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Category: RHEL">
+  <meta name="description" content="In the first part of this
+post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
+Why is the Celery stack slow? How &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.orgblog/categories/rhel/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -74,226 +76,168 @@ you can logoff, but you can never leave
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: RHEL</h1>
+    
+      <h1 class="entry-title">Speeding Up Celery Backends, Part 2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-07T15:48:00+02:00" pubdate data-updated="true">Nov 7<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
+Why is the Celery stack slow? How slow is it actually?</p>
 
-  
-  <h2>2014</h2>
+<h2>How slow is Celery in practice</h2>
 
-<article>
-  
-<h1><a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">7 Years and 1400 Bugs Later as Red Hat QA</a></h1>
-<time datetime="2014-02-19T10:43:00+02:00" pubdate><span class='month'>Feb</span> <span class='day'>19</span> <span class='year'>2014</span></time>
+<ul>
+<li>Queue: 500`000 msg/sec</li>
+<li>Kombu:  14`000 msg/sec</li>
+<li>Celery:  2`000 msg/sec</li>
+</ul>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a></span>
-</footer>
 
+<h2>Detailed test description</h2>
 
-</article>
+<p>There are three main components of the Celery stack:</p>
 
+<ul>
+<li>Celery itself</li>
+<li>Kombu which handles the transport layer</li>
+<li>Python Queue()&#8217;s underlying everything</li>
+</ul>
 
 
-  
-  <h2>2013</h2>
+<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
+run for 1 000 000 messages I got the following results:</p>
 
-<article>
-  
-<h1><a href="/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/">Can I Use Android Phone as Smart Card Reader</a></h1>
-<time datetime="2013-12-18T23:09:00+02:00" pubdate><span class='month'>Dec</span> <span class='day'>18</span> <span class='year'>2013</span></time>
+<ul>
+<li>Raw Python Queue: Msgs per sec: 500`000</li>
+<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a></span>
-</footer>
+<ul>
+<li>with json serializer: Msgs per sec: 5`988</li>
+<li>with pickle serializer: Msgs per sec: 12`820</li>
+<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
+Msgs per sec: 14`492</li>
+</ul>
+</li>
+</ul>
 
 
-</article>
+<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I&#8217;ve observed similar behavior
+with raw Python Queue()&#8217;s. I saw some cache buffers being managed internally to avoid OOM
+exceptions. This is probably the main reason performance becomes saturated over a longer
+execution.</p>
 
+<ul>
+<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
+</ul>
 
 
-<article>
-  
-<h1><a href="/blog/2013/08/23/red-hats-bugzilla-hits-one-million-bugs/">Red Hat's Bugzilla Hits One Million Bugs</a></h1>
-<time datetime="2013-08-23T12:21:00+03:00" pubdate><span class='month'>Aug</span> <span class='day'>23</span> <span class='year'>2013</span></time>
+<p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a></span>
-</footer>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:
+</span><span class='line'>    for j in range(1000000):</span></code></pre></td></tr></table></div></figure>
 
 
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/08/23/how-to-find-your-red-hat-account-number/">Tip: How to Find Your Red Hat Account Number</a></h1>
-<time datetime="2013-08-23T11:55:00+03:00" pubdate><span class='month'>Aug</span> <span class='day'>23</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/">SSH from Linux to BlackBerry Z10</a></h1>
-<time datetime="2013-07-19T23:31:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>19</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/z10/'>Z10</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/17/tip-how-to-enable-usb-networking-between-blackberry-z10-and-red-hat-enterprise-linux-6/">Tip: How To Enable USB Networking Between BlackBerry Z10 and Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2013-07-17T11:06:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>17</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/z10/'>Z10</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/">Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2013-05-30T13:07:00+03:00" pubdate><span class='month'>May</span> <span class='day'>30</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/">Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2013-05-14T21:26:00+03:00" pubdate><span class='month'>May</span> <span class='day'>14</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/03/20/virtualization-platforms-supported-by-red-hat-enterprise-linux/">Virtualization Platforms Supported by Red Hat Enterprise Linux</a></h1>
-<time datetime="2013-03-20T15:04:00+02:00" pubdate><span class='month'>Mar</span> <span class='day'>20</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/tips/'>tips</a>, <a class='category' href='/blog/categories/virtualization/'>virtualization</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/">Secure VNC Installation of Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2013-02-13T15:40:00+02:00" pubdate><span class='month'>Feb</span> <span class='day'>13</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-  
-  <h2>2012</h2>
-
-<article>
-  
-<h1><a href="/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/">Mission Impossible - ABRT Bugzilla Plugin on RHEL6</a></h1>
-<time datetime="2012-07-13T13:21:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>13</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/07/12/combining-pdf-files-on-the-command-line/">Combining PDF Files On The Command Line</a></h1>
-<time datetime="2012-07-12T11:06:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>12</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-  
-  <h2>2011</h2>
-
-<article>
-  
-<h1><a href="/blog/2011/09/15/protected-rpm-repositories-with-yum-and-ssl/">Protected RPM repositories with yum and SSL</a></h1>
-<time datetime="2011-09-15T19:40:00+03:00" pubdate><span class='month'>Sep</span> <span class='day'>15</span> <span class='year'>2011</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2011/03/14/usb-multi-seat-on-red-hat-enterprise-linux-6/">USB multi-seat on Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2011-03-14T20:10:00+02:00" pubdate><span class='month'>Mar</span> <span class='day'>14</span> <span class='year'>2011</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rhel/'>RHEL</a></span>
-</footer>
-
-
-</article>
-
+<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there&#8217;s the same <code>with producer.acquire(block=True)</code>
+construct which is executed every time a new task is published. Next I will be looking
+into this to figure out exactly where the slowliness comes from.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-07T15:48:00+02:00" pubdate data-updated="true">Nov 7<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/django/'>Django</a>, <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/qa/'>QA</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/05/speeding-up-celery-backends/" title="Previous Post: Speeding up Celery Backends, Part 1">&laquo; Speeding up Celery Backends, Part 1</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -428,7 +372,10 @@ if (uri.indexOf("?") > 0) {
       var disqus_shortname = 'atodorov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/';
+        var disqus_url = 'http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
