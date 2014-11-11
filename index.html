@@ -9,9 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="In the first part of this
-post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
-Why is the Celery stack slow? How &hellip;">
+  <meta name="description" content="In the second part of this article we&#8217;ve seen
+how slow Celery actually is.
+Now let&#8217;s explore what happens inside and see if we can&#8217; &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,123 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-11T15:59:00+02:00" pubdate data-updated="true">Nov 11<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In the second part of this article we&#8217;ve seen
+<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
+Now let&#8217;s explore what happens inside and see if we can&#8217;t speed things up.</p>
+
+<p>I&#8217;ve used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
+call graph visualizations of my application. It has the nice feature to also show
+execution time and use different colors for fast and slow operations.</p>
+
+<p>Full command line is:</p>
+
+<pre><code>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+</code></pre>
+
+<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
+
+<h2>General findings</h2>
+
+<p><img src="/images/celery/general.png" title="call graph" alt="call graph" /></p>
+
+<ul>
+<li>The first four calls is where most of the time is spent as seen on the picture.</li>
+<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
+transport Kombu (not shown on picture)</li>
+<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
+<code>celery.app.base.Celery.send_task</code></li>
+<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
+rewrites the code.</li>
+</ul>
+
+
+<h2>More findings</h2>
+
+<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
+
+<pre><code>349         with self.producer_or_acquire(producer) as P:
+350             self.backend.on_task_call(P, task_id)
+351             task_id = P.publish_task(
+352                 name, args, kwargs, countdown=countdown, eta=eta,
+353                 task_id=task_id, expires=expires,
+354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
+355                 reply_to=reply_to or self.oid, **options
+356             )
+</code></pre>
+
+<p><code>producer</code> is always None because delay() doesn&#8217;t pass it as argument.
+I&#8217;ve tried passing it explicitly to apply_async() as so:</p>
+
+<pre><code>from djapp.celery import *
+
+# app = debug_task._get_app() # if not defined in djapp.celery
+producer = app.amqp.producer_pool.acquire(block=True)
+debug_task.apply_async(producer=producer)
+</code></pre>
+
+<p>However this doesn&#8217;t speedup anything. If we replace the above code block like this:</p>
+
+<pre><code>349         with producer as P:
+</code></pre>
+
+<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
+
+<p>If you are unfamiliar with the with statement in Python please read
+<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
+a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
+<code>self.release()</code> on exit of the with statement.</p>
+
+<p>I also tried killing the with statement and using producer directly but with limited success. While
+it was not released(was non None) on subsequent iterations the memory usage grew much more and there
+wasn&#8217;t any performance boost.</p>
+
+<h2>Conclusion</h2>
+
+<p>The with statement is used throughout both Celery and Kombu and I&#8217;m not at all sure if
+there&#8217;s a mechanism for keep-alive connections. My time constraints are limited and I&#8217;ll probably
+not spend anymore time on this problem soon.</p>
+
+<p>Since my use case involves task producer and consumers on localhost I&#8217;ll try to workaround the
+current limitations by using Kombu directly
+(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
+uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2001,61 +2118,6 @@ the core of their Kendo UI framework on the
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/">Screen Magnifier and Smart Phone! Has Anyone Used It ?</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T10:25:00+03:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Do you remember I was going to
-<a href="/blog/2013/08/01/laptop-vs-smartphone-part-one/">replace my laptop for a smartphone</a>.
-There&#8217;s the issue with a desk working environment and one solution is to buy an external
-display. The other one is to use a
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=screen%20magnifier&linkCode=ur2&rh=i%3Aaps%2Ck%3Ascreen%20magnifier&sprefix=screen%20magnifie%2Ccomputers%2C277&tag=atodorovorg-20&url=search-alias%3Daps&linkId=KGF6F22QDNBRWAMP">screen magnifier</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-as shown on the picture
-(source <a href="http://www.ebay.co.uk/itm/2PC-Enlarger-Magnifier-for-Mobile-Screen-3-Times-for-All-Mobiles-Senior-2014-New-/181398272903?pt=UK_Holders_Mounts&amp;hash=item2a3c2dfb87">eBay</a>).</p>
-
-<p><img src="/images/mobile_screen_magnifier.jpg" title="Mobile Screen Magnifier" alt="Mobile Screen Magnifier" /></p>
-
-<p>Does anyone have experience with these? Ultimately it should be possible to use
-any 3x Fresnel lens magnifier and make your 5&#8221; phone display into a 15&#8221; laptop size one.
-The magnifiers used for reading,
-<a href="http://www.amazon.com/gp/product/B001TLJXJ8/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001TLJXJ8&linkCode=as2&tag=atodorovorg-20&linkId=HS6EY4BELCHBZ6HC">this one</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001TLJXJ8" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-are cheap and portable but don&#8217;t look very well around the edges.</p>
-
-<p>If anyone has such a device at hand I&#8217;d love to see if this works for you or not.
-Thanks!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2105,6 +2167,10 @@ Thanks!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">Speeding up Celery Backends, Part 2</a>
       </li>
     
@@ -2138,10 +2204,6 @@ Thanks!</p>
     
       <li class="post">
         <a href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/">SNAKE is no Longer Needed to Run Installation Tests in Beaker</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/">Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com</a>
       </li>
     
   </ul>

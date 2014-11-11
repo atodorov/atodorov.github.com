@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-11-07T16:30:15+02:00</updated>
+  <updated>2014-11-11T16:52:54+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,94 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Speeding Up Celery Backends, Part 3]]></title>
+    <link href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/"/>
+    <updated>2014-11-11T15:59:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3</id>
+    <content type="html"><![CDATA[<p>In the second part of this article we've seen
+<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
+Now let's explore what happens inside and see if we can't speed things up.</p>
+
+<p>I've used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
+call graph visualizations of my application. It has the nice feature to also show
+execution time and use different colors for fast and slow operations.</p>
+
+<p>Full command line is:</p>
+
+<pre><code>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+</code></pre>
+
+<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
+
+<h2>General findings</h2>
+
+<p><img src="/images/celery/general.png" title="call graph" alt="call graph" /></p>
+
+<ul>
+<li>The first four calls is where most of the time is spent as seen on the picture.</li>
+<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
+transport Kombu (not shown on picture)</li>
+<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
+<code>celery.app.base.Celery.send_task</code></li>
+<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
+rewrites the code.</li>
+</ul>
+
+
+<h2>More findings</h2>
+
+<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
+
+<pre><code>349         with self.producer_or_acquire(producer) as P:
+350             self.backend.on_task_call(P, task_id)
+351             task_id = P.publish_task(
+352                 name, args, kwargs, countdown=countdown, eta=eta,
+353                 task_id=task_id, expires=expires,
+354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
+355                 reply_to=reply_to or self.oid, **options
+356             )
+</code></pre>
+
+<p><code>producer</code> is always None because delay() doesn't pass it as argument.
+I've tried passing it explicitly to apply_async() as so:</p>
+
+<pre><code>from djapp.celery import *
+
+# app = debug_task._get_app() # if not defined in djapp.celery
+producer = app.amqp.producer_pool.acquire(block=True)
+debug_task.apply_async(producer=producer)
+</code></pre>
+
+<p>However this doesn't speedup anything. If we replace the above code block like this:</p>
+
+<pre><code>349         with producer as P:
+</code></pre>
+
+<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
+
+<p>If you are unfamiliar with the with statement in Python please read
+<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
+a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
+<code>self.release()</code> on exit of the with statement.</p>
+
+<p>I also tried killing the with statement and using producer directly but with limited success. While
+it was not released(was non None) on subsequent iterations the memory usage grew much more and there
+wasn't any performance boost.</p>
+
+<h2>Conclusion</h2>
+
+<p>The with statement is used throughout both Celery and Kombu and I'm not at all sure if
+there's a mechanism for keep-alive connections. My time constraints are limited and I'll probably
+not spend anymore time on this problem soon.</p>
+
+<p>Since my use case involves task producer and consumers on localhost I'll try to workaround the
+current limitations by using Kombu directly
+(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
+uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Speeding up Celery Backends, Part 2]]></title>
@@ -345,18 +433,6 @@ block inside the template. A simpler variant is to define a comment line that st
 <p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
 can be used by the general public though. I will be writing another post about that
 so stay tuned.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How Do You Test Thai Scalable Fonts]]></title>
-    <link href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/"/>
-    <updated>2014-03-17T22:51:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts</id>
-    <content type="html"><![CDATA[<p>Recently I wrote about <a href="/blog/2014/03/04/how-do-you-test-fonts/">testing fonts</a>.
-I finally managed to get an answer from the authors of <em>thai-scalable-fonts</em>.</p>
-
-<p><blockquote><p></p></p><p><blockquote><ul><br/><li>What is your approach for testing Fonts-TLWG?</li><br/></ul><br/></blockquote></p><p><p>It's not automated test. What it does is generate PDF with sample<br/>texts at several sizes (the waterfall), pangrams, and glyph table.<br/>It needs human eyes to investigate.</p></p><p><blockquote><ul><br/><li>What kind of problems is your test suite designed for ?</li><br/></ul><br/></blockquote></p><p><ul><br/><li>Shaping</li><br/><li>Glyph coverage</li><br/><li>Metrics</li><br/></ul></p><p><br/><p>We also make use of fontforge features to make spotting errors<br/>easier, such as<br/>- Show extremas<br/>- Show almost vertical/horizontal lines/curves</p><footer><strong>Theppitak Karoonboonyanan</strong> <cite>Fonts-TLWG</cite></footer></blockquote></p>
 ]]></content>
   </entry>
   
