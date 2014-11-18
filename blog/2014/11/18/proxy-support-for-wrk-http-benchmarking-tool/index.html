@@ -5,14 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>To fork or not to fork - the MATE story</title>
+  <title>Proxy Support for wrk HTTP Benchmarking Tool</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="In the open source world
-forking
-is a common concept, largely endorsed by GitHub&#8217;s fork &amp; pull requests work-flow.
-Forking a large and &hellip;">
+  <meta name="description" content="Few times recently I&#8217;ve seen people using an HTTP benchmarking tool called
+wrk and decided to give it a try. It is a very cool
+instrument but &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +20,7 @@ Forking a large and &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/03/26/to-fork-or-not-to-fork-the-mate-story/">
+  <link rel="canonical" href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -81,7 +80,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">To Fork or Not to Fork - the MATE Story</h1>
+      <h1 class="entry-title">Proxy Support for Wrk HTTP Benchmarking Tool</h1>
     
     
       <p class="meta">
@@ -97,7 +96,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-03-26T10:46:00+02:00" pubdate data-updated="true">Mar 26<span>th</span>, 2013</time>
+<time datetime="2014-11-18T10:04:00+02:00" pubdate data-updated="true">Nov 18<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -106,37 +105,49 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p><img src="/images/MATE.png" title="MATE Desktop" alt="&quot;MATE Desktop&quot;" /></p>
+<div class="entry-content"><p>Few times recently I&#8217;ve seen people using an HTTP benchmarking tool called
+<a href="https://github.com/wg/wrk">wrk</a> and decided to give it a try. It is a very cool
+instrument but didn&#8217;t fit my use case perfectly. What I needed is to be able to
+redirect the connection through a web proxy and measure how much the proxy
+slows down things compared to hitting the web server directly with wrk.
+In other words - how fast is the proxy server.</p>
 
-<p>In the open source world
-<a href="https://en.wikipedia.org/wiki/Fork_%28software_development%29">forking</a>
-is a common concept, largely endorsed by GitHub&#8217;s fork &amp; pull requests work-flow.
-Forking a large and successful project and creating a new one, with its own
-eco-system is rare though.</p>
+<h2>How does a proxy work</h2>
 
-<p>Recently I came across the <a href="http://mate-desktop.org">MATE</a> desktop environment
-which is a fork of GNOME 2. Even more interesting is that they forked lots of
-standard GNOME <a href="http://mate-desktop.org/applications/">applications</a> as well.
-Being behind the <a href="http://www.redhat.com/products/enterprise-linux/">world&#8217;s leading enterprise OS</a>
-where maintaining a private fork is sometimes necessary I wondered why MATE had to do this.</p>
+<p>I&#8217;ve examined the source code of two proxies (one in Python and another one in Go)
+and what happens is this:</p>
 
-<p>Here are some interesting responses from
-<a href="http://ml.mate-desktop.org/pipermail/mate-dev/2013-March/000090.html">mate-dev</a>:</p>
-
-<blockquote><p>Well, MATE is born in a time of fear, so Perberos forked almost all <br/>GNOME 2 applications. Currently, we are dropping a lot of packages to <br/>focus our effort on what we need really.<br/>&#8230;<br/>The main reason of this is to have a base set of apps in GTK 2. Another <br/>reason, most GNOME apps (like Evince) are suffering mockups that dont <br/>follow the traditional idea of MATE.</p><p>When MATE will be GTK3, we&#8217;ll consider again if keeping or not such <br/>applications.</p><footer><strong>Stefano Karapetsas</strong> <cite><a href='http://ml.mate-desktop.org/pipermail/mate-dev/2013-March/000091.html'>ml.mate-desktop.org/pipermail/&hellip;</a></cite></footer></blockquote>
-
-
-
-
-<blockquote><p>A similar question was also asked not long after the MATE forum was <br/>created, which was probably somewhere early in 2012. Steve Zesch <br/>answered that we would be sure that we wouldn&#8217;t be affected by <br/>feature/UI choices of the GNOME developers, which we would have been if <br/>MATE relied on GNOME 3 applications. He used Caja as an example. Caja <br/>looked -of course- similar to Nautilus. It had some features Nautilus 3 <br/>didn&#8217;t, but the reverse was true as well. Nautilus 3 looked better, <br/>though, so it was not very surprising that we got (and get) this <br/>question. But Steve&#8217;s example of Caja turned out to be pretty much spot <br/>on, when Nautilus 3.6 was released, and almost all of the changes were <br/>removed features (it was even described by a former GNOME developer as <br/>&#8216;vandalism&#8217;). Canonical decided to use 3.4 for Ubuntu 12.10, although <br/>the original plan was to include 3.6. Linux Mint forked 3.4 as Nemo.</p><p>And there&#8217;s no good reason for this, as far as I can see. The interfaces <br/>of Gnome have always been simple enough not to be overwhelming for <br/>novice users, but at the same time powerful enough for the power users. <br/>Which is a fine - and rare - balance. They completely messed it up in <br/>Gnome 3. <br/>&#8230;<br/>So although Gedit, Evince and GNOME Terminal are fine now, I doubt it&#8217;s <br/>safe to assume they will stay that way. Especially since we&#8217;ve already <br/>seen what happened to the fallback mode of Gnome 3 (completely removed, <br/>although many people use it and Ubuntu&#8217;s Unity depends on it) and <br/>Nautilus (vandalised).<br/>&#8230;<br/>Well, ok, that was a big rant. But to summarise my post (and Stefano&#8217;s): <br/>it was a decision that had to be taken quickly, and from the integration <br/>and control viewpoint, it seems like was a good idea after all. <br/>Especially now many deprecated underlying technologies have been replaced.</p><footer><strong>Michael Steenbeek</strong> <cite><a href='http://ml.mate-desktop.org/pipermail/mate-dev/2013-March/000092.html'>ml.mate-desktop.org/pipermail/&hellip;</a></cite></footer></blockquote>
+<ul>
+<li>The proxy server starts listening to a TCP port</li>
+<li>A client (e.g. the browser) sends the request using an absolute URL (GET http://example.com/about.html)</li>
+<li>Instead of connecting directly to the web server behind example.com the client connects to the proxy</li>
+<li>The proxy server does connect to example.com directly, reads the response and delivers it back to
+the client.</li>
+</ul>
 
 
+<h2>Proxy in wrk</h2>
 
+<p>Luckily wrk supports the execution of Lua scripts so we can make a
+<a href="https://github.com/wg/wrk/pull/107">simple script</a> like this:</p>
 
-<blockquote><p>Well, when two teams are maintaining applications with very little <br/>differences, that can be considered a waste of time and effort. It was <br/>very easy to say about the MATE applications as well, before we knew <br/>what GNOME would do to its applications. Now GNOME is removing more and <br/>more features from its applications and changing their GUI to a tablet <br/>interface, it turned to be the right decision.</p><footer><strong>Michael Steenbeek</strong> <cite><a href='http://ml.mate-desktop.org/pipermail/mate-dev/2013-March/000095.html'>ml.mate-desktop.org/pipermail/&hellip;</a></cite></footer></blockquote>
+<pre><code>init = function(args)
+    target_url = args[1] -- proxy needs absolute URL
+end
 
+request = function()
+    return wrk.format("GET", target_url)
+end
+</code></pre>
 
+<p>Then update your command line to something like this:</p>
 
+<pre><code>./wrk [options] http://proxy:port -s proxy.lua -- http://example.com/about.html
+</code></pre>
+
+<p>This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
+Depending on how your proxy works you may need to add the <code>Host: example.com</code> header as well.
+Now let&#8217;s do some testing.</p>
 </div>
 
 
@@ -159,8 +170,14 @@ where maintaining a private fork is sometimes necessary I wondered why MATE had 
   
 
 
-<time datetime="2013-03-26T10:46:00+02:00" pubdate data-updated="true">Mar 26<span>th</span>, 2013</time>
+<time datetime="2014-11-18T10:04:00+02:00" pubdate data-updated="true">Nov 18<span>th</span>, 2014</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/qa/'>QA</a>
+  
+</span>
 
 
     </p>
@@ -187,10 +204,8 @@ where maintaining a private fork is sometimes necessary I wondered why MATE had 
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/03/25/the-silicon-prairie-movie/" title="Previous Post: The Silicon Prairie Movie">&laquo; The Silicon Prairie Movie</a>
+        <a class="basic-alignment left" href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/" title="Previous Post: HackFMI SMS Delivery Powered by Twilio">&laquo; HackFMI SMS Delivery Powered by Twilio</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/03/27/what-runs-your-startup/" title="Next Post: What Runs Your Start-up">What Runs Your Start-up &raquo;</a>
       
     </p>
   </footer>
@@ -336,8 +351,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/03/26/to-fork-or-not-to-fork-the-mate-story/';
-        var disqus_url = 'http://atodorov.org/blog/2013/03/26/to-fork-or-not-to-fork-the-mate-story/';
+        var disqus_identifier = 'http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/';
+        var disqus_url = 'http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/';
         var disqus_script = 'embed.js';
       
     (function () {

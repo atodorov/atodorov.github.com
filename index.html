@@ -9,9 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Ten days ago the regular HackFMI competition was held.
-This year they tried sending SMS notifications to all participants which was powered
-by Twilio &hellip;">
+  <meta name="description" content="Few times recently I&#8217;ve seen people using an HTTP benchmarking tool called
+wrk and decided to give it a try. It is a very cool
+instrument but &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,86 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for Wrk HTTP Benchmarking Tool</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-18T10:04:00+02:00" pubdate data-updated="true">Nov 18<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Few times recently I&#8217;ve seen people using an HTTP benchmarking tool called
+<a href="https://github.com/wg/wrk">wrk</a> and decided to give it a try. It is a very cool
+instrument but didn&#8217;t fit my use case perfectly. What I needed is to be able to
+redirect the connection through a web proxy and measure how much the proxy
+slows down things compared to hitting the web server directly with wrk.
+In other words - how fast is the proxy server.</p>
+
+<h2>How does a proxy work</h2>
+
+<p>I&#8217;ve examined the source code of two proxies (one in Python and another one in Go)
+and what happens is this:</p>
+
+<ul>
+<li>The proxy server starts listening to a TCP port</li>
+<li>A client (e.g. the browser) sends the request using an absolute URL (GET http://example.com/about.html)</li>
+<li>Instead of connecting directly to the web server behind example.com the client connects to the proxy</li>
+<li>The proxy server does connect to example.com directly, reads the response and delivers it back to
+the client.</li>
+</ul>
+
+
+<h2>Proxy in wrk</h2>
+
+<p>Luckily wrk supports the execution of Lua scripts so we can make a
+<a href="https://github.com/wg/wrk/pull/107">simple script</a> like this:</p>
+
+<pre><code>init = function(args)
+    target_url = args[1] -- proxy needs absolute URL
+end
+
+request = function()
+    return wrk.format("GET", target_url)
+end
+</code></pre>
+
+<p>Then update your command line to something like this:</p>
+
+<pre><code>./wrk [options] http://proxy:port -s proxy.lua -- http://example.com/about.html
+</code></pre>
+
+<p>This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
+Depending on how your proxy works you may need to add the <code>Host: example.com</code> header as well.
+Now let&#8217;s do some testing.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2018,122 +2098,6 @@ are incorrect which is the first of its kind I&#8217;ve seen in a book.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/13/book-review-last-3-months/">Book Review - Last 3 Months</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-13T23:57:00+03:00" pubdate data-updated="true">May 13<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/05/13/book-review-last-3-months/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Hello folks, this is my book list for the past 3 months. It ranges from
-tech and start-up related to Japanese and kid stories. Here&#8217;s my quick review.</p>
-
-<h2>Lean UX</h2>
-
-<p><a href="http://www.amazon.com/gp/product/1449311652/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449311652&linkCode=as2&tag=atodorovorg-20&linkId=JNQIKHJJXU3KJ33H">Lean UX: Applying Lean Principles to Improve User Experience</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449311652" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-is the second book I read on the subject after first reading
-<a href="/blog/2013/12/09/book-review-ux-for-lean-startups/">UX for Lean Startups</a>.</p>
-
-<p>It is published before <em>UX for Lean Startups</em> and is much more about principles than
-any practical methods. Honestly I&#8217;m not sure if I took any real value out of it.
-Maybe if I had read these two books in reverse order it would have been better.</p>
-
-<h2>The Hacienda - How Not to Run a Club</h2>
-
-<p><a href="http://www.amazon.com/gp/product/B00DEKLESK/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00DEKLESK&linkCode=as2&tag=atodorovorg-20&linkId=FOMGYFQW4BHGPPOL">The Hacienda: How Not to Run a Club</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00DEKLESK" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-by Peter Hook is one of my favorites. It covers a great deal of music and clubland history,
-depicts crazy parties and describes the adventure of owning one of the most
-popular nightclubs in the world. All of that while struggling to make a buck and
-pouring countless pounds into a black hole.</p>
-
-<p>The irony is The Hacienda became a legendary place only after it had closed down
-and later on being demolished.</p>
-
-<p>A must read for anyone who is considering business in the entertainment industry
-or wants to read a piece of history. My favorite quote of the book:</p>
-
-<blockquote><p>Years after, Tony Wilson found himself sitting opposite Madonna at dinner.</p><p>‘I eventually plucked up the courage to look across the table to Madonna and ask,<br/>“Are you aware that the first place you appeared outside of New York was our club in Manchester?”</p><p>‘She gave me an ice-cold stare and said, “My memory seems to have wiped that.”’</p></blockquote>
-
-
-<h2>Simple Science Experiments</h2>
-
-<p><a href="http://www.amazon.com/gp/product/0713428945/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0713428945&linkCode=as2&tag=atodorovorg-20&linkId=HU6TVCNR6DG67EFG">Simple Science Experiments</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0713428945" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-by Hans Jürgen Press is a very old book listing 200 experiments which you can
-do at home using household materials. It is great for teaching basic science
-to children. The book is very popular and is available in many languages
-and editions - just search for it.</p>
-
-<p>I used to have this as a kid and was able to purchase the 1987 Bulgarian edition
-at an antique bookstore in Varna two months ago.</p>
-
-<h2>Ronia, the Robber&#8217;s Daughter</h2>
-
-<p>Decided to experiment a little bit and found
-<a href="http://www.amazon.com/gp/product/0140317201/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0140317201&linkCode=as2&tag=atodorovorg-20&linkId=FDHOPXQCZPMYCAA2">Ronia, the Robber&#8217;s Daughter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0140317201" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.
-It&#8217;s a child&#8217;s book telling the story of two kids whose fathers are rival
-robbers. The book is an easy read (2-3 hrs before bed time) with stories
-of magic woods, dwarfs and scary creatures mixed with human emotions
-and the good vs. bad theme.</p>
-
-<h2>Japanese Short Stories</h2>
-
-<p>I&#8217;ve managed to find a 1973 compilation of Japanese short stories
-translated into Bulgarian. Also one of my favorite books.</p>
-
-<p>If I&#8217;m not mistaken these are classic
-Japanese authors, nothing modern or cutting edge. Most of the action happens
-during the early 1900s as far as I can tell.
-What impresses me most is the detailed description of nature and
-surrounding details in all of the stories.</p>
-
-<h2>The Singularity Is Near</h2>
-
-<p>I&#8217;ve also started
-<a href="http://www.amazon.com/gp/product/0143037889/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0143037889&linkCode=as2&tag=atodorovorg-20&linkId=BKMQ47NQEXNTDDRR">The Singularity Is Near: When Humans Transcend Biology</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0143037889" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-by Ray Kurzweil.</p>
-
-<p>It&#8217;s a bit hard to read because the book is full of so many technical details
-about genetics, nanotechnology, robotics and AI.</p>
-
-<p>Ray depicts a bright future where humans will transcend our biological
-limitations and essentially become pure intelligence. Definitely a good
-read and I will tell you more about it when I finish it.</p>
-
-<hr />
-
-<p>What have you been reading since January ? I&#8217;d love to see your book list
-or connect on
-<a href="https://www.goodreads.com/user/show/16191345-alexander-todorov">Goodreads</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2183,6 +2147,10 @@ or connect on
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for wrk HTTP Benchmarking Tool</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/">HackFMI SMS Delivery Powered by Twilio</a>
       </li>
     
@@ -2216,10 +2184,6 @@ or connect on
     
       <li class="post">
         <a href="/blog/2014/08/03/book-review-4-hour-workweek/">Book Review: The 4-Hour Workweek</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/19/book-review-how-to-win-friends/">Book Review: How to Win Friends</a>
       </li>
     
   </ul>

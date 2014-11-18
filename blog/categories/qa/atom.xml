@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-11-17T15:18:43+02:00</updated>
+  <updated>2014-11-18T10:20:33+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,57 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Proxy Support for wrk HTTP Benchmarking Tool]]></title>
+    <link href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/"/>
+    <updated>2014-11-18T10:04:00+02:00</updated>
+    <id>http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool</id>
+    <content type="html"><![CDATA[<p>Few times recently I've seen people using an HTTP benchmarking tool called
+<a href="https://github.com/wg/wrk">wrk</a> and decided to give it a try. It is a very cool
+instrument but didn't fit my use case perfectly. What I needed is to be able to
+redirect the connection through a web proxy and measure how much the proxy
+slows down things compared to hitting the web server directly with wrk.
+In other words - how fast is the proxy server.</p>
+
+<h2>How does a proxy work</h2>
+
+<p>I've examined the source code of two proxies (one in Python and another one in Go)
+and what happens is this:</p>
+
+<ul>
+<li>The proxy server starts listening to a TCP port</li>
+<li>A client (e.g. the browser) sends the request using an absolute URL (GET http://example.com/about.html)</li>
+<li>Instead of connecting directly to the web server behind example.com the client connects to the proxy</li>
+<li>The proxy server does connect to example.com directly, reads the response and delivers it back to
+the client.</li>
+</ul>
+
+
+<h2>Proxy in wrk</h2>
+
+<p>Luckily wrk supports the execution of Lua scripts so we can make a
+<a href="https://github.com/wg/wrk/pull/107">simple script</a> like this:</p>
+
+<pre><code>init = function(args)
+    target_url = args[1] -- proxy needs absolute URL
+end
+
+request = function()
+    return wrk.format("GET", target_url)
+end
+</code></pre>
+
+<p>Then update your command line to something like this:</p>
+
+<pre><code>./wrk [options] http://proxy:port -s proxy.lua -- http://example.com/about.html
+</code></pre>
+
+<p>This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
+Depending on how your proxy works you may need to add the <code>Host: example.com</code> header as well.
+Now let's do some testing.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Speeding Up Celery Backends, Part 3]]></title>
@@ -384,55 +435,6 @@ If you have any suggestions or pointers please share them in the comments.</p>
 <code>abstract.py: class Object(object).__init__()</code>
 and the second one is Python's
 <code>uuid.py: class UUID().__init__()</code>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[SNAKE is no Longer Needed to Run Installation Tests in Beaker]]></title>
-    <link href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/"/>
-    <updated>2014-07-18T23:05:00+03:00</updated>
-    <id>http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker</id>
-    <content type="html"><![CDATA[<p>This is a quick status update for one of the pieces of
-<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
-and mostly a self-note.</p>
-
-<p>Previously to control the kickstart configuration used during installation in Beaker one
-had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
-a kickstart configuration from a Python template.</p>
-
-<p>SNAKE presented challenges when deploying and using
-<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
-virtually unmaintained.</p>
-
-<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
-generate a kickstart configuration when provisioning the system. This is already
-available in beaker-client-0.17.1.</p>
-
-<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
-very complex ones. You can even include snippets from one template into another if required.
-The standard context that is passed to the template is:</p>
-
-<ul>
-<li><strong>DISTRO</strong> - if specified, the distro name</li>
-<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
-<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
-<li><strong>VARIANT</strong> - if specified</li>
-<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
-<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
-</ul>
-
-
-<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
-have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
-
-<p>This workflow also has the ability to return boot arguments for the installer if needed.
-If any, they should be defined in a {% block kernel_options %}{% endblock %}
-block inside the template. A simpler variant is to define a comment line that stars with
-<em>## kernel_options:</em></p>
-
-<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
-can be used by the general public though. I will be writing another post about that
-so stay tuned.</p>
 ]]></content>
   </entry>
   
