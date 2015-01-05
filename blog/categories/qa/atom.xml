@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2014-12-22T15:58:32+02:00</updated>
+  <updated>2015-01-05T15:55:27+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,32 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Endless Loop Bug in Candy Crush Saga Level 80]]></title>
+    <link href="http://atodorov.org/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/"/>
+    <updated>2015-01-05T15:44:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80</id>
+    <content type="html"><![CDATA[<p>Happy new year everyone. During the holidays I've discovered several interesting
+bugs which will be revealed in this blog. Starting today with a bug in the popular
+game <em>Candy Crush Saga</em>.</p>
+
+<p>In level 80 one teleport is still open but the chocolates are blocking the rest.
+The game has ended but candies keep flowing through the teleport and the level doesn't exit.
+My guess is that the game logic is missing a check whether or not it will go into an endless loop.</p>
+
+<iframe width="560" height="315" src="http://atodorov.org//www.youtube.com/embed/haBepFwyaxY" frameborder="0" allowfullscreen></iframe>
+
+
+<p>This bug seems to be generic for the entire game. It pops up also on
+level 137 in the Owl part of the game (recorded by somebody else):</p>
+
+<iframe width="420" height="315" src="http://atodorov.org//www.youtube.com/embed/6q1_LIdamqw" frameborder="0" allowfullscreen></iframe>
+
+
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[BlackBerry Z10 is Killing My WiFi Router]]></title>
@@ -275,85 +301,6 @@ not spend anymore time on this problem soon.</p>
 current limitations by using Kombu directly
 (see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
 uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding up Celery Backends, Part 2]]></title>
-    <link href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/"/>
-    <updated>2014-11-07T15:48:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2</id>
-    <content type="html"><![CDATA[<p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
-post I looked at a few celery backends and discovered they didn't meet my needs.
-Why is the Celery stack slow? How slow is it actually?</p>
-
-<h2>How slow is Celery in practice</h2>
-
-<ul>
-<li>Queue: 500`000 msg/sec</li>
-<li>Kombu:  14`000 msg/sec</li>
-<li>Celery:  2`000 msg/sec</li>
-</ul>
-
-
-<h2>Detailed test description</h2>
-
-<p>There are three main components of the Celery stack:</p>
-
-<ul>
-<li>Celery itself</li>
-<li>Kombu which handles the transport layer</li>
-<li>Python Queue()'s underlying everything</li>
-</ul>
-
-
-<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
-run for 1 000 000 messages I got the following results:</p>
-
-<ul>
-<li>Raw Python Queue: Msgs per sec: 500`000</li>
-<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
-
-<ul>
-<li>with json serializer: Msgs per sec: 5`988</li>
-<li>with pickle serializer: Msgs per sec: 12`820</li>
-<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
-Msgs per sec: 14`492</li>
-</ul>
-</li>
-</ul>
-
-
-<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
-25`000 msg/sec then the performance is saturated. I've observed similar behavior
-with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
-exceptions. This is probably the main reason performance becomes saturated over a longer
-execution.</p>
-
-<ul>
-<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
-loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
-</ul>
-
-
-<p>Another interesting this worth outlining - in the kombu test there are these lines:
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>for j in range(1000000):
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
-Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
-construct which is executed every time a new task is published. Next I will be looking
-into this to figure out exactly where the slowliness comes from.</p>
 ]]></content>
   </entry>
   
