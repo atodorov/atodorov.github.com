@@ -503,6 +503,62 @@ consistent over time and the error messages from both webserver and proxy (maybe
 <p>At the moment I&#8217;m not aware of the internal workings of neither wrk, nor
 Go itself, nor the goproxy library to make conclusion if this is a bad thing or expected.
 I&#8217;m eager to hear what others think in the comments. Thanks!</p>
+
+<h2>Update 2015-01-27</h2>
+
+<p>I have retested with PyPy but on a different system so I&#8217;m giving all the test results
+on it as well. <code>/proc/cpuinfo</code> says we have 16 x Intel(R) Xeon(R) CPU E5-2450L 0 @ 1.80GHz
+CPUs.</p>
+
+<p>Baseline - Go server:</p>
+
+<pre><code>$ ./wrk -c1000 -t20 -d30s http://127.0.0.1:8000/atodorov.html
+Running 30s test @ http://127.0.0.1:8000/atodorov.html
+  20 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    15.57ms   20.38ms 238.93ms   98.11%
+    Req/Sec     3.55k     1.32k   15.91k    82.49%
+  1980738 requests in 30.00s, 174.53GB read
+  Socket errors: connect 0, read 0, write 0, timeout 602
+  Non-2xx or 3xx responses: 60331
+Requests/sec:  66022.87
+Transfer/sec:      5.82GB
+</code></pre>
+
+<p>Go proxy (30 sec):</p>
+
+<pre><code>$ ./wrk -c1000 -t20 -d30s http://127.0.0.1:9090 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s test @ http://127.0.0.1:9090
+  20 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    68.93ms  718.98ms  12.60s    99.58%
+    Req/Sec     1.61k   784.01     4.83k    62.50%
+  942757 requests in 30.00s, 32.16GB read
+  Socket errors: connect 0, read 26, write 0, timeout 3050
+  Non-2xx or 3xx responses: 589940
+Requests/sec:  31425.47
+Transfer/sec:      1.07GB
+</code></pre>
+
+<p>Python proxy with <code>Twisted==14.0.2</code> and <code>pypy-2.2.1-2.el7.x86_64</code>:</p>
+
+<pre><code>$ ./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s test @ http://127.0.0.1:8080
+  20 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   858.75ms    1.47s    6.00s    88.09%
+    Req/Sec   146.39    104.83   341.00     54.18%
+  85645 requests in 30.00s, 853.54MB read
+  Socket errors: connect 0, read 289, write 0, timeout 3297
+  Non-2xx or 3xx responses: 76567
+Requests/sec:   2854.45
+Transfer/sec:     28.45MB
+</code></pre>
+
+<p>As seen Go proxy is slower than the Go server by factor of 2.
+Python proxy is slower by than the Go server by factor of 20.
+These results are similar to previous ones so I don&#8217;t think PyPy
+makes any significant difference.</p>
 </div>
   
   
