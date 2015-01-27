@@ -152,6 +152,23 @@ Python proxy with `Twisted==14.0.2` and `pypy-2.2.1-2.el7.x86_64`:
     Requests/sec:   2854.45
     Transfer/sec:     28.45MB
 
+**Update 2015-01-27-2**
+
+Python proxy with `Twisted==14.0.2` and `python-2.7.5-16.el7.x86_64`:
+
+    $ ./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+    Running 30s test @ http://127.0.0.1:8080
+      20 threads and 1000 connections
+      Thread Stats   Avg      Stdev     Max   +/- Stdev
+        Latency   739.64ms    1.58s   14.22s    96.18%
+        Req/Sec    84.43     36.61   157.00     67.79%
+      49173 requests in 30.01s, 701.77MB read
+      Socket errors: connect 0, read 240, write 0, timeout 2463
+      Non-2xx or 3xx responses: 41683
+    Requests/sec:   1638.38
+    Transfer/sec:     23.38MB
+
+
 As seen Go proxy is slower than the Go server by factor of 2.
 Python proxy is slower by than the Go server by factor of 20.
 These results are similar to previous ones so I don't think PyPy
