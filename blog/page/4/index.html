@@ -9,8 +9,10 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Today I was looking for a command sequence to cut a string in two by predefined
-delimiter (e.g. like cut does). I wanted to get the last field only &hellip;">
+  <meta name="description" content="In the last few weeks I&#8217;ve been working together with
+Tim Flink and
+Kamil Paral from the Fedora QA
+team on bringing some installation testing &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +78,165 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Open Source Quality Assurance Infrastructure for Fedora QA</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-19T14:12:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/fedora/beaker.png" title="Beaker test lab" alt="&quot;Beaker test lab&quot;" /></p>
+
+<p>In the last few weeks I&#8217;ve been working together with
+<a href="https://fedoraproject.org/wiki/User:Tflink">Tim Flink</a> and
+<a href="https://fedoraproject.org/wiki/User:Kparal">Kamil Paral</a> from the Fedora QA
+team on bringing some installation testing expertise to Fedora and establishing
+an <a href="http://beaker.fedoraproject.org/bkr/">open source test lab</a>
+to perform automated testing in. The infrastructure is
+already in relatively usable condition so I&#8217;ve decided to share this information
+with the community.</p>
+
+<h2>Beaker is Running Our Test Lab</h2>
+
+<p><a href="http://beaker-project.org/">Beaker</a> is the software suite that powers the test
+lab infrastructure. It is quite complex, with many components and sometimes not
+very straight-forward to set up. Tim has been working on that with me giving it
+a try and reporting issues as they have been discovered and fixed.</p>
+
+<p>In the process of working on this I&#8217;ve managed to create
+<a href="http://gerrit.beaker-project.org/#/q/owner:%22Alexander+Todorov%22,n,z">couple of patches</a>
+against Beaker and friends. They are still pending release in a future version
+because of more urgent bug fixes which need to released first.</p>
+
+<h2>SNAKE is The Kickstart Template Server</h2>
+
+<p><a href="https://fedorahosted.org/snake/">SNAKE</a> is a client/server Python framework used
+to support Anaconda installations. It supports plain text ks.cfg files, IIRC those
+were static templates, no variable substitution.</p>
+
+<p>The other possibility is Python templates based on Pykickstart:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">pykickstart.constants</span> <span class="kn">import</span> <span class="n">KS_SCRIPT_POST</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">pykickstart.parser</span> <span class="kn">import</span> <span class="n">Script</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">installdefaults</span> <span class="kn">import</span> <span class="n">InstallKs</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">ks</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&#39;&#39;&#39;Anaconda autopart&#39;&#39;&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ks</span><span class="o">=</span><span class="n">InstallKs</span><span class="p">()</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;@base&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">clearpart</span><span class="p">(</span><span class="n">initAll</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">autopart</span><span class="p">(</span><span class="n">autopart</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">script</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+</span><span class='line'><span class="s">cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || </span><span class="se">\</span>
+</span><span class='line'><span class="s">cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg</span>
+</span><span class='line'><span class="s">&#39;&#39;&#39;</span>
+</span><span class='line'>    <span class="n">post</span> <span class="o">=</span> <span class="n">Script</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">KS_SCRIPT_POST</span><span class="p">,</span> <span class="n">inChroot</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">ks</span><span class="o">.</span><span class="n">scripts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ks</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At the moment SNAKE is essentially abandoned but feature complete.
+I&#8217;m thinking about adopting the project just in case we need to make some fixes.
+Will let you know more about this when it happens.</p>
+
+<h2>Open Source Test Suite</h2>
+
+<p>I have been working on opening up several test cases for what we (QE) call
+a tier #1 installation test suite. They can be found in
+<a href="http://taskbot.cloud.fedoraproject.org/cgit/fedora-beaker-tests/">git</a>.
+The tests are base on <a href="https://fedorahosted.org/beakerlib/">beakerlib</a> and
+the legacy RHTS framework which is now part of Beaker.</p>
+
+<p>This effort has been coordinated with Kamil as part of a pilot
+project he&#8217;s responsible for. I&#8217;ve been executing the same test suite against
+earlier Fedora 20 snapshots but using an internal environment. Now everything
+is going out in the open.</p>
+
+<h2>Executing The Tests</h2>
+
+<p>Well you can&#8217;t do that - YET! There are command line client tools for Fedora
+but Beaker and SNAKE are not well suited for use outside a restricted network
+like LAN or VPN. There are issues with authentication most notably for SNAKE.</p>
+
+<p>At the moment I have to ssh through two different systems to get proper access.
+However this is been worked on. I&#8217;ve read about a rewrite which will allow Beaker
+to utilize a custom authentication framework like FAS for example. Hopefully that
+will be implemented soon enough.</p>
+
+<p>I will also like to see the test systems have direct access to the Internet for
+various reasons but this is not without its risks either. This is still to be
+decided.</p>
+
+<p>If you are interested anyway see the <code>kick-tests.sh</code> file in the test suite for
+examples and command line options.</p>
+
+<h2>Test Results</h2>
+
+<p>The first successfully completed
+<a href="http://beaker.fedoraproject.org/bkr/jobs/">test jobs</a> are jobs 50 to 58.
+There&#8217;s a failure in one of the test cases, namely SELinux related
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1027148">RHBZ #1027148</a>.</p>
+
+<p>From what I can tell the lab is now working as expected and we can start doing
+some testing against Fedora development snapshots.</p>
+
+<p>Ping me or join #fedora-qa on irc.freenode.net if you&#8217;d like to join Fedora QA!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1409,59 +1570,6 @@ go and check them out!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/07/notes-from-two-interesting-guadec-talks/">Notes From Two Interesting GUADEC Talks</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-07T14:33:00+03:00" pubdate data-updated="true">Aug 7<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/08/07/notes-from-two-interesting-guadec-talks/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>As this year&#8217;s <a href="https://www.guadec.org/">GUADEC</a> is coming to an end
-I&#8217;m publishing an interesting update from
-<a href="cz.linkedin.com/in/mullerpetr">Petr Muller</a> for
-those who were not able to attend.
-Petr is a Senior Quality Engineer at Red Hat. His notes were
-sent to an internal QE mailing list and re-published with permission.</p>
-
-<blockquote><p>As this year&#8217;s GUADEC happened in the same building where I have my<br/>other office, I decided to attend. I&#8217;m sharing my notes from the two<br/>sessions I consider to be especially interesting for the audience of<br/>this mailing list:</p><p>== How to not report your UX bug ==<br/>Speaker:    Fabiana Simões<br/>Blog:       http://fabianapsimoes.wordpress.com/<br/>Twitter:    https://twitter.com/fabianapsimoes</p><p>Do not do this stuff:<br/>* Do not simply present a preferred solution, but describe a problem (a<br/>difficulty you are having, etc.)<br/>* Do not use &#8220;This sucks&#8221; idiom, not even hidden in false niceties like<br/>&#8220;It&#8217;s not user friendly&#8221;<br/>* Do not talk for majority, when you are not entitled to (&#8220;most users<br/>would like&#8221;)<br/>* Do not consider all UX issues as minor: an inability to do stuff is<br/>not a minor issue</p><p>What is actually interesting for the designer in a report?<br/>* What were you trying to do?<br/>* Why did you want to do it?<br/>* What did you do?<br/>* What happened?<br/>* What were your expectations?</p><p>More notes<br/>* Write as much as needed<br/>* Describe what you see, did and *how you felt*<br/>* Print screen is your friend!<br/>* *Give praise*</p><p>== Extreme containment measures: keeping bug reports under control ==<br/>Speaker:  Jean-Francois Fortin Tam<br/>Homepage: http://jeff.ecchi.ca<br/>Twitter:  https://twitter.com/nekohayo</p><p>Discussed the problem lot of OS projects are having: lot of useless<br/>(old, irrelevant, waiting for decision no one wants to make) bug/rfe<br/>reports in their bug tracking systems. Lots of food for thought about<br/>our own projects, internal or external. Clever applications of<br/>principles from personal productivity systems such as GTD and Inbox Zero<br/>for bug tracking.  </p><p>The talk was mostly an applied version of this blog post, which is worth<br/>reading:<br/>http://jeff.ecchi.ca/blog/2012/10/08/reducing-our-core-apps-software-inventory/</p><footer><strong>Petr Muller</strong></footer></blockquote>
-
-
-<p>I particularly like the UX bug reporting guide lines. Need to take those into
-account when reporting UI issues.</p>
-
-<p>I still haven&#8217;t read the second blog post which also looks interesting although
-not very applicable to me. After all I&#8217;m the person reporting bugs not the one
-who decides what and when gets fixed.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/5/">&larr; Older</a>
@@ -1513,6 +1621,10 @@ who decides what and when gets fixed.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/">Pedometer Bug in Samsung Gear Fit Smartwatch</a>
       </li>
     
@@ -1546,10 +1658,6 @@ who decides what and when gets fixed.</p>
     
       <li class="post">
         <a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">Speeding up Celery Backends, Part 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/05/speeding-up-celery-backends/">Speeding up Celery Backends, Part 1</a>
       </li>
     
   </ul>
