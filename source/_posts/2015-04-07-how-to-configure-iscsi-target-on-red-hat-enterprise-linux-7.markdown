@@ -173,4 +173,5 @@ ramdisk backstore. It also supports "nullio" mode, which discards all writes, an
 * I'm having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
 the system has. I've still not figured that out entirely.
 
-
+For more information please read Chapter 25 from Red Hat's
+[Storage Administration Guide](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Storage_Administration_Guide/ch25.html)
