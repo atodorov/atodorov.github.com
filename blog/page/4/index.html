@@ -9,10 +9,18 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="In the last few weeks I&#8217;ve been working together with
-Tim Flink and
-Kamil Paral from the Fedora QA
-team on bringing some installation testing &hellip;">
+  <meta name="description" content="Accidentally I have discovered a bug for Python&#8217;s
+URLGrabber module which has to do with change in behavior in libcurl. 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +86,98 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/">Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-29T14:05:00+02:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Accidentally I have discovered a bug for Python&#8217;s
+URLGrabber module which has to do with change in behavior in libcurl.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
+</span><span class='line'>    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
+</span><span class='line'>    <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
+</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
+</span><span class='line'><span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
+newer. As explained by
+<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
+the reason is an internal change in libcurl which doesn&#8217;t accept a value of 1 anymore!</p>
+
+<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
+from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
+Fedora and Amazon Linux already have the fix.</p>
+
+<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
+there aren&#8217;t any updates released on PyPI though!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1525,51 +1625,6 @@ the first subscription activation.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/13/the-rise-of-io-domains-for-well-crafted-web-services/">The Rise of .io Domains for Well Crafted Web Services</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-13T16:17:00+03:00" pubdate data-updated="true">Aug 13<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/08/13/the-rise-of-io-domains-for-well-crafted-web-services/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Back in February 2013 Russell Beattie has published an article on his blog
-titled
-<a href="http://www.russellbeattie.com/blog/artisanal-websites-the-rise-of-io-domains-for-well-crafted-web-services">Artisanal Websites: The rise of .io domains for well crafted web services</a>
-. He has compiled a great deal of sites in the .io domain space with screenshots
-and links to each individual service. There are lots of interesting ones, so
-go and check them out!</p>
-
-<p>I&#8217;m glad Russell has added <a href="http://www.dif.io">Difio</a> as well!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/5/">&larr; Older</a>
@@ -1621,6 +1676,10 @@ go and check them out!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
       </li>
     
@@ -1654,10 +1713,6 @@ go and check them out!</p>
     
       <li class="post">
         <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">Speeding up Celery Backends, Part 2</a>
       </li>
     
   </ul>

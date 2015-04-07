@@ -4,7 +4,7 @@
   <title><![CDATA[Category: RHEL | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/rhel/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-03-16T23:44:22+02:00</updated>
+  <updated>2015-04-07T17:07:02+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,338 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[How to Configure iSCSI Target on Red Hat Enterprise Linux 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/"/>
+    <updated>2015-04-07T15:52:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7</id>
+    <content type="html"><![CDATA[<p>Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
+has become the standard one included in the Linux kernel and the one present in
+Red Hat Enterprise Linux 7. The popular <em>scsi-target-utils</em> package is replaced
+by the newer <em>targetcli</em> which makes configuring a software iSCSI target quite
+different.</p>
+
+<p>In earlier versions one had to edit the <code>/etc/tgtd/targets.conf</code> file and
+<code>service tgtd restart</code>. Here is an example configuration:</p>
+
+<pre><code>&lt;target iqn.2008-09.com.example:server.target1&gt;
+    backing-store /dev/vg_iscsi/lv_lun1
+    backing-store /dev/vg_iscsi/lv_lun2
+
+    incominguser user2 secretpass23
+    outgoinguser userA secretpassA
+&lt;/target&gt;
+</code></pre>
+
+<p><em>targetcli</em> can be used either as an interactive shell or as stand alone commands.
+Here is an example shell session which creates a file-based disk image. Comments are
+provided inline:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>yum install -y targetcli&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>systemctl enable target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>targetcli&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>first create a disk image with the name of disk1. All files are sparsely created.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> backstores/fileio create disk1 /var/lib/libvirt/images/disk1.img 10G
+</span><span class='line'>Created fileio disk1 with size 10737418240&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create an iSCSI target. NB: this only defines the target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> iscsi/ create iqn.2015-04.com.example:target1
+</span><span class='line'>Created target iqn.2015-04.com.example:target1.
+</span><span class='line'>Created TPG 1.
+</span><span class='line'>Global pref auto_add_default_portal=true
+</span><span class='line'>Created default portal listening on all IPs (0.0.0.0), port 3260.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>TPGs (Target Portal Groups) allow the iSCSI to support multiple complete&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>configurations within one target. This is useful for complex quality-of-service&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>configurations. targetcli will automatically create one TPG when the target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>is created, and almost all setups only need one.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>switch to TPG definition for our target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>list the contents&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ..................................................................................................... [no-gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 0]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create a portal aka IP:port pairs which expose the target on the network&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> portals/ create
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Binding to INADDR_ANY (0.0.0.0)
+</span><span class='line'>This NetworkPortal already exists in configFS.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create logical units (LUNs) aka disks inside our target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>in other words bind the target to its on-disk storage&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> luns/ create /backstores/fileio/disk1
+</span><span class='line'>Created LUN 0.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>disable authentication&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=0
+</span><span class='line'>Parameter authentication is now '0'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>enable read/write mode&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute demo_mode_write_protect=0
+</span><span class='line'>Parameter demo_mode_write_protect is now '0'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>Enable generate_node_acls mode. This can be thought of as&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>"ignore ACLs mode" -- both  authentication and LUN mapping&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>will then use the TPG settings.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute generate_node_acls=1
+</span><span class='line'>Parameter generate_node_acls is now '1'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ........................................................................................................ [gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 1]
+</span><span class='line'>  | o- lun0 ..................................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>exit or Ctrl+D will save the configuration under /etc/target/saveconfig.json&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> exit
+</span><span class='line'>Global pref auto_save_on_exit=true
+</span><span class='line'>Last 10 configs saved in /etc/target/backup.
+</span><span class='line'>Configuration saved to /etc/target/saveconfig.json&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>after creating a second target the layout looks like this&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> ls
+</span><span class='line'>o- / ......................................................................................................................... [...]
+</span><span class='line'>  o- backstores .............................................................................................................. [...]
+</span><span class='line'>  | o- block .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- fileio ................................................................................................. [Storage Objects: 2]
+</span><span class='line'>  | | o- disk1 .................................................. [/var/lib/libvirt/images/disk1.img (10.0GiB) write-back activated]
+</span><span class='line'>  | | o- disk2 .................................................. [/var/lib/libvirt/images/disk2.img (10.0GiB) write-back activated]
+</span><span class='line'>  | o- pscsi .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- ramdisk ................................................................................................ [Storage Objects: 0]
+</span><span class='line'>  o- iscsi ............................................................................................................ [Targets: 2]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target1 ................................................................................... [TPGs: 1]
+</span><span class='line'>  | | o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  | |   o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  | |   o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  | |   | o- lun0 ............................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  | |   o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  | |     o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target2 ................................................................................... [TPGs: 1]
+</span><span class='line'>  |   o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  |     o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  |     o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  |     | o- lun0 ............................................................... [fileio/disk2 (/var/lib/libvirt/images/disk2.img)]
+</span><span class='line'>  |     o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  |       o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  o- loopback ......................................................................................................... [Targets: 0]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>enable CHAP and Reverse CHAP (mutual) for both discovery and login authentication&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>discovery authentication is enabled under the global iscsi node&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> cd /iscsi
+</span><span class='line'>/iscsi> set discovery_auth enable=1
+</span><span class='line'>/iscsi> set discovery_auth userid=IncomingUser
+</span><span class='line'>/iscsi> set discovery_auth password=SomePassword1
+</span><span class='line'>/iscsi> set discovery_auth mutual_userid=OutgoingUser
+</span><span class='line'>/iscsi> set discovery_auth mutual_password=AnotherPassword2&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>login authentication is enabled either under the TPG node or under ACLs&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi> cd iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth userid=IncomingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth password=SomePassword3
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_userid=OutgoingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_password=AnotherPassword4
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Hints:</p>
+
+<ul>
+<li>activating targetcli service at boot is mandatory, otherwise your configuration won’t be read after a reboot</li>
+<li>if you type <code>cd</code> <em>targetcli</em> will display an interactive node tree</li>
+<li>after configuration is saved you don't need to restart anything</li>
+<li>the old <em>scsi-target-utils</em> doesn't support discovery authentication</li>
+<li><em>targetcli</em> allows kernel memory to be shared as a block SCSI device via the
+ramdisk backstore. It also supports "nullio" mode, which discards all writes, and returns all-zeroes for reads.</li>
+<li>I'm having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
+the system has. I've still not figured that out entirely.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[7 Years and 1400 Bugs Later as Red Hat QA]]></title>
@@ -466,302 +798,6 @@ corner after you login at <a href="https://access.redhat.com">https://access.red
 the first subscription activation.</p>
 
 <p>If you need to know more about Red Hat's ordering process just ask me!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[SSH from Linux to BlackBerry Z10]]></title>
-    <link href="http://atodorov.org/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/"/>
-    <updated>2013-07-19T23:31:00+03:00</updated>
-    <id>http://atodorov.org/blog/2013/07/19/ssh-from-linux-to-blackberry-z10</id>
-    <content type="html"><![CDATA[<p>You can SSH into a <a href="http://amzn.to/12y4ewJ">BlackBerry Z10</a> device even on Linux.
-I'm using Red Hat Enterprise Linux 6 and here is how to establish the connection.</p>
-
-<p>1) <a href="/blog/2013/07/17/tip-how-to-enable-usb-networking-between-blackberry-z10-and-red-hat-enterprise-linux-6/">Enable USB networking</a>
-between your Linux desktop and the Z10;</p>
-
-<p>2) Install the <a href="https://developer.blackberry.com/develop/platform_choice/ndk.html">Momentics IDE</a>.
-You need it to create debug tokens and to start the SSH daemon on the device;</p>
-
-<p>3) Obtain <a href="https://www.blackberry.com/SignedKeys/codesigning.html">signing keys</a>
-and create a debug token by following the wizard in the IDE.
-I just started a new project and followed the instructions;</p>
-
-<p>4) Install debug token on device using the IDE. From <code>Window - Preferences</code> select
-<code>Blackberry - Signing</code>. Just create and deploy the debug token on the device. Mine was
-automatically discovered so I just had to follow the prompts;</p>
-
-<p>5) Reboot and re-enable development mode (I'm not sure if this was necessary);</p>
-
-<p>6) Generate a <strong>4096 bit</strong> key for SSH. Smaller keys won't work. You can use your
-current key if it is 4096 bit;</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ssh-keygen -t rsa -b 4096
-</span><span class='line'>Generating public/private rsa key pair.
-</span><span class='line'>Enter file in which to save the key <span class="o">(</span>/home/atodorov/.ssh/id_rsa<span class="o">)</span>: /home/atodorov/.rim/testKey_4096_rsa
-</span><span class='line'>/home/atodorov/.rim/testKey_4096_rsa already exists.
-</span><span class='line'>Overwrite <span class="o">(</span>y/n<span class="o">)</span>? y
-</span><span class='line'>Enter passphrase <span class="o">(</span>empty <span class="k">for </span>no passphrase<span class="o">)</span>:
-</span><span class='line'>Enter same passphrase again:
-</span><span class='line'>Your identification has been saved in /home/atodorov/.rim/testKey_4096_rsa.
-</span><span class='line'>Your public key has been saved in /home/atodorov/.rim/testKey_4096_rsa.pub.
-</span><span class='line'>The key fingerprint is:
-</span><span class='line'>77:73:55:03:e1:fc:5b:df:a6:e9:2c:b4:d4:1e:0c:b2 atodorov@redbull.mini
-</span><span class='line'>The key<span class="err">&#39;</span>s randomart image is:
-</span><span class='line'>+--<span class="o">[</span> RSA 4096<span class="o">]</span>----+
-</span><span class='line'>|             oo..|
-</span><span class='line'>|            o   o|
-</span><span class='line'>|             o  .|
-</span><span class='line'>|          . . .. |
-</span><span class='line'>|        S .oo+...|
-</span><span class='line'>|         .E.oo+ <span class="o">=</span>|
-</span><span class='line'>|           o o o+|
-</span><span class='line'>|            o..+ |
-</span><span class='line'>|             <span class="nv">o</span><span class="o">=</span>  |
-</span><span class='line'>+-----------------+
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>7) Update key permissions, since ssh complains:</p>
-
-<pre><code>    $ chmod 600 ~/.rim/testKey_4096_rsa.pub
-</code></pre>
-
-<p>8) By default SSH is not listening on your BlackBerry. Use the <code>blackberry-connect</code>
-command to start the SSH daemon on the device. It will upload your public SSH key
-to the device and start the SSH daemon on the other side. <code>password</code> is your device
-password;</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span><span class="nb">pwd</span>
-</span><span class='line'>/home/atodorov/bbndk/host_10_1_0_231/linux/x86/usr/bin&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>./blackberry-connect 169.254.0.1 -password 123456 -sshPublicKey ~/.rim/testKey_4096_rsa.pub
-</span><span class='line'>Info: Connecting to target 169.254.0.1:4455
-</span><span class='line'>Info: Authenticating with target 169.254.0.1:4455
-</span><span class='line'>Info: Encryption parameters verified
-</span><span class='line'>Info: Authenticating with target credentials.
-</span><span class='line'>Info: Successfully authenticated with target credentials.
-</span><span class='line'>Info: Sending ssh key to target 169.254.0.1:4455
-</span><span class='line'>Info: ssh key successfully transferred.
-</span><span class='line'>Info: Successfully connected. This application must remain running in order to use debug tools. Exiting the application will terminate this connection.
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>9) Check if SSH is running on the device</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>nmap 169.254.0.1&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;Starting Nmap 5.51 <span class="o">(</span> http://nmap.org <span class="o">)</span> at 2013-07-18 10:19 EEST
-</span><span class='line'>Stats: 0:00:01 elapsed; 0 hosts completed <span class="o">(</span>1 up<span class="o">)</span>, 1 undergoing Connect Scan
-</span><span class='line'>Connect Scan Timing: About 14.30% <span class="k">done</span>; ETC: 10:20 <span class="o">(</span>0:00:06 remaining<span class="o">)</span>
-</span><span class='line'>Nmap scan report <span class="k">for </span>169.254.0.1
-</span><span class='line'>Host is up <span class="o">(</span>0.00097s latency<span class="o">)</span>.
-</span><span class='line'>Not shown: 991 closed ports
-</span><span class='line'>PORT     STATE SERVICE
-</span><span class='line'>22/tcp   open  ssh
-</span><span class='line'>80/tcp   open  http
-</span><span class='line'>139/tcp  open  netbios-ssn
-</span><span class='line'>443/tcp  open  https
-</span><span class='line'>445/tcp  open  microsoft-ds
-</span><span class='line'>1111/tcp open  lmsocialserver
-</span><span class='line'>5555/tcp open  freeciv
-</span><span class='line'>8000/tcp open  http-alt
-</span><span class='line'>8443/tcp open  https-alt&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned in 12.47 seconds
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>10)  Use SSH with the specified key to connect to the Z10. Username is <code>devuser</code>.
-Here's a simple session:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ssh -i ~/.rim/testKey_4096_rsa devuser@169.254.0.1
-</span><span class='line'><span class="err">$</span>
-</span><span class='line'><span class="nv">$ </span><span class="nb">pwd</span>
-</span><span class='line'>/accounts/devuser
-</span><span class='line'><span class="nv">$ </span>uname -a
-</span><span class='line'>QNX atodorovZ10 8.0.0 2013/05/02-08:42:48EDT OMAP4470_ES1.0_HS_London_Rev:08 armle
-</span><span class='line'><span class="nv">$ </span>date
-</span><span class='line'>Fri Jul 19 23:39:19 EEST 2013
-</span><span class='line'><span class="nv">$ </span>ifconfig
-</span><span class='line'>lo0: <span class="nv">flags</span><span class="o">=</span>8049&amp;lt;UP,LOOPBACK,RUNNING,MULTICAST&gt; mtu 33192&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;inet 127.0.0.1 netmask 0xff000000
-</span><span class='line'>inet6 ::1 prefixlen 128
-</span><span class='line'>inet6 fe80::1%lo0 prefixlen 64 scopeid 0x1
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;tiw_drv0: <span class="nv">flags</span><span class="o">=</span>8c02&amp;lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1c:69:a5:d0:10:cd
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;tiw_sta0: <span class="nv">flags</span><span class="o">=</span>40008c43&amp;lt;UP,BROADCAST,RUNNING,OACTIVE,SIMPLEX,MULTICAST,ACCEPTRTADV&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1c:69:a5:d0:10:cd
-</span><span class='line'>inet 192.168.0.100 netmask 0xffffff00 broadcast 192.168.0.255
-</span><span class='line'>inet6 fe80::1e69:a5ff:fed0:10cd%tiw_sta0 prefixlen 64 scopeid 0x12
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;tiw_p2pdev0: <span class="nv">flags</span><span class="o">=</span>8c02&amp;lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1c:69:a5:d0:10:cd
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;tiw_p2pgrp0: <span class="nv">flags</span><span class="o">=</span>8c02&amp;lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1c:69:a5:d0:10:cd
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;tiw_ibss0: <span class="nv">flags</span><span class="o">=</span>8c02&amp;lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1c:69:a5:d0:10:cd
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;pflog0: <span class="nv">flags</span><span class="o">=</span>0 mtu 33192
-</span><span class='line'>lo2: <span class="nv">flags</span><span class="o">=</span>8048&amp;lt;LOOPBACK,RUNNING,MULTICAST&gt; mtu 33192
-</span><span class='line'>cellular0: <span class="nv">flags</span><span class="o">=</span>8810&amp;lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
-</span><span class='line'>cellular1: <span class="nv">flags</span><span class="o">=</span>8810&amp;lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
-</span><span class='line'>cellular2: <span class="nv">flags</span><span class="o">=</span>8810&amp;lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
-</span><span class='line'>cellular3: <span class="nv">flags</span><span class="o">=</span>8810&amp;lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
-</span><span class='line'>cellular4: <span class="nv">flags</span><span class="o">=</span>8810&amp;lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
-</span><span class='line'>bptp0: <span class="nv">flags</span><span class="o">=</span>8043&amp;lt;UP,BROADCAST,RUNNING,MULTICAST&gt; mtu 1356&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;inet6 fe80::1e69:a5ff:fed0:10cd%bptp0 prefixlen 64 scopeid 0x2d
-</span><span class='line'>inet6 fd02:42ac:77b2:d543:c158:fabb:6276:80e6 prefixlen 8
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;ecm0: <span class="nv">flags</span><span class="o">=</span>8a43&amp;lt;UP,BROADCAST,RUNNING,ALLMULTI,SIMPLEX,MULTICAST&gt; mtu 1500&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;address: 1e:69:a5:d0:10:cd
-</span><span class='line'>inet 169.254.0.1 netmask 0xfffffffc broadcast 169.254.0.3
-</span><span class='line'>inet6 fe80::1c69:a5ff:fed0:10cd%ecm0 prefixlen 64 scopeid 0x2e
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p><strong>IMPORTANT:</strong> you can also use the WiFi address of the device to pass to
-<code>backberry-connect</code> and ssh. It works for me.</p>
-
-<p>I'm starting to explore the dark world of QNX in the next couple of days
-and will keep you posted! Until then - happy hacking.</p>
 ]]></content>
   </entry>
   

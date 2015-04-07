@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How to Configure iSCSI Target on Red Hat Enterprise Linux 7</title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
+has become the standard one included in the Linux kernel and the one &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+<meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM" />
+
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-37979549-1', 'atodorov.org');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+you can logoff, but you can never leave
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="/domains/">Domains</a></li>
+  <li><a href="http://amzn.to/1wTPaLe">Previous: Traction</a></li>
+  <li><a href="http://amzn.to/1lLi5NU">Previous: How to Win Friends</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-07T15:52:00+03:00" pubdate data-updated="true">Apr 7<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
+has become the standard one included in the Linux kernel and the one present in
+Red Hat Enterprise Linux 7. The popular <em>scsi-target-utils</em> package is replaced
+by the newer <em>targetcli</em> which makes configuring a software iSCSI target quite
+different.</p>
+
+<p>In earlier versions one had to edit the <code>/etc/tgtd/targets.conf</code> file and
+<code>service tgtd restart</code>. Here is an example configuration:</p>
+
+<pre><code>&lt;target iqn.2008-09.com.example:server.target1&gt;
+    backing-store /dev/vg_iscsi/lv_lun1
+    backing-store /dev/vg_iscsi/lv_lun2
+
+    incominguser user2 secretpass23
+    outgoinguser userA secretpassA
+&lt;/target&gt;
+</code></pre>
+
+<p><em>targetcli</em> can be used either as an interactive shell or as stand alone commands.
+Here is an example shell session which creates a file-based disk image. Comments are
+provided inline:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># yum install -y targetcli
+</span><span class='line'># systemctl enable target
+</span><span class='line'>
+</span><span class='line'># targetcli 
+</span><span class='line'>
+</span><span class='line'># first create a disk image with the name of disk1. All files are sparsely created.
+</span><span class='line'>
+</span><span class='line'>/> backstores/fileio create disk1 /var/lib/libvirt/images/disk1.img 10G
+</span><span class='line'>Created fileio disk1 with size 10737418240
+</span><span class='line'>
+</span><span class='line'># create an iSCSI target. NB: this only defines the target
+</span><span class='line'>
+</span><span class='line'>/> iscsi/ create iqn.2015-04.com.example:target1
+</span><span class='line'>Created target iqn.2015-04.com.example:target1.
+</span><span class='line'>Created TPG 1.
+</span><span class='line'>Global pref auto_add_default_portal=true
+</span><span class='line'>Created default portal listening on all IPs (0.0.0.0), port 3260.
+</span><span class='line'>
+</span><span class='line'># TPGs (Target Portal Groups) allow the iSCSI to support multiple complete
+</span><span class='line'># configurations within one target. This is useful for complex quality-of-service
+</span><span class='line'># configurations. targetcli will automatically create one TPG when the target
+</span><span class='line'># is created, and almost all setups only need one.
+</span><span class='line'>
+</span><span class='line'># switch to TPG definition for our target
+</span><span class='line'>
+</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>
+</span><span class='line'># list the contents
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> ls 
+</span><span class='line'>o- tpg1 ..................................................................................................... [no-gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 0]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]
+</span><span class='line'>    o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>
+</span><span class='line'># create a portal aka IP:port pairs which expose the target on the network
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> portals/ create
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Binding to INADDR_ANY (0.0.0.0)
+</span><span class='line'>This NetworkPortal already exists in configFS.
+</span><span class='line'>
+</span><span class='line'># create logical units (LUNs) aka disks inside our target
+</span><span class='line'># in other words bind the target to its on-disk storage
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> luns/ create /backstores/fileio/disk1
+</span><span class='line'>Created LUN 0.
+</span><span class='line'>
+</span><span class='line'># disable authentication
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=0
+</span><span class='line'>Parameter authentication is now '0'.
+</span><span class='line'>
+</span><span class='line'># enable read/write mode
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute demo_mode_write_protect=0
+</span><span class='line'>Parameter demo_mode_write_protect is now '0'.
+</span><span class='line'>
+</span><span class='line'># Enable generate_node_acls mode. This can be thought of as 
+</span><span class='line'># "ignore ACLs mode" -- both  authentication and LUN mapping
+</span><span class='line'># will then use the TPG settings.
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute generate_node_acls=1
+</span><span class='line'>Parameter generate_node_acls is now '1'.
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ........................................................................................................ [gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 1]
+</span><span class='line'>  | o- lun0 ..................................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]
+</span><span class='line'>    o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>
+</span><span class='line'># exit or Ctrl+D will save the configuration under /etc/target/saveconfig.json
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit
+</span><span class='line'>Global pref auto_save_on_exit=true
+</span><span class='line'>Last 10 configs saved in /etc/target/backup.
+</span><span class='line'>Configuration saved to /etc/target/saveconfig.json
+</span><span class='line'>
+</span><span class='line'># after creating a second target the layout looks like this
+</span><span class='line'>
+</span><span class='line'>/> ls
+</span><span class='line'>o- / ......................................................................................................................... [...]
+</span><span class='line'>  o- backstores .............................................................................................................. [...]
+</span><span class='line'>  | o- block .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- fileio ................................................................................................. [Storage Objects: 2]
+</span><span class='line'>  | | o- disk1 .................................................. [/var/lib/libvirt/images/disk1.img (10.0GiB) write-back activated]
+</span><span class='line'>  | | o- disk2 .................................................. [/var/lib/libvirt/images/disk2.img (10.0GiB) write-back activated]
+</span><span class='line'>  | o- pscsi .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- ramdisk ................................................................................................ [Storage Objects: 0]
+</span><span class='line'>  o- iscsi ............................................................................................................ [Targets: 2]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target1 ................................................................................... [TPGs: 1]
+</span><span class='line'>  | | o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  | |   o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  | |   o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  | |   | o- lun0 ............................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  | |   o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  | |     o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target2 ................................................................................... [TPGs: 1]
+</span><span class='line'>  |   o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  |     o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  |     o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  |     | o- lun0 ............................................................... [fileio/disk2 (/var/lib/libvirt/images/disk2.img)]
+</span><span class='line'>  |     o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  |       o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  o- loopback ......................................................................................................... [Targets: 0]
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'># enable CHAP and Reverse CHAP (mutual) for both discovery and login authentication
+</span><span class='line'>
+</span><span class='line'># discovery authentication is enabled under the global iscsi node
+</span><span class='line'>
+</span><span class='line'>/> cd /iscsi
+</span><span class='line'>/iscsi> set discovery_auth enable=1
+</span><span class='line'>/iscsi> set discovery_auth userid=IncomingUser
+</span><span class='line'>/iscsi> set discovery_auth password=SomePassword1
+</span><span class='line'>/iscsi> set discovery_auth mutual_userid=OutgoingUser
+</span><span class='line'>/iscsi> set discovery_auth mutual_password=AnotherPassword2
+</span><span class='line'>
+</span><span class='line'># login authentication is enabled either under the TPG node or under ACLs
+</span><span class='line'>
+</span><span class='line'>/iscsi> cd iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth userid=IncomingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth password=SomePassword3
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_userid=OutgoingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_password=AnotherPassword4
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hints:</p>
+
+<ul>
+<li>activating targetcli service at boot is mandatory, otherwise your configuration won’t be read after a reboot</li>
+<li>if you type <code>cd</code> <em>targetcli</em> will display an interactive node tree</li>
+<li>after configuration is saved you don&#8217;t need to restart anything</li>
+<li>the old <em>scsi-target-utils</em> doesn&#8217;t support discovery authentication</li>
+<li><em>targetcli</em> allows kernel memory to be shared as a block SCSI device via the
+ramdisk backstore. It also supports &#8220;nullio&#8221; mode, which discards all writes, and returns all-zeroes for reads.</li>
+<li>I&#8217;m having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
+the system has. I&#8217;ve still not figured that out entirely.</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-07T15:52:00+03:00" pubdate data-updated="true">Apr 7<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/" title="Previous Post: Mining E-mail Identities with Gravatar">&laquo; Mining E-mail Identities with Gravatar</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <p>
+    I am a QA contractor at Red Hat responsible for over
+    <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1400 bugs</a>,
+    a general purpose open source developer, Red Hat Certified professional,
+    cloud hacker and an <a href="/projects/">entrepreneur</a>.
+  </p>
+
+  <p>
+    I'm living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+    which is emerging as a busy place for start-up founders and tech enthusiasts
+    in Eastern Europe! You can find more about me <a href="/about/">here</a>.
+  </p>
+</section>
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<section>
+    <h1>
+        <a href="/blog/categories/books/">Book Reviews</a>
+    </h1>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/">Pedometer Bug in Samsung Gear Fit Smartwatch</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/07/2-barcode-related-bugs-in-myfitnesspal/">2 Barcode Related Bugs in MyFitnessPal</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/">Endless Loop Bug in Candy Crush Saga Level 80</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/22/blackberry-z10-is-killing-my-wifi-router/">BlackBerry Z10 is Killing My WiFi Router</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/">Speed Comparison of Web Proxies Written in Python Twisted and Go</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for wrk HTTP Benchmarking Tool</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/">HackFMI SMS Delivery Powered by Twilio</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2011-2015 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+  &diams;
+  Popular categories:
+<a href="/blog/categories/rhel/">Red Hat</a>,
+<a href="/blog/categories/cloud/">Cloud</a>,
+<a href="/blog/categories/fedora/">Fedora</a>,
+<a href="/blog/categories/qa/">QA</a>,
+<a href="/blog/categories/start-up/">Start-up</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/';
+        var disqus_url = 'http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

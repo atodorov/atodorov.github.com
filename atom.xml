@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-03-16T23:44:22+02:00</updated>
+  <updated>2015-04-07T17:07:02+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,311 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[How to Configure iSCSI Target on Red Hat Enterprise Linux 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/"/>
+    <updated>2015-04-07T15:52:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7</id>
+    <content type="html"><![CDATA[<p>Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
+has become the standard one included in the Linux kernel and the one present in
+Red Hat Enterprise Linux 7. The popular <em>scsi-target-utils</em> package is replaced
+by the newer <em>targetcli</em> which makes configuring a software iSCSI target quite
+different.</p>
+
+<p>In earlier versions one had to edit the <code>/etc/tgtd/targets.conf</code> file and
+<code>service tgtd restart</code>. Here is an example configuration:</p>
+
+<pre><code>&lt;target iqn.2008-09.com.example:server.target1&gt;
+    backing-store /dev/vg_iscsi/lv_lun1
+    backing-store /dev/vg_iscsi/lv_lun2
+
+    incominguser user2 secretpass23
+    outgoinguser userA secretpassA
+&lt;/target&gt;
+</code></pre>
+
+<p><em>targetcli</em> can be used either as an interactive shell or as stand alone commands.
+Here is an example shell session which creates a file-based disk image. Comments are
+provided inline:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># yum install -y targetcli
+</span><span class='line'># systemctl enable target
+</span><span class='line'>
+</span><span class='line'># targetcli 
+</span><span class='line'>
+</span><span class='line'># first create a disk image with the name of disk1. All files are sparsely created.
+</span><span class='line'>
+</span><span class='line'>/> backstores/fileio create disk1 /var/lib/libvirt/images/disk1.img 10G
+</span><span class='line'>Created fileio disk1 with size 10737418240
+</span><span class='line'>
+</span><span class='line'># create an iSCSI target. NB: this only defines the target
+</span><span class='line'>
+</span><span class='line'>/> iscsi/ create iqn.2015-04.com.example:target1
+</span><span class='line'>Created target iqn.2015-04.com.example:target1.
+</span><span class='line'>Created TPG 1.
+</span><span class='line'>Global pref auto_add_default_portal=true
+</span><span class='line'>Created default portal listening on all IPs (0.0.0.0), port 3260.
+</span><span class='line'>
+</span><span class='line'># TPGs (Target Portal Groups) allow the iSCSI to support multiple complete
+</span><span class='line'># configurations within one target. This is useful for complex quality-of-service
+</span><span class='line'># configurations. targetcli will automatically create one TPG when the target
+</span><span class='line'># is created, and almost all setups only need one.
+</span><span class='line'>
+</span><span class='line'># switch to TPG definition for our target
+</span><span class='line'>
+</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>
+</span><span class='line'># list the contents
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> ls 
+</span><span class='line'>o- tpg1 ..................................................................................................... [no-gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 0]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]
+</span><span class='line'>    o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>
+</span><span class='line'># create a portal aka IP:port pairs which expose the target on the network
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> portals/ create
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Binding to INADDR_ANY (0.0.0.0)
+</span><span class='line'>This NetworkPortal already exists in configFS.
+</span><span class='line'>
+</span><span class='line'># create logical units (LUNs) aka disks inside our target
+</span><span class='line'># in other words bind the target to its on-disk storage
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> luns/ create /backstores/fileio/disk1
+</span><span class='line'>Created LUN 0.
+</span><span class='line'>
+</span><span class='line'># disable authentication
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=0
+</span><span class='line'>Parameter authentication is now '0'.
+</span><span class='line'>
+</span><span class='line'># enable read/write mode
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute demo_mode_write_protect=0
+</span><span class='line'>Parameter demo_mode_write_protect is now '0'.
+</span><span class='line'>
+</span><span class='line'># Enable generate_node_acls mode. This can be thought of as 
+</span><span class='line'># "ignore ACLs mode" -- both  authentication and LUN mapping
+</span><span class='line'># will then use the TPG settings.
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute generate_node_acls=1
+</span><span class='line'>Parameter generate_node_acls is now '1'.
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ........................................................................................................ [gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 1]
+</span><span class='line'>  | o- lun0 ..................................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]
+</span><span class='line'>    o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>
+</span><span class='line'># exit or Ctrl+D will save the configuration under /etc/target/saveconfig.json
+</span><span class='line'>
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit
+</span><span class='line'>Global pref auto_save_on_exit=true
+</span><span class='line'>Last 10 configs saved in /etc/target/backup.
+</span><span class='line'>Configuration saved to /etc/target/saveconfig.json
+</span><span class='line'>
+</span><span class='line'># after creating a second target the layout looks like this
+</span><span class='line'>
+</span><span class='line'>/> ls
+</span><span class='line'>o- / ......................................................................................................................... [...]
+</span><span class='line'>  o- backstores .............................................................................................................. [...]
+</span><span class='line'>  | o- block .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- fileio ................................................................................................. [Storage Objects: 2]
+</span><span class='line'>  | | o- disk1 .................................................. [/var/lib/libvirt/images/disk1.img (10.0GiB) write-back activated]
+</span><span class='line'>  | | o- disk2 .................................................. [/var/lib/libvirt/images/disk2.img (10.0GiB) write-back activated]
+</span><span class='line'>  | o- pscsi .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- ramdisk ................................................................................................ [Storage Objects: 0]
+</span><span class='line'>  o- iscsi ............................................................................................................ [Targets: 2]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target1 ................................................................................... [TPGs: 1]
+</span><span class='line'>  | | o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  | |   o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  | |   o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  | |   | o- lun0 ............................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  | |   o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  | |     o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target2 ................................................................................... [TPGs: 1]
+</span><span class='line'>  |   o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  |     o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  |     o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  |     | o- lun0 ............................................................... [fileio/disk2 (/var/lib/libvirt/images/disk2.img)]
+</span><span class='line'>  |     o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  |       o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  o- loopback ......................................................................................................... [Targets: 0]
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'># enable CHAP and Reverse CHAP (mutual) for both discovery and login authentication
+</span><span class='line'>
+</span><span class='line'># discovery authentication is enabled under the global iscsi node
+</span><span class='line'>
+</span><span class='line'>/> cd /iscsi
+</span><span class='line'>/iscsi> set discovery_auth enable=1
+</span><span class='line'>/iscsi> set discovery_auth userid=IncomingUser
+</span><span class='line'>/iscsi> set discovery_auth password=SomePassword1
+</span><span class='line'>/iscsi> set discovery_auth mutual_userid=OutgoingUser
+</span><span class='line'>/iscsi> set discovery_auth mutual_password=AnotherPassword2
+</span><span class='line'>
+</span><span class='line'># login authentication is enabled either under the TPG node or under ACLs
+</span><span class='line'>
+</span><span class='line'>/iscsi> cd iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth userid=IncomingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth password=SomePassword3
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_userid=OutgoingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_password=AnotherPassword4
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hints:</p>
+
+<ul>
+<li>activating targetcli service at boot is mandatory, otherwise your configuration won’t be read after a reboot</li>
+<li>if you type <code>cd</code> <em>targetcli</em> will display an interactive node tree</li>
+<li>after configuration is saved you don&#8217;t need to restart anything</li>
+<li>the old <em>scsi-target-utils</em> doesn&#8217;t support discovery authentication</li>
+<li><em>targetcli</em> allows kernel memory to be shared as a block SCSI device via the
+ramdisk backstore. It also supports &#8220;nullio&#8221; mode, which discards all writes, and returns all-zeroes for reads.</li>
+<li>I&#8217;m having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
+the system has. I&#8217;ve still not figured that out entirely.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mining E-mail Identities with Gravatar]]></title>
@@ -1450,86 +1755,6 @@ possibly adding them to a database or anything else.</p>
 <p>I find webhooks extremely easy to setup and develop and used them whenever they are
 supported by the service provider. What other services do you use webhooks for? Please
 share your story in the comments.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Software Design Vol. 1]]></title>
-    <link href="http://atodorov.org/blog/2014/06/30/software-design-vol-1/"/>
-    <updated>2014-06-30T23:22:00+03:00</updated>
-    <id>http://atodorov.org/blog/2014/06/30/software-design-vol-1</id>
-    <content type="html"><![CDATA[<p>I&#8217;m starting a new series where I will share my thoughts about software design,
-usability and other related topics with examples of items I like or dislike.
-I&#8217;ve
-<a href="http://atodorov.org/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/">written before</a>
-about the topic so consider this post as a sequel. I&#8217;m starting with couple of
-examples from the mobile world. Plese use the comments to tell if there is something
-that you particulary like or dislike in software or hardware design
-(and apologies to my readers for not being able to post more frequently lately).</p>
-
-<h2>BlackBerry Camera Burst Feature vs. Android</h2>
-
-<p>BlackBerry 10 Camera&#8217;s burst mode is well made in my opinion. It is capable of
-taking thousands of pictures and saving the to disk without interruption. Thus
-I am capable of taking pictures of fast moving objects like flash lights.</p>
-
-<p><img src="http://atodorov.org/images/flashlight.jpg" title="Flash light" alt="Flash light" /></p>
-
-<p>On the other hand I have access to an
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=htc%20one&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=CZ33VB6BARW7FWZS">HTC One smartphone</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-with Android. The burst
-mode feature there is particularly crappy. It shoots between 20 to 50 photos
-(haven&#8217;t counted how much exactly), then takes a second to flash everything to disk,
-then pops a question asking the user to select the best one and possibly delete
-the rest. If you don&#8217;t want all of this just tap the back button to return to
-shooting mode.</p>
-
-<h2>BlackBerry Hub</h2>
-
-<p>Hub is another well designed application which integrates all of your accounts and
-messaging into the core of the OS although other mobile OSes have a similar feature
-as well if I&#8217;m not mistaken. I just mention it because it is easy and comfortable to use.</p>
-
-<h2>BlackBerry Memory Management</h2>
-
-<p>BlackBerry 10 OS memory management is particularly crappy with respect to
-the end user. I&#8217;m not sure whether this is due to QNX being real-time OS
-or just the Java stack keeping stuff in memory.</p>
-
-<p>After some usage my development Z10 will begin experiencing out of memory issues
-(it has 1 GB of RAM vs. 2 GB in production hardware). This will lead to apps
-crashing, web pages that were able to open, not being able to load and the most
-annoying of all - camera starts taking pictures with random color spots.</p>
-
-<p><img src="http://atodorov.org/images/bbz10camerafail.jpg" title="BlackBerry Z10 camera fail" alt="Blackberry camera fail" /></p>
-
-<p>After restarting the device everything is back to normal :(.</p>
-
-<h2>BlackBerry Date and Time Synchronization</h2>
-
-<p>This one I also hate a lot. It appears that the software is designed to
-automatically synchronize over the Internet and without a reliable connection fails miserably.
-After reboot (or even worse battery removal) the device will start with a fixed date and time
-somewhere in the past. If it fails to synchronize or takes too long several things happen:</p>
-
-<ul>
-<li>The Blackberry Hub application loads first (email and other accounts) which causes all sorts
-of warnings of invalid SSL certificates. Which in their own right are annoying because Cancel
-means dismiss the warning until the next connection retry; which blocks access to the main menu
-for manual configuration;</li>
-<li>All images taken by the Camera app will be saved on disk with the wrong date which makes you think
-they are gone; I&#8217;ve found this by accident while scrolling way back in my history looking for something
-unrelated.</li>
-</ul>
-
-
-<h2>Multiple File Selection</h2>
-
-<p>I haven&#8217;t tested this explicitly on Android or other mobile devices but on BlackBerry
-the user needs to tap each individual object to select it. My guess is this is similar
-on all devices utilizing a touch screen.  However such interface makes it damn hard to
-select a thousand files for deletion (the unusable results from the camera burst mode feature).
-Luckily Z10 (and possibly others) has a shell application with <code>cp</code>, <code>mv</code> and <code>rm -f</code> commands.</p>
 ]]></content>
   </entry>
   
