@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="In my practice I like to use webhooks and integrate auxiliary services with
-my internal processes or businesses. One of these is the collection of &hellip;">
+  <meta name="description" content="This is a quick status update for one of the pieces of
+Fedora QA infrastructure
+and mostly a self-note. Previously to control the kickstart &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,84 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/">SNAKE Is No Longer Needed to Run Installation Tests in Beaker</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-18T23:05:00+03:00" pubdate data-updated="true">Jul 18<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This is a quick status update for one of the pieces of
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
+and mostly a self-note.</p>
+
+<p>Previously to control the kickstart configuration used during installation in Beaker one
+had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
+a kickstart configuration from a Python template.</p>
+
+<p>SNAKE presented challenges when deploying and using
+<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
+virtually unmaintained.</p>
+
+<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
+generate a kickstart configuration when provisioning the system. This is already
+available in beaker-client-0.17.1.</p>
+
+<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
+very complex ones. You can even include snippets from one template into another if required.
+The standard context that is passed to the template is:</p>
+
+<ul>
+<li><strong>DISTRO</strong> - if specified, the distro name</li>
+<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
+<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
+<li><strong>VARIANT</strong> - if specified</li>
+<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
+<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
+</ul>
+
+
+<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
+have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
+
+<p>This workflow also has the ability to return boot arguments for the installer if needed.
+If any, they should be defined in a {% block kernel_options %}{% endblock %}
+block inside the template. A simpler variant is to define a comment line that stars with
+<em>## kernel_options:</em></p>
+
+<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
+can be used by the general public though. I will be writing another post about that
+so stay tuned.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1907,48 +1986,6 @@ I think is simpler and less expensive in terms of I/O operations.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How Do You Test Thai Scalable Fonts</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-17T22:51:00+02:00" pubdate data-updated="true">Mar 17<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently I wrote about <a href="/blog/2014/03/04/how-do-you-test-fonts/">testing fonts</a>.
-I finally managed to get an answer from the authors of <em>thai-scalable-fonts</em>.</p>
-
-<blockquote><p>> * What is your approach for testing Fonts-TLWG?</p><p>It&#8217;s not automated test. What it does is generate PDF with sample<br/>texts at several sizes (the waterfall), pangrams, and glyph table.<br/>It needs human eyes to investigate.</p><p>> * What kind of problems is your test suite designed for ?</p><p>- Shaping<br/>- Glyph coverage<br/>- Metrics</p><p>We also make use of fontforge features to make spotting errors<br/>easier, such as<br/>- Show extremas<br/>- Show almost vertical/horizontal lines/curves</p><footer><strong>Theppitak Karoonboonyanan</strong> <cite>Fonts-TLWG</cite></footer></blockquote>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -2000,6 +2037,10 @@ I finally managed to get an answer from the authors of <em>thai-scalable-fonts</
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/">Tip: Linux-IO default LUN is 0 instead of 1</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
       </li>
     
@@ -2033,10 +2074,6 @@ I finally managed to get an answer from the authors of <em>thai-scalable-fonts</
     
       <li class="post">
         <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for wrk HTTP Benchmarking Tool</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/">HackFMI SMS Delivery Powered by Twilio</a>
       </li>
     
   </ul>

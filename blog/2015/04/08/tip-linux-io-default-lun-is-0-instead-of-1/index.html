@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: ElastiCache</title>
+  <title>Tip: Linux-IO default LUN is 0 instead of 1</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Category: ElastiCache">
+  <meta name="description" content="I&#8217;ve been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target. 1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.orgblog/categories/elasticache/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -74,35 +75,136 @@ you can logoff, but you can never leave
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: ElastiCache</h1>
+    
+      <h1 class="entry-title">Tip: Linux-IO Default LUN Is 0 Instead of 1</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-08T15:09:00+03:00" pubdate data-updated="true">Apr 8<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>I&#8217;ve been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target.</p>
 
-  
-  <h2>2013</h2>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> dhcp net0
+</span><span class='line'>DHCP (net0 52:54:00:12:34:56)... ok
+</span><span class='line'>iPXE> set keep-san 1
+</span><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
+</span><span class='line'>Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
+</span><span class='line'>iPXE></span></code></pre></td></tr></table></div></figure>
 
-<article>
-  
-<h1><a href="/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/">Performance test: Amazon ElastiCache vs Amazon S3</a></h1>
-<time datetime="2013-06-26T21:22:00+03:00" pubdate><span class='month'>Jun</span> <span class='day'>26</span> <span class='year'>2013</span></time>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/amazon/'>Amazon</a>, <a class='category' href='/blog/categories/elasticache/'>ElastiCache</a>, <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/s3/'>S3</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/performance-testing/'>performance testing</a></span>
-</footer>
+<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says</p>
+
+<blockquote><p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p></blockquote>
 
 
-</article>
+<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
 
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
+</span><span class='line'>Registered SAN device 0x80
+</span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-08T15:09:00+03:00" pubdate data-updated="true">Apr 8<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" title="Previous Post: How to Configure targetcli to Listen on IPv4 and IPv6">&laquo; How to Configure targetcli to Listen on IPv4 and IPv6</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -237,7 +339,10 @@ if (uri.indexOf("?") > 0) {
       var disqus_shortname = 'atodorov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/';
+        var disqus_url = 'http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
