@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="I&#8217;m starting a new series where I will share my thoughts about software design,
-usability and other related topics with examples of items I &hellip;">
+  <meta name="description" content="In my practice I like to use webhooks and integrate auxiliary services with
+my internal processes or businesses. One of these is the collection of &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,159 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/">Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-12T23:15:00+03:00" pubdate data-updated="true">Jul 12<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In my practice I like to use webhooks and integrate auxiliary services with
+my internal processes or businesses. One of these is the collection of emails.
+In this short article I&#8217;ll show you an example of how to collect email addresses
+from the comments of a WordPress.com blog and the UserVoice feedback/ticketing system.</p>
+
+<h2>WordPress.com</h2>
+
+<p>For your WordPress.com blog from the Admin Dashboard navigate to
+Settings -> Webhooks and add a new webhook with action <code>comment_post</code>
+and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
+Django view that handles the input is shown below.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@csrf_exempt</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>UserVoice</h2>
+
+<p>For UserVoice navigate to Admin Dashboard -> Settings -> Integrations ->
+Service Hooks and add a custom web hook for the New Ticket notification.
+Then use a sample code like that:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@csrf_exempt</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
+possibly adding them to a database or anything else.</p>
+
+<p>I find webhooks extremely easy to setup and develop and used them whenever they are
+supported by the service provider. What other services do you use webhooks for? Please
+share your story in the comments.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1796,116 +1949,6 @@ I finally managed to get an answer from the authors of <em>thai-scalable-fonts</
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/">Reducing AWS Cloud Costs - Real Money Example</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-07T17:14:00+02:00" pubdate data-updated="true">Mar 7<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="http://aws.amazon.com/ebs/pricing/effective-february-2014/">Last month</a> Amazon
-reduced by 50% prices for EBS storage. This, combined with
-<a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">shrinking EBS root volume size</a> and
-<a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">moving /tmp to instance storage</a>
-allowed me to reduce EBS related costs behind <a href="http://www.dif.io">Difio</a> by around 50%.
-Following are the real figures from my AWS Bill.</p>
-
-<p>EBS costs for Difio were gradually rising up with every new node added to the cluster and
-increased package processing (resulting in more I/O):</p>
-
-<ul>
-<li>November 2013 - $7.38</li>
-<li>December 2013 - $10.55</li>
-<li>January 2014 - $11.97</li>
-</ul>
-
-
-<figure class='code'><figcaption><span>January 2014 </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EBS
-</span><span class='line'>$0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
-</span><span class='line'>$0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
-</span><span class='line'>$0.10  per 1 million I/O requests               9,405,243 IOs   $0.94
-</span><span class='line'>                                                        Total: $11.97</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In February there was one new system added to process additional requests
-(cluster nodes run as spot instances) and an increased number of temporary
-instances (although I haven&#8217;t counted them) while I was restructuring AMI
-internals to accommodate the <a href="https://github.com/difio/difio">open source</a>
-version of Difio. My assumption (based on historical data) is this would
-have driven the costs up in the region of $15 per month only for EBS.</p>
-
-<p>After implementing the stated minimal improvements and having Amazon reduced the prices by
-half the bill looks like this:</p>
-
-<figure class='code'><figcaption><span>February 2014 </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EBS
-</span><span class='line'>$0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
-</span><span class='line'>$0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
-</span><span class='line'>$0.05  per 1 million I/O requests               5,704,482 IOs   $0.29
-</span><span class='line'>                                                        Total:  $4.01</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Explanation</h2>
-
-<p><em>Snapshot data stored</em> is the volume of snapshots (AMIs, backups, etc) which
-I have. This is fairly constant.</p>
-
-<p><em>Provisioned storage</em> is the volume of EBS storage provisioned for running
-instances (e.g. root file system, data partitions, etc.). This was reduced
-mainly because of shrinking the root volumes. (Previously I&#8217;ve used larger
-root volumes for a bigger /tmp).</p>
-
-<p><em>I/O requests</em> is the number of I/O requests associated with your EBS volumes.
-As far as I understand Amazon doesn&#8217;t charge for I/O related to ephemeral storage.
-Moving /tmp from EBS to instance storage is the reason this was reduced roughly by half.</p>
-
-<h2>Where To Next</h2>
-
-<p>I&#8217;ve reduced the root volumes back to the 8GB defaults but this has still room for
-improvement b/c the AMI is quite minimal. This will bring the largest improvements.
-Another thing is the still relatively high I/O rate that touches EBS volumes.
-I haven&#8217;t investigated where this comes from though.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -1957,6 +2000,10 @@ I haven&#8217;t investigated where this comes from though.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
       </li>
     
@@ -1990,10 +2037,6 @@ I haven&#8217;t investigated where this comes from though.</p>
     
       <li class="post">
         <a href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/">HackFMI SMS Delivery Powered by Twilio</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a>
       </li>
     
   </ul>

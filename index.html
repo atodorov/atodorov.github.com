@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
-has become the standard one included in the Linux kernel and the one &hellip;">
+  <meta name="description" content="In order to configure targetcli to listen on both IPv4 and IPv6 one has to
+delete the default IPv4 portal configuration and replace it with IPv6 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,102 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure Targetcli to Listen on IPv4 and IPv6</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-08T11:46:00+03:00" pubdate data-updated="true">Apr 8<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In order to configure <em>targetcli</em> to listen on both IPv4 and IPv6 one has to
+delete the default IPv4 portal configuration and replace it with IPv6 instead.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># targetcli 
+</span><span class='line'>/>
+</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
+</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
+</span><span class='line'>  o- 0.0.0.0:3260 ............................................................................................................. [OK]
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> delete 0.0.0.0 3260
+</span><span class='line'>Deleted network portal 0.0.0.0:3260
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Created network portal ::0:3260.
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
+</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
+</span><span class='line'>  o- [::0]:3260 ............................................................................................................... [OK]
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> exit
+</span><span class='line'>
+</span><span class='line'># netstat -antp | grep 3260
+</span><span class='line'>tcp6       0      0 :::3260                 :::*                    LISTEN</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It appears the target is listening only on IPv6 but in fact it will
+also accept connections over IPv4. I&#8217;ve tried it.</p>
+
+<p>This is a bit counter intuitive, however if you try adding the IPv6 address
+without removing the default IPv4 one <em>targetcli</em> will throw an error:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Could not create NetworkPortal in configFS.
+</span><span class='line'>/></span></code></pre></td></tr></table></div></figure>
+
+
+<p>For more information about <em>targetcli</em> usage see my previous post
+<a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2252,159 +2348,6 @@ so stay tuned.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/">Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-12T23:15:00+03:00" pubdate data-updated="true">Jul 12<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In my practice I like to use webhooks and integrate auxiliary services with
-my internal processes or businesses. One of these is the collection of emails.
-In this short article I&#8217;ll show you an example of how to collect email addresses
-from the comments of a WordPress.com blog and the UserVoice feedback/ticketing system.</p>
-
-<h2>WordPress.com</h2>
-
-<p>For your WordPress.com blog from the Admin Dashboard navigate to
-Settings -> Webhooks and add a new webhook with action <code>comment_post</code>
-and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
-Django view that handles the input is shown below.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@csrf_exempt</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>UserVoice</h2>
-
-<p>For UserVoice navigate to Admin Dashboard -> Settings -> Integrations ->
-Service Hooks and add a custom web hook for the New Ticket notification.
-Then use a sample code like that:</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@csrf_exempt</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
-possibly adding them to a database or anything else.</p>
-
-<p>I find webhooks extremely easy to setup and develop and used them whenever they are
-supported by the service provider. What other services do you use webhooks for? Please
-share your story in the comments.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2454,6 +2397,10 @@ share your story in the comments.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
       </li>
     
@@ -2487,10 +2434,6 @@ share your story in the comments.</p>
     
       <li class="post">
         <a href="/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/">HackFMI SMS Delivery Powered by Twilio</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Speeding Up Celery Backends, Part 3</a>
       </li>
     
   </ul>
