@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Recently I wrote about testing fonts.
-I finally managed to get an answer from the authors of thai-scalable-fonts. > * What is your approach for &hellip;">
+  <meta name="description" content="This is a quick example of SMS PIN verification using Twilio cloud services and
+Django which I did for a small site recently. The page template &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,195 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/19/sms-pin-verification-with-twilio-and-django/">SMS PIN Verification With Twilio and Django</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-19T11:41:00+02:00" pubdate data-updated="true">Mar 19<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/03/19/sms-pin-verification-with-twilio-and-django/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This is a quick example of SMS PIN verification using Twilio cloud services and
+Django which I did for a small site recently.</p>
+
+<p><img src="/images/sms_pin.png" title="SMS PIN form" alt="SMS PIN form" /></p>
+
+<p>The page template contains the following HTML snippet</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">name=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">placeholder=</span><span class="s">&quot;111-111-1111&quot;</span> <span class="na">required</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;button</span> <span class="na">class=</span><span class="s">&quot;btn&quot;</span> <span class="na">type=</span><span class="s">&quot;button&quot;</span> <span class="na">onClick=</span><span class="s">&quot;send_pin()&quot;</span><span class="nt">&gt;&lt;i</span> <span class="na">class=</span><span class="s">&quot;icon-share&quot;</span><span class="nt">&gt;&lt;/i&gt;</span> Get PIN<span class="nt">&lt;/button&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and a JavaScript function utilizing jQuery:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">send_pin</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>                <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;{% url &#39;ajax_send_pin&#39; %}&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">type</span><span class="o">:</span> <span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">mobile_number</span><span class="o">:</span>  <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#mobile_number&quot;</span><span class="p">).</span><span class="nx">val</span><span class="p">()</span> <span class="p">},</span>
+</span><span class='line'>            <span class="p">})</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;PIN sent via SMS!&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">})</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">jqXHR</span><span class="p">,</span> <span class="nx">textStatus</span><span class="p">,</span> <span class="nx">errorThrown</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="nx">alert</span><span class="p">(</span><span class="nx">errorThrown</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nx">jqXHR</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then create the following views in Django:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">_get_pin</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot; Return a numeric PIN with length digits &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">10</span><span class="o">**</span><span class="n">length</span><span class="p">),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">_verify_pin</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot; Verify a PIN is correct &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">pin</span> <span class="o">==</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">ajax_send_pin</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot; Sends SMS PIN to the specified number &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">mobile_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;mobile_number&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">mobile_number</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No mobile number&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">pin</span> <span class="o">=</span> <span class="n">_get_pin</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># store the PIN in the cache for later verification.</span>
+</span><span class='line'>    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="mi">24</span><span class="o">*</span><span class="mi">3600</span><span class="p">)</span> <span class="c"># valid for 24 hrs</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">client</span> <span class="o">=</span> <span class="n">TwilioRestClient</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_ACCOUNT_SID</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_AUTH_TOKEN</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">message</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span class='line'>                        <span class="n">body</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pin</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">to</span><span class="o">=</span><span class="n">mobile_number</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">from_</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_FROM_NUMBER</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Message </span><span class="si">%s</span><span class="s"> sent&quot;</span> <span class="o">%</span> <span class="n">message</span><span class="o">.</span><span class="n">sid</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">process_order</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot; Process orders made via web form and verified by SMS PIN. &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">form</span> <span class="o">=</span> <span class="n">OrderForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span> <span class="ow">or</span> <span class="bp">None</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+</span><span class='line'>        <span class="n">pin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;pin&quot;</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">mobile_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;mobile_number&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="n">_verify_pin</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s">&#39;transaction_complete&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">messages</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&quot;Invalid PIN!&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+</span><span class='line'>                    <span class="n">request</span><span class="p">,</span>
+</span><span class='line'>                    <span class="s">&#39;order.html&#39;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="s">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>                <span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>PINs are only numeric and are stored in the CACHE instead of the database which
+I think is simpler and less expensive in terms of I/O operations.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2407,65 +2596,6 @@ Thanks!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/">Idempotent Django Email Sender With Amazon SQS and Memcache</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-11T23:29:00+02:00" pubdate data-updated="true">Dec 11<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently I wrote about my problem with
-<a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/">duplicate Amazon SQS messages causing multiple emails</a>
-for <a href="http://www.dif.io">Difio</a>. After considering several options and
-feedback from
-<a href="https://twitter.com/atodorov_/status/409429840820199424">@Answers4AWS</a>
-I wrote a small decorator to fix this.</p>
-
-<p>It uses the cache backend to prevent the task from executing twice
-during the specified time frame. The code is available at
-<a href="https://djangosnippets.org/snippets/3010/">https://djangosnippets.org/snippets/3010/</a>.</p>
-
-<p>As stated on Twitter you should use Memcache (or ElastiCache) for this.
-If using Amazon S3 with my
-<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a> don&#8217;t use the
-<code>us-east-1</code> region because it is eventually consistent.</p>
-
-<p>The solution is fast and simple on the development side and uses my existing
-cache infrastructure so it doesn&#8217;t cost anything more!</p>
-
-<p>There is still a race condition between marking the message as processed
-and the second check but nevertheless this should minimize the possibility of
-receiving duplicate emails to an accepted level. Only time will tell though!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/4/">&larr; Older</a>
@@ -2517,6 +2647,10 @@ receiving duplicate emails to an accepted level. Only time will tell though!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/">How to Find if LVM Volume is Thinly Provisioned</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/">Tip: Linux-IO default LUN is 0 instead of 1</a>
       </li>
     
@@ -2550,10 +2684,6 @@ receiving duplicate emails to an accepted level. Only time will tell though!</p>
     
       <li class="post">
         <a href="/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/">Speed Comparison of Web Proxies Written in Python Twisted and Go</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for wrk HTTP Benchmarking Tool</a>
       </li>
     
   </ul>

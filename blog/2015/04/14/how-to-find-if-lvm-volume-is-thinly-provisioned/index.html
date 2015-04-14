@@ -5,14 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Tip: Setting Secure ENV variables on Red Hat OpenShift</title>
+  <title>How to Find if LVM Volume is Thinly Provisioned</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="OpenShift is
-still missing
-the client side tools to set environment variables without exposing the values
-in source code but there is a way to do it &hellip;">
+  <meta name="description" content="The latest versions of Red Hat Enterprise Linux, CentOS and Fedora all
+support LVM thin provisioning. Here&#8217;s how to tell if a logical volume &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +19,7 @@ in source code but there is a way to do it &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -81,7 +79,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Tip: Setting Secure ENV Variables on Red Hat OpenShift</h1>
+      <h1 class="entry-title">How to Find if LVM Volume Is Thinly Provisioned</h1>
     
     
       <p class="meta">
@@ -97,7 +95,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-07-08T21:39:00+03:00" pubdate data-updated="true">Jul 8<span>th</span>, 2013</time>
+<time datetime="2015-04-14T15:40:00+03:00" pubdate data-updated="true">Apr 14<span>th</span>, 2015</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -106,64 +104,44 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>OpenShift is
-<a href="https://www.openshift.com/content/custom-environment-variables">still missing</a>
-the client side tools to set environment variables without exposing the values
-in source code but there is a way to do it. Here is how.</p>
+<div class="entry-content"><p>The latest versions of Red Hat Enterprise Linux, CentOS and Fedora all
+support LVM thin provisioning. Here&#8217;s how to tell if a logical volume
+has been thinly provisioned or not.</p>
 
-<p>First ssh into your application and navigate to the <code>$OPENSHIFT_DATA_DIR</code>.
-Create a file to define your environment.</p>
+<p>Using <code>lvs</code> to display volume information look under the <em>Attr</em> column.
+Attribute values have the following meaning:</p>
 
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<blockquote><p>The lv_attr bits are:</p><p>1  Volume type: (C)ache, (m)irrored, (M)irrored without initial sync, (o)rigin,<br/>(O)rigin  with  merging  snapshot, (r)aid,  (R)aid  without  initial  sync,<br/>(s)napshot,  merging  (S)napshot, (p)vmove, (v)irtual, mirror or raid (i)mage,<br/>mirror or raid (I)mage out-of-sync, mirror (l)og device, under  (c)onversion,<br/>thin  (V)olume,  (t)hin pool, (T)hin pool data, raid or pool m(e)tadata or<br/>pool metadata spare.</p></blockquote>
+
+
+<p>This is how <code>lvs</code> looks like when you have a regular LVM setup:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># lvs
+</span><span class='line'>  LV   VG              Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+</span><span class='line'>  root rhel_dhcp70-183 -wi-ao---- 17,47g                                                    
+</span><span class='line'>  swap rhel_dhcp70-183 -wi-ao----  2,00g</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When using LVM thin provisioning you&#8217;re looking for the left-most attribute bit
+to be V, t or T. Here&#8217;s an example:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rhc ssh -a difio
-</span><span class='line'>Password: ***
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> vi myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> cat myenv.sh
-</span><span class='line'><span class="c">#!/bin/bash</span>
-</span><span class='line'><span class="nb">export </span><span class="nv">MYENV</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> chmod a+x myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">exit</span>
-</span><span class='line'>Connection to difio-otb.rhcloud.com closed.
-</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class=''><span class='line'># lvs
+</span><span class='line'>  LV     VG              Attr       LSize  Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert
+</span><span class='line'>  pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                            
+</span><span class='line'>  root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                   
+</span><span class='line'>  swap   rhel_dhcp71-101 -wi-ao----  2,00g</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now modify your code and git push to OpenShift. Then ssh into the app once
-again to verify that your configuration is still in place.</p>
 
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>atodorov@redbull difio<span class="o">]</span><span class="nv">$ </span>rhc ssh -a difio
-</span><span class='line'>Password: ***
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com 51d32a854382ecf7a9000116<span class="o">]</span><span class="se">\&gt;</span> <span class="nb">cd</span> <span class="nv">$OPENSHIFT_DATA_DIR</span>
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span> ls -l
-</span><span class='line'>total 4
-</span><span class='line'>-rwxr-xr-x. 1 51d32a854382ecf7a9000116 51d32a854382ecf7a9000116 34  8 jul 14,33 myenv.sh
-</span><span class='line'><span class="o">[</span>difio-otb.rhcloud.com data<span class="o">]</span><span class="se">\&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Use the defined variables as you wish.</p>
 </div>
 
 
@@ -186,12 +164,12 @@ again to verify that your configuration is still in place.</p>
   
 
 
-<time datetime="2013-07-08T21:39:00+03:00" pubdate data-updated="true">Jul 8<span>th</span>, 2013</time>
+<time datetime="2015-04-14T15:40:00+03:00" pubdate data-updated="true">Apr 14<span>th</span>, 2015</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/openshift/'>OpenShift</a>, <a class='category' href='/blog/categories/cloud/'>cloud</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>
   
 </span>
 
@@ -220,10 +198,8 @@ again to verify that your configuration is still in place.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/07/04/give-a-book-get-a-laptop-with-discount/" title="Previous Post: Give a Book, Get a Laptop With Discount">&laquo; Give a Book, Get a Laptop With Discount</a>
+        <a class="basic-alignment left" href="/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/" title="Previous Post: Tip: Linux-IO default LUN is 0 instead of 1">&laquo; Tip: Linux-IO default LUN is 0 instead of 1</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/07/13/how-to-get-a-free-blackberry-z10/" title="Next Post: How to Get a Free BlackBerry Z10">How to Get a Free BlackBerry Z10 &raquo;</a>
       
     </p>
   </footer>
@@ -369,8 +345,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/';
-        var disqus_url = 'http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/';
+        var disqus_identifier = 'http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/';
+        var disqus_url = 'http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/';
         var disqus_script = 'embed.js';
       
     (function () {
