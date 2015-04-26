@@ -75,6 +75,7 @@ tests;
 * Output sound works out of the box, haven't tested camera and microphone input yet;
 * ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;
 * Fan speed needs adjustments; 
+* I have not yet tested presenting via projector but already have a few ideas how to make it work;
 
 
 Fedora 22 on MacBook Air
