@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-27T12:42:23+03:00</updated>
+  <updated>2015-04-27T23:41:27+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,73 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/"/>
+    <updated>2015-04-27T23:23:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux</id>
+    <content type="html"><![CDATA[<p>There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux.</p>
+
+<p>This sound can be easily disabled if you mute the volume in OS X
+and shutdown the computer. The value is stored in NVRAM.</p>
+
+<ol>
+<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
+OS X Internet recovery mode;</li>
+<li><p>Open the terminal and issue the following command</p>
+
+<pre><code> nvram SystemAudioVolume=%00
+</code></pre></li>
+<li><p>Reboot.</p></li>
+</ol>
+
+
+<p>Voila. In Linux try this:</p>
+
+<pre><code># efivar -l | grep SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolume"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00                                                |.               |
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolumeDB"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00 
+#
+</code></pre>
+
+<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
+doesn't seem to have any effect.</p>
+
+<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
+<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
+
+<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
+may sometimes corrupt your Apple firmware. I didn't research this any further. If you
+happen to figure out how to successfully write to these variables under Linux please let
+everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
+
+<p>Thanks to my reader Alexander, who
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
+in a previous blog post.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Compiling Broadcom wl-kmod WiFi Driver for RHEL 7]]></title>
@@ -118,13 +185,15 @@ days to check these out:</p>
 
 <ul>
 <li>GNOME 3 sucks big time. Fortunately I was able to install MATE Desktop from EPEL;</li>
-<li>Wireless card needs drivers; I've managed to compile them myself, will share the info soon;</li>
+<li>Wireless card needs drivers; I've managed to compile them myself,
+<a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
 <li>Display brightness doesn't seem to work at all. On top of that the display goes full black
 after suspend-resume. I could barely see anything on it.</li>
 <li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
 importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
 I'll share more info aafter I figure out how to remap the keyboard;</li>
-<li>There is a very annoying boot chime which I have no idea how to disable;</li>
+<li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
+<a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
@@ -247,43 +316,6 @@ to be V, t or T. Here's an example:</p>
 </span><span class='line'>  pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                          &lt;br/>
 </span><span class='line'>  root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                 &lt;br/>
 </span><span class='line'>  swap   rhel_dhcp71-101 -wi-ao----  2,00g &lt;br/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: Linux-IO default LUN is 0 instead of 1]]></title>
-    <link href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/"/>
-    <updated>2015-04-08T15:09:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1</id>
-    <content type="html"><![CDATA[<p>I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
-and failed miserably when I switched to RHEL 7 iSCSI target.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> dhcp net0
-</span><span class='line'>DHCP (net0 52:54:00:12:34:56)... ok
-</span><span class='line'>iPXE> set keep-san 1
-</span><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
-</span><span class='line'>Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
-</span><span class='line'>iPXE></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says
-<blockquote><p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p></blockquote></p>
-
-<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
-</span><span class='line'>Registered SAN device 0x80
-</span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
 ]]></content>
   </entry>
   

@@ -9,10 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="After I got my
-MacBook Air installed with RHEL 7.1
-the first priority was getting wireless working.
-First check if your device isn&#8217;t already &hellip;">
+  <meta name="description" content="There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux. This sound can be easily &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +76,102 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Disabling MacBook Startup Sound in Linux</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-27T23:23:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux.</p>
+
+<p>This sound can be easily disabled if you mute the volume in OS X
+and shutdown the computer. The value is stored in NVRAM.</p>
+
+<ol>
+<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
+OS X Internet recovery mode;</li>
+<li><p>Open the terminal and issue the following command</p>
+
+<pre><code> nvram SystemAudioVolume=%00
+</code></pre></li>
+<li><p>Reboot.</p></li>
+</ol>
+
+
+<p>Voila. In Linux try this:</p>
+
+<pre><code># efivar -l | grep SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolume"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00                                                |.               |
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolumeDB"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00 
+#
+</code></pre>
+
+<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
+doesn&#8217;t seem to have any effect.</p>
+
+<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
+<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
+
+<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
+may sometimes corrupt your Apple firmware. I didn&#8217;t research this any further. If you
+happen to figure out how to successfully write to these variables under Linux please let
+everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
+
+<p>Thanks to my reader Alexander, who
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
+in a previous blog post.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -238,13 +332,15 @@ days to check these out:</p>
 
 <ul>
 <li>GNOME 3 sucks big time. Fortunately I was able to install MATE Desktop from EPEL;</li>
-<li>Wireless card needs drivers; I&#8217;ve managed to compile them myself, will share the info soon;</li>
+<li>Wireless card needs drivers; I&#8217;ve managed to compile them myself,
+<a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
 <li>Display brightness doesn&#8217;t seem to work at all. On top of that the display goes full black
 after suspend-resume. I could barely see anything on it.</li>
 <li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
 importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
 I&#8217;ll share more info aafter I figure out how to remap the keyboard;</li>
-<li>There is a very annoying boot chime which I have no idea how to disable;</li>
+<li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
+<a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
@@ -2095,95 +2191,6 @@ and the second one is Python&#8217;s
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/14/mtel-fuck-up-online-invoices/">How Mtel, the Biggest Mobile Operator in Bulgaria, Fucked-Up Their Online Invoice System</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-10-14T09:08:00+03:00" pubdate data-updated="true">Oct 14<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/10/14/mtel-fuck-up-online-invoices/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Prompted by <a href="http://radorado.me/">Rado&#8217;s</a> post about
-<a href="https://www.facebook.com/radorado.radoslav.georgiev/posts/10204276374941470">Mtel not fixing a business customer Internet connection</a>
-I want to tell you a story about how the big company totally fucked up their
-online invoice system and give you a few more hints about how stupidity
-reigns supreme even in big companies, especially in Bulgaria.</p>
-
-<p>I&#8217;ve never received a paper invoice for my phone bill and used the website to access any information
-about my bills and calls duration, etc. The problem is that I ported my number to another operator.</p>
-
-<p><strong>Porting a number away from Mtel automatically cuts access to your previous invoices online</strong></p>
-
-<h2>The problem in technical terms</h2>
-
-<p>This is a tech blog so let&#8217;s be technical. Users can register at Mtel&#8217;s website via
-username and password. If they are customers then they can add their numbers to their
-profile. Once the number is verified (via SMS code), the user has access to additional services
-one of which is online invoices and monthly usage reports.</p>
-
-<p>Migrating away to another operator &#8220;erases&#8221; your number from the system but
-this is not true actually. All the information is still there because they can give me
-print outs if I pay all the extra fees and simply because no business will voluntarily
-erase their database records.</p>
-
-<p><strong>The genius who designed the <em>if-number-migrated-then-delete-from-user-profile-and-cut-off-access</em>
-business process/software implementation is the biggest idiot in the world.</strong></p>
-
-<h2>How Mtel handled my complaint</h2>
-
-<p>My request for
-explanation (see below) was answered with a nice letter, basically telling me to piss off. None of my
-questions were answered. To make things worse they want to charge extra fees for detailed print outs.</p>
-
-<p>What I&#8217;ve asked for:</p>
-
-<ul>
-<li>To be granted access back to all of my invoices online. Not only I paid for them but this
-is something of a personal information;</li>
-<li>To be given copies of my last 5 invoices, preferably via email;</li>
-<li>To be given explanation why my online access to previous invoices was cut off;</li>
-<li>Mtel to stop doing this and allow access to online invoices for everyone of their past
-or current customers;</li>
-</ul>
-
-
-<p>I&#8217;ve also told them I&#8217;m available to help them fix their system if they don&#8217;t have
-the resources to do so (hint, hint: it&#8217;s an if-then condition or something very close I bet).</p>
-
-<p>A copy of my complaint and the response to it (in Bulgarian only):</p>
-
-<p><img src="/images/mtel/complaint_01.jpg" title="Complaint" alt="&quot;Complaint&quot;" />
-<img src="/images/mtel/complaint_01.jpg" title="Complaint" alt="&quot;Complaint&quot;" />
-<img src="/images/mtel/response.jpg" title="Response" alt="&quot;Response&quot;" /></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2233,6 +2240,10 @@ the resources to do so (hint, hint: it&#8217;s an if-then condition or something
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Disabling MacBook Startup Sound in Linux</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</a>
       </li>
     
@@ -2266,10 +2277,6 @@ the resources to do so (hint, hint: it&#8217;s an if-then condition or something
     
       <li class="post">
         <a href="/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/">Pedometer Bug in Samsung Gear Fit Smartwatch</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/07/2-barcode-related-bugs-in-myfitnesspal/">2 Barcode Related Bugs in MyFitnessPal</a>
       </li>
     
   </ul>

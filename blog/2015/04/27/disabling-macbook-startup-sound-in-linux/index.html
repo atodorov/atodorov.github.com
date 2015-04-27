@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: RPM</title>
+  <title>Disabling MacBook Startup Sound in Linux</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Category: RPM">
+  <meta name="description" content="There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux. This sound can be easily &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.orgblog/categories/rpm/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -74,35 +75,162 @@ you can logoff, but you can never leave
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: RPM</h1>
+    
+      <h1 class="entry-title">Disabling MacBook Startup Sound in Linux</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-27T23:23:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux.</p>
 
-  
-  <h2>2013</h2>
+<p>This sound can be easily disabled if you mute the volume in OS X
+and shutdown the computer. The value is stored in NVRAM.</p>
 
-<article>
-  
-<h1><a href="/blog/2013/04/09/creating-rpm-spec-files-from-scratch-using-vim/">Creating RPM .spec Files From Scratch Using Vim</a></h1>
-<time datetime="2013-04-09T15:24:00+03:00" pubdate><span class='month'>Apr</span> <span class='day'>09</span> <span class='year'>2013</span></time>
+<ol>
+<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
+OS X Internet recovery mode;</li>
+<li><p>Open the terminal and issue the following command</p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/rpm/'>RPM</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
+<pre><code> nvram SystemAudioVolume=%00
+</code></pre></li>
+<li><p>Reboot.</p></li>
+</ol>
 
 
-</article>
+<p>Voila. In Linux try this:</p>
 
+<pre><code># efivar -l | grep SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolume"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00                                                |.               |
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: "SystemAudioVolumeDB"
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00 
+#
+</code></pre>
+
+<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
+doesn&#8217;t seem to have any effect.</p>
+
+<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
+<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
+
+<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
+may sometimes corrupt your Apple firmware. I didn&#8217;t research this any further. If you
+happen to figure out how to successfully write to these variables under Linux please let
+everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
+
+<p>Thanks to my reader Alexander, who
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
+in a previous blog post.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-27T23:23:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/mac/'>Mac</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/" title="Previous Post: Compiling Broadcom wl-kmod WiFi Driver for RHEL 7">&laquo; Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -237,7 +365,10 @@ if (uri.indexOf("?") > 0) {
       var disqus_shortname = 'atodorov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/';
+        var disqus_url = 'http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
