@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="How do you generate useful stats from a git repo? In particular how do you
-calculate the monetary cost of development effort behind that git repo?
-I &hellip;">
+  <meta name="description" content="You can SSH into a BlackBerry Z10 device even on Linux.
+I&#8217;m using Red Hat Enterprise Linux 6 and here is how to establish the connection. 1) &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +76,287 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/">SSH From Linux to BlackBerry Z10</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-19T23:31:00+03:00" pubdate data-updated="true">Jul 19<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>You can SSH into a <a href="http://amzn.to/12y4ewJ">BlackBerry Z10</a> device even on Linux.
+I&#8217;m using Red Hat Enterprise Linux 6 and here is how to establish the connection.</p>
+
+<p>1) <a href="/blog/2013/07/17/tip-how-to-enable-usb-networking-between-blackberry-z10-and-red-hat-enterprise-linux-6/">Enable USB networking</a>
+between your Linux desktop and the Z10;</p>
+
+<p>2) Install the <a href="https://developer.blackberry.com/develop/platform_choice/ndk.html">Momentics IDE</a>.
+You need it to create debug tokens and to start the SSH daemon on the device;</p>
+
+<p>3) Obtain <a href="https://www.blackberry.com/SignedKeys/codesigning.html">signing keys</a>
+and create a debug token by following the wizard in the IDE.
+I just started a new project and followed the instructions;</p>
+
+<p>4) Install debug token on device using the IDE. From <code>Window - Preferences</code> select
+<code>Blackberry - Signing</code>. Just create and deploy the debug token on the device. Mine was
+automatically discovered so I just had to follow the prompts;</p>
+
+<p>5) Reboot and re-enable development mode (I&#8217;m not sure if this was necessary);</p>
+
+<p>6) Generate a <strong>4096 bit</strong> key for SSH. Smaller keys won&#8217;t work. You can use your
+current key if it is 4096 bit;</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ssh-keygen -t rsa -b 4096
+</span><span class='line'>Generating public/private rsa key pair.
+</span><span class='line'>Enter file in which to save the key <span class="o">(</span>/home/atodorov/.ssh/id_rsa<span class="o">)</span>: /home/atodorov/.rim/testKey_4096_rsa
+</span><span class='line'>/home/atodorov/.rim/testKey_4096_rsa already exists.
+</span><span class='line'>Overwrite <span class="o">(</span>y/n<span class="o">)</span>? y
+</span><span class='line'>Enter passphrase <span class="o">(</span>empty <span class="k">for </span>no passphrase<span class="o">)</span>:
+</span><span class='line'>Enter same passphrase again:
+</span><span class='line'>Your identification has been saved in /home/atodorov/.rim/testKey_4096_rsa.
+</span><span class='line'>Your public key has been saved in /home/atodorov/.rim/testKey_4096_rsa.pub.
+</span><span class='line'>The key fingerprint is:
+</span><span class='line'>77:73:55:03:e1:fc:5b:df:a6:e9:2c:b4:d4:1e:0c:b2 atodorov@redbull.mini
+</span><span class='line'>The key<span class="err">&#39;</span>s randomart image is:
+</span><span class='line'>+--<span class="o">[</span> RSA 4096<span class="o">]</span>----+
+</span><span class='line'>|             oo..|
+</span><span class='line'>|            o   o|
+</span><span class='line'>|             o  .|
+</span><span class='line'>|          . . .. |
+</span><span class='line'>|        S .oo+...|
+</span><span class='line'>|         .E.oo+ <span class="o">=</span>|
+</span><span class='line'>|           o o o+|
+</span><span class='line'>|            o..+ |
+</span><span class='line'>|             <span class="nv">o</span><span class="o">=</span>  |
+</span><span class='line'>+-----------------+
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>7) Update key permissions, since ssh complains:</p>
+
+<pre><code>    $ chmod 600 ~/.rim/testKey_4096_rsa.pub
+</code></pre>
+
+<p>8) By default SSH is not listening on your BlackBerry. Use the <code>blackberry-connect</code>
+command to start the SSH daemon on the device. It will upload your public SSH key
+to the device and start the SSH daemon on the other side. <code>password</code> is your device
+password;</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span><span class="nb">pwd</span>
+</span><span class='line'>/home/atodorov/bbndk/host_10_1_0_231/linux/x86/usr/bin
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>./blackberry-connect 169.254.0.1 -password 123456 -sshPublicKey ~/.rim/testKey_4096_rsa.pub
+</span><span class='line'>Info: Connecting to target 169.254.0.1:4455
+</span><span class='line'>Info: Authenticating with target 169.254.0.1:4455
+</span><span class='line'>Info: Encryption parameters verified
+</span><span class='line'>Info: Authenticating with target credentials.
+</span><span class='line'>Info: Successfully authenticated with target credentials.
+</span><span class='line'>Info: Sending ssh key to target 169.254.0.1:4455
+</span><span class='line'>Info: ssh key successfully transferred.
+</span><span class='line'>Info: Successfully connected. This application must remain running in order to use debug tools. Exiting the application will terminate this connection.
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>9) Check if SSH is running on the device</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>nmap 169.254.0.1
+</span><span class='line'>
+</span><span class='line'>Starting Nmap 5.51 <span class="o">(</span> http://nmap.org <span class="o">)</span> at 2013-07-18 10:19 EEST
+</span><span class='line'>Stats: 0:00:01 elapsed; 0 hosts completed <span class="o">(</span>1 up<span class="o">)</span>, 1 undergoing Connect Scan
+</span><span class='line'>Connect Scan Timing: About 14.30% <span class="k">done</span>; ETC: 10:20 <span class="o">(</span>0:00:06 remaining<span class="o">)</span>
+</span><span class='line'>Nmap scan report <span class="k">for </span>169.254.0.1
+</span><span class='line'>Host is up <span class="o">(</span>0.00097s latency<span class="o">)</span>.
+</span><span class='line'>Not shown: 991 closed ports
+</span><span class='line'>PORT     STATE SERVICE
+</span><span class='line'>22/tcp   open  ssh
+</span><span class='line'>80/tcp   open  http
+</span><span class='line'>139/tcp  open  netbios-ssn
+</span><span class='line'>443/tcp  open  https
+</span><span class='line'>445/tcp  open  microsoft-ds
+</span><span class='line'>1111/tcp open  lmsocialserver
+</span><span class='line'>5555/tcp open  freeciv
+</span><span class='line'>8000/tcp open  http-alt
+</span><span class='line'>8443/tcp open  https-alt
+</span><span class='line'>
+</span><span class='line'>Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned in 12.47 seconds
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>10)  Use SSH with the specified key to connect to the Z10. Username is <code>devuser</code>.
+Here&#8217;s a simple session:</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>
+</span><span class='line'><span class="nv">$ </span>ssh -i ~/.rim/testKey_4096_rsa devuser@169.254.0.1
+</span><span class='line'><span class="nv">$ </span>
+</span><span class='line'><span class="nv">$ </span><span class="nb">pwd</span>
+</span><span class='line'>/accounts/devuser
+</span><span class='line'><span class="nv">$ </span>uname -a
+</span><span class='line'>QNX atodorovZ10 8.0.0 2013/05/02-08:42:48EDT OMAP4470_ES1.0_HS_London_Rev:08 armle
+</span><span class='line'><span class="nv">$ </span>date
+</span><span class='line'>Fri Jul 19 23:39:19 EEST 2013
+</span><span class='line'><span class="nv">$ </span>ifconfig
+</span><span class='line'>lo0: <span class="nv">flags</span><span class="o">=</span>8049&lt;UP,LOOPBACK,RUNNING,MULTICAST&gt; mtu 33192
+</span><span class='line'>    inet 127.0.0.1 netmask 0xff000000
+</span><span class='line'>    inet6 ::1 prefixlen 128
+</span><span class='line'>    inet6 fe80::1%lo0 prefixlen 64 scopeid 0x1
+</span><span class='line'>tiw_drv0: <span class="nv">flags</span><span class="o">=</span>8c02&lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>    address: 1c:69:a5:d0:10:cd
+</span><span class='line'>tiw_sta0: <span class="nv">flags</span><span class="o">=</span>40008c43&lt;UP,BROADCAST,RUNNING,OACTIVE,SIMPLEX,MULTICAST,ACCEPTRTADV&gt; mtu 1500
+</span><span class='line'>    address: 1c:69:a5:d0:10:cd
+</span><span class='line'>    inet 192.168.0.100 netmask 0xffffff00 broadcast 192.168.0.255
+</span><span class='line'>    inet6 fe80::1e69:a5ff:fed0:10cd%tiw_sta0 prefixlen 64 scopeid 0x12
+</span><span class='line'>tiw_p2pdev0: <span class="nv">flags</span><span class="o">=</span>8c02&lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>    address: 1c:69:a5:d0:10:cd
+</span><span class='line'>tiw_p2pgrp0: <span class="nv">flags</span><span class="o">=</span>8c02&lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>    address: 1c:69:a5:d0:10:cd
+</span><span class='line'>tiw_ibss0: <span class="nv">flags</span><span class="o">=</span>8c02&lt;BROADCAST,OACTIVE,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>    address: 1c:69:a5:d0:10:cd
+</span><span class='line'>pflog0: <span class="nv">flags</span><span class="o">=</span>0 mtu 33192
+</span><span class='line'>lo2: <span class="nv">flags</span><span class="o">=</span>8048&lt;LOOPBACK,RUNNING,MULTICAST&gt; mtu 33192
+</span><span class='line'>cellular0: <span class="nv">flags</span><span class="o">=</span>8810&lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>cellular1: <span class="nv">flags</span><span class="o">=</span>8810&lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>cellular2: <span class="nv">flags</span><span class="o">=</span>8810&lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>cellular3: <span class="nv">flags</span><span class="o">=</span>8810&lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>cellular4: <span class="nv">flags</span><span class="o">=</span>8810&lt;POINTOPOINT,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>bptp0: <span class="nv">flags</span><span class="o">=</span>8043&lt;UP,BROADCAST,RUNNING,MULTICAST&gt; mtu 1356
+</span><span class='line'>    inet6 fe80::1e69:a5ff:fed0:10cd%bptp0 prefixlen 64 scopeid 0x2d
+</span><span class='line'>    inet6 fd02:42ac:77b2:d543:c158:fabb:6276:80e6 prefixlen 8
+</span><span class='line'>ecm0: <span class="nv">flags</span><span class="o">=</span>8a43&lt;UP,BROADCAST,RUNNING,ALLMULTI,SIMPLEX,MULTICAST&gt; mtu 1500
+</span><span class='line'>    address: 1e:69:a5:d0:10:cd
+</span><span class='line'>    inet 169.254.0.1 netmask 0xfffffffc broadcast 169.254.0.3
+</span><span class='line'>    inet6 fe80::1c69:a5ff:fed0:10cd%ecm0 prefixlen 64 scopeid 0x2e
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>IMPORTANT:</strong> you can also use the WiFi address of the device to pass to
+<code>backberry-connect</code> and ssh. It works for me.</p>
+
+<p>I&#8217;m starting to explore the dark world of QNX in the next couple of days
+and will keep you posted! Until then - happy hacking.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2239,93 +2519,6 @@ to other folks who may know more on the topic.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/">Why VMware Multi-Hypervisor Manager Architecture Is Wrong</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-30T23:36:00+03:00" pubdate data-updated="true">May 30<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Today I&#8217;ve visited the annual
-<a href="http://www.openhouse.vmware-bulgaria.com/">VMware Open House Event</a> in Sofia.
-One of the sessions discussed their product
-<a href="http://www.vmware.com/support/mhm/doc/vcenter-multi-hypervisor-manager-10-release-notes.html">vCenter Multi-Hypervisor Manager</a>
-and the developers explained their architecture and technology behind it.
-I think they are wrong.</p>
-
-<p><img src="/images/vmware_mhm_architecture.png" alt="MHM Architecture" style="clear:both;display:block;"/>
-Image taken from product release notes.</p>
-
-<p>As shown above the purple-orange components are the MHM ones. They are designed as
-plug-ins to the vCenter product and can not function as stand alone products.
-vCenter MHM Server is responsible for communicating with 3rd party hypervisors
-and then talks back to the MHM Extension in vCenter which feeds the MHM Plug-In (the UI).
-I see three bad design decisions here:</p>
-
-<p>1) The plugin architecture makes both the management layer and the UI a separate module.
-As was shown in a demo session the user can not manage/visualize ESX and Hyper-V hosts/VMs
-at the same time. They are managed and visualized in separate views.
-This leads to non uniform user experience. Not to mention both UIs are different because the
-supported hypervisor capabilities are different. -1 for user experience.</p>
-
-<p>2) From what I understand both vCenter and MHM Extension provide API access. MHM one is not public yet.
-Customers are using this API to build their own scripts around the infrastructure. For a customer
-this means duplicating effort and maintaining scripts that talk to two separate APIs, although they
-will be very similar to one another. -1 for making it easy on the customer.</p>
-
-<p>3) From development point of view the top two components are not necessary. They introduce
-extra development and management costs to the product. -1 for product maintainability.</p>
-
-<h2>The Alternative</h2>
-
-<p>One could design the same product in the fashion that <a href="http://libvirt.org">libvirt</a> does -
-abstract all hypervisor details and provide a common API to build applications against.
-In this case vCenter Server will be the application on top.
-This interface will also report hypervisor capabilities so that the UI will be disabled
-where appropriate.</p>
-
-<p><img src="/images/libvirt-driver-arch.png" alt="Libvirt Driver Architecture" style="clear:both;display:block;"/>
-Image taken from <a href="http://libvirt.org/api.html">http://libvirt.org/api.html</a></p>
-
-<p>I think libvirt&#8217;s approach is much cleaner and easier to maintain in the long term.</p>
-
-<p>Indeed I&#8217;ve asked the question why not use libvirt -
-it already supports ESX and Hyper-V as well as bunch of other hypervisors. I didn&#8217;t get a clear
-answer on that, just that the team was looking at it, evaluated libvirt but opted to go
-another way.</p>
-
-<p>I still feel VMware has not learned how to do the open source dance as well as others do.
-What do you think?</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/7/">&larr; Older</a>
@@ -2377,6 +2570,10 @@ What do you think?</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">Installing Red Hat Enterprise Linux 7 on MacBook Air 2015</a>
       </li>
     
@@ -2410,10 +2607,6 @@ What do you think?</p>
     
       <li class="post">
         <a href="/blog/2015/01/07/2-barcode-related-bugs-in-myfitnesspal/">2 Barcode Related Bugs in MyFitnessPal</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/">Endless Loop Bug in Candy Crush Saga Level 80</a>
       </li>
     
   </ul>

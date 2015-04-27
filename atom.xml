@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-26T21:58:58+03:00</updated>
+  <updated>2015-04-27T12:42:23+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,56 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Compiling Broadcom wl-kmod WiFi Driver for RHEL 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/"/>
+    <updated>2015-04-27T12:17:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7</id>
+    <content type="html"><![CDATA[<p>After I got my
+<a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air installed with RHEL 7.1</a>
+the first priority was getting wireless working.
+First check if your device isn&#8217;t already supported
+<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn&#8217;t</p>
+
+<pre><code>14e4:43a0: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
+</code></pre>
+
+<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
+For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
+<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild &#8211;rebuild</em> against each file
+and install <code>kmodtool</code> and <code>akmods</code>.</p>
+
+<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
+The first one is a helper tool containing list of recent kernels to build against,
+the later one is the driver source itself. Both needed minor modifications before
+building on RHEL 7.</p>
+
+<p>I&#8217;ve created my own
+<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
+for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I&#8217;ve introduced a
+<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
+which modifies the other patches in the package so it builds correctly on 7.1.</p>
+
+<p><strong>Note:</strong> I don&#8217;t know if there&#8217;s a define which can be used to detect if we&#8217;re building
+on RHEL (maybe I can define my own) but direct kernel version number comparison doesn&#8217;t
+work here because Red Hat backports chosen functionality from more recent kernels without
+changing the version number. This approach may not be the best one but I&#8217;ve tried to keep it clean
+for easier maintenance in the future and it got me started very quickly.</p>
+
+<p>Build the modified buildsys-build-rpmfusion and:</p>
+
+<pre><code>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+</code></pre>
+
+<p>Build the wl-kmod package and:</p>
+
+<pre><code>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+</code></pre>
+
+<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Installing Red Hat Enterprise Linux 7 on MacBook Air 2015]]></title>
@@ -1485,104 +1535,6 @@ the resources to do so (hint, hint: it&#8217;s an if-then condition or something
 <p><img src="http://atodorov.org/images/mtel/complaint_01.jpg" title="Complaint" alt="&quot;Complaint&quot;" />
 <img src="http://atodorov.org/images/mtel/complaint_01.jpg" title="Complaint" alt="&quot;Complaint&quot;" />
 <img src="http://atodorov.org/images/mtel/response.jpg" title="Response" alt="&quot;Response&quot;" /></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Shutdown Your Startup in 7 Steps]]></title>
-    <link href="http://atodorov.org/blog/2014/10/13/shutdown-your-startup-in-7-steps/"/>
-    <updated>2014-10-13T14:17:00+03:00</updated>
-    <id>http://atodorov.org/blog/2014/10/13/shutdown-your-startup-in-7-steps</id>
-    <content type="html"><![CDATA[<p>A month ago one of my startups Difio stopped working forever.
-This is the story of how to go about shutting down a working
-web service and not about why it came around to this.</p>
-
-<h2>Step #1: Disable new registrations</h2>
-
-<p>You obviously need to make sure new customers
-arriving at your web site will not sing up to only find the service is
-shutting down later.</p>
-
-<p>Disable whatever sign-on/registration system you have in place
-but leave currently registered users to login as they wish.</p>
-
-<h2>Step #2: Disable payments</h2>
-
-<p>Difio had paying customers, just not enough of them and it was based on
-a subscription model which was automatically renewed without any interaction
-from the customer.</p>
-
-<p>The first thing I did was to disable all payments for the service which
-was quite easy (just a few comments) because Difio used an external payment
-processor.</p>
-
-<p>Next thing was to go through all subscriptions that were still active and
-cancel them. This prevented the payment processor to automatically charge
-the customers next time their subscription renewal was due.</p>
-
-<p>Because all subscriptions were charged in advance and when canceled were
-still considered active (due to expire at some later date) Difio had to
-keep operating at least one month after all subscriptions have been canceled.</p>
-
-<h2>Step #3: Notify all customers that you are shutting down</h2>
-
-<p>I scheduled this to happen right after the last subscription was canceled.
-An email to everyone who registered to the website and a blog post should work
-for most startups. See ours <a href="http://www.dif.io/blog/2014/08/10/difio-is-shutting-down/">here</a>.</p>
-
-<p>Make sure to provide a gratis period if necessary. Difio had a gratis period
-of one month after the shutdown announcement.</p>
-
-<h2>Step #4: Disable all external triggers</h2>
-
-<p>Difio was a complex piece of software which relied on external triggers like
-web hooks and repetitive tasks executed by cron.</p>
-
-<p>Disabling these will prevent external services or hosting providers
-getting errors about your URLs not being accessible. It is just polite
-to do so.</p>
-
-<p>You may want to keep these still operational during the gratis period
-before the physical shutdown or disable them straight away. In Difio&#8217;s
-case they were left operational because there were customers who have paid
-in advance and relied on this functionality.</p>
-
-<h2>Step #5: Prepare your &#8216;Service Disabled&#8217; banner</h2>
-
-<p>You will probably want to let people know why something isn&#8217;t working
-as it used (or is expected) to be. A simple page explaining that
-you&#8217;re going to shut down should be enough.</p>
-
-<p>Difio required the user to be logged in to see most of the website.
-This made it very easy to redirect everything to the same page.
-A few more places were linking to public URLs which were manually rewritten
-to point to the same &#8216;Service Disabled&#8217; page.</p>
-
-<p>It is the same page used previously to redirect new registrations to.</p>
-
-<h2>Step #6: Terminate all processing resources</h2>
-
-<p>Difio used both AWS EC2 instances and an OpenShift PaaS instance to do its
-processing. Simply terminating all of them was enough. The only thing left
-is a couple of static HTML pages behind the domain.</p>
-
-<h2>Step #7: Database archival</h2>
-
-<p>The last thing you need to do is archive your database. Although the
-startup is out of business already you have gathered additional information
-which may come handy at a later time.</p>
-
-<p>Difio didn&#8217;t collect any personal information about its users, except email
-and didn&#8217;t store financial information either. This made it safe to just make
-a backup of the database and leave it lurking around on disk.</p>
-
-<p>However beware
-if you have collected personal and/or financial information from your customers.
-You may want to erase/anonymize some of it before doing your backups and
-probably safeguard them from unauthorized access.</p>
-
-<p>That&#8217;s it, your startup is officially dead now! Let me know if I&#8217;ve missed
-something in the comments below.</p>
 ]]></content>
   </entry>
   

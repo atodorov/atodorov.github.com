@@ -5,11 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: BlackBerry</title>
+  <title>Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Category: BlackBerry">
+  <meta name="description" content="After I got my
+MacBook Air installed with RHEL 7.1
+the first priority was getting wireless working.
+First check if your device isn&#8217;t already &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.orgblog/categories/blackberry/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -74,150 +77,145 @@ you can logoff, but you can never leave
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: BlackBerry</h1>
+    
+      <h1 class="entry-title">Compiling Broadcom Wl-kmod WiFi Driver for RHEL 7</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-27T12:17:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>After I got my
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air installed with RHEL 7.1</a>
+the first priority was getting wireless working.
+First check if your device isn&#8217;t already supported
+<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn&#8217;t</p>
 
-  
-  <h2>2014</h2>
+<pre><code>14e4:43a0: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
+</code></pre>
 
-<article>
-  
-<h1><a href="/blog/2014/12/22/blackberry-z10-is-killing-my-wifi-router/">BlackBerry Z10 is Killing My WiFi Router</a></h1>
-<time datetime="2014-12-22T15:46:00+02:00" pubdate><span class='month'>Dec</span> <span class='day'>22</span> <span class='year'>2014</span></time>
+<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
+For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
+<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild &#8211;rebuild</em> against each file
+and install <code>kmodtool</code> and <code>akmods</code>.</p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a></span>
-</footer>
+<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
+The first one is a helper tool containing list of recent kernels to build against,
+the later one is the driver source itself. Both needed minor modifications before
+building on RHEL 7.</p>
 
+<p>I&#8217;ve created my own
+<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
+for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I&#8217;ve introduced a
+<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
+which modifies the other patches in the package so it builds correctly on 7.1.</p>
 
-</article>
+<p><strong>Note:</strong> I don&#8217;t know if there&#8217;s a define which can be used to detect if we&#8217;re building
+on RHEL (maybe I can define my own) but direct kernel version number comparison doesn&#8217;t
+work here because Red Hat backports chosen functionality from more recent kernels without
+changing the version number. This approach may not be the best one but I&#8217;ve tried to keep it clean
+for easier maintenance in the future and it got me started very quickly.</p>
 
+<p>Build the modified buildsys-build-rpmfusion and:</p>
 
+<pre><code>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+</code></pre>
 
-  
-  <h2>2013</h2>
+<p>Build the wl-kmod package and:</p>
 
-<article>
-  
-<h1><a href="/blog/2013/08/05/exploring-blackberry-10-environment-variables/">Exploring BlackBerry 10 - Environment Variables</a></h1>
-<time datetime="2013-08-05T00:20:00+03:00" pubdate><span class='month'>Aug</span> <span class='day'>05</span> <span class='year'>2013</span></time>
+<pre><code>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+</code></pre>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/08/04/exploring-blackberry-10-application-security-model/">Exploring BlackBerry 10 - Application Security Model</a></h1>
-<time datetime="2013-08-04T00:02:00+03:00" pubdate><span class='month'>Aug</span> <span class='day'>04</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/08/01/laptop-vs-smartphone-part-one/">Laptop vs Smartphone, Part 1, Requirements</a></h1>
-<time datetime="2013-08-01T21:02:00+03:00" pubdate><span class='month'>Aug</span> <span class='day'>01</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/19/ssh-from-linux-to-blackberry-z10/">SSH from Linux to BlackBerry Z10</a></h1>
-<time datetime="2013-07-19T23:31:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>19</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/z10/'>Z10</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/17/exploring-blackberry-10-nmap/">Exploring BlackBerry 10 - nmap</a></h1>
-<time datetime="2013-07-17T23:16:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>17</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/z10/'>Z10</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/17/tip-how-to-enable-usb-networking-between-blackberry-z10-and-red-hat-enterprise-linux-6/">Tip: How To Enable USB Networking Between BlackBerry Z10 and Red Hat Enterprise Linux 6</a></h1>
-<time datetime="2013-07-17T11:06:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>17</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/z10/'>Z10</a>, <a class='category' href='/blog/categories/tips/'>tips</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/14/importing-vcard-contacts-to-blackberry-z10-sucks/">Importing vCard Contacts To BlackBerry Z10 Sucks</a></h1>
-<time datetime="2013-07-14T21:09:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>14</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/nokia/'>Nokia</a>, <a class='category' href='/blog/categories/z10/'>Z10</a>, <a class='category' href='/blog/categories/bugs/'>bugs</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/07/13/how-to-get-a-free-blackberry-z10/">How to Get a Free BlackBerry Z10</a></h1>
-<time datetime="2013-07-13T11:30:00+03:00" pubdate><span class='month'>Jul</span> <span class='day'>13</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/blackberry/'>BlackBerry</a>, <a class='category' href='/blog/categories/z10/'>Z10</a></span>
-</footer>
-
-
-</article>
-
+<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-27T12:17:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/mac/'>Mac</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/" title="Previous Post: Installing Red Hat Enterprise Linux 7 on MacBook Air 2015">&laquo; Installing Red Hat Enterprise Linux 7 on MacBook Air 2015</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -352,7 +350,10 @@ if (uri.indexOf("?") > 0) {
       var disqus_shortname = 'atodorov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/';
+        var disqus_url = 'http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
