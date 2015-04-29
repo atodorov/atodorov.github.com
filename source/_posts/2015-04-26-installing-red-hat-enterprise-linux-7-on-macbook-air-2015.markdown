@@ -3,7 +3,7 @@ layout: post
 title: "Installing Red Hat Enterprise Linux 7 on MacBook Air 2015"
 date: 2015-04-26 20:33
 comments: true
-categories: ['Fedora', 'RHEL', 'Mac']
+categories: ['fedora.planet', 'RHEL', 'Mac']
 ---
 
 Recently I've upgraded to a new 
