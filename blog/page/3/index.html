@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="We&#8217;ve heard about companies opening up their proprietary software products,
-this is hardly news nowadays. But have you wondered what it is like &hellip;">
+  <meta name="description" content="Last week at HackFMI 3.0 one team had to display a form
+which presented multiple choice selection for filtering, where the filter keys
+are read from &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,228 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/03/howto-django-forms-with-dynamic-fields/">Howto: Django Forms With Dynamic Fields</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-03T16:58:00+03:00" pubdate data-updated="true">May 3<span>rd</span>, 2014</time>
+        
+         | <a href="/blog/2014/05/03/howto-django-forms-with-dynamic-fields/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Last week at <a href="http://hackfmi.com">HackFMI 3.0</a> one team had to display a form
+which presented multiple choice selection for filtering, where the filter keys
+are read from the database. They&#8217;ve solved the problem by simply building up the
+HTML required inside the view. I was wondering if this can be done with forms.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">pass</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">POST</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="s">&#39;Alex&#39;</span><span class="p">,</span> <span class="s">&#39;age&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">(</span><span class="n">POST</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;Alex&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
+</span><span class='line'><span class="bp">True</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_bound</span>
+</span><span class='line'><span class="bp">True</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">errors</span>
+</span><span class='line'><span class="p">{}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
+</span><span class='line'><span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Alex&#39;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So if we were to query all names from the database then we could build up the
+class by adding a BooleanField using the object primary key as the name.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s">&#39;123&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
+</span><span class='line'><span class="bp">True</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
+</span><span class='line'><span class="p">{</span><span class="s">&#39;123&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/30/hackfmi-post-mortem/">HackFMI 3.0 Post-mortem</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-30T00:03:00+03:00" pubdate data-updated="true">Apr 30<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/04/30/hackfmi-post-mortem/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" /></p>
+
+<p>The fourth <a href="http://hackfmi.com/hackfmi3-winners/">HackFMI</a>,
+now traditional, hackathon was held this weekend.
+It is over and I still can&#8217;t wrap my head around what happened during these 3 nights. Here&#8217;s
+bits of code, beer, energy drinks and fun as I saw it.</p>
+
+<p>A big thanks goes to Lilly and Misha who were running around like
+<a href="https://www.youtube.com/watch?v=uL6e3co4Qqc">robots</a> managing the day-to-day activities.
+Kudos to the rest of the team as well because they&#8217;ve established HackFMI as a tradition
+and people already ask when is going to be the next event.</p>
+
+<h2>What</h2>
+
+<p>This year the topic was <em>Hack for charity</em> and immediate goal of raising money for
+a sick kid. Most of the teams got to work to meet these goals. Only a few had worked
+on slightly different charity (broadly defined) ideas.</p>
+
+<p>My favorite two apps were Blago-darenie and SMShelp although they were not
+developed with Django.</p>
+
+<p><a href="http://blago-darenie.outernetnotes.com/">Blago-darenie</a> is a simple WordPress
+site listing donation campaigns. Instead of directly donating money one needs to
+promise something (an action, an object, etc) and put a price tag on it. When the
+promise is claimed the two parties donate the money to that particular campaign
+and exchange the promised goods or services. I&#8217;ve promised to cook dinner
+involving tasty meatballs from horse meat and serve one of my wine bottles to whoever
+decides to donate 25 EUR. (disclaimer: I&#8217;m a good cook and love wine more than code).</p>
+
+<p><a href="http://ganev.bg/project-8/">SMShelp</a> is an aggregator of donation campaigns via SMS
+which are very popular in the country but lack a central repository for all of them.
+A simple web site, live Android app and wonderful design secured the team the first place!
+BTW Team 8 was <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/">Adrian and Vihren</a>
+who took part in all previous editions as well.</p>
+
+<h2>TODO</h2>
+
+<p>I&#8217;m glad both organizers and teams had listened to some of my feedback but there are
+still things to improve. The most obvious one was that a quick communication channel
+to all the teams is needed. Facebook and email just didn&#8217;t cut it.</p>
+
+<p>I already have couple of quick ideas involving Django and Twilio&#8217;s cloud services.
+Let me take a few more days to get it clear before going any further.</p>
+
+<h2>/me</h2>
+
+<p>I found myself mentoring as much as I could helping folks with Django or just
+with general ideal or concepts, serving cake provided by <a href="http://www.chaosgroup.com">Chaos Group</a>
+and opening stacks of energy drinks, going door to door and letting teams know deployment and presentation
+details for the last day.</p>
+
+<p>What surprised me a bit was that there were many new teams (some involving previous contestants)
+who were very diverse in their technological background. This presented a challenge to
+some of them as they had to use a technology which nobody on the team knew very well
+and had to make a working app with that. One team even changed from Python to PHP in the
+middle of day 2.</p>
+
+<p>On Sunday I was pretty much helping the HackFMI team with whatever I can,
+checking on my favorite teams from time to time and giving access to cloud servers
+left and right to people who needed them.</p>
+
+<p>Unfortunately I missed the Grand Finale due to unexpected hardware problems involving
+big iron and 150 litters of loose water :(. See you next time!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2355,220 +2578,6 @@ name from the first step (e.g. <code>/dev/sda1</code>);</li>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014 Report - Day #2 Testing and Automation</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-03T22:54:00+02:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2014</time>
-        
-         | <a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation" alt="Testing and Automation" /></p>
-
-<p>FOSDEM was hosting the
-<a href="https://fosdem.org/2014/schedule/track/testing_and_automation/">Testing and automation devroom</a>
-for the second year and this was the very reason I attended the conference. I managed to get in
-early and stayed until 15:00 when I had to leave to catch my flight (which was late :().</p>
-
-<p>There were 3 talks given by Red Hat employees in the testing devroom which was a nice opportunity
-to meet some of the folks I&#8217;ve been working on IRC with. Unfortunately I didn&#8217;t meet anyone from
-Fedora QA. Not sure if they were attending or not.</p>
-
-<p>All the talks were interesting so see the official schedule and video for more details. I will
-highlight only the items I saw as particularly interesting or have not heard of before.</p>
-
-<h2>ANSTE</h2>
-
-<p>ANSTE - Advanced Network Service Testing Environment is a test infrastructure controller,
-something like our own <a href="http://beaker-project.org/">Beaker</a> but designed to create complex
-networking environments. I think it lacks many of the provisioning features built in Beaker
-and integration with various hypervisors and bare-metal provisioning. What it seems to do better
-(as far as I can tell from the talk) is to deploy virtual systems and create more complex network
-configuration between them. Not something I will need in the near future but definitely worth
-a look at.</p>
-
-<h2>cwrap</h2>
-
-<blockquote><p>cwrap is&#8230;</p><p>a set of tools to create a fully isolated network environment to test client/server components on a single host.<br/>It provides synthetic account information, hostname resolution and support for privilege separation.<br/>The heart of cwrap consists of three libraries you can preload to any executable.</p></blockquote>
-
-
-<p>That one was the coolest technology I&#8217;ve seen so far although I may not need to use it at all,
-hmmm maybe testing DHCP fits the case.</p>
-
-<p>It evolved from the Samba project and takes advantage of the order in which
-libraries are searched when resolving functions. When you preload the project libraries
-to any executable they will override standard libc functions for working with sockets,
-user accounts and privilege escalation.</p>
-
-<p>The socket_wrapper library redirects networking sockets through local UNIX sockets and
-gives you the ability to test applications which need privileged ports with a local developer
-account.</p>
-
-<p>The nss_wrapper library provides artificial information for user and group accounts,
-network name resolution using a hosts file and loading and testing of NSS modules.</p>
-
-<p>The uid_wrapper library allows uid switching as a normal user (e.g. fake root) and
-supports user/group changing in the local thread using the syscalls (like glibc).</p>
-
-<p>All of these wrapper libraries are controlled via environment variables and definitely
-makes testing of daemons and networking applications easier.</p>
-
-<h2>Testing Documentation</h2>
-
-<p>That one was just scratching the surface of an entire branch of testing which I&#8217;ve not
-even considered before. The talk also explains why it is hard to test documentation and
-what possible solutions there are.</p>
-
-<p>If you write user guides and technical articles which need to
-stay current with the software this is definitely the place to start.</p>
-
-<h2>Automation in the Foreman Infrastructure</h2>
-
-<p>The last <a href="http://ftp.osuosl.org/pub/fosdem//2014/previews/fosdem/fosdem_2014/dv/UD2218A/2014-02-02/12_51_36.ogv">talk</a>
-I&#8217;ve listened to. Definitely the best one from a general testing approach
-point of view. Greg talked about starting with Foreman unit tests, then testing the merged PR,
-then integration tests, then moving on to test the package build and then the resulting packages themselves.</p>
-
-<p>These guys try to even test their own infrastructure (infra as code) and the test suites
-they use to test everything else. It&#8217;s all about automation and the level of confidence
-you have in the entire process.</p>
-
-<p>I like the fact that no single testing approach can make you confident enough before shipping
-the code and that they&#8217;ve taken into account changes which get introduced at various places
-(e.g. 3rd party package upgrades, distro specific issues, infrastructure changes and such)</p>
-
-<p>If I had to attend only one session it would have been this one. There are many things for me
-to take back home and apply to my work on Fedora and RHEL.</p>
-
-<p>If you find any of these topics remotely interesting I advise you to wait until FOSDEM video
-team uploads the recordings and watch the entire session stream. I&#8217;m definitely missing a lot
-of stuff which can&#8217;t be easily reproduced in text form.</p>
-
-<p>You can also find my report of the first FOSDEM&#8217;14 day on Saturday
-<a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">here</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-03T21:37:00+02:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2014</time>
-        
-         | <a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>As promised I&#8217;m starting catching up on blogging after being sick and traveling.
-Here&#8217;s my report of what I saw and found interesting at this year&#8217;s
-<a href="https://fosdem.org/2014/">FOSDEM</a> which was held the last weekend in Brussels.</p>
-
-<p>On Friday evening I&#8217;ve tried to attend the FOSDEM beer event at Delirium Cafe but
-had a bad luck. At 21:30 the place was already packed with people. I managed to get
-access to only one of the rooms but it looked like the wrong one :(. I think the space
-is definitely small for all who are willing to attend.</p>
-
-<p>During Saturday morning I did a quick sight-seeing most notably
-<a href="www.migsworldwines.be/">Mig&#8217;s wine shop</a> and the area around it since I&#8217;ve never
-been to this part of the city before. Then I took off to FOSDEM arriving at noon
-(IOW not too late).</p>
-
-<p>I&#8217;ve spent most of my day at building K where project stands were and I stayed quite
-a long time around the Python and Perl stands meeting new people and talking to them
-about their upgrade practices and how they manage package dependencies
-(aka promoting <a href="http://www.dif.io">Difio</a>).</p>
-
-<p><img src="/images/fosdem/2014/fedora_octopus.jpg" title="Fedora Octopus" alt="Fedora Octopus" /></p>
-
-<p>Fedora stand was busy with 3D printing this year. I&#8217;ve seen 3D printing
-before but here I was amazed of the fine-grained quality of the pieces produced.
-This is definitely something to have in mind if you are building physical products.</p>
-
-<p>Red Hat&#8217;s presence was very strong this year. In addition to the numerous talks they
-gave there were also oVirt and OpenShift Origin stands which were packed with people.
-I couldn&#8217;t even get close to say hi or take a picture.</p>
-
-<p><img src="/images/fosdem/2014/doudou_linux.png" alt="DoudouLinux" style="float:left;margin-right:10px;"/></p>
-
-<p>Near the end of the day I went to listen to some of the lightning talks. The ones that
-I liked the most were MATE Desktop and DoudouLinux.</p>
-
-<p>The thing about MATE which I liked
-is that they have a <a href="https://github.com/mate-desktop/mate-university">MATE University</a>
-initiative which is targeting developers who want to learn how to develop MATE extensions.
-This is pretty cool with respect to community and developers on-boarding.</p>
-
-<p><a href="http://www.doudoulinux.org">DoudouLinux</a> is a Debian based distribution targeted at
-small children (2 or 3 years old) based on simple desktop and educational activities.
-I&#8217;ve met project leader and founder Jean-Michel Philippe who gave the talk. We chatted for
-a while when Alejandro Simon from <a href="http://www.kano.me/">Kano</a> came around and showed us a prototype
-of their computer for children. I will definitely give DoudouLinux a try and maybe pre-order Kano as well.</p>
-
-<p>In the evening there was a Python beer event at Delirium and after that dinner at
-Chez Leon where I had snails and rabbit with cherries in cherry beer sauce.
-I&#8217;ve had a few beers with Marc-Andre from <a href="http://egenix.com">eGenix</a>
-and Charlie from <a href="http://www.clark-consulting.eu/">Clark Consulting</a> and the talk
-was mostly about non-technical stuff which was nice.</p>
-
-<p>After that we went back to Delirium and
-re-united with <a href="http://akurtakov.blogspot.com">Alexander Kurtakov</a> and other folks from
-Red Hat for more cherry beer!</p>
-
-<p>Report of the second day of FOSDEM&#8217;14 on Sunday is
-<a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">here</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/4/">&larr; Older</a>
@@ -2620,6 +2629,14 @@ Red Hat for more cherry beer!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixing Display Brightness on MacBook Air with RHEL 7</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/27/how-to-enable-backspace-key-to-navigate-back-in-firefox/">How to Enable backspace Key to Navigate Back in Firefox</a>
       </li>
     
@@ -2649,14 +2666,6 @@ Red Hat for more cherry beer!</p>
     
       <li class="post">
         <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
       </li>
     
   </ul>

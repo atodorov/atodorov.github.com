@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="This is a quick reference on profiling Python applications with
-cProfile: $ python -m cProfile -s time application.py The output is sorted by &hellip;">
+  <meta name="description" content="In the first part of this
+post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
+Why is the Celery stack slow? How &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,236 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">Speeding Up Celery Backends, Part 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-07T15:48:00+02:00" pubdate data-updated="true">Nov 7<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
+Why is the Celery stack slow? How slow is it actually?</p>
+
+<h2>How slow is Celery in practice</h2>
+
+<ul>
+<li>Queue: 500`000 msg/sec</li>
+<li>Kombu:  14`000 msg/sec</li>
+<li>Celery:  2`000 msg/sec</li>
+</ul>
+
+
+<h2>Detailed test description</h2>
+
+<p>There are three main components of the Celery stack:</p>
+
+<ul>
+<li>Celery itself</li>
+<li>Kombu which handles the transport layer</li>
+<li>Python Queue()&#8217;s underlying everything</li>
+</ul>
+
+
+<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
+run for 1 000 000 messages I got the following results:</p>
+
+<ul>
+<li>Raw Python Queue: Msgs per sec: 500`000</li>
+<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
+
+<ul>
+<li>with json serializer: Msgs per sec: 5`988</li>
+<li>with pickle serializer: Msgs per sec: 12`820</li>
+<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
+Msgs per sec: 14`492</li>
+</ul>
+</li>
+</ul>
+
+
+<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I&#8217;ve observed similar behavior
+with raw Python Queue()&#8217;s. I saw some cache buffers being managed internally to avoid OOM
+exceptions. This is probably the main reason performance becomes saturated over a longer
+execution.</p>
+
+<ul>
+<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
+</ul>
+
+
+<p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:
+</span><span class='line'>    for j in range(1000000):</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there&#8217;s the same <code>with producer.acquire(block=True)</code>
+construct which is executed every time a new task is published. Next I will be looking
+into this to figure out exactly where the slowliness comes from.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/05/speeding-up-celery-backends/">Speeding Up Celery Backends, Part 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-05T15:20:00+02:00" pubdate data-updated="true">Nov 5<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/11/05/speeding-up-celery-backends/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&#8217;m working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
+
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
+
+
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn&#8217;t much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
+
+<h2>Why is Celery slow ?</h2>
+
+<p>Using <code>celery_load_test.py</code> together with
+<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
+
+<ul>
+<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="nd">@cached_property</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="bp">None</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</li>
+</ul>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</li>
+</ul>
+
+
+<p>It&#8217;s clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance.</p>
+
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I&#8217;m not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I&#8217;ll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1825,228 +2056,6 @@ Thanks!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/03/howto-django-forms-with-dynamic-fields/">Howto: Django Forms With Dynamic Fields</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-03T16:58:00+03:00" pubdate data-updated="true">May 3<span>rd</span>, 2014</time>
-        
-         | <a href="/blog/2014/05/03/howto-django-forms-with-dynamic-fields/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Last week at <a href="http://hackfmi.com">HackFMI 3.0</a> one team had to display a form
-which presented multiple choice selection for filtering, where the filter keys
-are read from the database. They&#8217;ve solved the problem by simply building up the
-HTML required inside the view. I was wondering if this can be done with forms.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
-</span><span class='line'><span class="o">...</span>     <span class="k">pass</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">POST</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="s">&#39;Alex&#39;</span><span class="p">,</span> <span class="s">&#39;age&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">(</span><span class="n">POST</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;Alex&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-</span><span class='line'><span class="bp">True</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_bound</span>
-</span><span class='line'><span class="bp">True</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">errors</span>
-</span><span class='line'><span class="p">{}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-</span><span class='line'><span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Alex&#39;</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>So if we were to query all names from the database then we could build up the
-class by adding a BooleanField using the object primary key as the name.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s">&#39;123&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-</span><span class='line'><span class="bp">True</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-</span><span class='line'><span class="p">{</span><span class="s">&#39;123&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/04/30/hackfmi-post-mortem/">HackFMI 3.0 Post-mortem</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-04-30T00:03:00+03:00" pubdate data-updated="true">Apr 30<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/04/30/hackfmi-post-mortem/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" /></p>
-
-<p>The fourth <a href="http://hackfmi.com/hackfmi3-winners/">HackFMI</a>,
-now traditional, hackathon was held this weekend.
-It is over and I still can&#8217;t wrap my head around what happened during these 3 nights. Here&#8217;s
-bits of code, beer, energy drinks and fun as I saw it.</p>
-
-<p>A big thanks goes to Lilly and Misha who were running around like
-<a href="https://www.youtube.com/watch?v=uL6e3co4Qqc">robots</a> managing the day-to-day activities.
-Kudos to the rest of the team as well because they&#8217;ve established HackFMI as a tradition
-and people already ask when is going to be the next event.</p>
-
-<h2>What</h2>
-
-<p>This year the topic was <em>Hack for charity</em> and immediate goal of raising money for
-a sick kid. Most of the teams got to work to meet these goals. Only a few had worked
-on slightly different charity (broadly defined) ideas.</p>
-
-<p>My favorite two apps were Blago-darenie and SMShelp although they were not
-developed with Django.</p>
-
-<p><a href="http://blago-darenie.outernetnotes.com/">Blago-darenie</a> is a simple WordPress
-site listing donation campaigns. Instead of directly donating money one needs to
-promise something (an action, an object, etc) and put a price tag on it. When the
-promise is claimed the two parties donate the money to that particular campaign
-and exchange the promised goods or services. I&#8217;ve promised to cook dinner
-involving tasty meatballs from horse meat and serve one of my wine bottles to whoever
-decides to donate 25 EUR. (disclaimer: I&#8217;m a good cook and love wine more than code).</p>
-
-<p><a href="http://ganev.bg/project-8/">SMShelp</a> is an aggregator of donation campaigns via SMS
-which are very popular in the country but lack a central repository for all of them.
-A simple web site, live Android app and wonderful design secured the team the first place!
-BTW Team 8 was <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/">Adrian and Vihren</a>
-who took part in all previous editions as well.</p>
-
-<h2>TODO</h2>
-
-<p>I&#8217;m glad both organizers and teams had listened to some of my feedback but there are
-still things to improve. The most obvious one was that a quick communication channel
-to all the teams is needed. Facebook and email just didn&#8217;t cut it.</p>
-
-<p>I already have couple of quick ideas involving Django and Twilio&#8217;s cloud services.
-Let me take a few more days to get it clear before going any further.</p>
-
-<h2>/me</h2>
-
-<p>I found myself mentoring as much as I could helping folks with Django or just
-with general ideal or concepts, serving cake provided by <a href="http://www.chaosgroup.com">Chaos Group</a>
-and opening stacks of energy drinks, going door to door and letting teams know deployment and presentation
-details for the last day.</p>
-
-<p>What surprised me a bit was that there were many new teams (some involving previous contestants)
-who were very diverse in their technological background. This presented a challenge to
-some of them as they had to use a technology which nobody on the team knew very well
-and had to make a working app with that. One team even changed from Python to PHP in the
-middle of day 2.</p>
-
-<p>On Sunday I was pretty much helping the HackFMI team with whatever I can,
-checking on my favorite teams from time to time and giving access to cloud servers
-left and right to people who needed them.</p>
-
-<p>Unfortunately I missed the Grand Finale due to unexpected hardware problems involving
-big iron and 150 litters of loose water :(. See you next time!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -2098,6 +2107,14 @@ big iron and 150 litters of loose water :(. See you next time!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixing Display Brightness on MacBook Air with RHEL 7</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/27/how-to-enable-backspace-key-to-navigate-back-in-firefox/">How to Enable backspace Key to Navigate Back in Firefox</a>
       </li>
     
@@ -2127,14 +2144,6 @@ big iron and 150 litters of loose water :(. See you next time!</p>
     
       <li class="post">
         <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
       </li>
     
   </ul>

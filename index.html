@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Open about:config and set browser.backspace_action to 0.
-For more information see here.
-">
+  <meta name="description" content="I&#8217;ve made a repository with binary (x86_64 only) and source RPM packages which
+are missing from Red Hat Enterprise Linux 7 and necessary when &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +76,151 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-29T13:00:00+03:00" pubdate data-updated="true">Apr 29<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&#8217;ve made a repository with binary (x86_64 only) and source RPM packages which
+are missing from Red Hat Enterprise Linux 7 and necessary when using a
+MacBook Air. To install execute the commands below:</p>
+
+<pre><code>cd /etc/yum.repos.d/
+wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
+</code></pre>
+
+<h2>Wireless driver</h2>
+
+<pre><code>yum install kmod-wl
+</code></pre>
+
+<h2>Display backlight driver</h2>
+
+<pre><code>yum install kmod-mba6x_bl
+</code></pre>
+
+<p>And uncomment <code>/etc/X11/xorg.conf.d/98-mba_bl.conf</code>.</p>
+
+<p><em>Note:</em> the .spec file is available from
+<a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixing Display Brightness on MacBook Air With RHEL 7</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-29T12:14:00+03:00" pubdate data-updated="true">Apr 29<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
+and backlight behavior after suspend/resume. I&#8217;ve found the solution
+<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
+and only tweaked it slightly for my use case.</p>
+
+<h2>mba6x_bl doesn&#8217;t load automatically</h2>
+
+<p>The reason being the driver matches older hardware:</p>
+
+<pre><code>$ modinfo mba6x_bl
+filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
+alias:          dmi:*:pnMacBookAir6*
+license:        GPL
+description:    MacBook Air 6,1 and 6,2 backlight driver
+author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
+rhelversion:    7.1
+srcversion:     4D069C8EB0E470AF27E7F8D
+depends:        video
+vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
+</code></pre>
+
+<p>My system is <strong>MacBookAir7,2</strong> and doesn&#8217;t match the module alias. So a
+<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
+For more info about <code>MODULE_ALIAS</code> see
+<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
+Alternatively on Red Hat based systems you can place a config file
+under <code>/etc/sysconfig/modules</code>, see
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
+for more details.</p>
+
+<h2>intel_backlight driver is in the way</h2>
+
+<p>On older systems mba6x_bl doesn&#8217;t get used automatically. The problem is the offending
+intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
+
+<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+Section "Device"
+    Identifier      "Intel Graphics"
+    Driver          "intel"
+    Option          "Backlight"     "mba6x_backlight"
+EndSection
+</code></pre>
+
+<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
+
+<h2>Everything in one go</h2>
+
+<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
+a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -375,23 +519,30 @@ days to check these out:</p>
 <li>Wireless card needs drivers; I&#8217;ve managed to compile them myself,
 <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
 <li>Display brightness doesn&#8217;t seem to work at all. On top of that the display goes full black
-after suspend-resume. I could barely see anything on it.</li>
-<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
-importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I&#8217;ll share more info aafter I figure out how to remap the keyboard;</li>
+after suspend-resume. I could barely see anything on it.
+<a href="http://localhost:4000/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixed here</a>!</li>
 <li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
 <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
+<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
+importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
+I&#8217;ll share more info after I figure out how to remap the keyboard;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
-it seems to have calibrated itself. I need to fix brightness and other issues before doing more
-tests;</li>
+it seems to have calibrated itself;</li>
 <li>Output sound works out of the box, haven&#8217;t tested camera and microphone input yet;</li>
 <li>ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;</li>
 <li>Fan speed needs adjustments;</li>
 <li>I have not yet tested presenting via projector but already have a few ideas how to make it work;</li>
 </ul>
 
+
+<p><strong>UPDATE 2015-04-28:</strong>
+Check the list above for links to wifi and backlight drivers and how to disable the boot chime.</p>
+
+<p><strong>UPDATE 2015-04-29:</strong>
+You can find precompiled RPMS in my
+<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 
 <h2>Fedora 22 on MacBook Air</h2>
 
@@ -1914,236 +2065,6 @@ uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">Speeding Up Celery Backends, Part 2</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-07T15:48:00+02:00" pubdate data-updated="true">Nov 7<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
-post I looked at a few celery backends and discovered they didn&#8217;t meet my needs.
-Why is the Celery stack slow? How slow is it actually?</p>
-
-<h2>How slow is Celery in practice</h2>
-
-<ul>
-<li>Queue: 500`000 msg/sec</li>
-<li>Kombu:  14`000 msg/sec</li>
-<li>Celery:  2`000 msg/sec</li>
-</ul>
-
-
-<h2>Detailed test description</h2>
-
-<p>There are three main components of the Celery stack:</p>
-
-<ul>
-<li>Celery itself</li>
-<li>Kombu which handles the transport layer</li>
-<li>Python Queue()&#8217;s underlying everything</li>
-</ul>
-
-
-<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
-run for 1 000 000 messages I got the following results:</p>
-
-<ul>
-<li>Raw Python Queue: Msgs per sec: 500`000</li>
-<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
-
-<ul>
-<li>with json serializer: Msgs per sec: 5`988</li>
-<li>with pickle serializer: Msgs per sec: 12`820</li>
-<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
-Msgs per sec: 14`492</li>
-</ul>
-</li>
-</ul>
-
-
-<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
-25`000 msg/sec then the performance is saturated. I&#8217;ve observed similar behavior
-with raw Python Queue()&#8217;s. I saw some cache buffers being managed internally to avoid OOM
-exceptions. This is probably the main reason performance becomes saturated over a longer
-execution.</p>
-
-<ul>
-<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
-loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
-</ul>
-
-
-<p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:
-</span><span class='line'>    for j in range(1000000):</span></code></pre></td></tr></table></div></figure>
-
-
-<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
-Celery results. Indeed inside Celery there&#8217;s the same <code>with producer.acquire(block=True)</code>
-construct which is executed every time a new task is published. Next I will be looking
-into this to figure out exactly where the slowliness comes from.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/05/speeding-up-celery-backends/">Speeding Up Celery Backends, Part 1</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-05T15:20:00+02:00" pubdate data-updated="true">Nov 5<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/11/05/speeding-up-celery-backends/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I&#8217;m working on an application which fires a lot of Celery tasks - the more
-the better! Unfortunately Celery backends seem to be rather slow :(.
-Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
-command for Django I was able to capture some metrics:</p>
-
-<ul>
-<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
-<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
-<li>Memory backend: around 3000 tasks/sec</li>
-</ul>
-
-
-<p>Not bad but I need in the order of 10000 tasks created per sec!
-The other noticeable thing is that memory backend isn&#8217;t much faster compared to
-the filesystem one! NB: all of these backends actually come from the kombu package.</p>
-
-<h2>Why is Celery slow ?</h2>
-
-<p>Using <code>celery_load_test.py</code> together with
-<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
-was able to pin-point some problematic areas:</p>
-
-<ul>
-<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
-self.encode_body() into base64 encoded string. Fixed with custom transport backend
-I called fastmemory which redefines the body_encoding property:</li>
-</ul>
-
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'>    <span class="nd">@cached_property</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">None</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>Celery uses json or pickle (or other) serializers to serialize the data.
-While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
-Replacing with a custom serializer which just returns
-the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</li>
-</ul>
-
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">s</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
-which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
-to 7000 tasks/sec.</li>
-</ul>
-
-
-<p>It&#8217;s clear that a constant UUID is not of any practical use but serves well to illustrate
-how much does this function affect performance.</p>
-
-<p><strong>Note:</strong>
-Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
-the most optimized transport backend. I&#8217;m not sure why is this. One possibility is the random
-UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
-generating more random numbers becomes slower. If you know better please tell me!</p>
-
-<p>I will be looking for a better understanding
-of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I&#8217;ll be
-exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
-If you have any suggestions or pointers please share them in the comments.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2193,6 +2114,14 @@ If you have any suggestions or pointers please share them in the comments.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixing Display Brightness on MacBook Air with RHEL 7</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/27/how-to-enable-backspace-key-to-navigate-back-in-firefox/">How to Enable backspace Key to Navigate Back in Firefox</a>
       </li>
     
@@ -2222,14 +2151,6 @@ If you have any suggestions or pointers please share them in the comments.</p>
     
       <li class="post">
         <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure targetcli to Listen on IPv4 and IPv6</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities with Gravatar</a>
       </li>
     
   </ul>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: RHEL | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/rhel/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-29T12:25:28+03:00</updated>
+  <updated>2015-04-29T13:16:59+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,93 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RHEL 7 Repository for MacBook Air]]></title>
+    <link href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/"/>
+    <updated>2015-04-29T13:00:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air</id>
+    <content type="html"><![CDATA[<p>I've made a repository with binary (x86_64 only) and source RPM packages which
+are missing from Red Hat Enterprise Linux 7 and necessary when using a
+MacBook Air. To install execute the commands below:</p>
+
+<pre><code>cd /etc/yum.repos.d/
+wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
+</code></pre>
+
+<h2>Wireless driver</h2>
+
+<pre><code>yum install kmod-wl
+</code></pre>
+
+<h2>Display backlight driver</h2>
+
+<pre><code>yum install kmod-mba6x_bl
+</code></pre>
+
+<p>And uncomment <code>/etc/X11/xorg.conf.d/98-mba_bl.conf</code>.</p>
+
+<p><em>Note:</em> the .spec file is available from
+<a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Fixing Display Brightness on MacBook Air with RHEL 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"/>
+    <updated>2015-04-29T12:14:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7</id>
+    <content type="html"><![CDATA[<p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
+and backlight behavior after suspend/resume. I've found the solution
+<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
+and only tweaked it slightly for my use case.</p>
+
+<h2>mba6x_bl doesn't load automatically</h2>
+
+<p>The reason being the driver matches older hardware:</p>
+
+<pre><code>$ modinfo mba6x_bl
+filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
+alias:          dmi:*:pnMacBookAir6*
+license:        GPL
+description:    MacBook Air 6,1 and 6,2 backlight driver
+author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
+rhelversion:    7.1
+srcversion:     4D069C8EB0E470AF27E7F8D
+depends:        video
+vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
+</code></pre>
+
+<p>My system is <strong>MacBookAir7,2</strong> and doesn't match the module alias. So a
+<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
+For more info about <code>MODULE_ALIAS</code> see
+<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
+Alternatively on Red Hat based systems you can place a config file
+under <code>/etc/sysconfig/modules</code>, see
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
+for more details.</p>
+
+<h2>intel_backlight driver is in the way</h2>
+
+<p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
+intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
+
+<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+Section "Device"
+    Identifier      "Intel Graphics"
+    Driver          "intel"
+    Option          "Backlight"     "mba6x_backlight"
+EndSection
+</code></pre>
+
+<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
+
+<h2>Everything in one go</h2>
+
+<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
+a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
@@ -188,23 +275,30 @@ days to check these out:</p>
 <li>Wireless card needs drivers; I've managed to compile them myself,
 <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
 <li>Display brightness doesn't seem to work at all. On top of that the display goes full black
-after suspend-resume. I could barely see anything on it.</li>
-<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
-importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I'll share more info aafter I figure out how to remap the keyboard;</li>
+after suspend-resume. I could barely see anything on it.
+<a href="http://localhost:4000/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixed here</a>!</li>
 <li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
 <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
+<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
+importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
+I'll share more info after I figure out how to remap the keyboard;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
-it seems to have calibrated itself. I need to fix brightness and other issues before doing more
-tests;</li>
+it seems to have calibrated itself;</li>
 <li>Output sound works out of the box, haven't tested camera and microphone input yet;</li>
 <li>ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;</li>
 <li>Fan speed needs adjustments;</li>
 <li>I have not yet tested presenting via projector but already have a few ideas how to make it work;</li>
 </ul>
 
+
+<p><strong>UPDATE 2015-04-28:</strong>
+Check the list above for links to wifi and backlight drivers and how to disable the boot chime.</p>
+
+<p><strong>UPDATE 2015-04-29:</strong>
+You can find precompiled RPMS in my
+<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 
 <h2>Fedora 22 on MacBook Air</h2>
 
@@ -214,96 +308,6 @@ Also for some reason the installation hit an error downloading a package and did
 but forced me to exit the process.</p>
 
 <p>I'll continue posting my updates until the system runs smoothly like it is supposed to.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to Find if LVM Volume is Thinly Provisioned]]></title>
-    <link href="http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/"/>
-    <updated>2015-04-14T15:40:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned</id>
-    <content type="html"><![CDATA[<p>The latest versions of Red Hat Enterprise Linux, CentOS and Fedora all
-support LVM thin provisioning. Here's how to tell if a logical volume
-has been thinly provisioned or not.</p>
-
-<p>Using <code>lvs</code> to display volume information look under the <em>Attr</em> column.
-Attribute values have the following meaning:</p>
-
-<p><blockquote><p>The lv_attr bits are:</p></p><p><p>1  Volume type: (C)ache, (m)irrored, (M)irrored without initial sync, (o)rigin,<br/>(O)rigin  with  merging  snapshot, (r)aid,  (R)aid  without  initial  sync,<br/>(s)napshot,  merging  (S)napshot, (p)vmove, (v)irtual, mirror or raid (i)mage,<br/>mirror or raid (I)mage out-of-sync, mirror (l)og device, under  (c)onversion,<br/>thin  (V)olume,  (t)hin pool, (T)hin pool data, raid or pool m(e)tadata or<br/>pool metadata spare.</p></blockquote></p>
-
-<p>This is how <code>lvs</code> looks like when you have a regular LVM setup:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1>lvs&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;p>  LV   VG              Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
-</span><span class='line'>  root rhel_dhcp70-183 -wi-ao---- 17,47g                                                  &lt;br/>
-</span><span class='line'>  swap rhel_dhcp70-183 -wi-ao----  2,00g  &lt;br/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>When using LVM thin provisioning you're looking for the left-most attribute bit
-to be V, t or T. Here's an example:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1>lvs&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;p>  LV     VG              Attr       LSize  Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert
-</span><span class='line'>  pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                          &lt;br/>
-</span><span class='line'>  root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                 &lt;br/>
-</span><span class='line'>  swap   rhel_dhcp71-101 -wi-ao----  2,00g &lt;br/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip: Linux-IO default LUN is 0 instead of 1]]></title>
-    <link href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/"/>
-    <updated>2015-04-08T15:09:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1</id>
-    <content type="html"><![CDATA[<p>I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
-and failed miserably when I switched to RHEL 7 iSCSI target.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> dhcp net0
-</span><span class='line'>DHCP (net0 52:54:00:12:34:56)... ok
-</span><span class='line'>iPXE> set keep-san 1
-</span><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
-</span><span class='line'>Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
-</span><span class='line'>iPXE></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says
-<blockquote><p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p></blockquote></p>
-
-<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
-</span><span class='line'>Registered SAN device 0x80
-</span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
 ]]></content>
   </entry>
   

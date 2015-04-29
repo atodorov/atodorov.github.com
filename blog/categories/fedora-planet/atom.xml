@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-29T12:25:28+03:00</updated>
+  <updated>2015-04-29T13:16:59+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,93 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RHEL 7 Repository for MacBook Air]]></title>
+    <link href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/"/>
+    <updated>2015-04-29T13:00:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air</id>
+    <content type="html"><![CDATA[<p>I've made a repository with binary (x86_64 only) and source RPM packages which
+are missing from Red Hat Enterprise Linux 7 and necessary when using a
+MacBook Air. To install execute the commands below:</p>
+
+<pre><code>cd /etc/yum.repos.d/
+wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
+</code></pre>
+
+<h2>Wireless driver</h2>
+
+<pre><code>yum install kmod-wl
+</code></pre>
+
+<h2>Display backlight driver</h2>
+
+<pre><code>yum install kmod-mba6x_bl
+</code></pre>
+
+<p>And uncomment <code>/etc/X11/xorg.conf.d/98-mba_bl.conf</code>.</p>
+
+<p><em>Note:</em> the .spec file is available from
+<a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Fixing Display Brightness on MacBook Air with RHEL 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"/>
+    <updated>2015-04-29T12:14:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7</id>
+    <content type="html"><![CDATA[<p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
+and backlight behavior after suspend/resume. I've found the solution
+<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
+and only tweaked it slightly for my use case.</p>
+
+<h2>mba6x_bl doesn't load automatically</h2>
+
+<p>The reason being the driver matches older hardware:</p>
+
+<pre><code>$ modinfo mba6x_bl
+filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
+alias:          dmi:*:pnMacBookAir6*
+license:        GPL
+description:    MacBook Air 6,1 and 6,2 backlight driver
+author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
+rhelversion:    7.1
+srcversion:     4D069C8EB0E470AF27E7F8D
+depends:        video
+vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
+</code></pre>
+
+<p>My system is <strong>MacBookAir7,2</strong> and doesn't match the module alias. So a
+<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
+For more info about <code>MODULE_ALIAS</code> see
+<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
+Alternatively on Red Hat based systems you can place a config file
+under <code>/etc/sysconfig/modules</code>, see
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
+for more details.</p>
+
+<h2>intel_backlight driver is in the way</h2>
+
+<p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
+intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
+
+<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+Section "Device"
+    Identifier      "Intel Graphics"
+    Driver          "intel"
+    Option          "Backlight"     "mba6x_backlight"
+EndSection
+</code></pre>
+
+<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
+
+<h2>Everything in one go</h2>
+
+<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
+a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
@@ -188,23 +275,30 @@ days to check these out:</p>
 <li>Wireless card needs drivers; I've managed to compile them myself,
 <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
 <li>Display brightness doesn't seem to work at all. On top of that the display goes full black
-after suspend-resume. I could barely see anything on it.</li>
-<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
-importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I'll share more info aafter I figure out how to remap the keyboard;</li>
+after suspend-resume. I could barely see anything on it.
+<a href="http://localhost:4000/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixed here</a>!</li>
 <li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
 <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
+<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
+importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
+I'll share more info after I figure out how to remap the keyboard;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
-it seems to have calibrated itself. I need to fix brightness and other issues before doing more
-tests;</li>
+it seems to have calibrated itself;</li>
 <li>Output sound works out of the box, haven't tested camera and microphone input yet;</li>
 <li>ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;</li>
 <li>Fan speed needs adjustments;</li>
 <li>I have not yet tested presenting via projector but already have a few ideas how to make it work;</li>
 </ul>
 
+
+<p><strong>UPDATE 2015-04-28:</strong>
+Check the list above for links to wifi and backlight drivers and how to disable the boot chime.</p>
+
+<p><strong>UPDATE 2015-04-29:</strong>
+You can find precompiled RPMS in my
+<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 
 <h2>Fedora 22 on MacBook Air</h2>
 
