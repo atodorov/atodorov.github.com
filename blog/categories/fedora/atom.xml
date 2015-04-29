@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-27T23:56:14+03:00</updated>
+  <updated>2015-04-29T12:25:28+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,210 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/"/>
-    <updated>2015-04-27T23:23:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux</id>
-    <content type="html"><![CDATA[<p>There is an easy way to disable the MacBook startup sound
-(boot chime) even after wiping out OS X and installing Linux.</p>
-
-<p>This sound can be easily disabled if you mute the volume in OS X
-and shutdown the computer. The value is stored in NVRAM.</p>
-
-<ol>
-<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
-OS X Internet recovery mode;</li>
-<li><p>Open the terminal and issue the following command</p>
-
-<pre><code> nvram SystemAudioVolume=%00
-</code></pre></li>
-<li><p>Reboot.</p></li>
-</ol>
-
-
-<p>Voila. In Linux try this:</p>
-
-<pre><code># efivar -l | grep SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolume"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00                                                |.               |
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolumeDB"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00 
-#
-</code></pre>
-
-<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
-doesn't seem to have any effect.</p>
-
-<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
-<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
-
-<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
-may sometimes corrupt your Apple firmware. I didn't research this any further. If you
-happen to figure out how to successfully write to these variables under Linux please let
-everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
-
-<p>Thanks to my reader Alexander, who
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
-in a previous blog post.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Compiling Broadcom wl-kmod WiFi Driver for RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/"/>
-    <updated>2015-04-27T12:17:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7</id>
-    <content type="html"><![CDATA[<p>After I got my
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air installed with RHEL 7.1</a>
-the first priority was getting wireless working.
-First check if your device isn't already supported
-<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn't</p>
-
-<pre><code>14e4:43a0: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
-</code></pre>
-
-<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
-For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
-<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild --rebuild</em> against each file
-and install <code>kmodtool</code> and <code>akmods</code>.</p>
-
-<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
-The first one is a helper tool containing list of recent kernels to build against,
-the later one is the driver source itself. Both needed minor modifications before
-building on RHEL 7.</p>
-
-<p>I've created my own
-<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
-for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I've introduced a
-<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
-which modifies the other patches in the package so it builds correctly on 7.1.</p>
-
-<p><strong>Note:</strong> I don't know if there's a define which can be used to detect if we're building
-on RHEL (maybe I can define my own) but direct kernel version number comparison doesn't
-work here because Red Hat backports chosen functionality from more recent kernels without
-changing the version number. This approach may not be the best one but I've tried to keep it clean
-for easier maintenance in the future and it got me started very quickly.</p>
-
-<p>Build the modified buildsys-build-rpmfusion and:</p>
-
-<pre><code>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
-</code></pre>
-
-<p>Build the wl-kmod package and:</p>
-
-<pre><code>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
-</code></pre>
-
-<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Installing Red Hat Enterprise Linux 7 on MacBook Air 2015]]></title>
-    <link href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/"/>
-    <updated>2015-04-26T20:33:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015</id>
-    <content type="html"><![CDATA[<p>Recently I've upgraded to a new
-<a href="http://www.amazon.com/gp/product/B00UGECEUY/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00UGECEUY&linkCode=as2&tag=atodorovorg-20&linkId=3YENGI5TIYKEC5GM">MacBook Air</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00UGECEUY" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-(13 inch, early 2015) laptop and luckily enough I'm running
-Red Hat Enterprise Linux 7.1 on it. Here is how to install it.</p>
-
-<h2>Prepare boot media</h2>
-
-<p>The easiest method is to boot from a USB stick which holds
-either the entire DVD or just boot.iso. Since I happened to find a 1GB only USB stick I
-went for the boot.iso. <code>dd if=boot.iso of=/dev/sdb</code> is the only thing you need to prepare
-the boot media.</p>
-
-<h2>Initial boot</h2>
-
-<p><img src="/images/mac/boot_menu.jpg" title="Mac boot menu" alt="Mac boot menu" /></p>
-
-<p>While computer is booting hold the (left) Alt (Option) key to enter <em>Startup Manager</em>.
-Wait a second or two before it displays your local hard drive and the USB boot media.
-Select the option <em>EFI boot</em> to boot the anaconda installer.</p>
-
-<h2>Installation</h2>
-
-<p>Booting from a boot.iso means I need to use the network to grab the rest of the installation.
-Because the wireless card needs proprietary drivers
-I've tried both USB to Ethernet adapter and USB tethering with my phone.</p>
-
-<p><strong>Note:</strong> initially I have forgotten to plug in my USB networking card which resulted in
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1191286">bug #1191286</a>. After cold-plugging and
-rebooting the system everything was fine. Subsequently I don't see any problems with the
-USB networking card. The bug should be fixed in RHEL 7.2 btw.</p>
-
-<p><strong>Note:</strong> I've been using a
-<a href="http://www.amazon.com/gp/product/B002PONXAI/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B002PONXAI&linkCode=as2&tag=atodorovorg-20&linkId=N4KGQKYSBSDWMMM6">USB docking station from Plugable</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B002PONXAI" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-for years because their products are Linux friendly. In particular the networking chip is ASIX and
-there is no problems with drivers for Linux.</p>
-
-<p>In my case I've wiped out the entire SSD disk b/c I don't care about dual boot.
-Previously I've heard about anaconda crashing while it tries to detect the Mac OS file system.
-I've played around with Rawhide before going for RHEL 7.1 and didn't see any problems related to
-foreign filesystems.</p>
-
-<p>I've gone with the default partitioning scheme while slightly modifing the partition sizes, etc.</p>
-
-<h2>Post install</h2>
-
-<p>There are several issues which still need attention. I didn't have enough time in the last few
-days to check these out:</p>
-
-<ul>
-<li>GNOME 3 sucks big time. Fortunately I was able to install MATE Desktop from EPEL;</li>
-<li>Wireless card needs drivers; I've managed to compile them myself,
-<a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">see here</a>;</li>
-<li>Display brightness doesn't seem to work at all. On top of that the display goes full black
-after suspend-resume. I could barely see anything on it.</li>
-<li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
-importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I'll share more info aafter I figure out how to remap the keyboard;</li>
-<li>There is a very annoying boot chime <strike>which I have no idea how to disable</strike>
-<a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
-<li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
-despite claims that this is not supported in Linux;</li>
-<li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
-it seems to have calibrated itself. I need to fix brightness and other issues before doing more
-tests;</li>
-<li>Output sound works out of the box, haven't tested camera and microphone input yet;</li>
-<li>ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;</li>
-<li>Fan speed needs adjustments;</li>
-<li>I have not yet tested presenting via projector but already have a few ideas how to make it work;</li>
-</ul>
-
-
-<h2>Fedora 22 on MacBook Air</h2>
-
-<p>I did try Fedora 22 Beta and experienced
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1215458">bug #1215458</a>.
-Also for some reason the installation hit an error downloading a package and didn't let me retry
-but forced me to exit the process.</p>
-
-<p>I'll continue posting my updates until the system runs smoothly like it is supposed to.</p>
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Videos from Bulgaria Web Summit 2015]]></title>
@@ -316,6 +112,451 @@ to be V, t or T. Here's an example:</p>
 </span><span class='line'>  pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                          &lt;br/>
 </span><span class='line'>  root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                 &lt;br/>
 </span><span class='line'>  swap   rhel_dhcp71-101 -wi-ao----  2,00g &lt;br/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Linux-IO default LUN is 0 instead of 1]]></title>
+    <link href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/"/>
+    <updated>2015-04-08T15:09:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1</id>
+    <content type="html"><![CDATA[<p>I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> dhcp net0
+</span><span class='line'>DHCP (net0 52:54:00:12:34:56)... ok
+</span><span class='line'>iPXE> set keep-san 1
+</span><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
+</span><span class='line'>Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
+</span><span class='line'>iPXE></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says
+<blockquote><p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p></blockquote></p>
+
+<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
+</span><span class='line'>Registered SAN device 0x80
+</span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to Configure targetcli to Listen on IPv4 and IPv6]]></title>
+    <link href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/"/>
+    <updated>2015-04-08T11:46:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6</id>
+    <content type="html"><![CDATA[<p>In order to configure <em>targetcli</em> to listen on both IPv4 and IPv6 one has to
+delete the default IPv4 portal configuration and replace it with IPv6 instead.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>targetcli&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/>
+</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
+</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
+</span><span class='line'>  o- 0.0.0.0:3260 ............................................................................................................. [OK]
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> delete 0.0.0.0 3260
+</span><span class='line'>Deleted network portal 0.0.0.0:3260
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Created network portal ::0:3260.
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
+</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
+</span><span class='line'>  o- [::0]:3260 ............................................................................................................... [OK]
+</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> exit&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>netstat -antp | grep 3260&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>tcp6       0      0 :::3260                 :::*                    LISTEN</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>It appears the target is listening only on IPv6 but in fact it will
+also accept connections over IPv4. I've tried it.</p>
+
+<p>This is a bit counter intuitive, however if you try adding the IPv6 address
+without removing the default IPv4 one <em>targetcli</em> will throw an error:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Could not create NetworkPortal in configFS.
+</span><span class='line'>/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>For more information about <em>targetcli</em> usage see my previous post
+<a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to Configure iSCSI Target on Red Hat Enterprise Linux 7]]></title>
+    <link href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/"/>
+    <updated>2015-04-07T15:52:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7</id>
+    <content type="html"><![CDATA[<p>Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
+has become the standard one included in the Linux kernel and the one present in
+Red Hat Enterprise Linux 7. The popular <em>scsi-target-utils</em> package is replaced
+by the newer <em>targetcli</em> which makes configuring a software iSCSI target quite
+different.</p>
+
+<p>In earlier versions one had to edit the <code>/etc/tgtd/targets.conf</code> file and
+<code>service tgtd restart</code>. Here is an example configuration:</p>
+
+<pre><code>&lt;target iqn.2008-09.com.example:server.target1&gt;
+    backing-store /dev/vg_iscsi/lv_lun1
+    backing-store /dev/vg_iscsi/lv_lun2
+
+    incominguser user2 secretpass23
+    outgoinguser userA secretpassA
+&lt;/target&gt;
+</code></pre>
+
+<p><em>targetcli</em> can be used either as an interactive shell or as stand alone commands.
+Here is an example shell session which creates a file-based disk image. Comments are
+provided inline:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>yum install -y targetcli&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>systemctl enable target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>targetcli&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>first create a disk image with the name of disk1. All files are sparsely created.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> backstores/fileio create disk1 /var/lib/libvirt/images/disk1.img 10G
+</span><span class='line'>Created fileio disk1 with size 10737418240&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create an iSCSI target. NB: this only defines the target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> iscsi/ create iqn.2015-04.com.example:target1
+</span><span class='line'>Created target iqn.2015-04.com.example:target1.
+</span><span class='line'>Created TPG 1.
+</span><span class='line'>Global pref auto_add_default_portal=true
+</span><span class='line'>Created default portal listening on all IPs (0.0.0.0), port 3260.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>TPGs (Target Portal Groups) allow the iSCSI to support multiple complete&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>configurations within one target. This is useful for complex quality-of-service&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>configurations. targetcli will automatically create one TPG when the target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>is created, and almost all setups only need one.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>switch to TPG definition for our target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>list the contents&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ..................................................................................................... [no-gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 0]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create a portal aka IP:port pairs which expose the target on the network&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> portals/ create
+</span><span class='line'>Using default IP port 3260
+</span><span class='line'>Binding to INADDR_ANY (0.0.0.0)
+</span><span class='line'>This NetworkPortal already exists in configFS.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>create logical units (LUNs) aka disks inside our target&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>in other words bind the target to its on-disk storage&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> luns/ create /backstores/fileio/disk1
+</span><span class='line'>Created LUN 0.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>disable authentication&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=0
+</span><span class='line'>Parameter authentication is now '0'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>enable read/write mode&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute demo_mode_write_protect=0
+</span><span class='line'>Parameter demo_mode_write_protect is now '0'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>Enable generate_node_acls mode. This can be thought of as&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>"ignore ACLs mode" -- both  authentication and LUN mapping&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>will then use the TPG settings.&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> set attribute generate_node_acls=1
+</span><span class='line'>Parameter generate_node_acls is now '1'.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> ls
+</span><span class='line'>o- tpg1 ........................................................................................................ [gen-acls, no-auth]
+</span><span class='line'>  o- acls ................................................................................................................ [ACLs: 0]
+</span><span class='line'>  o- luns ................................................................................................................ [LUNs: 1]
+</span><span class='line'>  | o- lun0 ..................................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  o- portals .......................................................................................................... [Portals: 1]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>o- 0.0.0.0:3260 ........................................................................................................... [OK]
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>exit or Ctrl+D will save the configuration under /etc/target/saveconfig.json&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi/iqn.20...:target1/tpg1> exit
+</span><span class='line'>Global pref auto_save_on_exit=true
+</span><span class='line'>Last 10 configs saved in /etc/target/backup.
+</span><span class='line'>Configuration saved to /etc/target/saveconfig.json&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>after creating a second target the layout looks like this&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> ls
+</span><span class='line'>o- / ......................................................................................................................... [...]
+</span><span class='line'>  o- backstores .............................................................................................................. [...]
+</span><span class='line'>  | o- block .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- fileio ................................................................................................. [Storage Objects: 2]
+</span><span class='line'>  | | o- disk1 .................................................. [/var/lib/libvirt/images/disk1.img (10.0GiB) write-back activated]
+</span><span class='line'>  | | o- disk2 .................................................. [/var/lib/libvirt/images/disk2.img (10.0GiB) write-back activated]
+</span><span class='line'>  | o- pscsi .................................................................................................. [Storage Objects: 0]
+</span><span class='line'>  | o- ramdisk ................................................................................................ [Storage Objects: 0]
+</span><span class='line'>  o- iscsi ............................................................................................................ [Targets: 2]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target1 ................................................................................... [TPGs: 1]
+</span><span class='line'>  | | o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  | |   o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  | |   o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  | |   | o- lun0 ............................................................... [fileio/disk1 (/var/lib/libvirt/images/disk1.img)]
+</span><span class='line'>  | |   o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  | |     o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  | o- iqn.2015-04.com.example:target2 ................................................................................... [TPGs: 1]
+</span><span class='line'>  |   o- tpg1 .................................................................................................. [gen-acls, no-auth]
+</span><span class='line'>  |     o- acls .......................................................................................................... [ACLs: 0]
+</span><span class='line'>  |     o- luns .......................................................................................................... [LUNs: 1]
+</span><span class='line'>  |     | o- lun0 ............................................................... [fileio/disk2 (/var/lib/libvirt/images/disk2.img)]
+</span><span class='line'>  |     o- portals .................................................................................................... [Portals: 1]
+</span><span class='line'>  |       o- 0.0.0.0:3260 ..................................................................................................... [OK]
+</span><span class='line'>  o- loopback ......................................................................................................... [Targets: 0]&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>enable CHAP and Reverse CHAP (mutual) for both discovery and login authentication&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>discovery authentication is enabled under the global iscsi node&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/> cd /iscsi
+</span><span class='line'>/iscsi> set discovery_auth enable=1
+</span><span class='line'>/iscsi> set discovery_auth userid=IncomingUser
+</span><span class='line'>/iscsi> set discovery_auth password=SomePassword1
+</span><span class='line'>/iscsi> set discovery_auth mutual_userid=OutgoingUser
+</span><span class='line'>/iscsi> set discovery_auth mutual_password=AnotherPassword2&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>login authentication is enabled either under the TPG node or under ACLs&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/iscsi> cd iqn.2015-04.com.example:target1/tpg1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set attribute authentication=1
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth userid=IncomingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth password=SomePassword3
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_userid=OutgoingUser2
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> set auth mutual_password=AnotherPassword4
+</span><span class='line'>/iscsi/iqn.20...:target1/tpg1> exit&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Hints:</p>
+
+<ul>
+<li>activating targetcli service at boot is mandatory, otherwise your configuration won’t be read after a reboot</li>
+<li>if you type <code>cd</code> <em>targetcli</em> will display an interactive node tree</li>
+<li>after configuration is saved you don't need to restart anything</li>
+<li>the old <em>scsi-target-utils</em> doesn't support discovery authentication</li>
+<li><em>targetcli</em> allows kernel memory to be shared as a block SCSI device via the
+ramdisk backstore. It also supports "nullio" mode, which discards all writes, and returns all-zeroes for reads.</li>
+<li>I'm having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
+the system has. I've still not figured that out entirely.</li>
+</ul>
+
+
+<p>For more information please read Chapter 25 from Red Hat's
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Storage_Administration_Guide/ch25.html">Storage Administration Guide</a></p>
 ]]></content>
   </entry>
   
