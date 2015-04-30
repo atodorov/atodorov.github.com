@@ -59,6 +59,8 @@ Post install
 There are several issues which still need attention. I didn't have enough time in the last few
 days to check these out:
 
+**Things which work**
+
 * GNOME 3 sucks big time. Fortunately I was able to install MATE Desktop from EPEL;
 * Wireless card needs drivers; I've managed to compile them myself, 
 [see here](/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/);
@@ -70,14 +72,22 @@ after suspend-resume. I could barely see anything on it.
 * The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
 importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
 [Fixed here](/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/);
-* *UPDATE 2015-04-30:* I'd like to remap the Cmd key to the Menu key found in PC keyboards;
-* I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
-despite claims that this is not supported in Linux;
+* Output sound works - both speakers and headphones;
+* Microphone works (tested with a hands free device);
 * Power manager was reporting my battery life totally wrong but after a full discharge/recharge
 it seems to have calibrated itself;
-* Output sound works out of the box, haven't tested camera and microphone input yet;
 * ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;
-* Fan speed needs adjustments; 
+*UPDATE 2015-04-30:* codecs seem to work now with the [NUX Desktop](http://li.nux.ro/repos.html)
+repos. Not sure what I was missing when testing it initially;
+
+**Things that don't work yet**
+
+* *UPDATE 2015-04-30:* I'd like to remap the Cmd key to the Menu key found in PC keyboards;
+* I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
+despite claims that this is not supported in Linux. Needs more testing;
+* Camera doesn't work, reverse engineering a [driver](https://github.com/patjak/bcwc_pcie)
+ is in progress;
+* I need a CPU temperature monitor and maybe CPU fan speed needs adjustments;
 * I have not yet tested presenting via projector but already have a few ideas how to make it work;
 
 **UPDATE 2015-04-28:**
@@ -86,6 +96,10 @@ Check the list above for links to wifi and backlight drivers and how to disable 
 **UPDATE 2015-04-29:**
 You can find precompiled RPMS in my
 [Macbook Air RHEL 7 repository](/blog/2015/04/29/rhel-7-repository-for-macbook-air/).
+
+**UPDATE 2015-04-30:**
+Added more links and split the list into stuff which already works and stuff that doesn't.
+
 
 
 
