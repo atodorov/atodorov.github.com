@@ -69,7 +69,8 @@ after suspend-resume. I could barely see anything on it.
 [Fixed here](/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/);
 * The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
 importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I'll share more info after I figure out how to remap the keyboard;
+[Fixed here](/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/);
+* *UPDATE 2015-04-30:* I'd like to remap the Cmd key to the Menu key found in PC keyboards;
 * I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;
 * Power manager was reporting my battery life totally wrong but after a full discharge/recharge
