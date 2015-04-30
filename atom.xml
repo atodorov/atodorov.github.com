@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-04-29T13:16:59+03:00</updated>
+  <updated>2015-04-30T11:48:05+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fixing Tilde and Function Keys Mapping for MacBook Air on Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/"/>
+    <updated>2015-04-30T11:33:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux</id>
+    <content type="html"><![CDATA[<p>Thera are two problems with the MacBook Air keyboard on Linux:</p>
+
+<p>Function keys and media keys are switched and by default you have to
+press Fn+F5 in order to refresh a browser page. The
+<a href="https://chaidarun.com/fedora-mbp">solution</a> is</p>
+
+<pre><code>echo 2 &gt; /sys/module/hid_apple/parameters/fnmode
+</code></pre>
+
+<p>The tilde key is mapped improperly, see
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025041#c2">RHBZ #1025041</a>.
+To fix it</p>
+
+<pre><code>echo 0 &gt; /sys/module/hid_apple/parameters/iso_layout
+</code></pre>
+
+<h2>Permanent fix</h2>
+
+<p>Either you have to add the above commands in a boot script or you can
+<code>yum install mba-kbd-fix</code> from my
+<a href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.
+The RPM source can be found <a href="https://github.com/atodorov/mba-kbd-fix">here</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RHEL 7 Repository for MacBook Air]]></title>
@@ -40,6 +70,11 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 
 <p><em>Note:</em> the .spec file is available from
 <a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
+
+<h2>Fixing keyboard mapping</h2>
+
+<pre><code>yum install mba-kbd-fix
+</code></pre>
 ]]></content>
   </entry>
   
@@ -291,7 +326,8 @@ after suspend-resume. I could barely see anything on it.
 <a href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Fixed here</a>;</li>
 <li>The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
 importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
-I&#8217;ll share more info after I figure out how to remap the keyboard;</li>
+<a href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">Fixed here</a>;</li>
+<li><em>UPDATE 2015-04-30:</em> I&#8217;d like to remap the Cmd key to the Menu key found in PC keyboards;</li>
 <li>I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
 despite claims that this is not supported in Linux;</li>
 <li>Power manager was reporting my battery life totally wrong but after a full discharge/recharge
@@ -1330,94 +1366,6 @@ was used. It is by no means production ready but does the job and was quick to w
 SMS to Globul via Twilio is as twice expensive. The total sums up to about 25 $.
 HackFMI team used two accounts to send the messages - one using the provided
 20$ upgrade code from Twilio and the second one was mine.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding Up Celery Backends, Part 3]]></title>
-    <link href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/"/>
-    <updated>2014-11-11T15:59:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3</id>
-    <content type="html"><![CDATA[<p>In the second part of this article we&#8217;ve seen
-<a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
-Now let&#8217;s explore what happens inside and see if we can&#8217;t speed things up.</p>
-
-<p>I&#8217;ve used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
-call graph visualizations of my application. It has the nice feature to also show
-execution time and use different colors for fast and slow operations.</p>
-
-<p>Full command line is:</p>
-
-<pre><code>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
-</code></pre>
-
-<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
-
-<h2>General findings</h2>
-
-<p><img src="http://atodorov.org/images/celery/general.png" title="call graph" alt="call graph" /></p>
-
-<ul>
-<li>The first four calls is where most of the time is spent as seen on the picture.</li>
-<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
-transport Kombu (not shown on picture)</li>
-<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
-<code>celery.app.base.Celery.send_task</code></li>
-<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
-rewrites the code.</li>
-</ul>
-
-
-<h2>More findings</h2>
-
-<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-
-<pre><code>349         with self.producer_or_acquire(producer) as P:
-350             self.backend.on_task_call(P, task_id)
-351             task_id = P.publish_task(
-352                 name, args, kwargs, countdown=countdown, eta=eta,
-353                 task_id=task_id, expires=expires,
-354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
-355                 reply_to=reply_to or self.oid, **options
-356             )
-</code></pre>
-
-<p><code>producer</code> is always None because delay() doesn&#8217;t pass it as argument.
-I&#8217;ve tried passing it explicitly to apply_async() as so:</p>
-
-<pre><code>from djapp.celery import *
-
-# app = debug_task._get_app() # if not defined in djapp.celery
-producer = app.amqp.producer_pool.acquire(block=True)
-debug_task.apply_async(producer=producer)
-</code></pre>
-
-<p>However this doesn&#8217;t speedup anything. If we replace the above code block like this:</p>
-
-<pre><code>349         with producer as P:
-</code></pre>
-
-<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
-
-<p>If you are unfamiliar with the with statement in Python please read
-<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
-a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
-<code>self.release()</code> on exit of the with statement.</p>
-
-<p>I also tried killing the with statement and using producer directly but with limited success. While
-it was not released(was non None) on subsequent iterations the memory usage grew much more and there
-wasn&#8217;t any performance boost.</p>
-
-<h2>Conclusion</h2>
-
-<p>The with statement is used throughout both Celery and Kombu and I&#8217;m not at all sure if
-there&#8217;s a mechanism for keep-alive connections. My time constraints are limited and I&#8217;ll probably
-not spend anymore time on this problem soon.</p>
-
-<p>Since my use case involves task producer and consumers on localhost I&#8217;ll try to workaround the
-current limitations by using Kombu directly
-(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
-uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
 ]]></content>
   </entry>
   
