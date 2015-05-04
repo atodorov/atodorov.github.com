@@ -5,12 +5,15 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Tip: Installing Missing debuginfo Packages for ABRT</title>
+  <title>Thunderbolt to Ethernet Adapter on Linux</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Every once in a while ABRT will tell you that reporting is disabled because
-backtrace is unusable. What it means is that it can&#8217;t read some of &hellip;">
+  <meta name="description" content="As it seems my
+Thunderbolt to gigabit Ethernet adapter
+works with
+RHEL 7 on a MacBook Air
+despite some reports it may not. After plugging the device &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +22,7 @@ backtrace is unusable. What it means is that it can&#8217;t read some of &hellip
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +82,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Tip: Installing Missing Debuginfo Packages for ABRT</h1>
+      <h1 class="entry-title">Thunderbolt to Ethernet Adapter on Linux</h1>
     
     
       <p class="meta">
@@ -95,7 +98,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-10-12T14:38:00+03:00" pubdate data-updated="true">Oct 12<span>th</span>, 2013</time>
+<time datetime="2015-05-04T22:27:00+03:00" pubdate data-updated="true">May 4<span>th</span>, 2015</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,20 +107,46 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p><img src="/images/reporting_disabled.png" title="Reporting disabled" alt="&quot;Reporting disabled&quot;" /></p>
+<div class="entry-content"><p>As it seems my
+<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+works with
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
+despite some reports it may not.</p>
 
-<p>Every once in a while ABRT will tell you that reporting is disabled because
-backtrace is unusable. What it means is that it can&#8217;t read some of the debugging
-symbols and the most likely reason for that is debuginfo packages are missing.</p>
+<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
+Detailed <em>lspci</em> below:</p>
 
-<p>To install them first locate the directory containing the files for that particular
-crash. Use the <code>executable</code> file to find out if you are looking into the correct
-directory. Then use this one liner to install the missing debuginfo packages.</p>
-
-<pre><code># pwd
-/var/tmp/abrt/ccpp-2013-10-10-15:55:18-15533
-# cat backtrace | grep lib | tr -s ' ' | cut -f4 -d' ' | sort | uniq | grep "/" | xargs rpm -qf --qf "%{name}\n" | xargs debuginfo-install -y
+<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
+    Subsystem: Apple Inc. Device 00f6
+    Physical Slot: 9
+    Flags: bus master, fast devsel, latency 0, IRQ 19
+    Memory at cd800000 (64-bit, prefetchable) [size=64K]
+    Memory at cd810000 (64-bit, prefetchable) [size=64K]
+    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
+    Capabilities: [48] Power Management version 3
+    Capabilities: [50] Vital Product Data
+    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
+    Capabilities: [ac] Express Endpoint, MSI 00
+    Capabilities: [100] Advanced Error Reporting
+    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
+    Capabilities: [150] Power Budgeting &lt;?&gt;
+    Capabilities: [160] Virtual Channel
+    Capabilities: [1b0] Latency Tolerance Reporting
+    Kernel driver in use: tg3
 </code></pre>
+
+<p>Unplugging and pluggin back in the network cable works as expected.
+I did see my computer freeze 2 out of 10 times when I&#8217;ve unplugged the Thunderbolt
+adapter but couldn&#8217;t reproduce it repliably or grab more info.</p>
+
+<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
+this
+<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
+I&#8217;m not sure why it works though.</p>
+
+<p>If I remember correctly <em>tg3</em> is available during installation so you should
+be able to use the Thunderbolt adapter instead of WiFi as well.</p>
 </div>
 
 
@@ -140,12 +169,12 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
   
 
 
-<time datetime="2013-10-12T14:38:00+03:00" pubdate data-updated="true">Oct 12<span>th</span>, 2013</time>
+<time datetime="2015-05-04T22:27:00+03:00" pubdate data-updated="true">May 4<span>th</span>, 2015</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/mac/'>Mac</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/fedora-planet/'>fedora.planet</a>
   
 </span>
 
@@ -174,10 +203,8 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/" title="Previous Post: Fedora 20 GNOME 3.10 Test Day Post-mortem">&laquo; Fedora 20 GNOME 3.10 Test Day Post-mortem</a>
+        <a class="basic-alignment left" href="/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/" title="Previous Post: Compiling Twinkle SIP Phone on RHEL 7">&laquo; Compiling Twinkle SIP Phone on RHEL 7</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/" title="Next Post: Tip: Extending Btrfs Filesystem for Fedora Virtual Machine">Tip: Extending Btrfs Filesystem for Fedora Virtual Machine &raquo;</a>
       
     </p>
   </footer>
@@ -323,8 +350,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/';
-        var disqus_url = 'http://atodorov.org/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/';
+        var disqus_identifier = 'http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/';
+        var disqus_url = 'http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/';
         var disqus_script = 'embed.js';
       
     (function () {

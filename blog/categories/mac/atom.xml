@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mac | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/mac/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-05-02T10:54:25+03:00</updated>
+  <updated>2015-05-04T22:53:39+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,54 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"/>
+    <updated>2015-05-04T22:27:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux</id>
+    <content type="html"><![CDATA[<p>As it seems my
+<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+works with
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
+despite some reports it may not.</p>
+
+<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
+Detailed <em>lspci</em> below:</p>
+
+<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
+    Subsystem: Apple Inc. Device 00f6
+    Physical Slot: 9
+    Flags: bus master, fast devsel, latency 0, IRQ 19
+    Memory at cd800000 (64-bit, prefetchable) [size=64K]
+    Memory at cd810000 (64-bit, prefetchable) [size=64K]
+    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
+    Capabilities: [48] Power Management version 3
+    Capabilities: [50] Vital Product Data
+    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
+    Capabilities: [ac] Express Endpoint, MSI 00
+    Capabilities: [100] Advanced Error Reporting
+    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
+    Capabilities: [150] Power Budgeting &lt;?&gt;
+    Capabilities: [160] Virtual Channel
+    Capabilities: [1b0] Latency Tolerance Reporting
+    Kernel driver in use: tg3
+</code></pre>
+
+<p>Unplugging and pluggin back in the network cable works as expected.
+I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
+adapter but couldn't reproduce it repliably or grab more info.</p>
+
+<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
+this
+<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
+I'm not sure why it works though.</p>
+
+<p>If I remember correctly <em>tg3</em> is available during installation so you should
+be able to use the Thunderbolt adapter instead of WiFi as well.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Fixing Tilde and Function Keys Mapping for MacBook Air on Linux]]></title>
@@ -199,56 +247,6 @@ everyone know in the comments (in case OS X recovery mode goes missing, you know
 <p>Thanks to my reader Alexander, who
 <a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
 in a previous blog post.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Compiling Broadcom wl-kmod WiFi Driver for RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/"/>
-    <updated>2015-04-27T12:17:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7</id>
-    <content type="html"><![CDATA[<p>After I got my
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air installed with RHEL 7.1</a>
-the first priority was getting wireless working.
-First check if your device isn't already supported
-<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn't</p>
-
-<pre><code>14e4:43a0: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
-</code></pre>
-
-<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
-For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
-<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild --rebuild</em> against each file
-and install <code>kmodtool</code> and <code>akmods</code>.</p>
-
-<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
-The first one is a helper tool containing list of recent kernels to build against,
-the later one is the driver source itself. Both needed minor modifications before
-building on RHEL 7.</p>
-
-<p>I've created my own
-<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
-for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I've introduced a
-<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
-which modifies the other patches in the package so it builds correctly on 7.1.</p>
-
-<p><strong>Note:</strong> I don't know if there's a define which can be used to detect if we're building
-on RHEL (maybe I can define my own) but direct kernel version number comparison doesn't
-work here because Red Hat backports chosen functionality from more recent kernels without
-changing the version number. This approach may not be the best one but I've tried to keep it clean
-for easier maintenance in the future and it got me started very quickly.</p>
-
-<p>Build the modified buildsys-build-rpmfusion and:</p>
-
-<pre><code>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
-</code></pre>
-
-<p>Build the wl-kmod package and:</p>
-
-<pre><code>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
-</code></pre>
-
-<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
 ]]></content>
   </entry>
   

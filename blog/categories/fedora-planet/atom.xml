@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-05-02T10:54:25+03:00</updated>
+  <updated>2015-05-04T22:53:39+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,54 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"/>
+    <updated>2015-05-04T22:27:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux</id>
+    <content type="html"><![CDATA[<p>As it seems my
+<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+works with
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
+despite some reports it may not.</p>
+
+<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
+Detailed <em>lspci</em> below:</p>
+
+<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
+    Subsystem: Apple Inc. Device 00f6
+    Physical Slot: 9
+    Flags: bus master, fast devsel, latency 0, IRQ 19
+    Memory at cd800000 (64-bit, prefetchable) [size=64K]
+    Memory at cd810000 (64-bit, prefetchable) [size=64K]
+    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
+    Capabilities: [48] Power Management version 3
+    Capabilities: [50] Vital Product Data
+    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
+    Capabilities: [ac] Express Endpoint, MSI 00
+    Capabilities: [100] Advanced Error Reporting
+    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
+    Capabilities: [150] Power Budgeting &lt;?&gt;
+    Capabilities: [160] Virtual Channel
+    Capabilities: [1b0] Latency Tolerance Reporting
+    Kernel driver in use: tg3
+</code></pre>
+
+<p>Unplugging and pluggin back in the network cable works as expected.
+I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
+adapter but couldn't reproduce it repliably or grab more info.</p>
+
+<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
+this
+<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
+I'm not sure why it works though.</p>
+
+<p>If I remember correctly <em>tg3</em> is available during installation so you should
+be able to use the Thunderbolt adapter instead of WiFi as well.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Compiling Twinkle SIP Phone on RHEL 7]]></title>
@@ -169,73 +217,6 @@ EndSection
 
 <p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
 a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/"/>
-    <updated>2015-04-27T23:23:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux</id>
-    <content type="html"><![CDATA[<p>There is an easy way to disable the MacBook startup sound
-(boot chime) even after wiping out OS X and installing Linux.</p>
-
-<p>This sound can be easily disabled if you mute the volume in OS X
-and shutdown the computer. The value is stored in NVRAM.</p>
-
-<ol>
-<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
-OS X Internet recovery mode;</li>
-<li><p>Open the terminal and issue the following command</p>
-
-<pre><code> nvram SystemAudioVolume=%00
-</code></pre></li>
-<li><p>Reboot.</p></li>
-</ol>
-
-
-<p>Voila. In Linux try this:</p>
-
-<pre><code># efivar -l | grep SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolume"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00                                                |.               |
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolumeDB"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00 
-#
-</code></pre>
-
-<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
-doesn't seem to have any effect.</p>
-
-<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
-<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
-
-<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
-may sometimes corrupt your Apple firmware. I didn't research this any further. If you
-happen to figure out how to successfully write to these variables under Linux please let
-everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
-
-<p>Thanks to my reader Alexander, who
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
-in a previous blog post.</p>
 ]]></content>
   </entry>
   
