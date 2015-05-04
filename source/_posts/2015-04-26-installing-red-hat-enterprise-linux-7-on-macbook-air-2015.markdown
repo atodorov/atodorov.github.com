@@ -45,6 +45,10 @@ USB networking card. The bug should be fixed in RHEL 7.2 btw.
 for years because their products are Linux friendly. In particular the networking chip is ASIX and
 there is no problems with drivers for Linux.
 
+**UPDATE 2015-05-04:**
+You should also be able to use a Thunderbolt to Ethernet adapter which is more
+common for Apple users. [See here for more info](/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/);
+
 In my case I've wiped out the entire SSD disk b/c I don't care about dual boot.
 Previously I've heard about anaconda crashing while it tries to detect the Mac OS file system.
 I've played around with Rawhide before going for RHEL 7.1 and didn't see any problems related to
@@ -77,16 +81,21 @@ importantly I need to press Fn to activate the F1, F2, etc keys which I use a lo
 * Power manager was reporting my battery life totally wrong but after a full discharge/recharge
 it seems to have calibrated itself;
 * ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;
-*UPDATE 2015-04-30:* codecs seem to work now with the [NUX Desktop](http://li.nux.ro/repos.html)
+ codecs seem to work now with the [NUX Desktop](http://li.nux.ro/repos.html)
 repos. Not sure what I was missing when testing it initially;
+* *UPDATE 2015-05-04:* I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work
+despite claims that this is not supported in Linux.
+[See here for more info](/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/);
+
 
 **Things that don't work yet**
 
 * *UPDATE 2015-04-30:* I'd like to remap the Cmd key to the Menu key found in PC keyboards;
-* I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work (at least partially)
-despite claims that this is not supported in Linux. Needs more testing;
 * Camera doesn't work, reverse engineering a [driver](https://github.com/patjak/bcwc_pcie)
  is in progress;
+* I'm missing the [ThinkLight](http://www.thinkwiki.org/wiki/ThinkLight) from my X220,
+however the integrated Broadcom FaceTime HD camera doesn't seem to have a LED flash
+which can be repurposed for this task;
 * I need a CPU temperature monitor and maybe CPU fan speed needs adjustments;
 * I have not yet tested presenting via projector but already have a few ideas how to make it work;
 
@@ -100,7 +109,8 @@ You can find precompiled RPMS in my
 **UPDATE 2015-04-30:**
 Added more links and split the list into stuff which already works and stuff that doesn't.
 
-
+**UPDATE 2015-05-04:**
+Added info about Thunderbolt to Ethernet adapter.
 
 
 Fedora 22 on MacBook Air
