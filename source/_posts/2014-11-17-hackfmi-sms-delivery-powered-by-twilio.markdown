@@ -3,7 +3,7 @@ layout: post
 title: "HackFMI SMS Delivery Powered by Twilio"
 date: 2014-11-17 15:00
 comments: true
-categories: 
+categories: ['Twilio']
 ---
 
 Ten days ago the regular [HackFMI](http://hackfmi.com/) competition was held.
