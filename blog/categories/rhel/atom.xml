@@ -4,7 +4,7 @@
   <title><![CDATA[Category: RHEL | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/rhel/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-05-05T13:25:53+03:00</updated>
+  <updated>2015-05-05T14:23:56+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Using USB to VGA Adapter on MacBook Air with Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/"/>
+    <updated>2015-05-05T14:02:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux</id>
+    <content type="html"><![CDATA[<p>A quick solution for MacBook Air users running Linux who want to
+use external projector is to use a USB to VGA adapter. Mine is
+<a href="http://www.amazon.com/gp/product/B004AIJE9G/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B004AIJE9G&linkCode=as2&tag=atodorovorg-20&linkId=74W7KWXBGC7SZ5QH">Plugable UGA-165</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B004AIJE9G" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+and it works great with Red Hat Enterprise Linux 7.1.</p>
+
+<p>After the device is plugged in the <em>udl</em> kernel module is loaded
+and a new framebuffer device is created (/dev/fb1 in my case). Using
+<em>mate-display-properties</em> I'm able to configure the 2nd monitor attached
+to the USB video card. I was able to succeffully display an OpenOffice
+presentation on the 2nd monitor and play YouTube video.</p>
+
+<p>All USB 2.0 devices from Plugable should be well supported on Linux.
+For USB 3.0 David Airlie from Red Hat is doing some reverse engineering
+but I have no idea what the status is. For more info see:</p>
+
+<ul>
+<li><a href="http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0">http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0</a></li>
+<li><a href="http://airlied.livejournal.com/80307.html">http://airlied.livejournal.com/80307.html</a></li>
+<li><a href="http://airlied.livejournal.com/80516.html">http://airlied.livejournal.com/80516.html</a></li>
+<li><a href="http://airlied.livejournal.com/80797.html">http://airlied.livejournal.com/80797.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
@@ -160,63 +190,6 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 
 <pre><code>yum install mba-kbd-fix
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fixing Display Brightness on MacBook Air with RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"/>
-    <updated>2015-04-29T12:14:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7</id>
-    <content type="html"><![CDATA[<p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
-and backlight behavior after suspend/resume. I've found the solution
-<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
-and only tweaked it slightly for my use case.</p>
-
-<h2>mba6x_bl doesn't load automatically</h2>
-
-<p>The reason being the driver matches older hardware:</p>
-
-<pre><code>$ modinfo mba6x_bl
-filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
-alias:          dmi:*:pnMacBookAir6*
-license:        GPL
-description:    MacBook Air 6,1 and 6,2 backlight driver
-author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
-rhelversion:    7.1
-srcversion:     4D069C8EB0E470AF27E7F8D
-depends:        video
-vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
-</code></pre>
-
-<p>My system is <strong>MacBookAir7,2</strong> and doesn't match the module alias. So a
-<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
-For more info about <code>MODULE_ALIAS</code> see
-<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
-Alternatively on Red Hat based systems you can place a config file
-under <code>/etc/sysconfig/modules</code>, see
-<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
-for more details.</p>
-
-<h2>intel_backlight driver is in the way</h2>
-
-<p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
-intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
-
-<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
-Section "Device"
-    Identifier      "Intel Graphics"
-    Driver          "intel"
-    Option          "Backlight"     "mba6x_backlight"
-EndSection
-</code></pre>
-
-<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
-
-<h2>Everything in one go</h2>
-
-<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
-a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 ]]></content>
   </entry>
   

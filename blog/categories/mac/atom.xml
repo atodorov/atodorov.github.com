@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mac | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/mac/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-05-05T13:25:53+03:00</updated>
+  <updated>2015-05-05T14:23:56+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Using USB to VGA Adapter on MacBook Air with Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/"/>
+    <updated>2015-05-05T14:02:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux</id>
+    <content type="html"><![CDATA[<p>A quick solution for MacBook Air users running Linux who want to
+use external projector is to use a USB to VGA adapter. Mine is
+<a href="http://www.amazon.com/gp/product/B004AIJE9G/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B004AIJE9G&linkCode=as2&tag=atodorovorg-20&linkId=74W7KWXBGC7SZ5QH">Plugable UGA-165</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B004AIJE9G" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+and it works great with Red Hat Enterprise Linux 7.1.</p>
+
+<p>After the device is plugged in the <em>udl</em> kernel module is loaded
+and a new framebuffer device is created (/dev/fb1 in my case). Using
+<em>mate-display-properties</em> I'm able to configure the 2nd monitor attached
+to the USB video card. I was able to succeffully display an OpenOffice
+presentation on the 2nd monitor and play YouTube video.</p>
+
+<p>All USB 2.0 devices from Plugable should be well supported on Linux.
+For USB 3.0 David Airlie from Red Hat is doing some reverse engineering
+but I have no idea what the status is. For more info see:</p>
+
+<ul>
+<li><a href="http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0">http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0</a></li>
+<li><a href="http://airlied.livejournal.com/80307.html">http://airlied.livejournal.com/80307.html</a></li>
+<li><a href="http://airlied.livejournal.com/80516.html">http://airlied.livejournal.com/80516.html</a></li>
+<li><a href="http://airlied.livejournal.com/80797.html">http://airlied.livejournal.com/80797.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
@@ -180,73 +210,6 @@ EndSection
 
 <p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
 a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Disabling MacBook Startup Sound in Linux]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/"/>
-    <updated>2015-04-27T23:23:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux</id>
-    <content type="html"><![CDATA[<p>There is an easy way to disable the MacBook startup sound
-(boot chime) even after wiping out OS X and installing Linux.</p>
-
-<p>This sound can be easily disabled if you mute the volume in OS X
-and shutdown the computer. The value is stored in NVRAM.</p>
-
-<ol>
-<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
-OS X Internet recovery mode;</li>
-<li><p>Open the terminal and issue the following command</p>
-
-<pre><code> nvram SystemAudioVolume=%00
-</code></pre></li>
-<li><p>Reboot.</p></li>
-</ol>
-
-
-<p>Voila. In Linux try this:</p>
-
-<pre><code># efivar -l | grep SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolume"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00                                                |.               |
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolumeDB"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00 
-#
-</code></pre>
-
-<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
-doesn't seem to have any effect.</p>
-
-<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
-<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
-
-<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
-may sometimes corrupt your Apple firmware. I didn't research this any further. If you
-happen to figure out how to successfully write to these variables under Linux please let
-everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
-
-<p>Thanks to my reader Alexander, who
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
-in a previous blog post.</p>
 ]]></content>
   </entry>
   
