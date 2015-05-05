@@ -86,7 +86,8 @@ repos. Not sure what I was missing when testing it initially;
 * *UPDATE 2015-05-04:* I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work
 despite claims that this is not supported in Linux.
 [See here for more info](/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/);
-
+* *UPDATE 2015-05-05:* Presenting via external projector works with a USB to VGA adapter.
+[See here](/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/);
 
 **Things that don't work yet**
 
@@ -97,7 +98,7 @@ despite claims that this is not supported in Linux.
 however the integrated Broadcom FaceTime HD camera doesn't seem to have a LED flash
 which can be repurposed for this task;
 * I need a CPU temperature monitor and maybe CPU fan speed needs adjustments;
-* I have not yet tested presenting via projector but already have a few ideas how to make it work;
+
 
 **UPDATE 2015-04-28:**
 Check the list above for links to wifi and backlight drivers and how to disable the boot chime.
@@ -111,6 +112,9 @@ Added more links and split the list into stuff which already works and stuff tha
 
 **UPDATE 2015-05-04:**
 Added info about Thunderbolt to Ethernet adapter.
+
+**UPDATE 2015-05-05:**
+Added info about USB to VGA adapter.
 
 
 Fedora 22 on MacBook Air
