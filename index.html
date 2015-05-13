@@ -9,10 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="A quick solution for MacBook Air users running Linux who want to
-use external projector is to use a USB to VGA adapter. Mine is
-Plugable UGA-165
-and &hellip;">
+  <meta name="description" content="Recently I&#8217;ve been looking into
+fixing tilde and Fn keys mapping for MacBook Air
+and thought I could use sysctl to permanently set the desired &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +77,64 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/">Why Does Sysctl Not Write Under /sys</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-13T12:34:00+03:00" pubdate data-updated="true">May 13<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently I&#8217;ve been looking into
+<a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">fixing tilde and Fn keys mapping for MacBook Air</a>
+and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
+possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is
+<a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
+
+<pre><code>static const char PROC_PATH[] = "/proc/sys/";
+</code></pre>
+
+<p>IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
+The only open question I see is backward compatibility - maybe adding new parameter (e.g. &#8211;sysfs)
+or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.</p>
+
+<p>I&#8217;ve asked sysctl maintainers on the
+<a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys">procps mailing list</a>
+but so far got no answer.</p>
+
+<p>Is anyone else interested in this? How do you set parameter values under /sys then ?</p>
+
+<p><strong>NOTE:</strong> for my particular purposes I could have used config files under
+<em>/etc/modprobe.d/</em> or a startup script (I used that) instead.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2841,62 +2898,6 @@ level 137 in the Owl part of the game (recorded by somebody else):</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/22/blackberry-z10-is-killing-my-wifi-router/">BlackBerry Z10 Is Killing My WiFi Router</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-12-22T15:46:00+02:00" pubdate data-updated="true">Dec 22<span>nd</span>, 2014</time>
-        
-         | <a href="/blog/2014/12/22/blackberry-z10-is-killing-my-wifi-router/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Few days ago I&#8217;ve resurrected my BlackBerry Z10 only to find out that it kills
-my WiFi router shortly after connecting to the network.
-It looks like many people are having the same problem with BlackBerry but most forum
-threads don&#8217;t offer a meaningful solution so I did some tests.</p>
-
-<p>Everything works fine when WiFi mode is set to either 11bgn mixed or 11n only and
-WiFi security is disabled.</p>
-
-<p>When using WPA2/Personal security mode and AES encryption the problem occurs
-regardless of which WiFi mode is used. There is another type of encryption called TKIP
-but the device itself warns that this is not supported by the 802.11n specification
-(all my devices use it anyway).</p>
-
-<p>So to recap:
-<strong>BlackBerry Z10 causes my TP-Link router to die if using WPA2/Personal security with
-AES Encryption. Switching to open network with MAC address filtering works fine!</strong></p>
-
-<p>I haven&#8217;t had the time to upgrade the firmware of this router and see if the problem persists.
-Most likely I&#8217;ll just go ahead and flash it with OpenWRT.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2946,6 +2947,10 @@ Most likely I&#8217;ll just go ahead and flash it with OpenWRT.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/">Why does sysctl not write under /sys</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/">Using USB to VGA Adapter on MacBook Air with Linux</a>
       </li>
     
@@ -2979,10 +2984,6 @@ Most likely I&#8217;ll just go ahead and flash it with OpenWRT.</p>
     
       <li class="post">
         <a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/">Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">Installing Red Hat Enterprise Linux 7 on MacBook Air 2015</a>
       </li>
     
   </ul>

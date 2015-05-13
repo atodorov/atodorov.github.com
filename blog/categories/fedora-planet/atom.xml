@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-05-05T14:23:56+03:00</updated>
+  <updated>2015-05-13T12:50:14+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,35 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Why does sysctl not write under /sys]]></title>
+    <link href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/"/>
+    <updated>2015-05-13T12:34:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys</id>
+    <content type="html"><![CDATA[<p>Recently I've been looking into
+<a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">fixing tilde and Fn keys mapping for MacBook Air</a>
+and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
+possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is
+<a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
+
+<pre><code>static const char PROC_PATH[] = "/proc/sys/";
+</code></pre>
+
+<p>IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
+The only open question I see is backward compatibility - maybe adding new parameter (e.g. --sysfs)
+or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.</p>
+
+<p>I've asked sysctl maintainers on the
+<a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys">procps mailing list</a>
+but so far got no answer.</p>
+
+<p>Is anyone else interested in this? How do you set parameter values under /sys then ?</p>
+
+<p><strong>NOTE:</strong> for my particular purposes I could have used config files under
+<em>/etc/modprobe.d/</em> or a startup script (I used that) instead.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using USB to VGA Adapter on MacBook Air with Linux]]></title>
@@ -155,41 +184,6 @@ To fix it</p>
 <code>yum install mba-kbd-fix</code> from my
 <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.
 The RPM source can be found <a href="https://github.com/atodorov/mba-kbd-fix">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RHEL 7 Repository for MacBook Air]]></title>
-    <link href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/"/>
-    <updated>2015-04-29T13:00:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air</id>
-    <content type="html"><![CDATA[<p>I've made a repository with binary (x86_64 only) and source RPM packages which
-are missing from Red Hat Enterprise Linux 7 and necessary when using a
-MacBook Air. To install execute the commands below:</p>
-
-<pre><code>cd /etc/yum.repos.d/
-wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
-</code></pre>
-
-<h2>Wireless driver</h2>
-
-<pre><code>yum install kmod-wl
-</code></pre>
-
-<h2>Display backlight driver</h2>
-
-<pre><code>yum install kmod-mba6x_bl
-</code></pre>
-
-<p>And uncomment <code>/etc/X11/xorg.conf.d/98-mba_bl.conf</code>.</p>
-
-<p><em>Note:</em> the .spec file is available from
-<a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
-
-<h2>Fixing keyboard mapping</h2>
-
-<pre><code>yum install mba-kbd-fix
-</code></pre>
 ]]></content>
   </entry>
   
