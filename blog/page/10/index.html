@@ -9,9 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Difio is hosted on OpenShift.
-During development I often need to spin-up another copy of Difio to use for testing and development.
-With OpenShift &hellip;">
+  <meta name="description" content="If you are already running some cool application on OpenShift
+it could be the case that you have to update some of the packages installed as &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +76,154 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/02/18/how-to-update-dependencies-on-openshift/">How to Update Dependencies on OpenShift</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-18T01:00:00+02:00" pubdate data-updated="true">Feb 18<span>th</span>, 2012</time>
+        
+         | <a href="/blog/2012/02/18/how-to-update-dependencies-on-openshift/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>If you are already running some cool application on <a href="http://openshift.redhat.com">OpenShift</a>
+it could be the case that you have to update some of the packages installed as dependencies.
+Here is an example for an application using the python-2.6 cartridge.</p>
+
+<h2>Pull latest upstream packages</h2>
+
+<p>The most simple method is to update everything to the latest upstream versions.</p>
+
+<ol>
+<li><p>Backup! Backup! Backup!</p>
+
+<pre><code> rhc-snapshot -a mycoolapp
+ mv mycoolapp.tar.gz mycoolapp-backup-before-update.tar.gz
+</code></pre></li>
+<li><p>If you haven&#8217;t specified any particular version in <code>setup.py</code> it will
+look like this:</p></li>
+</ol>
+
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">install_requires</span><span class="o">=</span><span class="p">[</span>
+</span><span class='line'>                <span class="s">&#39;difio-openshift-python&#39;</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&#39;MySQL-python&#39;</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&#39;Markdown&#39;</span><span class="p">,</span>
+</span><span class='line'>               <span class="p">],</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li><p>To update simply push to OpenShift instructing it to rebuild your virtualenv:</p>
+
+<pre><code> cd mycoolapp/
+ touch .openshift/markers/force_clean_build
+ git add .openshift/markers/force_clean_build
+ git commit -m "update to latest upstream"
+ git push
+</code></pre></li>
+</ol>
+
+
+<p>Voila! The environment hosting your application is rebuilt from scratch.</p>
+
+<h2>Keeping some packages unchanged</h2>
+
+<p>Suppose that before the update you have <code>Markdown-2.0.1</code> and you want to keep it!
+This is easily solved by adding versioned dependency to <code>setup.py</code></p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;Markdown&#39;,</span>
+</span><span class='line'><span class="gi">+       &#39;Markdown==2.0.1&#39;,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you do that OpenShift will install the same <code>Markdown</code> version when rebuilding your
+application. Everything else will use the latest available versions.</p>
+
+<p><strong>Note:</strong> after the update it&#8217;s recommended that you remove the
+<code>.openshift/markers/force_clean_build</code> file. This will speed up the push/build process
+and will not surprise you with unwanted changes.</p>
+
+<h2>Update only selected packages</h2>
+
+<p>Unless your application is really simple or you have tested the updates, I suspect that
+you want to update only selected packages. This can be done without rebuilding the whole
+virtualenv. Use versioned dependencies in <code>setup.py</code> :</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;Markdown==2.0.1&#39;,</span>
+</span><span class='line'><span class="gd">-       &#39;django-countries&#39;,</span>
+</span><span class='line'><span class="gi">+       &#39;Markdown&gt;=2.1&#39;,</span>
+</span><span class='line'><span class="gi">+       &#39;django-countries&gt;=1.1.2&#39;,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>No need for <code>force_clean_build</code> this time. Just</p>
+
+<pre><code>    git commit &amp;&amp; git push
+</code></pre>
+
+<p>At the time of writing my application was using <code>Markdown-2.0.1</code> and <code>django-countries-1.0.5</code>.
+Then it updated to <code>Markdown-2.1.1</code> and <code>django-countires-1.1.2</code> which also happened to be
+the latest versions.</p>
+
+<p><strong>Note:</strong> this will not work without <code>force_clean_build</code></p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;django-countries==1.0.5&#39;,</span>
+</span><span class='line'><span class="gi">+       &#39;django-countries&#39;,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Warning</h2>
+
+<p>OpenShift uses a local mirror of <a href="http://pypi.python.org">Python Package Index</a>.
+It seems to be updated every 24 hours or so. Have this in mind if you want to update
+to a package that was just released. It will not work! See
+<a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">How to Deploy Python Hotfix on OpenShift</a>
+if you wish to work around this limitation.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -733,6 +880,10 @@ A demonstration video from the same deployment can be found at <a href="http://w
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/05/22/devit-conf-2015-impressions/">DEVit Conf 2015 Impressions</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/05/20/free-software-testing-books/">Free Software Testing Books</a>
       </li>
     
@@ -766,10 +917,6 @@ A demonstration video from the same deployment can be found at <a href="http://w
     
       <li class="post">
         <a href="/blog/2015/04/27/how-to-enable-backspace-key-to-navigate-back-in-firefox/">How to Enable backspace Key to Navigate Back in Firefox</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Disabling MacBook Startup Sound in Linux</a>
       </li>
     
   </ul>
