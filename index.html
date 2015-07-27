@@ -9,9 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Open Data and Intelligent Government
-is the name of upcoming event organized by Sofia Tech Park
-on July 14th. The (preliminary) topics for this event &hellip;">
+  <meta name="description" content="If you are working with Python and writing unit tests chances are you are
+familiar with the coverage reporting
+tool. However there are testing &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,82 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">Call for Ideas: Graphical Test Coverage Reports</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-27T13:04:00+03:00" pubdate data-updated="true">Jul 27<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>If you are working with Python and writing unit tests chances are you are
+familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
+tool. However there are testing scenarios in which we either don&#8217;t use unit tests
+or maybe execute different code paths(test cases) independent of each other.</p>
+
+<p>For example, this is the case with installation testing in Fedora. Because anaconda
+- the installer is very complex the easiest way is to test it live, not with unit tests.
+Even though we can get a coverage report (anaconda is written in Python) it reflects
+only the test case it was collected from.</p>
+
+<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
+report. This can tell you how much test coverage you have across all your tests.</p>
+
+<p>As far as I can tell Python&#8217;s coverage doesn&#8217;t tell you how many times a particular
+line of code has been executed. It also doesn&#8217;t tell you which test cases executed
+a particular line
+(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
+In the Fedora example, I have the feeling many of our tests are touching the same
+code base and not contributing that much to the overall test coverage.
+So I started working on these items.</p>
+
+<p>I imagine a script which will read coverage data from several test executions
+(preferably in JSON format,
+<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a
+graphical report similar to what GitHub does for your commit activity.</p>
+
+<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
+
+<p>The example uses darker colors to indicate more line executions, lighter for less
+executions. Check the HTML for the actual numbers b/c there are no hints yet.
+The input JSON files are
+<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
+the script to generate the above HTML is at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
+
+<p>Now I need your ideas and comments!</p>
+
+<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
+How do they look like ?</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2792,92 +2868,6 @@ the system has. I&#8217;ve still not figured that out entirely.</li>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/">Mining E-mail Identities With Gravatar</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-03-16T23:16:00+02:00" pubdate data-updated="true">Mar 16<span>th</span>, 2015</time>
-        
-         | <a href="/blog/2015/03/16/mining-e-mail-identities-with-gravatar/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently I&#8217;ve laid my hands on a list of little over 7000 email addresses.
-This begs the question how much of them are still in use and what for ?</p>
-
-<p>My data is not fresh so I&#8217;ve uploaded the list to Facebook and created a custom
-audience. 2400 of 7129 addresses were recognized - 30% of these addresses are
-on Facebook and easy to target! Need to figure out which ones.</p>
-
-<p>I could have tried some sort of batch search combined with the custom audience
-functionality but I didn&#8217;t find an API for that and decided not to bother.
-Instead I&#8217;ve opted for Gravatar.</p>
-
-<figure class='code'><figcaption><span>gravatars.sh </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">while </span><span class="nb">read </span>LINE; <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="nv">HASH</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> -n <span class="nv">$LINE</span> | md5sum | cut -f1 -d<span class="s1">&#39; &#39;</span><span class="sb">`</span>
-</span><span class='line'>    wget <span class="s2">&quot;http://gravatar.com/avatar/$HASH&quot;</span> -O <span class="s2">&quot;$LINE&quot;</span>
-</span><span class='line'><span class="k">done</span> &lt; /dev/stdin
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Feed <code>gravatars.sh</code> with the email list and it will download all images to the
-current working directory and use the address as the file name. After
-<code>md5sum *@* | cut -f1 -d' ' | sort | uniq -c</code> I quickly noticed the following:</p>
-
-<ul>
-<li>4563 addresses have the <code>a1719586837f0fdac8835f74cf4ef04a</code> check-sum; These are
-not found on Gravatar.</li>
-<li>2400 addresses have the <code>d5fe5cbcc31cff5f8ac010db72eb000c</code> check-sum. These are
-addresses which are registered with Gravatar but didn&#8217;t bother to change the default
-image.</li>
-<li>166 remaining addresses, each with a different check-sum. These have their custom
-pictures uploaded to Gravatar and probably much more actively used.</li>
-</ul>
-
-
-<p>A second check with Facebook reveals 900 out of these 2566 addresses were recognized.
-This begs the question is Facebook showing incorrect stats or are there 1500 addresses
-using Gravatar (or have used at some point) which are not on Facebook ?</p>
-
-<p>At least some of the remaining 4000 addresses are still active and used to send emails.
-Next I will be looking for ways to identify them. Any suggestions and comments are more
-than welcome!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2927,6 +2917,10 @@ than welcome!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">Call for Ideas: Graphical Test Coverage Reports</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/07/01/open-data-event-coming-to-sofia/">Open Data Event Coming to Sofia</a>
       </li>
     
@@ -2960,10 +2954,6 @@ than welcome!</p>
     
       <li class="post">
         <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/">Fixing Display Brightness on MacBook Air with RHEL 7</a>
       </li>
     
   </ul>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-07-01T12:17:16+03:00</updated>
+  <updated>2015-07-27T13:34:41+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Call for Ideas: Graphical Test Coverage Reports]]></title>
+    <link href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/"/>
+    <updated>2015-07-27T13:04:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports</id>
+    <content type="html"><![CDATA[<p>If you are working with Python and writing unit tests chances are you are
+familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
+tool. However there are testing scenarios in which we either don't use unit tests
+or maybe execute different code paths(test cases) independent of each other.</p>
+
+<p>For example, this is the case with installation testing in Fedora. Because anaconda
+- the installer is very complex the easiest way is to test it live, not with unit tests.
+Even though we can get a coverage report (anaconda is written in Python) it reflects
+only the test case it was collected from.</p>
+
+<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
+report. This can tell you how much test coverage you have across all your tests.</p>
+
+<p>As far as I can tell Python's coverage doesn't tell you how many times a particular
+line of code has been executed. It also doesn't tell you which test cases executed
+a particular line
+(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
+In the Fedora example, I have the feeling many of our tests are touching the same
+code base and not contributing that much to the overall test coverage.
+So I started working on these items.</p>
+
+<p>I imagine a script which will read coverage data from several test executions
+(preferably in JSON format,
+<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a
+graphical report similar to what GitHub does for your commit activity.</p>
+
+<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
+
+<p>The example uses darker colors to indicate more line executions, lighter for less
+executions. Check the HTML for the actual numbers b/c there are no hints yet.
+The input JSON files are
+<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
+the script to generate the above HTML is at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
+
+<p>Now I need your ideas and comments!</p>
+
+<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
+How do they look like ?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[DEVit Conf 2015 Impressions]]></title>
@@ -164,54 +211,6 @@ but I have no idea what the status is. For more info see:</p>
 <li><a href="http://airlied.livejournal.com/80797.html">http://airlied.livejournal.com/80797.html</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
-    <link href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"/>
-    <updated>2015-05-04T22:27:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux</id>
-    <content type="html"><![CDATA[<p>As it seems my
-<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-works with
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
-despite some reports it may not.</p>
-
-<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
-Detailed <em>lspci</em> below:</p>
-
-<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
-    Subsystem: Apple Inc. Device 00f6
-    Physical Slot: 9
-    Flags: bus master, fast devsel, latency 0, IRQ 19
-    Memory at cd800000 (64-bit, prefetchable) [size=64K]
-    Memory at cd810000 (64-bit, prefetchable) [size=64K]
-    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
-    Capabilities: [48] Power Management version 3
-    Capabilities: [50] Vital Product Data
-    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
-    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
-    Capabilities: [ac] Express Endpoint, MSI 00
-    Capabilities: [100] Advanced Error Reporting
-    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
-    Capabilities: [150] Power Budgeting &lt;?&gt;
-    Capabilities: [160] Virtual Channel
-    Capabilities: [1b0] Latency Tolerance Reporting
-    Kernel driver in use: tg3
-</code></pre>
-
-<p>Unplugging and pluggin back in the network cable works as expected.
-I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
-adapter but couldn't reproduce it repliably or grab more info.</p>
-
-<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
-this
-<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
-I'm not sure why it works though.</p>
-
-<p>If I remember correctly <em>tg3</em> is available during installation so you should
-be able to use the Thunderbolt adapter instead of WiFi as well.</p>
 ]]></content>
   </entry>
   

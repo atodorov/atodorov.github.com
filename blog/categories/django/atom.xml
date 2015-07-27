@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Django | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-07-01T12:17:16+03:00</updated>
+  <updated>2015-07-27T13:34:41+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Call for Ideas: Graphical Test Coverage Reports]]></title>
+    <link href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/"/>
+    <updated>2015-07-27T13:04:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports</id>
+    <content type="html"><![CDATA[<p>If you are working with Python and writing unit tests chances are you are
+familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
+tool. However there are testing scenarios in which we either don't use unit tests
+or maybe execute different code paths(test cases) independent of each other.</p>
+
+<p>For example, this is the case with installation testing in Fedora. Because anaconda
+- the installer is very complex the easiest way is to test it live, not with unit tests.
+Even though we can get a coverage report (anaconda is written in Python) it reflects
+only the test case it was collected from.</p>
+
+<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
+report. This can tell you how much test coverage you have across all your tests.</p>
+
+<p>As far as I can tell Python's coverage doesn't tell you how many times a particular
+line of code has been executed. It also doesn't tell you which test cases executed
+a particular line
+(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
+In the Fedora example, I have the feeling many of our tests are touching the same
+code base and not contributing that much to the overall test coverage.
+So I started working on these items.</p>
+
+<p>I imagine a script which will read coverage data from several test executions
+(preferably in JSON format,
+<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a
+graphical report similar to what GitHub does for your commit activity.</p>
+
+<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
+
+<p>The example uses darker colors to indicate more line executions, lighter for less
+executions. Check the HTML for the actual numbers b/c there are no hints yet.
+The input JSON files are
+<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
+the script to generate the above HTML is at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
+
+<p>Now I need your ideas and comments!</p>
+
+<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
+How do they look like ?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[DEVit Conf 2015 Impressions]]></title>
@@ -242,85 +289,6 @@ not spend anymore time on this problem soon.</p>
 current limitations by using Kombu directly
 (see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
 uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding up Celery Backends, Part 2]]></title>
-    <link href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/"/>
-    <updated>2014-11-07T15:48:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2</id>
-    <content type="html"><![CDATA[<p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
-post I looked at a few celery backends and discovered they didn't meet my needs.
-Why is the Celery stack slow? How slow is it actually?</p>
-
-<h2>How slow is Celery in practice</h2>
-
-<ul>
-<li>Queue: 500`000 msg/sec</li>
-<li>Kombu:  14`000 msg/sec</li>
-<li>Celery:  2`000 msg/sec</li>
-</ul>
-
-
-<h2>Detailed test description</h2>
-
-<p>There are three main components of the Celery stack:</p>
-
-<ul>
-<li>Celery itself</li>
-<li>Kombu which handles the transport layer</li>
-<li>Python Queue()'s underlying everything</li>
-</ul>
-
-
-<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
-run for 1 000 000 messages I got the following results:</p>
-
-<ul>
-<li>Raw Python Queue: Msgs per sec: 500`000</li>
-<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
-
-<ul>
-<li>with json serializer: Msgs per sec: 5`988</li>
-<li>with pickle serializer: Msgs per sec: 12`820</li>
-<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
-Msgs per sec: 14`492</li>
-</ul>
-</li>
-</ul>
-
-
-<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
-25`000 msg/sec then the performance is saturated. I've observed similar behavior
-with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
-exceptions. This is probably the main reason performance becomes saturated over a longer
-execution.</p>
-
-<ul>
-<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
-loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
-</ul>
-
-
-<p>Another interesting this worth outlining - in the kombu test there are these lines:
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>for j in range(1000000):
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
-Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
-construct which is executed every time a new task is published. Next I will be looking
-into this to figure out exactly where the slowliness comes from.</p>
 ]]></content>
   </entry>
   
