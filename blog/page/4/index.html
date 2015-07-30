@@ -9,8 +9,10 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Here are some highlights from the past week discussions in Fedora which I found
-interesting or participated in. Call to Action: Improving Overall &hellip;">
+  <meta name="description" content="Previously I mentioned about testing
+fonts but didn&#8217;t have any idea how this is done. Authors
+Khaled Hosny of Amiri Font and Steve White of
+GNU &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +78,79 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/04/how-do-you-test-fonts/">How Do You Test Fonts</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-04T21:30:00+02:00" pubdate data-updated="true">Mar 4<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/03/04/how-do-you-test-fonts/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="/blog/2014/03/03/last-week-in-fedora-qa/">Previously</a> I mentioned about testing
+fonts but didn&#8217;t have any idea how this is done. Authors
+Khaled Hosny of <a href="http://www.amirifont.org/">Amiri Font</a> and Steve White of
+<a href="http://www.gnu.org/software/freefont/">GNU FreeFont</a> provided valuable insight
+and material for further reading. I&#8217;ve asked them:</p>
+
+<ul>
+<li>What is your approach for testing ?</li>
+<li>What kind of problems is your test suite designed for ?</li>
+</ul>
+
+
+<p>Here&#8217;s what they say:</p>
+
+<blockquote><p>Currently my test suite consists of text strings (or lists of code<br/>points) and expected output glyph sequences and then use HarfBuzz<br/>(through its hb-shape command line tool) to check that the fonts always<br/>output the expected sequence of glyphs, sometimes with the expected<br/>positioning as well. Amiri is a complex font that have many glyph<br/>substitution and positioning rules, so the test suite is designed to<br/>make sure those rules are always executed correctly to catch regressions<br/>in the font (or in HarfBuzz, which sometimes happens since the things I<br/>do in my fonts are not always that common).</p><p>I think Lohit project do similar testing for their fonts, and HarfBuzz<br/>itself has a similar test suite with a bunch of nice scripts (though<br/>they are not installed when building HarfBuzz, yet[1]).</p><p>Recently I added more kinds of tests, namely checking that OTS[2]<br/>sanitizes the fonts successfully as this is important for using them on<br/>the web, and a test for a common mistakes I made in my feature files<br/>that result in unexpected blank glyphs in the fonts.</p><footer><strong>Khaled Hosny</strong> <cite>Amiri Font</cite></footer></blockquote>
+
+
+<ol>
+<li><a href="https://github.com/behdad/harfbuzz/pull/12">https://github.com/behdad/harfbuzz/pull/12</a></li>
+<li><a href="https://github.com/khaledhosny/ots">https://github.com/khaledhosny/ots</a></li>
+</ol>
+
+
+<blockquote><p>The answer is complicated.  I&#8217;ll do what I can to answer.</p><p>First, the FontForge application has a &#8220;verification&#8221; function which<br/>can be run from a script, and which identifies numerous technical<br/>problems.</p><p>FontForge also has a &#8220;Find Problems&#8221; function that I run by hand.</p><p>The monospaced face has special restrictions, first that all glyphs of<br/>non-zero width must be of the same width, and second, that all glyphs<br/>lie within the vertical bounds of the font.</p><p>Beside this, I have several other scripts that check for a few things<br/>that FontForge doesn&#8217;t (duplicate names, that glyph slots agree with<br/>Unicode code within Unicode character blocks).</p><p>Several tests scripts have yet to be uploaded to the version control<br/>system &#8211; because I&#8217;m unsure of them.</p><p>There is a more complicated check of TrueType tables, which attempts<br/>to find cases of tables that have been &#8220;shadowed&#8221; by the<br/>script/language specification of another table.  This is helpful, but<br/>works imperfectly.</p><p>ALL THAT SAID,</p><p>In the end, every script used in the font has to be visually checked.<br/>This process takes me weeks, and there&#8217;s nothing systematic about it,<br/>except that I look at printout of documents in each language to see if<br/>things have gone awry.</p><p>For a few documents in a few languages, I have images of how text<br/>*should* look, and can compare that visually (especially important for<br/>complex scripts.)</p><p>A few years back, somebody wrote a clever script that generated images<br/>of text and compared them pixel-by-pixel.  This was a great idea, and<br/>I wish I could use it more effectively, but the problem was that it<br/>was much too sensitive.  A small change to the font (e.g. PostScript<br/>parameters) would cause a small but global change in the rendering.<br/>Also the rendering could vary from one version of the rendering<br/>software to another.  So I don&#8217;t use this anymore.</p><p>That&#8217;s all I can think of right now.</p><p>In fact, testing has been a big problem in getting releases out.  In<br/>the past, each release has taken at least two weeks to test, and then<br/>another week to fix and bundle&#8230;if I was lucky.  And for the past<br/>couple of years, I just haven&#8217;t been able to justify the time<br/>expenditure.  (Besides this, there are still a few serious problems<br/>with the fonts&#8211;once again, a matter of time.)</p><p>Have a look at the bugs pages, to get an idea of work being done.</p><footer><strong>Steve White</strong> <cite>GNU FreeFont</cite></footer></blockquote>
+
+
+<p><a href="http://savannah.gnu.org/bugs/?group=freefont">http://savannah.gnu.org/bugs/?group=freefont</a></p>
+
+<p>I&#8217;m not sure if ImageMagic or PIL can help solve the rendering and compare
+problem Steve is talking about. They can definitely be used for
+<a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">image comparison</a>
+so maybe coupled with some rendering library it&#8217;s worth a quick try.</p>
+
+<p>If you happen to know more about fonts, please join me in
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improving overall test coverage in Fedora</a>
+by designing test suites for fonts packages.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2438,98 +2513,6 @@ Thanks!</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/">Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-11-29T14:05:00+02:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Accidentally I have discovered a bug for Python&#8217;s
-URLGrabber module which has to do with change in behavior in libcurl.</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
-</span><span class='line'>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
-</span><span class='line'>    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
-</span><span class='line'>    <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
-</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
-</span><span class='line'>    <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
-</span><span class='line'><span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
-newer. As explained by
-<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
-the reason is an internal change in libcurl which doesn&#8217;t accept a value of 1 anymore!</p>
-
-<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
-from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
-Fedora and Amazon Linux already have the fix.</p>
-
-<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
-there aren&#8217;t any updates released on PyPI though!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/5/">&larr; Older</a>
@@ -2593,6 +2576,10 @@ there aren&#8217;t any updates released on PyPI though!</p>
       </li>
     
       <li class="post">
+        <a href="/blog/2015/05/21/bug-in-vmware-open-house-website/">Bug in VMware Open House Website</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/05/20/free-software-testing-books/">Free Software Testing Books</a>
       </li>
     
@@ -2614,10 +2601,6 @@ there aren&#8217;t any updates released on PyPI though!</p>
     
       <li class="post">
         <a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">Fixing Tilde and Function Keys Mapping for MacBook Air on Linux</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">RHEL 7 Repository for MacBook Air</a>
       </li>
     
   </ul>
