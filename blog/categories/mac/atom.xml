@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mac | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/mac/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-07-30T15:06:45+03:00</updated>
+  <updated>2015-08-14T14:12:03+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Try F10 When Editing grub2 Menu in EFI Mode]]></title>
+    <link href="http://atodorov.org/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/"/>
+    <updated>2015-08-14T14:06:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode</id>
+    <content type="html"><![CDATA[<p>When editing the grub2 menu (especially in EFI mode) it tells you to
+press Ctrl-x to save your changes and continue the boot process.
+However this doesn't work on Apple hardware
+(<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1253637">rhbz#1253637</a>)
+and maybe some other platforms. If this is the case try pressing <strong>F10</strong>
+instead. It works for me!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using USB to VGA Adapter on MacBook Air with Linux]]></title>
@@ -153,63 +167,6 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 
 <pre><code>yum install mba-kbd-fix
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fixing Display Brightness on MacBook Air with RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"/>
-    <updated>2015-04-29T12:14:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7</id>
-    <content type="html"><![CDATA[<p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
-and backlight behavior after suspend/resume. I've found the solution
-<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
-and only tweaked it slightly for my use case.</p>
-
-<h2>mba6x_bl doesn't load automatically</h2>
-
-<p>The reason being the driver matches older hardware:</p>
-
-<pre><code>$ modinfo mba6x_bl
-filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
-alias:          dmi:*:pnMacBookAir6*
-license:        GPL
-description:    MacBook Air 6,1 and 6,2 backlight driver
-author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
-rhelversion:    7.1
-srcversion:     4D069C8EB0E470AF27E7F8D
-depends:        video
-vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
-</code></pre>
-
-<p>My system is <strong>MacBookAir7,2</strong> and doesn't match the module alias. So a
-<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
-For more info about <code>MODULE_ALIAS</code> see
-<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
-Alternatively on Red Hat based systems you can place a config file
-under <code>/etc/sysconfig/modules</code>, see
-<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
-for more details.</p>
-
-<h2>intel_backlight driver is in the way</h2>
-
-<p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
-intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
-
-<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
-Section "Device"
-    Identifier      "Intel Graphics"
-    Driver          "intel"
-    Option          "Backlight"     "mba6x_backlight"
-EndSection
-</code></pre>
-
-<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
-
-<h2>Everything in one go</h2>
-
-<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
-a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 ]]></content>
   </entry>
   

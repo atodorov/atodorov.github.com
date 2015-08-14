@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fedora | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-07-30T15:06:45+03:00</updated>
+  <updated>2015-08-14T14:12:03+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Try F10 When Editing grub2 Menu in EFI Mode]]></title>
+    <link href="http://atodorov.org/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/"/>
+    <updated>2015-08-14T14:06:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode</id>
+    <content type="html"><![CDATA[<p>When editing the grub2 menu (especially in EFI mode) it tells you to
+press Ctrl-x to save your changes and continue the boot process.
+However this doesn't work on Apple hardware
+(<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1253637">rhbz#1253637</a>)
+and maybe some other platforms. If this is the case try pressing <strong>F10</strong>
+instead. It works for me!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Call for Ideas: Graphical Test Coverage Reports]]></title>
@@ -196,79 +210,6 @@ and failed miserably when I switched to RHEL 7 iSCSI target.</p>
 </span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
 <p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to Configure targetcli to Listen on IPv4 and IPv6]]></title>
-    <link href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/"/>
-    <updated>2015-04-08T11:46:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6</id>
-    <content type="html"><![CDATA[<p>In order to configure <em>targetcli</em> to listen on both IPv4 and IPv6 one has to
-delete the default IPv4 portal configuration and replace it with IPv6 instead.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1>targetcli&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;p>/>
-</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
-</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
-</span><span class='line'>  o- 0.0.0.0:3260 ............................................................................................................. [OK]
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> delete 0.0.0.0 3260
-</span><span class='line'>Deleted network portal 0.0.0.0:3260
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
-</span><span class='line'>Using default IP port 3260
-</span><span class='line'>Created network portal ::0:3260.
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
-</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
-</span><span class='line'>  o- [::0]:3260 ............................................................................................................... [OK]
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> exit&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1>netstat -antp | grep 3260&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;p>tcp6       0      0 :::3260                 :::*                    LISTEN</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>It appears the target is listening only on IPv6 but in fact it will
-also accept connections over IPv4. I've tried it.</p>
-
-<p>This is a bit counter intuitive, however if you try adding the IPv6 address
-without removing the default IPv4 one <em>targetcli</em> will throw an error:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
-</span><span class='line'>Using default IP port 3260
-</span><span class='line'>Could not create NetworkPortal in configFS.
-</span><span class='line'>/></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>For more information about <em>targetcli</em> usage see my previous post
-<a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>.</p>
 ]]></content>
   </entry>
   

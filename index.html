@@ -9,9 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="If you are working with Python and writing unit tests chances are you are
-familiar with the coverage reporting
-tool. However there are testing &hellip;">
+  <meta name="description" content="When editing the grub2 menu (especially in EFI mode) it tells you to
+press Ctrl-x to save your changes and continue the boot process.
+However this &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,49 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/">Tip: Try F10 When Editing Grub2 Menu in EFI Mode</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-14T14:06:00+03:00" pubdate data-updated="true">Aug 14<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>When editing the grub2 menu (especially in EFI mode) it tells you to
+press Ctrl-x to save your changes and continue the boot process.
+However this doesn&#8217;t work on Apple hardware
+(<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1253637">rhbz#1253637</a>)
+and maybe some other platforms. If this is the case try pressing <strong>F10</strong>
+instead. It works for me!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2477,102 +2520,6 @@ and failed miserably when I switched to RHEL 7 iSCSI target.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/">How to Configure Targetcli to Listen on IPv4 and IPv6</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-04-08T11:46:00+03:00" pubdate data-updated="true">Apr 8<span>th</span>, 2015</time>
-        
-         | <a href="/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In order to configure <em>targetcli</em> to listen on both IPv4 and IPv6 one has to
-delete the default IPv4 portal configuration and replace it with IPv6 instead.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'># targetcli 
-</span><span class='line'>/>
-</span><span class='line'>/> cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
-</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
-</span><span class='line'>  o- 0.0.0.0:3260 ............................................................................................................. [OK]
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> delete 0.0.0.0 3260
-</span><span class='line'>Deleted network portal 0.0.0.0:3260
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
-</span><span class='line'>Using default IP port 3260
-</span><span class='line'>Created network portal ::0:3260.
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> ls
-</span><span class='line'>o- portals ............................................................................................................ [Portals: 1]
-</span><span class='line'>  o- [::0]:3260 ............................................................................................................... [OK]
-</span><span class='line'>/iscsi/iqn.20.../tpg1/portals> exit
-</span><span class='line'>
-</span><span class='line'># netstat -antp | grep 3260
-</span><span class='line'>tcp6       0      0 :::3260                 :::*                    LISTEN</span></code></pre></td></tr></table></div></figure>
-
-
-<p>It appears the target is listening only on IPv6 but in fact it will
-also accept connections over IPv4. I&#8217;ve tried it.</p>
-
-<p>This is a bit counter intuitive, however if you try adding the IPv6 address
-without removing the default IPv4 one <em>targetcli</em> will throw an error:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>/iscsi/iqn.20.../tpg1/portals> create ::0
-</span><span class='line'>Using default IP port 3260
-</span><span class='line'>Could not create NetworkPortal in configFS.
-</span><span class='line'>/></span></code></pre></td></tr></table></div></figure>
-
-
-<p>For more information about <em>targetcli</em> usage see my previous post
-<a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2622,6 +2569,10 @@ without removing the default IPv4 one <em>targetcli</em> will throw an error:</p
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/">Tip: Try F10 When Editing grub2 Menu in EFI Mode</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">Call for Ideas: Graphical Test Coverage Reports</a>
       </li>
     
@@ -2655,10 +2606,6 @@ without removing the default IPv4 one <em>targetcli</em> will throw an error:</p
     
       <li class="post">
         <a href="/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/">Compiling Twinkle SIP Phone on RHEL 7</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">Fixing Tilde and Function Keys Mapping for MacBook Air on Linux</a>
       </li>
     
   </ul>
