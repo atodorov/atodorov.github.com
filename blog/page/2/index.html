@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="In order to configure targetcli to listen on both IPv4 and IPv6 one has to
-delete the default IPv4 portal configuration and replace it with IPv6 &hellip;">
+  <meta name="description" content="I&#8217;ve been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target. 1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,76 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/">Tip: Linux-IO Default LUN Is 0 Instead of 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-08T15:09:00+03:00" pubdate data-updated="true">Apr 8<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&#8217;ve been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> dhcp net0
+</span><span class='line'>DHCP (net0 52:54:00:12:34:56)... ok
+</span><span class='line'>iPXE> set keep-san 1
+</span><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
+</span><span class='line'>Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
+</span><span class='line'>iPXE></span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says</p>
+
+<blockquote><p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p></blockquote>
+
+
+<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>iPXE> sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
+</span><span class='line'>Registered SAN device 0x80
+</span><span class='line'>Booting from SAN device 0x80</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2270,84 +2340,6 @@ praise every improvement. Be &#8216;hearty in your approbation and lavish in you
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/">SNAKE Is No Longer Needed to Run Installation Tests in Beaker</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-18T23:05:00+03:00" pubdate data-updated="true">Jul 18<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This is a quick status update for one of the pieces of
-<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
-and mostly a self-note.</p>
-
-<p>Previously to control the kickstart configuration used during installation in Beaker one
-had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
-a kickstart configuration from a Python template.</p>
-
-<p>SNAKE presented challenges when deploying and using
-<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
-virtually unmaintained.</p>
-
-<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
-generate a kickstart configuration when provisioning the system. This is already
-available in beaker-client-0.17.1.</p>
-
-<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
-very complex ones. You can even include snippets from one template into another if required.
-The standard context that is passed to the template is:</p>
-
-<ul>
-<li><strong>DISTRO</strong> - if specified, the distro name</li>
-<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
-<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
-<li><strong>VARIANT</strong> - if specified</li>
-<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
-<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
-</ul>
-
-
-<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
-have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
-
-<p>This workflow also has the ability to return boot arguments for the installer if needed.
-If any, they should be defined in a {% block kernel_options %}{% endblock %}
-block inside the template. A simpler variant is to define a comment line that stars with
-<em>## kernel_options:</em></p>
-
-<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
-can be used by the general public though. I will be writing another post about that
-so stay tuned.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -2399,6 +2391,10 @@ so stay tuned.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/08/17/pedometer-bug-in-samsung-s-health/">Pedometer Bug in Samsung S Health</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/">Tip: Try F10 When Editing grub2 Menu in EFI Mode</a>
       </li>
     
@@ -2432,10 +2428,6 @@ so stay tuned.</p>
     
       <li class="post">
         <a href="/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/">Thunderbolt to Ethernet Adapter on Linux</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/">Compiling Twinkle SIP Phone on RHEL 7</a>
       </li>
     
   </ul>
