@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-08-20T16:43:40+03:00</updated>
+  <updated>2015-09-16T19:14:48+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[4000+ bugs in Fedora - checksec failures]]></title>
+    <link href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/"/>
+    <updated>2015-09-16T17:03:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures</id>
+    <content type="html"><![CDATA[<p>In the last week I've been trying to figure out how many packages
+conform to the new
+<a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages">Harden All Packages</a>
+policy in Fedora!</p>
+
+<p>From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
+From them 4489 are reported as failed <code>checksec</code>.</p>
+
+<p>What you should see as the output from <code>checksec is</code></p>
+
+<pre><code>Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
+Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
+</code></pre>
+
+<p>The first line is for binaries, the second one for libraries b/c
+DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
+e.g. <code>%{_libdir}/foo/</code> and I've tried to exclude them unless
+other offenses are found. The script which does this is
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect">checksec-collect</a>.</p>
+
+<p>Most often I'm seeing <em>Partial RELRO</em>, <em>No canary found</em> and <em>No PIE</em> errors.
+Since all packages potentially process untrusted input, it makes sense for all of them
+to be hardened and enhance the security of Fedora. That's why all of these errors
+should be considered valid bugs.</p>
+
+<h2>Attn package maintainers</h2>
+
+<p>Please see if your package is in the list and try to fix it or let me know
+why it should be excluded, for example it's a boot loader and doesn't function
+properly with hardening enabled. The full list is available at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log">GitHub</a>.</p>
+
+<p>For more information about the different protection mechanisms see the following
+links:</p>
+
+<ul>
+<li><a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html">Partial vs Full RELRO</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries">Stack canaries</a></li>
+<li><a href="https://en.wikipedia.org/wiki/NX_bit#Linux">NX memory protection</a></li>
+<li><a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/">Position Independent Executables</a></li>
+<li><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath">RPATH</a></li>
+<li><a href="http://blog.tremily.us/posts/rpath/">RUNPATH</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip: Try F10 When Editing grub2 Menu in EFI Mode]]></title>
@@ -166,35 +218,6 @@ I hope you find it helpful.</p>
 graduation theses from various universities which are freely accessible
 online. The list can be found
 <a href="http://qahelp.net/200-dissertatsij-po-testirovaniyu-v-svobodnoj-dostupe/">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Why does sysctl not write under /sys]]></title>
-    <link href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/"/>
-    <updated>2015-05-13T12:34:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys</id>
-    <content type="html"><![CDATA[<p>Recently I've been looking into
-<a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">fixing tilde and Fn keys mapping for MacBook Air</a>
-and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
-possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is
-<a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
-
-<pre><code>static const char PROC_PATH[] = "/proc/sys/";
-</code></pre>
-
-<p>IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
-The only open question I see is backward compatibility - maybe adding new parameter (e.g. --sysfs)
-or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.</p>
-
-<p>I've asked sysctl maintainers on the
-<a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys">procps mailing list</a>
-but so far got no answer.</p>
-
-<p>Is anyone else interested in this? How do you set parameter values under /sys then ?</p>
-
-<p><strong>NOTE:</strong> for my particular purposes I could have used config files under
-<em>/etc/modprobe.d/</em> or a startup script (I used that) instead.</p>
 ]]></content>
   </entry>
   
