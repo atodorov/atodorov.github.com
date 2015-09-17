@@ -48,3 +48,14 @@ links:
 * [Position Independent Executables](https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/)
 * [RPATH](https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath)
 * [RUNPATH](http://blog.tremily.us/posts/rpath/)
+
+**UPDATE 2015-09-17**
+
+I've posted my findings on 
+[fedora-devel](https://lists.fedoraproject.org/pipermail/packaging/2015-September/thread.html)
+and the comments are more than interesting even revealing an old bug in libtool.
+
+
+
+
+
