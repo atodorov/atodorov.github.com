@@ -3,7 +3,7 @@ layout: post
 title: "Can I Use Android Phone as Smart Card Reader"
 date: 2013-12-18 23:09
 comments: true
-categories: ['RHEL', 'Fedora', 'bugs']
+categories: ['RHEL', 'Fedora', 'QA']
 ---
 
 Today I had troubles with my Omnikey CardMan 6121 smart card reader.
