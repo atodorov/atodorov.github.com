@@ -3,7 +3,7 @@ layout: post
 title: "Minor Typo Bug in Messenger for bg_BG.UTF-8"
 date: 2015-08-20 16:34
 comments: true
-categories: ['QA', 'bugs']
+categories: ['QA']
 ---
 
 ![Messenger typo](/images/messenger_typo.png "Messenger typo")

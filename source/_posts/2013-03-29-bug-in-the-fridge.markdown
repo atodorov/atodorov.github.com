@@ -3,14 +3,14 @@ layout: post
 title: "Bug in the Fridge"
 date: 2013-03-29 15:09
 comments: true
-categories: ['QA', 'bugs']
+categories: ['QA']
 ---
 
 <img src="/images/liebherr_kbgb_3864.jpg" alt="Liebherr KBGB 3864" style="float:left; margin-right: 20px;" />
 
 Once you've been into
 <a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=quality%20assurance&linkCode=ur2&rh=i%3Aaps%2Ck%3Aquality%20assurance&sprefix=quality%20ass%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Daps">Quality Assurance</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-for 5+ years you start to notice [bugs everywhere](/blog/categories/bugs/)
+for 5+ years you start to notice [bugs everywhere](/blog/categories/qa/)
 and develop a sixth sense for it. Today I found a bug in my
 <a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=liebherr&linkCode=ur2&rh=n%3A2619525011%2Ck%3Aliebherr&sprefix=Liebherr%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Dappliances">Liebherr</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 KBGB 3864 refrigerator, caused by what looks like a race-condition.

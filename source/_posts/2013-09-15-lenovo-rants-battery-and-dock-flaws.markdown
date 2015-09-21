@@ -3,7 +3,7 @@ layout: post
 title: "Lenovo Rants: Battery and Dock Flaws"
 date: 2013-09-15 10:23
 comments: true
-categories: ['bugs', 'QA']
+categories: ['QA']
 ---
 
 To all my readers - sorry for not being able to blog more frequently lately.

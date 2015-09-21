@@ -3,7 +3,7 @@ layout: post
 title: "4000+ bugs in Fedora - checksec failures"
 date: 2015-09-16 17:03
 comments: true
-categories: ['QA', 'bugs', 'fedora.planet']
+categories: ['QA', 'fedora.planet']
 ---
 
 In the last week I've been trying to figure out how many packages

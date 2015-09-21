@@ -3,7 +3,7 @@ layout: post
 title: "UI Bug for OpenSource.com"
 date: 2013-07-31 21:39
 comments: true
-categories: ['QA', 'bugs']
+categories: ['QA']
 ---
 
 !["UI bug"](/images/opensource.com_ui_bug.png "UI bug")

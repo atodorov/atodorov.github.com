@@ -3,7 +3,7 @@ layout: post
 title: "Even Facebook has Bugs"
 date: 2013-06-20 10:17
 comments: true
-categories: ['QA', 'bugs']
+categories: ['QA']
 ---
 
 <img src="/images/facebook_ui_bug.png" alt="Faceook bug" style="float:left; margin-right: 10px;"/>

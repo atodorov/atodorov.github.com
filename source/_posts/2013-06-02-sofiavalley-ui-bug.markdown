@@ -3,7 +3,7 @@ layout: post
 title: "SofiaValley UI bug"
 date: 2013-06-02 21:04
 comments: true
-categories: ['QA', 'bugs']
+categories: ['QA']
 ---
 
 <img src="/images/bugs/sv-bug.png" alt="SV bug" style="clear:both;display:block;"/>

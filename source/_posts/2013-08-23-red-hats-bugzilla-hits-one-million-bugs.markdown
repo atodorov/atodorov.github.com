@@ -3,7 +3,7 @@ layout: post
 title: "Red Hat's Bugzilla Hits One Million Bugs"
 date: 2013-08-23 12:21
 comments: true
-categories: ['bugs', 'RHEL', 'QA']
+categories: ['RHEL', 'QA']
 ---
 
 !["RHBZ 1 million"](/images/redhat_1mil_bugs.jpg "RHBZ 1 million")
