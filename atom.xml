@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-09-25T11:53:16+03:00</updated>
+  <updated>2015-09-30T12:12:27+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Thunderbolt to VGA adapter on Linux]]></title>
+    <link href="http://atodorov.org/blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux/"/>
+    <updated>2015-09-30T11:59:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux</id>
+    <content type="html"><![CDATA[<p>I&#8217;ve previously written about my
+<a href="blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/">Thunderbolt to Ethernet adapter working on Linux</a>
+despite claims that it should not. Recently I&#8217;ve used my MacBook to do a presentation
+and the Thunderbolt to VGA adapter worked well enough.</p>
+
+<p>It was an Acer adapter but I have no more details b/c it wasn&#8217;t mine.</p>
+
+<p>Before the event I&#8217;ve tested it and it worked so on the day of the event I&#8217;ve
+freshly rebooted my laptop to be sure no crashed processes or anything like that
+was running and gave it a go.</p>
+
+<p>First time I plugged in the MacBook everything worked like a charm. Then my computer was
+unplugged and the lid closed, causing it to suspend. The second time I&#8217;ve plugged it in
+I was told there was nothing showing on the projector so I quickly plugged the adapter out
+and then back in. It worked more or less.</p>
+
+<p>At the time I had LibreOffice Impress in presentation
+mode but I did see ABRT detecting a kernel problem. When my slides popped up the text
+on the first one was mostly missing but the rest were ok!</p>
+
+<p>Mind you I&#8217;m still running <a href="http://atodorov.org/blog/categories/mac/">RHEL 7 on my MacBook Air</a>. The above is
+with kernel-3.10.0-229.14.1.el7.x86_64.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Unit Testing Example - Bad Stub Design in DNF]]></title>
@@ -794,56 +824,6 @@ everyone know in the comments (in case OS X recovery mode goes missing, you know
 <p>Thanks to my reader Alexander, who
 <a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
 in a previous blog post.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Compiling Broadcom wl-kmod WiFi Driver for RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/"/>
-    <updated>2015-04-27T12:17:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7</id>
-    <content type="html"><![CDATA[<p>After I got my
-<a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air installed with RHEL 7.1</a>
-the first priority was getting wireless working.
-First check if your device isn&#8217;t already supported
-<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn&#8217;t</p>
-
-<pre><code>14e4:43a0: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
-</code></pre>
-
-<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
-For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
-<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild &#8211;rebuild</em> against each file
-and install <code>kmodtool</code> and <code>akmods</code>.</p>
-
-<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
-The first one is a helper tool containing list of recent kernels to build against,
-the later one is the driver source itself. Both needed minor modifications before
-building on RHEL 7.</p>
-
-<p>I&#8217;ve created my own
-<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
-for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I&#8217;ve introduced a
-<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
-which modifies the other patches in the package so it builds correctly on 7.1.</p>
-
-<p><strong>Note:</strong> I don&#8217;t know if there&#8217;s a define which can be used to detect if we&#8217;re building
-on RHEL (maybe I can define my own) but direct kernel version number comparison doesn&#8217;t
-work here because Red Hat backports chosen functionality from more recent kernels without
-changing the version number. This approach may not be the best one but I&#8217;ve tried to keep it clean
-for easier maintenance in the future and it got me started very quickly.</p>
-
-<p>Build the modified buildsys-build-rpmfusion and:</p>
-
-<pre><code>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
-</code></pre>
-
-<p>Build the wl-kmod package and:</p>
-
-<pre><code>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
-</code></pre>
-
-<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
 ]]></content>
   </entry>
   
