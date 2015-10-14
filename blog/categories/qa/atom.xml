@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-09-30T12:12:27+03:00</updated>
+  <updated>2015-10-14T15:00:21+03:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,109 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Anaconda &amp; coverage.py - Pt.1 - Introduction]]></title>
+    <link href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/"/>
+    <updated>2015-10-14T13:44:00+03:00</updated>
+    <id>http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction</id>
+    <content type="html"><![CDATA[<p>Since early 2015 I've been working on testing installation related
+components in Rawhide. I'm interested in the code produced by the
+<a href="https://github.com/rhinstaller/">Red Hat Installer Engineering Team</a> and in
+particular in <em>anaconda</em>, <em>blivet</em>, <em>pyparted</em> and <em>pykickstart</em>. The goal of
+this effort is to improve the overall testing of these components and also
+have Red Hat QE contribute some of our knowledge back to the community. The benefit
+of course will be better software for everyone. In the next
+several posts I'll summarize what has been done so far and what's to be expected
+in the future.</p>
+
+<h2>Test Documentation Matters</h2>
+
+<p>Do you want others to contribute tests? I certainly do! When I started looking
+at the code it was obviously clear there was no documentation related to testing.
+Everyone needs to know how to write and execute these tests! Currently we have
+basic README files describing how to install necessary dependencies for development
+and test execution, how to execute the tests (and what can be tested) and most
+importantly what is the test architecture. There is description of how the file
+structure is organized and which are the base classes to inherit from when adding
+new tests. Most of the times each component goes through a <em>pylint</em> check and
+a standard PyUnit test suite.</p>
+
+<p>Test documentation is usually in a <code>tests/README</code> file. For example:</p>
+
+<ul>
+<li><a href="https://github.com/rhinstaller/anaconda/blob/master/tests/README.rst">anaconda</a></li>
+<li><a href="https://github.com/rhinstaller/blivet/blob/master/tests/README.rst">blivet</a></li>
+<li><a href="https://github.com/rhinstaller/pykickstart/blob/master/tests/README.rst">pykickstart</a></li>
+<li><a href="https://github.com/rhinstaller/pyparted/blob/master/tests/README.rst">pyparted</a></li>
+</ul>
+
+
+<p>I've tried to explain as much as possible without bloating the files and going into
+unnecessary details. If you spot something missing please send a pull request.</p>
+
+<h2>Continuous Integration</h2>
+
+<p>This has been largely an effort driven by Chris Lumens from the devel team.
+All the components I'm interested in are tested regularly in a CI environment.
+There is a <code>make ci</code> Makefile target for those of you interested in what exactly
+gets executed.</p>
+
+<h2>Test Coverage</h2>
+
+<p>In order to <strong>improve</strong> something you need to know where you stand. We'll I didn't.
+That's why the first step was to integrate the
+<a href="https://bitbucket.org/ned/coveragepy">coverage.py</a> tool with all of these components.</p>
+
+<p>With the exception of blivet (written in C) all of the other
+components integrate well with coverage.py and produce good statistics. pykickstart is
+the champ here with 90% coverage, while anaconda is somewhere between 10% and 50%.
+Full test coverage measurement for anaconda isn't straight forward and will be the
+subject of my next post. For the C based code we have to hook up with
+<a href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html">Gcov</a> which shouldn't be too difficult.</p>
+
+<p>At the moment there are several open pull requests to integrate the coverage test
+targets with <code>make ci</code> and also report the results in human readable form. I will be
+collecting these for historical references.</p>
+
+<h2>Tools</h2>
+
+<p>I've created some basic text-mode
+<a href="https://github.com/atodorov/coverage-tools">coverage-tools</a> to help me combine and
+compare data from different executions. These are only the start of it and I'm expanding
+them as my needs for reporting and analytics evolve. I'm also looking into
+<a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">more detailed coverage reports</a>
+but I don't have enough data and use cases to work on this front at the moment.</p>
+
+<p>Some ideas currently in mind:</p>
+
+<ul>
+<li>map code changes (git commits) to existing test coverage to get a feeling where to
+invest in more testing;</li>
+<li>map bugs to code areas and to existing test coverage to see if we aren't
+missing tests in areas where the bugs are happening;</li>
+</ul>
+
+
+<h2>Bugs</h2>
+
+<p>coverage.py is a very nice tool indeed but I guess most people use it in a very
+limited way. Shortly after I started working with it I've found several places which
+need improvements. These have to do with combining and reporting on multiple files.</p>
+
+<p>Some of the interesting issues I've found and still open are:</p>
+
+<ul>
+<li><a href="https://bitbucket.org/ned/coveragepy/pull-requests/63/">PR #63 - New option --dont-remove when combining coverage data</a></li>
+<li><a href="https://bitbucket.org/ned/coveragepy/issues/425">#425 - source parameter not including files which are explicitly specified</a></li>
+<li><a href="https://bitbucket.org/ned/coveragepy/issues/426">#426 - Difference between coverage results with source specifies full dir instead of module name</a></li>
+</ul>
+
+
+<p>In my next post I will talk about anaconda code coverage and what I want to do with it.
+In the mean time please use the comments to share your feedback.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Unit Testing Example - Bad Stub Design in DNF]]></title>
@@ -252,53 +355,6 @@ to this bug being present.</p>
 
 <p>Btw for more interesting bugs see
 <a href="http://gearfitbugs.tumblr.com/">Samsung Gear Fit Bug-of-the-Day</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Call for Ideas: Graphical Test Coverage Reports]]></title>
-    <link href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/"/>
-    <updated>2015-07-27T13:04:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports</id>
-    <content type="html"><![CDATA[<p>If you are working with Python and writing unit tests chances are you are
-familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
-tool. However there are testing scenarios in which we either don't use unit tests
-or maybe execute different code paths(test cases) independent of each other.</p>
-
-<p>For example, this is the case with installation testing in Fedora. Because anaconda
-- the installer is very complex the easiest way is to test it live, not with unit tests.
-Even though we can get a coverage report (anaconda is written in Python) it reflects
-only the test case it was collected from.</p>
-
-<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
-report. This can tell you how much test coverage you have across all your tests.</p>
-
-<p>As far as I can tell Python's coverage doesn't tell you how many times a particular
-line of code has been executed. It also doesn't tell you which test cases executed
-a particular line
-(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
-In the Fedora example, I have the feeling many of our tests are touching the same
-code base and not contributing that much to the overall test coverage.
-So I started working on these items.</p>
-
-<p>I imagine a script which will read coverage data from several test executions
-(preferably in JSON format,
-<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a
-graphical report similar to what GitHub does for your commit activity.</p>
-
-<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
-
-<p>The example uses darker colors to indicate more line executions, lighter for less
-executions. Check the HTML for the actual numbers b/c there are no hints yet.
-The input JSON files are
-<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
-the script to generate the above HTML is at
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
-
-<p>Now I need your ideas and comments!</p>
-
-<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
-How do they look like ?</p>
 ]]></content>
   </entry>
   

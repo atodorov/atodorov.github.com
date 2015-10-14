@@ -9,9 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="I&#8217;ve previously written about my
-Thunderbolt to Ethernet adapter working on Linux
-despite claims that it should not. Recently I&#8217;ve used &hellip;">
+  <meta name="description" content="Since early 2015 I&#8217;ve been working on testing installation related
+components in Rawhide. I&#8217;m interested in the code produced by the
+Red &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,138 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">Anaconda &amp; coverage.py - Pt.1 - Introduction</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-10-14T13:44:00+03:00" pubdate data-updated="true">Oct 14<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Since early 2015 I&#8217;ve been working on testing installation related
+components in Rawhide. I&#8217;m interested in the code produced by the
+<a href="https://github.com/rhinstaller/">Red Hat Installer Engineering Team</a> and in
+particular in <em>anaconda</em>, <em>blivet</em>, <em>pyparted</em> and <em>pykickstart</em>. The goal of
+this effort is to improve the overall testing of these components and also
+have Red Hat QE contribute some of our knowledge back to the community. The benefit
+of course will be better software for everyone. In the next
+several posts I&#8217;ll summarize what has been done so far and what&#8217;s to be expected
+in the future.</p>
+
+<h2>Test Documentation Matters</h2>
+
+<p>Do you want others to contribute tests? I certainly do! When I started looking
+at the code it was obviously clear there was no documentation related to testing.
+Everyone needs to know how to write and execute these tests! Currently we have
+basic README files describing how to install necessary dependencies for development
+and test execution, how to execute the tests (and what can be tested) and most
+importantly what is the test architecture. There is description of how the file
+structure is organized and which are the base classes to inherit from when adding
+new tests. Most of the times each component goes through a <em>pylint</em> check and
+a standard PyUnit test suite.</p>
+
+<p>Test documentation is usually in a <code>tests/README</code> file. For example:</p>
+
+<ul>
+<li><a href="https://github.com/rhinstaller/anaconda/blob/master/tests/README.rst">anaconda</a></li>
+<li><a href="https://github.com/rhinstaller/blivet/blob/master/tests/README.rst">blivet</a></li>
+<li><a href="https://github.com/rhinstaller/pykickstart/blob/master/tests/README.rst">pykickstart</a></li>
+<li><a href="https://github.com/rhinstaller/pyparted/blob/master/tests/README.rst">pyparted</a></li>
+</ul>
+
+
+<p>I&#8217;ve tried to explain as much as possible without bloating the files and going into
+unnecessary details. If you spot something missing please send a pull request.</p>
+
+<h2>Continuous Integration</h2>
+
+<p>This has been largely an effort driven by Chris Lumens from the devel team.
+All the components I&#8217;m interested in are tested regularly in a CI environment.
+There is a <code>make ci</code> Makefile target for those of you interested in what exactly
+gets executed.</p>
+
+<h2>Test Coverage</h2>
+
+<p>In order to <strong>improve</strong> something you need to know where you stand. We&#8217;ll I didn&#8217;t.
+That&#8217;s why the first step was to integrate the
+<a href="https://bitbucket.org/ned/coveragepy">coverage.py</a> tool with all of these components.</p>
+
+<p>With the exception of blivet (written in C) all of the other
+components integrate well with coverage.py and produce good statistics. pykickstart is
+the champ here with 90% coverage, while anaconda is somewhere between 10% and 50%.
+Full test coverage measurement for anaconda isn&#8217;t straight forward and will be the
+subject of my next post. For the C based code we have to hook up with
+<a href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html">Gcov</a> which shouldn&#8217;t be too difficult.</p>
+
+<p>At the moment there are several open pull requests to integrate the coverage test
+targets with <code>make ci</code> and also report the results in human readable form. I will be
+collecting these for historical references.</p>
+
+<h2>Tools</h2>
+
+<p>I&#8217;ve created some basic text-mode
+<a href="https://github.com/atodorov/coverage-tools">coverage-tools</a> to help me combine and
+compare data from different executions. These are only the start of it and I&#8217;m expanding
+them as my needs for reporting and analytics evolve. I&#8217;m also looking into
+<a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">more detailed coverage reports</a>
+but I don&#8217;t have enough data and use cases to work on this front at the moment.</p>
+
+<p>Some ideas currently in mind:</p>
+
+<ul>
+<li>map code changes (git commits) to existing test coverage to get a feeling where to
+invest in more testing;</li>
+<li>map bugs to code areas and to existing test coverage to see if we aren&#8217;t
+missing tests in areas where the bugs are happening;</li>
+</ul>
+
+
+<h2>Bugs</h2>
+
+<p>coverage.py is a very nice tool indeed but I guess most people use it in a very
+limited way. Shortly after I started working with it I&#8217;ve found several places which
+need improvements. These have to do with combining and reporting on multiple files.</p>
+
+<p>Some of the interesting issues I&#8217;ve found and still open are:</p>
+
+<ul>
+<li><a href="https://bitbucket.org/ned/coveragepy/pull-requests/63/">PR #63 - New option &#8211;dont-remove when combining coverage data</a></li>
+<li><a href="https://bitbucket.org/ned/coveragepy/issues/425">#425 - source parameter not including files which are explicitly specified</a></li>
+<li><a href="https://bitbucket.org/ned/coveragepy/issues/426">#426 - Difference between coverage results with source specifies full dir instead of module name</a></li>
+</ul>
+
+
+<p>In my next post I will talk about anaconda code coverage and what I want to do with it.
+In the mean time please use the comments to share your feedback.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1376,102 +1508,6 @@ For more information see <a href="http://kb.mozillazine.org/Browser.backspace_ac
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/">Disabling MacBook Startup Sound in Linux</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-04-27T23:23:00+03:00" pubdate data-updated="true">Apr 27<span>th</span>, 2015</time>
-        
-         | <a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>There is an easy way to disable the MacBook startup sound
-(boot chime) even after wiping out OS X and installing Linux.</p>
-
-<p>This sound can be easily disabled if you mute the volume in OS X
-and shutdown the computer. The value is stored in NVRAM.</p>
-
-<ol>
-<li>Reboot the computer and hold Cmd+Alt(Option)+R. This will start
-OS X Internet recovery mode;</li>
-<li><p>Open the terminal and issue the following command</p>
-
-<pre><code> nvram SystemAudioVolume=%00
-</code></pre></li>
-<li><p>Reboot.</p></li>
-</ol>
-
-
-<p>Voila. In Linux try this:</p>
-
-<pre><code># efivar -l | grep SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
- 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolume"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00                                                |.               |
-
-# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
-GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
-Name: "SystemAudioVolumeDB"
-Attributes:
-    Non-Volatile
-    Boot Service Access
-    Runtime Service Access
-Value:
-00000000  00 
-#
-</code></pre>
-
-<p><strong>Note 1</strong>: Before disabling both variables had non zero values. Also <em>SystemAudioVolumeDB</em>
-doesn&#8217;t seem to have any effect.</p>
-
-<p><strong>Note 2:</strong> RHEL or CentOS users need to rebuild <em>efivar</em> from the
-<a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm">Fedora src.rpm</a>.</p>
-
-<p><strong>Note 3:</strong> several Internet sources suggest that writing EFI variables from Linux
-may sometimes corrupt your Apple firmware. I didn&#8217;t research this any further. If you
-happen to figure out how to successfully write to these variables under Linux please let
-everyone know in the comments (in case OS X recovery mode goes missing, you know).</p>
-
-<p>Thanks to my reader Alexander, who
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">gave me the hint</a>
-in a previous blog post.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1521,6 +1557,10 @@ in a previous blog post.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">Anaconda &amp; coverage.py - Pt.1 - Introduction</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux/">Thunderbolt to VGA adapter on Linux</a>
       </li>
     
@@ -1554,10 +1594,6 @@ in a previous blog post.</p>
     
       <li class="post">
         <a href="/blog/2015/05/22/devit-conf-2015-impressions/">DEVit Conf 2015 Impressions</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/21/bug-in-vmware-open-house-website/">Bug in VMware Open House Website</a>
       </li>
     
   </ul>
