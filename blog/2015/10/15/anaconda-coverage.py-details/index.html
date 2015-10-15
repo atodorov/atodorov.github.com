@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Summary of Evolve Digital</title>
+  <title>Anaconda &amp; coverage.py - Pt.2 - Details</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Yesterday I&#8217;ve visited an event organized by the
-Atlantic Club of Bulgaria which
-officially marked the launch of a digital national alliance &hellip;">
+  <meta name="description" content="My previous post
+was an introduction to testing installation related components. Now I&#8217;m going to
+talk more about anaconda and how it is tested &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@ officially marked the launch of a digital national alliance &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2014/06/11/summary-of-evolve-digital/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -80,7 +80,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Summary of Evolve Digital</h1>
+      <h1 class="entry-title">Anaconda &amp; coverage.py - Pt.2 - Details</h1>
     
     
       <p class="meta">
@@ -96,7 +96,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2014-06-11T22:29:00+03:00" pubdate data-updated="true">Jun 11<span>th</span>, 2014</time>
+<time datetime="2015-10-15T14:15:00+03:00" pubdate data-updated="true">Oct 15<span>th</span>, 2015</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -105,81 +105,101 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p><img src="/images/evolve_digital.jpg" title="Grand Coalition for Digital Jobs" alt="Grand Coalition for Digital Jobs" /></p>
+<div class="entry-content"><p>My <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">previous post</a>
+was an introduction to testing installation related components. Now I&#8217;m going to
+talk more about anaconda and how it is tested.</p>
 
-<p>Yesterday I&#8217;ve visited an event organized by the
-<a href="http://www.atlantic-club.org/index.php?en">Atlantic Club of Bulgaria</a> which
-officially marked the launch of a digital national alliance in Bulgaria. This is
-part of an initiative of the European Commission, called
-<a href="http://ec.europa.eu/digital-agenda/en/grand-coalition-digital-jobs">Grand Coalition for Digital Jobs</a>,
-which aims to address the lack of
-sufficient amount and quality professionals in Europe working in the
-field of Information and Communication technologies.</p>
+<p>There are two primary ways to test anaconda. You can execute <code>make check</code> in the
+source directory which will trigger the package test suite. The other possibility
+is to perform an actual installation, on bare meta or virtual machine, using the
+<a href="https://kojipkgs.fedoraproject.org/mash/">latest Rawhide snapshots</a> which also
+include the latest anaconda. For both of these methods we can collect code
+coverage information. In live installation mode coverage is enabled via the
+<code>inst.debug</code> boot argument. Fedora 23 and earlier use <code>debug=1</code> but that
+can lead to <a href="https://github.com/rhinstaller/anaconda/pull/291">problems</a>
+sometimes.</p>
 
-<p>The first part was few short keynotes, including one from deputy prime minister
-and memorandum signing and group photo. In the keynotes (and afterwards)
-the stress was on the lack of relevant ICT skills and the need of an estimated
-1 million digital workers by 2020 in EU alone.</p>
+<h2>Kickstart Testing</h2>
 
-<p>The next two sessions were panel discussions. The first one presenting the local
-chapter of the Digital Coalition in Bulgaria.</p>
+<p><a href="https://github.com/rhinstaller/pykickstart/blob/master/docs/kickstart-docs.rst">Kickstart</a>
+is a method of automating the installation of Fedora by supplying the necessary
+configuration into a text file and pointing the installer at this file. There is
+the directory <code>tests/kickstart_tests</code>, inside the anaconda source, where each
+test is a kickstart file and a shell script. The test runner provisions a virtual
+machine using boot.iso and the kickstart file. A shell script then verifies
+installation was as expected and copies files of interest to the host system.
+Kickstart files are also the basis for testing Fedora installations in
+<a href="https://beaker.fedoraproject.org/bkr/jobs/">Beaker</a>.</p>
 
-<p>The goals of the coalition are to:</p>
+<p>Naturally some of these in-package kickstart tests are the same as
+<a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests/">out-of-band kickstart tests</a>.
+Hint: there are more available but not yet public.</p>
+
+<p>The question which I don&#8217;t have an answer for right now is
+&#8220;Can we remove some of the duplicates and how this affects devel and QE teams&#8221; ?
+The pros of in-package testing are that it is faster compared to Beaker. The cons
+are that you&#8217;re not testing the real distro (every snapshot is a possible final
+release to the users).</p>
+
+<h2>Dogtail</h2>
+
+<p><a href="https://fedorahosted.org/dogtail/">Dogtail</a> uses accessibility technologies to
+communicate with desktop applications. It is written in Python and can be used
+as GUI test automation framework. Long time ago I&#8217;ve proposed support for Dogtail
+in anaconda which was rejected, then couple of years later it was accepted and
+later removed from the code again.</p>
+
+<p>Anaconda has in-package Dogtail tests (<code>tests/gui/</code>). They work by attaching
+a second disk image with the test suite to a VM running a LiveCD. Anaconda is
+started on the LiveCD and an attempt to install Fedora on disk 1 is made.
+Everything is driven by the Dogtail scripts. There are only a few of these
+tests available and they are currently disabled.
+Red Hat QE has also created another method for running Dogtail tests in anaconda
+using an updates.img with the previous functionality.</p>
+
+<p>Even if there are some duplicate tests I&#8217;m not convinced we have to drop the
+<code>tests/gui/</code> directory from the code because
+the framework used to drive the graphical interface of anaconda appears to be very
+well written. The code is clean and easy to follow.
+Also I don&#8217;t have metrics of how much these two methods differ or how much they cover
+in their testing. IMO they are pretty close and before we can find a way to
+reliably execute them on a regular basis there isn&#8217;t much to be done here.
+One idea is to use the <code>--dirinstall</code> or <code>--image</code> options and skip the
+LiveCD part entirely.</p>
+
+<h2>How Much is Tested</h2>
+
+<p><code>make ci</code> covers 10% of the entire code base for anaconda. Mind you that
+<code>tests/storage</code> and <code>tests/gui</code> are currently disabled.
+See <a href="https://github.com/rhinstaller/anaconda/pull/346">PR #346</a>,
+<a href="https://github.com/rhinstaller/anaconda/pull/327">PR #327</a> and
+<a href="https://github.com/rhinstaller/anaconda/pull/319">PR #319</a>!
+There is definitely room for improvement.</p>
+
+<p>On the other hand live installation testing is much
+better. Text mode covers around 25% while graphical installations around 40%.
+Text and graphical combined cover 50% though. These numbers will drop quite a bit
+once anaconda learns to
+<a href="https://github.com/rhinstaller/anaconda/pull/397">include all possible files</a>
+in its report but it is a good estimate.</p>
+
+<p>The important questions to ask here are:</p>
 
 <ul>
-<li>help more people master more digital skills (not only as developers but also
-proper usage of social media, how to create content, etc)</li>
-<li>enable more people to choose digital jobs</li>
-<li>help local talents present themselves on the global scene</li>
+<li>How much can PyUnit tests cover in anaconda?</li>
+<li>How much can kickstart tests cover ?</li>
+<li>Have we reached a threshold in any of the two primary methods for testing ?</li>
+<li>Does UI automation (with Dogtail) improve anything ?</li>
+<li>When testing a particular feature (say user creation) how different is the
+code execution path between manual (GUI) testing, kickstart and unit testing ?
+If not so different can we invest in unit tests instead of higher level tests then ?</li>
+<li>How different is the code execution path between different tests (manual or kickstart) ?
+In other words how much value are we getting from testing for the resources we&#8217;re putting in ?</li>
 </ul>
 
 
-<p>How it (is supposed to) works:</p>
-
-<ul>
-<li>initiate own ideas and propose them for implementation (to the ICT industry and broad public I guess)</li>
-<li>stimulate learning through doing, learning by example using real use cases</li>
-<li>help (and possibly sponsor) outside projects and ideas</li>
-</ul>
-
-
-<p>Then the various companies supporting the coalition pledged how they are going to
-help. The most interesting news from this panel was the announcement of a new HP
-data center in Sofia which will be used as a training lab with access available to
-students.</p>
-
-<p>The second panel was about education and how to bridge the gap! The interesting points were:</p>
-
-<ul>
-<li>Ministry of Education and Science admits they have finally realized that our educational
-system and programs are behind current tendencies and need concrete steps in order to boost
-education and science research;</li>
-<li>Samsung will open their innovation lab at Sofia University to outside students as well;</li>
-<li>We need to pay more attention to content and training of teachers because they also have
-a skills gap while young children do not;</li>
-</ul>
-
-
-<p>I particularly liked what Prof. Petar Kenderov from the Institute of Mathematics and Informatics
-at Bulgarian Academy of Sciences said - in the outside world children are constantly sharing
-and communicating with each other while at school (also to some extent in universities) they
-are expected to not communicate, not share and keep quiet. He emphasized the value of learning through
-experimentation vs. learning through reading and writing, e.g. the current way things work
-and the old way of teaching.</p>
-
-<p>Another thing that was obvious was that otherwise competing companies (e.g. Microsoft, Oracle, SAP,
-VMware) were working together to fix some of the problems mentioned. However I&#8217;m a bit skeptical
-that large multi-national companies will be flexible enough to make a positive change.
-I&#8217;d bet on the independent organizations like <a href="https://hackbulgaria.com/">HackBulgaria</a> and
-Svetlin Nakov&#8217;s <a href="https://softuni.bg/">Software University</a> or initiatives by local Bulgarian companies
-like the already proven <a href="http://academy.telerik.com/">Telerik Academy</a>.</p>
-
-<p>Here&#8217;s the entire program of the event, for anyone interested:</p>
-
-<blockquote><p>“EVOLVE DIGITAL”<br/>10th June 2014 (Tuesday)</p><p>10:00 – 10:10 Opening: Gergana Passy, Digital Champion Bulgaria</p><p>10:10 – 10:20 Daniela Bobeva, Deputy Prime-Minister of the Republic of Bulgaria<br/>10:20 – 10:30 Constantijn van Oranje, Head of Cabinet of Vice-President of EC Neelie Kroes<br/>10:30 – 10:40 Jonathan Murray, Director, Digital Europe<br/>Special guest: Sandi Češko, Founder & President, Studio Moderna</p><p>10:40 – 10:50 Memorandum Signing and Group Photo<br/>10:50 – 11:00 Pause</p><p>11:00 – 12:15 Digital Coalition Bulgaria<br/>                Moderator: Boyan Benev, Founder, Forward.li</p><p>                Rennie Popcheva, CEO, Digital Coalition Bulgaria<br/>                Boyko Iaramov, Co-founder & Chief Process Officer, Telerik<br/>                Marta Poslad, Senior Policy Advisor, CEE Google<br/>                Petar Ivanov, General Manager, Microsoft Bulgaria<br/>                Iravan Hira, General Manager, Hewlett-Packard Bulgaria<br/>                Atanas Dobrev, CEO, VIVACOM<br/>                Danny Gooris, Senior Manager, Oracle Academy<br/>                Dimitar Dimitrov, Relationship Business Development, Lenovo<br/>                Stamen Kochkov, Vice-president, SAP Labs Bulgaria, Chairman of BASSCOM</p><p><br/>12:15 – 12:30 Coffee Break</p><p>12:30 – 13:45 Education in the Digital Era<br/>                Moderator: Boyan Benev, Founder, Forward.li</p><p>                Ivan Krastev, Deputy Minister, Ministry of Education and Science, Republic of Bulgaria<br/>                George Stoytchev, Executive Director, Open Society Institute Sofia<br/>                Sabina Stirb, Public Affairs & Corporate Citizenship Manager, Samsung<br/>                Prof. Petar Kenderov, Institute of Mathematics and Informatics, Bulgarian<br/>                Academy of Sciences<br/>                Dr. George Sharkov, Director, European Software Institute - Center Eastern<br/>                Europe<br/>                Elena Marinova, President, Musala Soft, Chair of the Educational Commission,<br/>                Bulgarian Association of Information Technologies<br/>                Svetlin Nakov, Founder, Software University</p><p>13:45 – Lunch in Restaurant “At the Eagles”<br/>                11 Dyakon Ygnatiy str., in the building of Ministry of transport, 18th Floor</p></blockquote>
-
-
-
+<p>In my next post I will talk more about these questions and some rudimentary
+analysis against coverage data from the various test methods and test cases!</p>
 </div>
 
 
@@ -202,12 +222,12 @@ like the already proven <a href="http://academy.telerik.com/">Telerik Academy</a
   
 
 
-<time datetime="2014-06-11T22:29:00+03:00" pubdate data-updated="true">Jun 11<span>th</span>, 2014</time>
+<time datetime="2015-10-15T14:15:00+03:00" pubdate data-updated="true">Oct 15<span>th</span>, 2015</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/events/'>events</a>
+    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/fedora-planet/'>fedora.planet</a>
   
 </span>
 
@@ -236,10 +256,8 @@ like the already proven <a href="http://academy.telerik.com/">Telerik Academy</a
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/06/02/bulgaria-web-summit-report/" title="Previous Post: Bulgaria Web Summit Report">&laquo; Bulgaria Web Summit Report</a>
+        <a class="basic-alignment left" href="/blog/2015/10/14/anaconda-coverage.py-introduction/" title="Previous Post: Anaconda &amp; coverage.py - Pt.1 - Introduction">&laquo; Anaconda &amp; coverage.py - Pt.1 - Introduction</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/06/26/using-d-link-dap-1320-wireless-range-extender-with-mac-filtering/" title="Next Post: Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering">Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering &raquo;</a>
       
     </p>
   </footer>
@@ -385,8 +403,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2014/06/11/summary-of-evolve-digital/';
-        var disqus_url = 'http://atodorov.org/blog/2014/06/11/summary-of-evolve-digital/';
+        var disqus_identifier = 'http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/';
+        var disqus_url = 'http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/';
         var disqus_script = 'embed.js';
       
     (function () {
