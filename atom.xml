@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-10-15T15:21:17+03:00</updated>
+  <updated>2015-10-27T12:44:52+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,399 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Anaconda &amp; coverage.py - Pt.3 - coverage-diff]]></title>
+    <link href="http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff/"/>
+    <updated>2015-10-27T11:12:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff</id>
+    <content type="html"><![CDATA[<p>In my <a href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/">previous post</a>
+I&#8217;ve talked about testing anaconda and friends and raised some questions.
+Today I&#8217;m going to give an example of how to answer one of them:
+&#8220;How different is the code execution path between different tests?&#8221;</p>
+
+<h2>coverate-tools</h2>
+
+<p>I&#8217;m going to use <a href="https://github.com/atodorov/coverage-tools">coverage-tools</a>
+in my explanations below so a little introduction is required. All the tools
+are executable Python scripts which build on top of existing coverage.py API.
+The difference is mainly in flexibility of parameters and output formatting.
+I&#8217;ve tried to keep as close as possible to the existing behavior of coverage.py.</p>
+
+<p><em>coverage-annotate</em> - when given a .coverage data file prints the source code
+annotated with line numbers and execution markers.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">!!!</span> <span class="n">missing</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib64</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">pyanaconda</span><span class="o">/</span><span class="n">anaconda_argparse</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">covered</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib64</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">pyanaconda</span><span class="o">/</span><span class="n">anaconda_argparse</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+</span><span class='line'>    <span class="mi">37</span> <span class="o">&gt;</span> <span class="kn">import</span> <span class="nn">logging</span>
+</span><span class='line'>    <span class="mi">38</span> <span class="o">&gt;</span> <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;anaconda&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="mi">39</span>
+</span><span class='line'>    <span class="mi">40</span>   <span class="c"># Help text formatting constants</span>
+</span><span class='line'>    <span class="mi">41</span>
+</span><span class='line'>    <span class="mi">42</span> <span class="o">&gt;</span> <span class="n">LEFT_PADDING</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c"># the help text will start after 8 spaces</span>
+</span><span class='line'>    <span class="mi">43</span> <span class="o">&gt;</span> <span class="n">RIGHT_PADDING</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c"># there will be 8 spaces left on the right</span>
+</span><span class='line'>    <span class="mi">44</span> <span class="o">&gt;</span> <span class="n">DEFAULT_HELP_WIDTH</span> <span class="o">=</span> <span class="mi">80</span>
+</span><span class='line'>    <span class="mi">45</span>
+</span><span class='line'>    <span class="mi">46</span> <span class="o">&gt;</span> <span class="k">def</span> <span class="nf">get_help_width</span><span class="p">():</span>
+</span><span class='line'>    <span class="mi">47</span> <span class="o">&gt;</span>     <span class="s">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="s">    48 &gt;     Try to detect the terminal window width size and use it to</span>
+</span><span class='line'><span class="s">    49 &gt;     compute optimal help text width. If it can&#39;t be detected</span>
+</span><span class='line'><span class="s">    50 &gt;     a default values is returned.</span>
+</span><span class='line'><span class="s">    51   </span>
+</span><span class='line'><span class="s">    52 &gt;     :returns: optimal help text width in number of characters</span>
+</span><span class='line'><span class="s">    53 &gt;     :rtype: int</span>
+</span><span class='line'><span class="s">    54 &gt;     &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="mi">55</span>       <span class="c"># don&#39;t do terminal size detection on s390, it is not supported</span>
+</span><span class='line'>    <span class="mi">56</span>       <span class="c"># by its arcane TTY system and only results in cryptic error messages</span>
+</span><span class='line'>    <span class="mi">57</span>       <span class="c"># ending on the standard output</span>
+</span><span class='line'>    <span class="mi">58</span>       <span class="c"># (we do the s390 detection here directly to avoid</span>
+</span><span class='line'>    <span class="mi">59</span>       <span class="c">#  the delay caused by importing the Blivet module</span>
+</span><span class='line'>    <span class="mi">60</span>       <span class="c">#  just for this single call)</span>
+</span><span class='line'>    <span class="mi">61</span> <span class="o">&gt;</span>     <span class="n">is_s390</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">uname</span><span class="p">()[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;s390&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="mi">62</span> <span class="o">&gt;</span>     <span class="k">if</span> <span class="n">is_s390</span><span class="p">:</span>
+</span><span class='line'>    <span class="mi">63</span> <span class="err">!</span>         <span class="k">return</span> <span class="n">DEFAULT_HELP_WIDTH</span>
+</span><span class='line'>    <span class="mi">64</span>
+</span><span class='line'><span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the example above all lines starting with <strong>></strong> were executed by the interpreter.
+All top-level import statements were executed as you would expect. Then the method
+<em>get_help_width()</em> was executed (called from somewhere). Because this was on x86_64
+machine line 63 was not executed. It is marked with <strong>!</strong>. The comments and empty
+lines are of no interest.</p>
+
+<p><em>coverage-diff</em> - produces git like diff reports on the text output of annotate.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
+</span><span class='line'><span class="gu">@@ -634,7 +634,7 @@</span>
+</span><span class='line'>    634           # Wait to make sure the other threads are done before sending ready, otherwise
+</span><span class='line'>    635           # the spoke may not get be sensitive by _handleCompleteness in the hub.
+</span><span class='line'>    636 &gt;         while not self.ready:
+</span><span class='line'><span class="gd">-   637 !             time.sleep(1)</span>
+</span><span class='line'><span class="gi">+   637 &gt;             time.sleep(1)</span>
+</span><span class='line'>    638 &gt;         hubQ.send_ready(self.__class__.__name__, False)
+</span><span class='line'>    639
+</span><span class='line'>    640 &gt;     def refresh(self):\
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this example line 637 was not executed in the first test run, while it was executed
+in the second test run. Reading the comments above it is clear the difference between
+the two test runs is just timing and synchronization.</p>
+
+<h2>Kickstart vs. Kickstart</h2>
+
+<p>How different is the code execution path between different tests? Looking at
+<a href="https://fedoraproject.org/wiki/Test_Results:Fedora_23_Final_RC3_Installation">Fedora 23 test results</a>
+we see several tests which differ only slightly in their setup - installation
+via HTTP, FTP or NFS; installation to SATA, SCSI, SAS drives; installation using
+RAID for the root file system; These are good candidates for further analysis.</p>
+
+<p>Note: my results below are not from Fedora 23 but the conclusions still apply!
+The tests were executed on bare metal and virtual machines, trying to use the
+same hardware or same systems configurations where possible!</p>
+
+<p>Example: HTTP vs. FTP</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py</span>
+</span><span class='line'><span class="gu">@@ -891,7 +891,7 @@</span>
+</span><span class='line'>    891
+</span><span class='line'>    892               # Run any listeners for the new state
+</span><span class='line'>    893 &gt;             for func in self._event_listeners[event_id]:
+</span><span class='line'><span class="gd">-   894 !                 func()</span>
+</span><span class='line'><span class="gi">+   894 &gt;                 func()</span>
+</span><span class='line'>    895
+</span><span class='line'>    896 &gt;     def _runThread(self, storage, ksdata, payload, fallback, checkmount):
+</span><span class='line'>    897           # This is the thread entry
+</span><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py</span>
+</span><span class='line'><span class="gu">@@ -102,10 +102,10 @@</span>
+</span><span class='line'>    102           # Otherwise, fall back on increasingly vague information.
+</span><span class='line'>    103 &gt;         if not part.isleaf:
+</span><span class='line'>    104 &gt;             return self.storage.devicetree.getChildren(part)[0].name
+</span><span class='line'><span class="gd">-   105 &gt;         if getattr(part.format, &quot;label&quot;, None):</span>
+</span><span class='line'><span class="gi">+   105 !         if getattr(part.format, &quot;label&quot;, None):</span>
+</span><span class='line'>    106 !             return part.format.label
+</span><span class='line'><span class="gd">-   107 &gt;         elif getattr(part.format, &quot;name&quot;, None):</span>
+</span><span class='line'><span class="gd">-   108 &gt;             return part.format.name</span>
+</span><span class='line'><span class="gi">+   107 !         elif getattr(part.format, &quot;name&quot;, None):</span>
+</span><span class='line'><span class="gi">+   108 !             return part.format.name</span>
+</span><span class='line'>    109 !         else:
+</span><span class='line'>    110 !             return &quot;&quot;
+</span><span class='line'>    111
+</span><span class='line'><span class="gu">@@ -315,10 +315,10 @@</span>
+</span><span class='line'>    315 &gt;     def on_key_pressed(self, window, event, *args):
+</span><span class='line'>    316           # Handle any keyboard events.  Right now this is just delete for
+</span><span class='line'>    317           # removing a partition, but it could include more later.
+</span><span class='line'><span class="gd">-   318 &gt;         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:</span>
+</span><span class='line'><span class="gi">+   318 !         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:</span>
+</span><span class='line'>    319 !             return
+</span><span class='line'>    320
+</span><span class='line'><span class="gd">-   321 &gt;         if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():</span>
+</span><span class='line'><span class="gi">+   321 !         if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():</span>
+</span><span class='line'>    322 !             self._deleteButton.emit(&quot;clicked&quot;)
+</span><span class='line'>    323
+</span><span class='line'>    324 &gt;     def _sumReclaimableSpace(self, model, path, itr, *args):
+</span><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
+</span><span class='line'><span class="gu">@@ -634,7 +634,7 @@</span>
+</span><span class='line'>    634           # Wait to make sure the other threads are done before sending ready, otherwise
+</span><span class='line'>    635           # the spoke may not get be sensitive by _handleCompleteness in the hub.
+</span><span class='line'>    636 &gt;         while not self.ready:
+</span><span class='line'><span class="gd">-   637 !             time.sleep(1)</span>
+</span><span class='line'><span class="gi">+   637 &gt;             time.sleep(1)</span>
+</span><span class='line'>    638 &gt;         hubQ.send_ready(self.__class__.__name__, False)
+</span><span class='line'>    639
+</span><span class='line'>    640 &gt;     def refresh(self):
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The difference in <code>source.py</code> is from timing/synchronization and can safely be ignored.
+I&#8217;m not exactly sure about <code>__init__.py</code> but doesn&#8217;t look much of a big deal.
+We&#8217;re left with <code>resize.py</code>. The differences in <em>on_key_pressed()</em> are because
+I&#8217;ve probably used the keyboard instead the mouse (these are indeed manual installs).
+The other difference is in how the partition labels are displayed. One of the installs
+was probably using fresh disks while the other not.</p>
+
+<p>Example: SATA vs. SCSI - no difference</p>
+
+<p>Example: SATA vs. SAS (mpt2sas driver)</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py</span>
+</span><span class='line'><span class="gu">@@ -109,10 +109,10 @@</span>
+</span><span class='line'>    109 &gt;     try:
+</span><span class='line'>    110 &gt;         opts.parity = arg[idx+0]
+</span><span class='line'>    111 &gt;         opts.word   = arg[idx+1]
+</span><span class='line'><span class="gd">-   112 !         opts.flow   = arg[idx+2]</span>
+</span><span class='line'><span class="gd">-   113 !     except IndexError:</span>
+</span><span class='line'><span class="gd">-   114 &gt;         pass</span>
+</span><span class='line'><span class="gd">-   115 &gt;     return opts</span>
+</span><span class='line'><span class="gi">+   112 &gt;         opts.flow   = arg[idx+2]</span>
+</span><span class='line'><span class="gi">+   113 &gt;     except IndexError:</span>
+</span><span class='line'><span class="gi">+   114 !         pass</span>
+</span><span class='line'><span class="gi">+   115 !     return opts</span>
+</span><span class='line'>    116
+</span><span class='line'>    117 ! def _is_on_iscsi(device):
+</span><span class='line'>    118 !     &quot;&quot;&quot;Tells whether a given device is on an iSCSI disk or not.&quot;&quot;&quot;
+</span><span class='line'><span class="gu">@@ -1075,13 +1075,13 @@</span>
+</span><span class='line'>   1075 &gt;             command = [&quot;serial&quot;]
+</span><span class='line'>   1076 &gt;             s = parse_serial_opt(self.console_options)
+</span><span class='line'>   1077 &gt;             if unit and unit != &#39;0&#39;:
+</span><span class='line'><span class="gd">-  1078 !                 command.append(&quot;--unit=%s&quot; % unit)</span>
+</span><span class='line'><span class="gi">+  1078 &gt;                 command.append(&quot;--unit=%s&quot; % unit)</span>
+</span><span class='line'>   1079 &gt;             if s.speed and s.speed != &#39;9600&#39;:
+</span><span class='line'>   1080 &gt;                 command.append(&quot;--speed=%s&quot; % s.speed)
+</span><span class='line'>   1081 &gt;             if s.parity:
+</span><span class='line'><span class="gd">-  1082 !                 if s.parity == &#39;o&#39;:</span>
+</span><span class='line'><span class="gi">+  1082 &gt;                 if s.parity == &#39;o&#39;:</span>
+</span><span class='line'>   1083 !                     command.append(&quot;--parity=odd&quot;)
+</span><span class='line'><span class="gd">-  1084 !                 elif s.parity == &#39;e&#39;:</span>
+</span><span class='line'><span class="gi">+  1084 &gt;                 elif s.parity == &#39;e&#39;:</span>
+</span><span class='line'>   1085 !                     command.append(&quot;--parity=even&quot;)
+</span><span class='line'>   1086 &gt;             if s.word and s.word != &#39;8&#39;:
+</span><span class='line'>   1087 !                 command.append(&quot;--word=%s&quot; % s.word)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see the difference is minimal, mostly related to the underlying
+hardware. As far as I can tell this has to do with how the bootloader is
+installed on disk but I&#8217;m no expert on this particular piece of code.
+I&#8217;ve seen the same difference in other comparisons so it probably has to do
+more with hardware than with what kind of disk/driver is used.</p>
+
+<p>Example: RAID 0 vs. RAID 1 - manual install</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py</span>
+</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py</span>
+</span><span class='line'><span class="gu">@@ -490,9 +490,9 @@</span>
+</span><span class='line'>    490
+</span><span class='line'>    491 &gt;         time_init_thread = threadMgr.get(constants.THREAD_TIME_INIT)
+</span><span class='line'>    492 &gt;         if time_init_thread is not None:
+</span><span class='line'><span class="gd">-   493 &gt;             hubQ.send_message(self.__class__.__name__,</span>
+</span><span class='line'><span class="gd">-   494 &gt;                              _(&quot;Restoring hardware time...&quot;))</span>
+</span><span class='line'><span class="gd">-   495 &gt;             threadMgr.wait(constants.THREAD_TIME_INIT)</span>
+</span><span class='line'><span class="gi">+   493 !             hubQ.send_message(self.__class__.__name__,</span>
+</span><span class='line'><span class="gi">+   494 !                              _(&quot;Restoring hardware time...&quot;))</span>
+</span><span class='line'><span class="gi">+   495 !             threadMgr.wait(constants.THREAD_TIME_INIT)</span>
+</span><span class='line'>    496
+</span><span class='line'>    497 &gt;         hubQ.send_ready(self.__class__.__name__, False)
+</span><span class='line'>    498
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As far as I can tell the difference is related to hardware clock settings,
+probably due to different defaults in BIOS on the various hardware.
+Additional tests with RAID 5 and RAID 6 reveals the same exact difference.
+RAID 0 vs. RAID 10 shows no difference at all. Indeed as far as I know anaconda
+delegates the creation of RAID arrays to mdadm once the desired configuration
+is known so these results are to be expected.</p>
+
+<h2>Conclusion</h2>
+
+<p>As you can see sometimes there are tests which appear to be very important
+but in reality they cover a corner case of the base test. For example if any
+of the RAID levels works we can be pretty confident all of them work!
+What you do with this information is up to you. Sometimes QA is able to
+execute all the tests and life is good. Sometimes we have to compromise,
+skip some testing and accept the risks of doing so. Sometimes you can
+execute all tests for every build, sometimes only once per milestone.
+Whatever the case having the information to back up your decision is vital!</p>
+
+<p>In my next post on this topic I&#8217;m going to talk more about functional tests
+vs. unit tests. Both anaconda and blivet have both kinds of tests and I&#8217;m
+interested to know if tests from the two categories focus on the same
+functionality how are they different. If we have a unit test for feature X,
+does it warrant to spend the resources doing functional testing for X as well?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Anaconda &amp; coverage.py - Pt.2 - Details]]></title>
@@ -896,63 +1289,6 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 
 <pre><code>yum install mba-kbd-fix
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fixing Display Brightness on MacBook Air with RHEL 7]]></title>
-    <link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"/>
-    <updated>2015-04-29T12:14:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7</id>
-    <content type="html"><![CDATA[<p>One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
-and backlight behavior after suspend/resume. I&#8217;ve found the solution
-<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
-and only tweaked it slightly for my use case.</p>
-
-<h2>mba6x_bl doesn&#8217;t load automatically</h2>
-
-<p>The reason being the driver matches older hardware:</p>
-
-<pre><code>$ modinfo mba6x_bl
-filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
-alias:          dmi:*:pnMacBookAir6*
-license:        GPL
-description:    MacBook Air 6,1 and 6,2 backlight driver
-author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
-rhelversion:    7.1
-srcversion:     4D069C8EB0E470AF27E7F8D
-depends:        video
-vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions 
-</code></pre>
-
-<p>My system is <strong>MacBookAir7,2</strong> and doesn&#8217;t match the module alias. So a
-<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
-For more info about <code>MODULE_ALIAS</code> see
-<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
-Alternatively on Red Hat based systems you can place a config file
-under <code>/etc/sysconfig/modules</code>, see
-<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
-for more details.</p>
-
-<h2>intel_backlight driver is in the way</h2>
-
-<p>On older systems mba6x_bl doesn&#8217;t get used automatically. The problem is the offending
-intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
-
-<pre><code>$ cat /etc/X11/xorg.conf.d/98-mba_bl.conf
-Section "Device"
-    Identifier      "Intel Graphics"
-    Driver          "intel"
-    Option          "Backlight"     "mba6x_backlight"
-EndSection
-</code></pre>
-
-<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
-
-<h2>Everything in one go</h2>
-
-<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
-a look at my <a href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
 ]]></content>
   </entry>
   

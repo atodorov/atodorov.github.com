@@ -9,9 +9,11 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="I like to buy books, the real ones, printed on paper. This however comes at
-a certain price when buying from Amazon. The book price itself is
-usually &hellip;">
+  <meta name="description" content="A few months ago I wrote
+django-s3-cache.
+This is Amazon Simple Storage Service (S3) cache backend for Django
+which uses hashed file names.
+django-s3 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +79,138 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/">Performance Test of MD5, SHA1, SHA256 and SHA512</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-05T10:33:00+02:00" pubdate data-updated="true">Feb 5<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>A few months ago I wrote
+<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+This is Amazon Simple Storage Service (S3) cache backend for Django
+which uses hashed file names.
+django-s3-cache uses <code>sha1</code> instead of <code>md5</code> which appeared to be
+faster at the time. I recall that my testing wasn&#8217;t very robust so I did another
+round.</p>
+
+<h2>Test Data</h2>
+
+<p>The file <a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz">urls.txt</a>
+contains 10000 unique paths from the <a href="http://www.dif.io">dif.io</a>
+website and looks like this:</p>
+
+<pre><code>/updates/Django-1.3.1/Django-1.3.4/7858/
+/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
+/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
+/updates/Data::Compare-1.22/Data::Compare-Type/8313/
+/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
+</code></pre>
+
+<h2>Test Automation</h2>
+
+<p>I used the standard <a href="http://docs.python.org/2/library/timeit.html">timeit</a>
+module in Python.</p>
+
+<figure class='code'><figcaption><span>test.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c">#!/usr/bin/python</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">timeit</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">t</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">import hashlib</span>
+</span><span class='line'><span class="sd">for line in url_paths:</span>
+</span><span class='line'><span class="sd">    h = hashlib.md5(line).hexdigest()</span>
+</span><span class='line'><span class="sd">#    h = hashlib.sha1(line).hexdigest()</span>
+</span><span class='line'><span class="sd">#    h = hashlib.sha256(line).hexdigest()</span>
+</span><span class='line'><span class="sd">#    h = hashlib.sha512(line).hexdigest()</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">,</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">url_paths = []</span>
+</span><span class='line'><span class="sd">f = open(&#39;urls.txt&#39;, &#39;r&#39;)</span>
+</span><span class='line'><span class="sd">for l in f.readlines():</span>
+</span><span class='line'><span class="sd">    url_paths.append(l)</span>
+</span><span class='line'><span class="sd">f.close()</span>
+</span><span class='line'><span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">print</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Test Results</h2>
+
+<p>The main statement hashes all 10000 entries one by one. This statement is
+executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
+on my system. After every test run the system was rebooted.
+Execution time in seconds is available below.</p>
+
+<pre><code>MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
+SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
+SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
+SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
+</code></pre>
+
+<p>Looks like I was wrong the first time! MD5 is still faster but not that much.
+I will stick with SHA1 for the time being.</p>
+
+<p>As always I’d love to hear your thoughts and feedback. Please use the comment form below.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2081,6 +2215,10 @@ A demonstration video from the same deployment can be found at <a href="http://w
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/10/15/anaconda-coverage.py-details/">Anaconda &amp; coverage.py - Pt.2 - Details</a>
       </li>
     
@@ -2114,10 +2252,6 @@ A demonstration video from the same deployment can be found at <a href="http://w
     
       <li class="post">
         <a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">Call for Ideas: Graphical Test Coverage Reports</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/07/01/open-data-event-coming-to-sofia/">Open Data Event Coming to Sofia</a>
       </li>
     
   </ul>
