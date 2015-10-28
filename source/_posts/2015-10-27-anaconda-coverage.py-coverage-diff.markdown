@@ -241,7 +241,10 @@ Conclusion
 
 As you can see sometimes there are tests which appear to be very important
 but in reality they cover a corner case of the base test. For example if any
-of the RAID levels works we can be pretty confident all of them work!
+of the RAID levels works we can be pretty confident 
+<strike>all of them work</strike> *they won't break in anaconda*
+(thanks Adam Williamson)!
+
 What you do with this information is up to you. Sometimes QA is able to
 execute all the tests and life is good. Sometimes we have to compromise,
 skip some testing and accept the risks of doing so. Sometimes you can
