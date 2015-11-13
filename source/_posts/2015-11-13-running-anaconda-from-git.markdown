@@ -14,5 +14,9 @@ to use this feature and rewrite the Dogtail tests inside `tests/gui/` which
 rely on having a LiveCD.iso and running VMs to execute. For me this has proven
 very slow and difficult to debug problems in the past hence the change.
 
+*Note:* you will need to have an active DISPLAY in your environment and
+also set SELinux to permissive, see 
+[rhbz#1276376](https://bugzilla.redhat.com/show_bug.cgi?id=1276376).
+
 Please see [PR 438](https://github.com/rhinstaller/anaconda/pull/438) for
 more details.
