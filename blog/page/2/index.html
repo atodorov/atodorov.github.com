@@ -9,9 +9,11 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="One of the best SIP clients for Linux is Twinkle.
-However upstream is not active (or even maybe dead) and the package is missing from
-latest Fedora &hellip;">
+  <meta name="description" content="As it seems my
+Thunderbolt to gigabit Ethernet adapter
+works with
+RHEL 7 on a MacBook Air
+despite some reports it may not. After plugging the device &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +79,83 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/">Thunderbolt to Ethernet Adapter on Linux</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-04T22:27:00+03:00" pubdate data-updated="true">May 4<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>As it seems my
+<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+works with
+<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
+despite some reports it may not.</p>
+
+<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
+Detailed <em>lspci</em> below:</p>
+
+<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
+    Subsystem: Apple Inc. Device 00f6
+    Physical Slot: 9
+    Flags: bus master, fast devsel, latency 0, IRQ 19
+    Memory at cd800000 (64-bit, prefetchable) [size=64K]
+    Memory at cd810000 (64-bit, prefetchable) [size=64K]
+    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
+    Capabilities: [48] Power Management version 3
+    Capabilities: [50] Vital Product Data
+    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
+    Capabilities: [ac] Express Endpoint, MSI 00
+    Capabilities: [100] Advanced Error Reporting
+    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
+    Capabilities: [150] Power Budgeting &lt;?&gt;
+    Capabilities: [160] Virtual Channel
+    Capabilities: [1b0] Latency Tolerance Reporting
+    Kernel driver in use: tg3
+</code></pre>
+
+<p>Unplugging and pluggin back in the network cable works as expected.
+I did see my computer freeze 2 out of 10 times when I&#8217;ve unplugged the Thunderbolt
+adapter but couldn&#8217;t reproduce it repliably or grab more info.</p>
+
+<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
+this
+<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
+I&#8217;m not sure why it works though.</p>
+
+<p>If I remember correctly <em>tg3</em> is available during installation so you should
+be able to use the Thunderbolt adapter instead of WiFi as well.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2961,86 +3040,6 @@ makes any significant difference.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">Proxy Support for Wrk HTTP Benchmarking Tool</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-18T10:04:00+02:00" pubdate data-updated="true">Nov 18<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Few times recently I&#8217;ve seen people using an HTTP benchmarking tool called
-<a href="https://github.com/wg/wrk">wrk</a> and decided to give it a try. It is a very cool
-instrument but didn&#8217;t fit my use case perfectly. What I needed is to be able to
-redirect the connection through a web proxy and measure how much the proxy
-slows down things compared to hitting the web server directly with wrk.
-In other words - how fast is the proxy server.</p>
-
-<h2>How does a proxy work</h2>
-
-<p>I&#8217;ve examined the source code of two proxies (one in Python and another one in Go)
-and what happens is this:</p>
-
-<ul>
-<li>The proxy server starts listening to a TCP port</li>
-<li>A client (e.g. the browser) sends the request using an absolute URL (GET http://example.com/about.html)</li>
-<li>Instead of connecting directly to the web server behind example.com the client connects to the proxy</li>
-<li>The proxy server does connect to example.com directly, reads the response and delivers it back to
-the client.</li>
-</ul>
-
-
-<h2>Proxy in wrk</h2>
-
-<p>Luckily wrk supports the execution of Lua scripts so we can make a
-<a href="https://github.com/wg/wrk/pull/107">simple script</a> like this:</p>
-
-<pre><code>init = function(args)
-    target_url = args[1] -- proxy needs absolute URL
-end
-
-request = function()
-    return wrk.format("GET", target_url)
-end
-</code></pre>
-
-<p>Then update your command line to something like this:</p>
-
-<pre><code>./wrk [options] http://proxy:port -s proxy.lua -- http://example.com/about.html
-</code></pre>
-
-<p>This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
-Depending on how your proxy works you may need to add the <code>Host: example.com</code> header as well.
-Now let&#8217;s do some testing.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -3092,6 +3091,10 @@ Now let&#8217;s do some testing.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/">How Krasi Tsonev Broke Planet.SofiaValley.com</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/11/11/ui-usability-bug-qachallengeaccepted.com/">UI Usability Bug for QAChallengeAccepted.com</a>
       </li>
     
@@ -3125,10 +3128,6 @@ Now let&#8217;s do some testing.</p>
     
       <li class="post">
         <a href="/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/">4000+ bugs in Fedora - checksec failures</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/08/20/minor-typo-bug-in-messenger/">Minor Typo Bug in Messenger for bg_BG.UTF-8</a>
       </li>
     
   </ul>
