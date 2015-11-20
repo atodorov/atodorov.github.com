@@ -5,12 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Tip: Cut Leading or Trailing Fields From Strings in Bash</title>
+  <title>Revamping Anaconda's Dogtail Tests</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Today I was looking for a command sequence to cut a string in two by predefined
-delimiter (e.g. like cut does). I wanted to get the last field only &hellip;">
+  <meta name="description" content="In my previous post I briefly talked
+about running anaconda from a git checkout. My goal was to rewrite tests/gui/ so
+that they don&#8217;t use a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +20,7 @@ delimiter (e.g. like cut does). I wanted to get the last field only &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -79,7 +80,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Tip: Cut Leading or Trailing Fields From Strings in Bash</h1>
+      <h1 class="entry-title">Revamping Anaconda's Dogtail Tests</h1>
     
     
       <p class="meta">
@@ -95,7 +96,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2013-11-19T00:16:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
+<time datetime="2015-11-20T15:34:00+02:00" pubdate data-updated="true">Nov 20<span>th</span>, 2015</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -104,33 +105,44 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>Today I was looking for a command sequence to cut a string in two by predefined
-delimiter (e.g. like <code>cut</code> does). I wanted to get the last field only and all
-fields but the last as separate variables.</p>
+<div class="entry-content"><p>In my <a href="/blog/2015/11/13/running-anaconda-from-git/">previous post</a> I briefly talked
+about running anaconda from a git checkout. My goal was to rewrite <code>tests/gui/</code> so
+that they don&#8217;t use a LiveCD and virtual machines anymore. I&#8217;m pleased to announce
+that this is already done (still not merged), see
+<a href="https://github.com/rhinstaller/anaconda/pull/457">PR#457</a>.</p>
 
-<p>The proposed solutions I&#8217;ve found suggested using <code>awk</code> but I don&#8217;t like it.
-Here&#8217;s a simple solution using <code>cut</code> and <code>rev</code> which can extract arbitrary
-field counts from the end of the string.</p>
+<p>The majority of the changes are just shuffling bits around and deleting
+unused code. The existing UI tests were mostly working and only needed minor
+changes. There are two things which didn&#8217;t work and are temporarily disabled:</p>
 
-<pre><code>$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f1 -d. | rev
-org
-$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-2 -d. | rev
-fedoraproject.org
-$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f-3 -d. | rev
-phx2.fedoraproject.org
-$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f2- -d. | rev
-buildvm-08.phx2.fedoraproject
-$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f3- -d. | rev
-buildvm-08.phx2
-$ echo 'buildvm-08.phx2.fedoraproject.org' | rev | cut -f4- -d. | rev
-buildvm-08
+<ul>
+<li>Clicking the Help button results in
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1282432">rhbz#1282432</a>,
+which in turn may be hiding another bug behind it;</li>
+<li>Looping over the available languages resulted in AT-SPI NonImplementedError
+which I&#8217;m going to debug next.</li>
+</ul>
+
+
+<p>To play around with this make sure you have accessibility enabled and:</p>
+
+<pre><code># cd anaconda/
+# export top_srcdir=`pwd`
+# setenforce 0
+# cd tests/gui/
+# ./run_gui_tests.sh
 </code></pre>
 
-<p>The magic here is done by <code>rev</code> which reverses the order of characters in every
-line. It comes with the <em>util-linux-ng</em> package.</p>
+<p><strong>Note:</strong> you also need Dogtail for Python3 which isn&#8217;t officially available
+yet. I&#8217;m building from
+<a href="https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm">https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm</a></p>
 
-<p><strong>Note to Self:</strong> <em>util-linux-ng</em> appears to contain more useful commands which
-I wasn&#8217;t aware of. Need to RTFM a little bit.</p>
+<p>My future plans are to figure out how to re-enable what is temporarily
+disabled, update <code>run_gui_tests.sh</code> to properly start gnome-session and
+enable accessibility, do a better job cleaning up after a failure,
+enable coverage and hook everything into <code>make ci</code>.</p>
+
+<p>Happy testing!</p>
 </div>
 
 
@@ -153,12 +165,12 @@ I wasn&#8217;t aware of. Need to RTFM a little bit.</p>
   
 
 
-<time datetime="2013-11-19T00:16:00+02:00" pubdate data-updated="true">Nov 19<span>th</span>, 2013</time>
+<time datetime="2015-11-20T15:34:00+02:00" pubdate data-updated="true">Nov 20<span>th</span>, 2015</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/fedora/'>Fedora</a>, <a class='category' href='/blog/categories/tips/'>tips</a>
+    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/fedora-planet/'>fedora.planet</a>
   
 </span>
 
@@ -187,10 +199,8 @@ I wasn&#8217;t aware of. Need to RTFM a little bit.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/" title="Previous Post: Keeping Backwards Compatibility for pykickstart">&laquo; Keeping Backwards Compatibility for pykickstart</a>
+        <a class="basic-alignment left" href="/blog/2015/11/13/running-anaconda-from-git/" title="Previous Post: Running Anaconda from git">&laquo; Running Anaconda from git</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/" title="Next Post: Open Source Quality Assurance Infrastructure for Fedora QA">Open Source Quality Assurance Infrastructure for Fedora QA &raquo;</a>
       
     </p>
   </footer>
@@ -336,8 +346,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/';
-        var disqus_url = 'http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/';
+        var disqus_identifier = 'http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/';
+        var disqus_url = 'http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/';
         var disqus_script = 'embed.js';
       
     (function () {

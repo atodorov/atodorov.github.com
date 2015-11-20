@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-13T11:18:30+02:00</updated>
+  <updated>2015-11-20T15:53:25+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,52 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Revamping Anaconda's Dogtail Tests]]></title>
+    <link href="http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/"/>
+    <updated>2015-11-20T15:34:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests</id>
+    <content type="html"><![CDATA[<p>In my <a href="http://atodorov.org/blog/2015/11/13/running-anaconda-from-git/">previous post</a> I briefly talked
+about running anaconda from a git checkout. My goal was to rewrite <code>tests/gui/</code> so
+that they don&#8217;t use a LiveCD and virtual machines anymore. I&#8217;m pleased to announce
+that this is already done (still not merged), see
+<a href="https://github.com/rhinstaller/anaconda/pull/457">PR#457</a>.</p>
+
+<p>The majority of the changes are just shuffling bits around and deleting
+unused code. The existing UI tests were mostly working and only needed minor
+changes. There are two things which didn&#8217;t work and are temporarily disabled:</p>
+
+<ul>
+<li>Clicking the Help button results in
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1282432">rhbz#1282432</a>,
+which in turn may be hiding another bug behind it;</li>
+<li>Looping over the available languages resulted in AT-SPI NonImplementedError
+which I&#8217;m going to debug next.</li>
+</ul>
+
+
+<p>To play around with this make sure you have accessibility enabled and:</p>
+
+<pre><code># cd anaconda/
+# export top_srcdir=`pwd`
+# setenforce 0
+# cd tests/gui/
+# ./run_gui_tests.sh
+</code></pre>
+
+<p><strong>Note:</strong> you also need Dogtail for Python3 which isn&#8217;t officially available
+yet. I&#8217;m building from
+<a href="https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm">https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm</a></p>
+
+<p>My future plans are to figure out how to re-enable what is temporarily
+disabled, update <code>run_gui_tests.sh</code> to properly start gnome-session and
+enable accessibility, do a better job cleaning up after a failure,
+enable coverage and hook everything into <code>make ci</code>.</p>
+
+<p>Happy testing!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Running Anaconda from git]]></title>
@@ -1677,35 +1723,6 @@ I hope you find it helpful.</p>
 graduation theses from various universities which are freely accessible
 online. The list can be found
 <a href="http://qahelp.net/200-dissertatsij-po-testirovaniyu-v-svobodnoj-dostupe/">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Why does sysctl not write under /sys]]></title>
-    <link href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/"/>
-    <updated>2015-05-13T12:34:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys</id>
-    <content type="html"><![CDATA[<p>Recently I&#8217;ve been looking into
-<a href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">fixing tilde and Fn keys mapping for MacBook Air</a>
-and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
-possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is
-<a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
-
-<pre><code>static const char PROC_PATH[] = "/proc/sys/";
-</code></pre>
-
-<p>IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
-The only open question I see is backward compatibility - maybe adding new parameter (e.g. &#8211;sysfs)
-or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.</p>
-
-<p>I&#8217;ve asked sysctl maintainers on the
-<a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys">procps mailing list</a>
-but so far got no answer.</p>
-
-<p>Is anyone else interested in this? How do you set parameter values under /sys then ?</p>
-
-<p><strong>NOTE:</strong> for my particular purposes I could have used config files under
-<em>/etc/modprobe.d/</em> or a startup script (I used that) instead.</p>
 ]]></content>
   </entry>
   

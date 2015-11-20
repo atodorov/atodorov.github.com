@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-13T11:18:30+02:00</updated>
+  <updated>2015-11-20T15:53:25+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,52 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Revamping Anaconda's Dogtail Tests]]></title>
+    <link href="http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/"/>
+    <updated>2015-11-20T15:34:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests</id>
+    <content type="html"><![CDATA[<p>In my <a href="/blog/2015/11/13/running-anaconda-from-git/">previous post</a> I briefly talked
+about running anaconda from a git checkout. My goal was to rewrite <code>tests/gui/</code> so
+that they don't use a LiveCD and virtual machines anymore. I'm pleased to announce
+that this is already done (still not merged), see
+<a href="https://github.com/rhinstaller/anaconda/pull/457">PR#457</a>.</p>
+
+<p>The majority of the changes are just shuffling bits around and deleting
+unused code. The existing UI tests were mostly working and only needed minor
+changes. There are two things which didn't work and are temporarily disabled:</p>
+
+<ul>
+<li>Clicking the Help button results in
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1282432">rhbz#1282432</a>,
+which in turn may be hiding another bug behind it;</li>
+<li>Looping over the available languages resulted in AT-SPI NonImplementedError
+which I'm going to debug next.</li>
+</ul>
+
+
+<p>To play around with this make sure you have accessibility enabled and:</p>
+
+<pre><code># cd anaconda/
+# export top_srcdir=`pwd`
+# setenforce 0
+# cd tests/gui/
+# ./run_gui_tests.sh
+</code></pre>
+
+<p><strong>Note:</strong> you also need Dogtail for Python3 which isn't officially available
+yet. I'm building from
+<a href="https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm">https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm</a></p>
+
+<p>My future plans are to figure out how to re-enable what is temporarily
+disabled, update <code>run_gui_tests.sh</code> to properly start gnome-session and
+enable accessibility, do a better job cleaning up after a failure,
+enable coverage and hook everything into <code>make ci</code>.</p>
+
+<p>Happy testing!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Running Anaconda from git]]></title>
@@ -958,109 +1004,6 @@ vs. unit tests. Both anaconda and blivet have both kinds of tests and I'm
 interested to know if tests from the two categories focus on the same
 functionality how are they different. If we have a unit test for feature X,
 does it warrant to spend the resources doing functional testing for X as well?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Anaconda &amp; coverage.py - Pt.2 - Details]]></title>
-    <link href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/"/>
-    <updated>2015-10-15T14:15:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details</id>
-    <content type="html"><![CDATA[<p>My <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">previous post</a>
-was an introduction to testing installation related components. Now I'm going to
-talk more about anaconda and how it is tested.</p>
-
-<p>There are two primary ways to test anaconda. You can execute <code>make check</code> in the
-source directory which will trigger the package test suite. The other possibility
-is to perform an actual installation, on bare meta or virtual machine, using the
-<a href="https://kojipkgs.fedoraproject.org/mash/">latest Rawhide snapshots</a> which also
-include the latest anaconda. For both of these methods we can collect code
-coverage information. In live installation mode coverage is enabled via the
-<code>inst.debug</code> boot argument. Fedora 23 and earlier use <code>debug=1</code> but that
-can lead to <a href="https://github.com/rhinstaller/anaconda/pull/291">problems</a>
-sometimes.</p>
-
-<h2>Kickstart Testing</h2>
-
-<p><a href="https://github.com/rhinstaller/pykickstart/blob/master/docs/kickstart-docs.rst">Kickstart</a>
-is a method of automating the installation of Fedora by supplying the necessary
-configuration into a text file and pointing the installer at this file. There is
-the directory <code>tests/kickstart_tests</code>, inside the anaconda source, where each
-test is a kickstart file and a shell script. The test runner provisions a virtual
-machine using boot.iso and the kickstart file. A shell script then verifies
-installation was as expected and copies files of interest to the host system.
-Kickstart files are also the basis for testing Fedora installations in
-<a href="https://beaker.fedoraproject.org/bkr/jobs/">Beaker</a>.</p>
-
-<p>Naturally some of these in-package kickstart tests are the same as
-<a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests/">out-of-band kickstart tests</a>.
-Hint: there are more available but not yet public.</p>
-
-<p>The question which I don't have an answer for right now is
-"Can we remove some of the duplicates and how this affects devel and QE teams" ?
-The pros of in-package testing are that it is faster compared to Beaker. The cons
-are that you're not testing the real distro (every snapshot is a possible final
-release to the users).</p>
-
-<h2>Dogtail</h2>
-
-<p><a href="https://fedorahosted.org/dogtail/">Dogtail</a> uses accessibility technologies to
-communicate with desktop applications. It is written in Python and can be used
-as GUI test automation framework. Long time ago I've proposed support for Dogtail
-in anaconda which was rejected, then couple of years later it was accepted and
-later removed from the code again.</p>
-
-<p>Anaconda has in-package Dogtail tests (<code>tests/gui/</code>). They work by attaching
-a second disk image with the test suite to a VM running a LiveCD. Anaconda is
-started on the LiveCD and an attempt to install Fedora on disk 1 is made.
-Everything is driven by the Dogtail scripts. There are only a few of these
-tests available and they are currently disabled.
-Red Hat QE has also created another method for running Dogtail tests in anaconda
-using an updates.img with the previous functionality.</p>
-
-<p>Even if there are some duplicate tests I'm not convinced we have to drop the
-<code>tests/gui/</code> directory from the code because
-the framework used to drive the graphical interface of anaconda appears to be very
-well written. The code is clean and easy to follow.
-Also I don't have metrics of how much these two methods differ or how much they cover
-in their testing. IMO they are pretty close and before we can find a way to
-reliably execute them on a regular basis there isn't much to be done here.
-One idea is to use the <code>--dirinstall</code> or <code>--image</code> options and skip the
-LiveCD part entirely.</p>
-
-<h2>How Much is Tested</h2>
-
-<p><code>make ci</code> covers 10% of the entire code base for anaconda. Mind you that
-<code>tests/storage</code> and <code>tests/gui</code> are currently disabled.
-See <a href="https://github.com/rhinstaller/anaconda/pull/346">PR #346</a>,
-<a href="https://github.com/rhinstaller/anaconda/pull/327">PR #327</a> and
-<a href="https://github.com/rhinstaller/anaconda/pull/319">PR #319</a>!
-There is definitely room for improvement.</p>
-
-<p>On the other hand live installation testing is much
-better. Text mode covers around 25% while graphical installations around 40%.
-Text and graphical combined cover 50% though. These numbers will drop quite a bit
-once anaconda learns to
-<a href="https://github.com/rhinstaller/anaconda/pull/397">include all possible files</a>
-in its report but it is a good estimate.</p>
-
-<p>The important questions to ask here are:</p>
-
-<ul>
-<li>How much can PyUnit tests cover in anaconda?</li>
-<li>How much can kickstart tests cover ?</li>
-<li>Have we reached a threshold in any of the two primary methods for testing ?</li>
-<li>Does UI automation (with Dogtail) improve anything ?</li>
-<li>When testing a particular feature (say user creation) how different is the
-code execution path between manual (GUI) testing, kickstart and unit testing ?
-If not so different can we invest in unit tests instead of higher level tests then ?</li>
-<li>How different is the code execution path between different tests (manual or kickstart) ?
-In other words how much value are we getting from testing for the resources we're putting in ?</li>
-</ul>
-
-
-<p>In my next post I will talk more about these questions and some rudimentary
-analysis against coverage data from the various test methods and test cases!</p>
 ]]></content>
   </entry>
   
