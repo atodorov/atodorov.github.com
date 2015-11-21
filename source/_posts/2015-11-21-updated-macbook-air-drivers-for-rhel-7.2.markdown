@@ -19,5 +19,5 @@ closing the laptop lid. The screen stays on and (I think) the computer doesn't
 suspend. My battery was drained as I left the computer as-is overnight. Suspending
 from the Desktop menu however appears to work. See
 [Issue #41](https://github.com/patjak/mba6x_bl/issues/41). I'd love to get some
-help in debugging what's going wrong and trying to fix it. at this point I have
+help in debugging what's going wrong and trying to fix it. At this point I have
 no idea where to look and if it's the driver to blame or something else on the system.
