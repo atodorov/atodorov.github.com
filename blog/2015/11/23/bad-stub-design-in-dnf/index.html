@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Bad Stub Design in DNF, Pt.2 </title>
+  <meta name="author" content="Alexander Todorov">
+
+  
+  <meta name="description" content="Do you remember my example of a
+bad stub design in DNF ?
+At that time I didn&#8217;t have a good example of why this is a bad design and what are the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
+<meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM" />
+
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-37979549-1', 'atodorov.org');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+<div id="logo-container">
+<div id="logo">atodorov.org</div>
+<div id="logo-sub"><em>
+you can logoff, but you can never leave
+</em></div>
+</div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/give-away/">Give Away List</a></li>
+  <li><a href="/projects/">Projects</a></li>
+  <li><a href="/domains/">Domains</a></li>
+  <li><a href="http://amzn.to/1wTPaLe">Previous: Traction</a></li>
+  <li><a href="http://amzn.to/1lLi5NU">Previous: How to Win Friends</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Bad Stub Design in DNF, Pt.2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-11-23T15:55:00+02:00" pubdate data-updated="true">Nov 23<span>rd</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn&#8217;t have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a></p>
+
+<blockquote><p>Note: the benefit of this patch are quite subtle.<br/>I&#8217;ve played around with creating a few more tests and the benefit I see affect<br/>only a few lines of code.</p><p>For #114 there doesn&#8217;t seem to be any need to test _get_query directly,<br/>although we call<br/><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span><br/><span class='line-number'>2</span><br/></pre></td><td class='code'><pre><code class=''><span class='line'>   q = self.base.sack.query()<br/></span><span class='line'>   q = q.available()</span></code></pre></td></tr></table></div></figure></p><p>which will benefit from this PR b/c we&#8217;re stubbing out the entire Sack object.<br/>I will work on a test later today/tomorrow to see how it looks.</p><p>OTOH for #113 where we modify _get_query the test can look something like this:</p><p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span><br/><span class='line-number'>2</span><br/><span class='line-number'>3</span><br/><span class='line-number'>4</span><br/><span class='line-number'>5</span><br/><span class='line-number'>6</span><br/><span class='line-number'>7</span><br/><span class='line-number'>8</span><br/><span class='line-number'>9</span><br/><span class='line-number'>10</span><br/><span class='line-number'>11</span><br/></pre></td><td class='code'><pre><code class=''><span class='line'>def test_get_query_with_local_rpm(self):<br/></span><span class='line'>    try:<br/></span><span class='line'>        (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')<br/></span><span class='line'>        # b/c self.cmd.cli.base is a mock object add_remote_rpm<br/></span><span class='line'>        # will not update the available packages while testing.<br/></span><span class='line'>        # it is expected to hit an exception<br/></span><span class='line'>        with self.assertRaises(dnf.exceptions.PackageNotFoundError):<br/></span><span class='line'>            self.cmd._get_query(rpm_path)<br/></span><span class='line'>        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)<br/></span><span class='line'>    finally:<br/></span><span class='line'>        os.remove(rpm_path)</span></code></pre></td></tr></table></div></figure></p><p>Note the comment above the with block. If we leave out `_get_query` as before<br/>(a simple stub function) we&#8217;re not going to be able to use `assert_called_with`<br/>later.</p></blockquote>
+
+
+<p>Now a more practical example. See
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-11-23T15:55:00+02:00" pubdate data-updated="true">Nov 23<span>rd</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/fedora-planet/'>fedora.planet</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+<!-- AddThis Button BEGIN -->
+<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+<a class="addthis_button_preferred_1"></a>
+<a class="addthis_button_preferred_2"></a>
+<a class="addthis_button_preferred_3"></a>
+<a class="addthis_button_preferred_4"></a>
+<a class="addthis_button_preferred_5"></a>
+<a class="addthis_button_preferred_6"></a>
+<a class="addthis_button_preferred_7"></a>
+<a class="addthis_button_preferred_8"></a>
+<a class="addthis_button_preferred_9"></a>
+<a class="addthis_button_compact"></a>
+<a class="addthis_counter addthis_bubble_style"></a>
+</div>
+<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+<!-- AddThis Button END -->
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/" title="Previous Post: Tip: Running DNF Plugins from git">&laquo; Tip: Running DNF Plugins from git</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <p>
+    I am a QA contractor at Red Hat responsible for over
+    <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
+    a general purpose open source developer, Red Hat Certified professional,
+    cloud hacker and an <a href="/projects/">entrepreneur</a>.
+  </p>
+
+  <p>
+    I'm living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+    which is emerging as a busy place for start-up founders and tech enthusiasts
+    in Eastern Europe! You can find more about me <a href="/about/">here</a>.
+  </p>
+</section>
+
+<section>
+  
+    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
+  
+</section>
+
+
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="atodorov.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<section>
+    <h1>
+        <a href="/blog/categories/books/">Book Reviews</a>
+    </h1>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2 </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins from git</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/">Updated MacBook Air Drivers for RHEL 7.2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/20/revamping-anaconda-dogtail-tests/">Revamping Anaconda's Dogtail Tests</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/13/running-anaconda-from-git/">Running Anaconda from git</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/">How Krasi Tsonev Broke Planet.SofiaValley.com</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/11/ui-usability-bug-qachallengeaccepted.com/">UI Usability Bug for QAChallengeAccepted.com</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/11/openfest-2015-impressions/">OpenFest 2015 Impressions</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/28/building-docker-images-with-anaconda/">Building Docker Images with Anaconda</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Disclaimer</h1>
+  <p>
+Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
+  </p>
+</section>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
+  &amp;
+  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+  2011-2015 &diams; Alexander Todorov
+  &diams;
+  <a href="/about/">About Me</a>
+  &diams;
+  Popular categories:
+<a href="/blog/categories/rhel/">Red Hat</a>,
+<a href="/blog/categories/cloud/">Cloud</a>,
+<a href="/blog/categories/fedora/">Fedora</a>,
+<a href="/blog/categories/qa/">QA</a>,
+<a href="/blog/categories/start-up/">Start-up</a>
+
+  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
+</p>
+
+<script type="text/javascript">
+var uri = window.location.toString();
+if (uri.indexOf("?") > 0) {
+    var clean_uri = uri.substring(0, uri.indexOf("?"));
+    window.history.replaceState({}, document.title, clean_uri);
+}
+</script>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'atodorov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/';
+        var disqus_url = 'http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -9,8 +9,8 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Common functionality for websites is the &#8216;DELETE ACCOUNT&#8217; or &#8216;DISABLE ACCOUNT&#8217;
-button. This is how to implement it if using &hellip;">
+  <meta name="description" content="Every now and then users forget their passwords. This is why I prefer using
+OAuth and social network accounts like GitHub or Twitter. But what do you &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,372 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/">Django-social-auth Tip: Reminder of Login Provider</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-14T12:04:00+02:00" pubdate data-updated="true">Mar 14<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Every now and then users forget their passwords. This is why I prefer using
+OAuth and social network accounts like GitHub or Twitter. But what do you do
+when somebody forgets which OAuth provider they used to login to your site?
+Your website needs a reminder. This is how to implement one if using
+django-social-auth.</p>
+
+<h2>Back-end</h2>
+
+<p>Create a similar view on your Django back-end</p>
+
+<figure class='code'><figcaption><span>views.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">ajax_social_auth_provider_reminder</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        Remind the user which social auth provider they used to login.</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;email&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span class='line'>    <span class="k">if</span> <span class="ow">not</span> <span class="n">email</span> <span class="ow">or</span> <span class="p">(</span><span class="n">email</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;@&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Invalid address!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;pk&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">except</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No user with address &#39;</span><span class="si">%s</span><span class="s">&#39; found!&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">providers</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">sa</span> <span class="ow">in</span> <span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;provider&#39;</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">providers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">providers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">send_templated_mail</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">template_name</span><span class="o">=</span><span class="s">&#39;social_provider_reminder&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">from_email</span><span class="o">=</span><span class="s">&#39;Difio &lt;reminder@dif.io&gt;&#39;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">recipient_list</span><span class="o">=</span><span class="p">[</span><span class="n">email</span><span class="p">],</span>
+</span><span class='line'>            <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;providers&#39;</span> <span class="p">:</span> <span class="n">providers</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Reminder sent to &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;User found but no social providers found!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This example assumes it is called via POST request which contains the email address.
+All responses are handled at the front-end via JavaScript. If a user with the specified
+email address exists this address will receive a reminder listing all social auth providers
+associated with the user account.</p>
+
+<h2>Front-end</h2>
+
+<p>On the browser side I like to use <a href="http://dojotoolkit.org">Dojo</a>.
+Here is a simple script which connects to a form and POSTs the data
+back to the server.</p>
+
+<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo&quot;</span><span class="p">]);</span>
+</span><span class='line'><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dijit&quot;</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">sendReminderForm</span><span class="p">(){</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">form</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;reminderForm&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">dojo</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">form</span><span class="p">,</span> <span class="s2">&quot;onsubmit&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">){</span>
+</span><span class='line'>        <span class="nx">dojo</span><span class="p">.</span><span class="nx">stopEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">);</span>
+</span><span class='line'>        <span class="nx">dijit</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;dlgForgot&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">xhrArgs</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">form</span><span class="o">:</span> <span class="nx">form</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">handleAs</span><span class="o">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">data</span><span class="p">);},</span>
+</span><span class='line'>            <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">ioargs</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">ioargs</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">xhrPost</span><span class="p">(</span><span class="nx">xhrArgs</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="nx">dojo</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="nx">sendReminderForm</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can try this out at <a href="http://www.dif.io">Difio</a> and let me know how it works for you!</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/">Python Twitter + Django-social-auth == Hello New User</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T21:47:00+02:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I have been experimenting with the <a href="https://pypi.python.org/pypi/twitter">twitter</a>
+module for Python and decided to combine it with
+<a href="https://github.com/omab/django-social-auth">django-social-auth</a> to welcome new
+users who join <a href="http://www.dif.io">Difio</a>. In this post I will show you how to
+tweet on behalf of the user when they join your site and send them a welcome email.</p>
+
+<h2>Configuration</h2>
+
+<p>In django-social-auth the authentication workflow is handled by an operations
+pipeline where custom functions can be added or default items can be removed to
+provide custom behavior. This is how our pipeline looks:</p>
+
+<figure class='code'><figcaption><span>settings.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">SOCIAL_AUTH_PIPELINE</span> <span class="o">=</span> <span class="p">(</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.social_auth_user&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="c">#&#39;social_auth.backends.pipeline.associate.associate_by_email&#39;,</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.get_username&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.create_user&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.associate_user&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.social.load_extra_data&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;social_auth.backends.pipeline.user.update_user_details&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&#39;myproject.tasks.welcome_new_user&#39;</span>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is the default plus an additional method at the end to welcome new users.</p>
+
+<p>You also have to create and configure a Twitter application so that users
+can login with Twitter OAuth to your site.
+<a href="http://django-social-auth.readthedocs.org/en/latest/backends/index.html">RTFM</a>
+for more information on how to do this.</p>
+
+<h2>Custom pipeline actions</h2>
+
+<p>This is how the custom pipeline action should look:</p>
+
+<figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qs</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">welcome_new_user</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">social_user</span><span class="p">,</span> <span class="n">is_new</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">new_association</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer</span>
+</span><span class='line'><span class="sd">        @backend - social_auth.backends.twitter.TwitterBackend (or other) object</span>
+</span><span class='line'><span class="sd">        @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)</span>
+</span><span class='line'><span class="sd">        @social_user - UserSocialAuth object</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">is_new</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">send_welcome_email</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">first_name</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="n">backend</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;twitter&#39;</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">is_new</span> <span class="ow">or</span> <span class="n">new_association</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">access_token</span> <span class="o">=</span> <span class="n">social_user</span><span class="o">.</span><span class="n">extra_data</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">parsed_tokens</span> <span class="o">=</span> <span class="n">parse_qs</span><span class="p">(</span><span class="n">access_token</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">oauth_token</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">oauth_secret</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>            <span class="n">tweet_on_join</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">None</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code works with django-social-auth==0.7.21 or newer. In older versions the
+<code>new_association</code> parameter is missing as
+<a href="https://groups.google.com/forum/?fromgroups=#!topic/django-social-auth/Nxf-0iRD27Y">I discovered</a>.
+If you use an older version you won&#8217;t be able to distinguish between newly created
+accounts and ones which have associated another OAuth backend. You are warned!</p>
+
+<h2>Tweet &amp; email</h2>
+
+<p>Sending the welcome email is out of the scope of this post. I am using
+<a href="https://github.com/bradwhittington/django-templated-email">django-templated-email</a>
+to define how emails look and sending them via Amazon SES. See
+<a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/">Email Logging for Django on RedHat OpenShift With Amazon SES</a>
+for more information on how to configure emailing with SES.</p>
+
+<p>Here is how the Twitter code looks:</p>
+
+<figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">twitter</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@task</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">tweet_on_join</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="sd">        Tweet when the user is logged in for the first time or</span>
+</span><span class='line'><span class="sd">        when new Twitter account is associated.</span>
+</span><span class='line'>
+</span><span class='line'><span class="sd">        @oauth_token - string</span>
+</span><span class='line'><span class="sd">        @oauth_secret - string</span>
+</span><span class='line'><span class="sd">    &quot;&quot;&quot;</span>
+</span><span class='line'>    <span class="n">t</span> <span class="o">=</span> <span class="n">twitter</span><span class="o">.</span><span class="n">Twitter</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">auth</span><span class="o">=</span><span class="n">twitter</span><span class="o">.</span><span class="n">OAuth</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span>
+</span><span class='line'>            <span class="p">)</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>    <span class="n">t</span><span class="o">.</span><span class="n">statuses</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">&#39;Started following open source changes at http://www.dif.io!&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This will post a new tweet on behalf of the user, telling everyone they joined
+your website!</p>
+
+<p><strong>NOTE:</strong>
+<code>tweet_on_join</code> and <code>send_welcome_email</code> are Celery tasks, not ordinary Python
+functions. This has the advantage of being able to execute these actions async
+and not slow down the user interface.</p>
+
+<p>Are you doing something special when a user joins your website? Please share
+your comments below. Thanks!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2029,235 +2395,6 @@ More time to write code.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/03/09/how-to-get-to-the-openshift-shell/">Tip: How to Get to the OpenShift Shell</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-03-09T21:43:00+02:00" pubdate data-updated="true">Mar 9<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/03/09/how-to-get-to-the-openshift-shell/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I wanted to examine the Perl environment on OpenShift and got tired of making snapshots,
-unzipping the archive and poking through the files. I wanted a shell. Here&#8217;s how to get one.</p>
-
-<ol>
-<li><p>Get the application info first</p>
-
-<pre><code> $ rhc-domain-info 
- Password: 
- Application Info
- ================
- myapp
-     Framework: perl-5.10
-      Creation: 2012-03-08T13:34:46-04:00
-          UUID: 8946b976ad284cf5b2401caf736186bd
-       Git URL: ssh://8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-    Public URL: http://myapp-mydomain.rhcloud.com/
-
-  Embedded: 
-       None
-</code></pre></li>
-<li><p>The Git URL has your username and host</p></li>
-<li><p>Now just ssh into the application</p>
-
-<pre><code> $ ssh 8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com
-
-     Welcome to OpenShift shell
-
-     This shell will assist you in managing OpenShift applications.
-
-     !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
-     Shell access is quite powerful and it is possible for you to
-     accidentally damage your application.  Proceed with care!
-     If worse comes to worst, destroy your application with 'rhc app destroy'
-     and recreate it
-     !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
-
-     Type "help" for more info.
-
- [myapp-mydomain.rhcloud.com ~]\&gt; 
-</code></pre></li>
-</ol>
-
-
-<p><strong>Voila!</strong></p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/02/18/how-to-update-dependencies-on-openshift/">How to Update Dependencies on OpenShift</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-02-18T01:00:00+02:00" pubdate data-updated="true">Feb 18<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/02/18/how-to-update-dependencies-on-openshift/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>If you are already running some cool application on <a href="http://openshift.redhat.com">OpenShift</a>
-it could be the case that you have to update some of the packages installed as dependencies.
-Here is an example for an application using the python-2.6 cartridge.</p>
-
-<h2>Pull latest upstream packages</h2>
-
-<p>The most simple method is to update everything to the latest upstream versions.</p>
-
-<ol>
-<li><p>Backup! Backup! Backup!</p>
-
-<pre><code> rhc-snapshot -a mycoolapp
- mv mycoolapp.tar.gz mycoolapp-backup-before-update.tar.gz
-</code></pre></li>
-<li><p>If you haven&#8217;t specified any particular version in <code>setup.py</code> it will
-look like this:</p></li>
-</ol>
-
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="n">install_requires</span><span class="o">=</span><span class="p">[</span>
-</span><span class='line'>                <span class="s">&#39;difio-openshift-python&#39;</span><span class="p">,</span>
-</span><span class='line'>                <span class="s">&#39;MySQL-python&#39;</span><span class="p">,</span>
-</span><span class='line'>                <span class="s">&#39;Markdown&#39;</span><span class="p">,</span>
-</span><span class='line'>               <span class="p">],</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ol>
-<li><p>To update simply push to OpenShift instructing it to rebuild your virtualenv:</p>
-
-<pre><code> cd mycoolapp/
- touch .openshift/markers/force_clean_build
- git add .openshift/markers/force_clean_build
- git commit -m "update to latest upstream"
- git push
-</code></pre></li>
-</ol>
-
-
-<p>Voila! The environment hosting your application is rebuilt from scratch.</p>
-
-<h2>Keeping some packages unchanged</h2>
-
-<p>Suppose that before the update you have <code>Markdown-2.0.1</code> and you want to keep it!
-This is easily solved by adding versioned dependency to <code>setup.py</code></p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;Markdown&#39;,</span>
-</span><span class='line'><span class="gi">+       &#39;Markdown==2.0.1&#39;,</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>If you do that OpenShift will install the same <code>Markdown</code> version when rebuilding your
-application. Everything else will use the latest available versions.</p>
-
-<p><strong>Note:</strong> after the update it&#8217;s recommended that you remove the
-<code>.openshift/markers/force_clean_build</code> file. This will speed up the push/build process
-and will not surprise you with unwanted changes.</p>
-
-<h2>Update only selected packages</h2>
-
-<p>Unless your application is really simple or you have tested the updates, I suspect that
-you want to update only selected packages. This can be done without rebuilding the whole
-virtualenv. Use versioned dependencies in <code>setup.py</code> :</p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;Markdown==2.0.1&#39;,</span>
-</span><span class='line'><span class="gd">-       &#39;django-countries&#39;,</span>
-</span><span class='line'><span class="gi">+       &#39;Markdown&gt;=2.1&#39;,</span>
-</span><span class='line'><span class="gi">+       &#39;django-countries&gt;=1.1.2&#39;,</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>No need for <code>force_clean_build</code> this time. Just</p>
-
-<pre><code>    git commit &amp;&amp; git push
-</code></pre>
-
-<p>At the time of writing my application was using <code>Markdown-2.0.1</code> and <code>django-countries-1.0.5</code>.
-Then it updated to <code>Markdown-2.1.1</code> and <code>django-countires-1.1.2</code> which also happened to be
-the latest versions.</p>
-
-<p><strong>Note:</strong> this will not work without <code>force_clean_build</code></p>
-
-<figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">-       &#39;django-countries==1.0.5&#39;,</span>
-</span><span class='line'><span class="gi">+       &#39;django-countries&#39;,</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Warning</h2>
-
-<p>OpenShift uses a local mirror of <a href="http://pypi.python.org">Python Package Index</a>.
-It seems to be updated every 24 hours or so. Have this in mind if you want to update
-to a package that was just released. It will not work! See
-<a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">How to Deploy Python Hotfix on OpenShift</a>
-if you wish to work around this limitation.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/11/">&larr; Older</a>
@@ -2309,6 +2446,14 @@ if you wish to work around this limitation.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2 </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins from git</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/">Updated MacBook Air Drivers for RHEL 7.2</a>
       </li>
     
@@ -2338,14 +2483,6 @@ if you wish to work around this limitation.</p>
     
       <li class="post">
         <a href="/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/15/anaconda-coverage.py-details/">Anaconda &amp; coverage.py - Pt.2 - Details</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">Anaconda &amp; coverage.py - Pt.1 - Introduction</a>
       </li>
     
   </ul>

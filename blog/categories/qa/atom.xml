@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-21T11:41:54+02:00</updated>
+  <updated>2015-11-23T16:15:43+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,60 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Bad Stub Design in DNF, Pt.2 ]]></title>
+    <link href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/"/>
+    <updated>2015-11-23T15:55:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf</id>
+    <content type="html"><![CDATA[<p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn't have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a>
+<blockquote><p>Note: the benefit of this patch are quite subtle.<br/>I've played around with creating a few more tests and the benefit I see affect<br/>only a few lines of code.</p></p><p><p>For #114 there doesn't seem to be any need to test _get_query directly,<br/>although we call<br/>```</p></p><p><pre><code>   q = self.base.sack.query()<br/>   q = q.available()<br/></code></pre></p><p><p>```</p></p><p><p>which will benefit from this PR b/c we're stubbing out the entire Sack object.<br/>I will work on a test later today/tomorrow to see how it looks.</p></p><p><p>OTOH for #113 where we modify _get_query the test can look something like this:</p></p><p><p>```</p></p><p><pre><code>def test_get_query_with_local_rpm(self):<br/>    try:<br/>        (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')<br/>        # b/c self.cmd.cli.base is a mock object add_remote_rpm<br/>        # will not update the available packages while testing.<br/>        # it is expected to hit an exception<br/>        with self.assertRaises(dnf.exceptions.PackageNotFoundError):<br/>            self.cmd._get_query(rpm_path)<br/>        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)<br/>    finally:<br/>        os.remove(rpm_path)<br/></code></pre></p><p><p>```</p></p><p><p>Note the comment above the with block. If we leave out <code>_get_query</code> as before<br/>(a simple stub function) we're not going to be able to use <code>assert_called_with</code><br/>later.</p></blockquote></p>
+
+<p>Now a more practical example. See
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Running DNF Plugins from git]]></title>
+    <link href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/"/>
+    <updated>2015-11-23T15:50:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git</id>
+    <content type="html"><![CDATA[<p>This is mostly for self reference because it is not currently documented
+in the code. To use dnf plugins from a local git checkout modify your
+<code>/etc/dnf/dnf.conf</code> and add the following line under the <code>[main]</code> section:</p>
+
+<pre><code>pluginpath=/path/to/dnf-plugins-core/plugins
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Revamping Anaconda's Dogtail Tests]]></title>
@@ -130,469 +184,6 @@ feed didn't have any timestamps. The fix is trivial:</p>
 
 
 <p>Thanks to Krasi for fixing this quickly and happy reading!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[UI Usability Bug for QAChallengeAccepted.com]]></title>
-    <link href="http://atodorov.org/blog/2015/11/11/ui-usability-bug-qachallengeaccepted.com/"/>
-    <updated>2015-11-11T22:36:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/11/11/ui-usability-bug-qachallengeaccepted.com</id>
-    <content type="html"><![CDATA[<p><img src="/images/qachallenge1.png" title="Initial view" alt="Initial view" /></p>
-
-<p>Today I wanted to submit a presentation proposal for
-<a href="http://qachallengeaccepted.com">QA Challenge Accepted 2016</a> and found a usability
-problem in their website. The first picture is how the UI looks on my screen.
-As you can see the screen height is enough to show the first section of the
-interface. There's something orange at the bottom which isn't clearly identifiable.
-The next picture shows the UI as it looks after clicking on the PROGRAM menu link.</p>
-
-<p><img src="/images/qachallenge2.png" title="View after clicking the menu" alt="View after clicking the menu" /></p>
-
-<p>The problem is that I never saw the orange section, which turned out to be
-the call for papers and a link to the submission form. To fix this the orange
-section either needs to go at the top and be clearly visible or at least a new
-item be added to the menu.</p>
-
-<p>Btw the next event will be in March 2016 in Sofia and I hope to see you there!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Anaconda &amp; coverage.py - Pt.3 - coverage-diff]]></title>
-    <link href="http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff/"/>
-    <updated>2015-10-27T11:12:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff</id>
-    <content type="html"><![CDATA[<p>In my <a href="/blog/2015/10/15/anaconda-coverage.py-details/">previous post</a>
-I've talked about testing anaconda and friends and raised some questions.
-Today I'm going to give an example of how to answer one of them:
-"How different is the code execution path between different tests?"</p>
-
-<h2>coverate-tools</h2>
-
-<p>I'm going to use <a href="https://github.com/atodorov/coverage-tools">coverage-tools</a>
-in my explanations below so a little introduction is required. All the tools
-are executable Python scripts which build on top of existing coverage.py API.
-The difference is mainly in flexibility of parameters and output formatting.
-I've tried to keep as close as possible to the existing behavior of coverage.py.</p>
-
-<p><em>coverage-annotate</em> - when given a .coverage data file prints the source code
-annotated with line numbers and execution markers.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">!!!</span> <span class="n">missing</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib64</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">pyanaconda</span><span class="o">/</span><span class="n">anaconda_argparse</span><span class="o">.</span><span class="n">py</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">blockquote</span><span class="o">&gt;&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">covered</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib64</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">pyanaconda</span><span class="o">/</span><span class="n">anaconda_argparse</span><span class="o">.</span><span class="n">py</span>
-</span><span class='line'><span class="o">...</span> <span class="n">skip</span> <span class="o">...&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="mi">37</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="kn">import</span> <span class="nn">logging</span>
-</span><span class='line'><span class="mi">38</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;anaconda&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="mi">39</span>
-</span><span class='line'><span class="mi">40</span>   <span class="c"># Help text formatting constants</span>
-</span><span class='line'><span class="mi">41</span>
-</span><span class='line'><span class="mi">42</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">LEFT_PADDING</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c"># the help text will start after 8 spaces</span>
-</span><span class='line'><span class="mi">43</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">RIGHT_PADDING</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c"># there will be 8 spaces left on the right</span>
-</span><span class='line'><span class="mi">44</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">DEFAULT_HELP_WIDTH</span> <span class="o">=</span> <span class="mi">80</span>
-</span><span class='line'><span class="mi">45</span>
-</span><span class='line'><span class="mi">46</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="k">def</span> <span class="nf">get_help_width</span><span class="p">():</span>
-</span><span class='line'><span class="mi">47</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span>     <span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="s">48 &amp;gt;     Try to detect the terminal window width size and use it to</span>
-</span><span class='line'><span class="s">49 &amp;gt;     compute optimal help text width. If it can&#39;t be detected</span>
-</span><span class='line'><span class="s">50 &amp;gt;     a default values is returned.</span>
-</span><span class='line'><span class="s">51   </span>
-</span><span class='line'><span class="s">52 &amp;gt;     :returns: optimal help text width in number of characters</span>
-</span><span class='line'><span class="s">53 &amp;gt;     :rtype: int</span>
-</span><span class='line'><span class="s">54 &amp;gt;     &quot;&quot;&quot;</span>
-</span><span class='line'><span class="mi">55</span>       <span class="c"># don&#39;t do terminal size detection on s390, it is not supported</span>
-</span><span class='line'><span class="mi">56</span>       <span class="c"># by its arcane TTY system and only results in cryptic error messages</span>
-</span><span class='line'><span class="mi">57</span>       <span class="c"># ending on the standard output</span>
-</span><span class='line'><span class="mi">58</span>       <span class="c"># (we do the s390 detection here directly to avoid</span>
-</span><span class='line'><span class="mi">59</span>       <span class="c">#  the delay caused by importing the Blivet module</span>
-</span><span class='line'><span class="mi">60</span>       <span class="c">#  just for this single call)</span>
-</span><span class='line'><span class="mi">61</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span>     <span class="n">is_s390</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">uname</span><span class="p">()[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;s390&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="mi">62</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span>     <span class="k">if</span> <span class="n">is_s390</span><span class="p">:</span>
-</span><span class='line'><span class="mi">63</span> <span class="err">!</span>         <span class="k">return</span> <span class="n">DEFAULT_HELP_WIDTH</span>
-</span><span class='line'><span class="mi">64</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;...</span> <span class="n">skip</span> <span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></blockquote></blockquote></blockquote>
-
-<p>In the example above all lines starting with <strong>></strong> were executed by the interpreter.
-All top-level import statements were executed as you would expect. Then the method
-<em>get_help_width()</em> was executed (called from somewhere). Because this was on x86_64
-machine line 63 was not executed. It is marked with <strong>!</strong>. The comments and empty
-lines are of no interest.</p>
-
-<p><em>coverage-diff</em> - produces git like diff reports on the text output of annotate.</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
-</span><span class='line'><span class="gu">@@ -634,7 +634,7 @@&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;634           # Wait to make sure the other threads are done before sending ready, otherwise
-</span><span class='line'>635           # the spoke may not get be sensitive by _handleCompleteness in the hub.
-</span><span class='line'>636 &amp;gt;         while not self.ready:
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;ul&gt;
-</span><span class='line'>&lt;li&gt;637 !             time.sleep(1)&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;637 &gt;             time.sleep(1)
-</span><span class='line'>638 &gt;         hubQ.send_ready(self.&lt;strong&gt;class&lt;/strong&gt;.&lt;strong&gt;name&lt;/strong&gt;, False)
-</span><span class='line'>639 &lt;br/&gt;
-</span><span class='line'>640 &gt;     def refresh(self):\
-</span></code></pre></td></tr></table></div></figure></notextile></div></li>
-</ul>
-
-
-<p>In this example line 637 was not executed in the first test run, while it was executed
-in the second test run. Reading the comments above it is clear the difference between
-the two test runs is just timing and synchronization.</p>
-
-<h2>Kickstart vs. Kickstart</h2>
-
-<p>How different is the code execution path between different tests? Looking at
-<a href="https://fedoraproject.org/wiki/Test_Results:Fedora_23_Final_RC3_Installation">Fedora 23 test results</a>
-we see several tests which differ only slightly in their setup - installation
-via HTTP, FTP or NFS; installation to SATA, SCSI, SAS drives; installation using
-RAID for the root file system; These are good candidates for further analysis.</p>
-
-<p>Note: my results below are not from Fedora 23 but the conclusions still apply!
-The tests were executed on bare metal and virtual machines, trying to use the
-same hardware or same systems configurations where possible!</p>
-
-<p>Example: HTTP vs. FTP
-<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/packaging/&lt;strong&gt;init&lt;/strong&gt;.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/packaging/&lt;strong&gt;init&lt;/strong&gt;.py</span>
-</span><span class='line'><span class="gu">@@ -891,7 +891,7 @@&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;891
-</span><span class='line'>892               # Run any listeners for the new state
-</span><span class='line'>893 &amp;gt;             for func in self._event_listeners[event_id]:
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;ul&gt;
-</span><span class='line'>&lt;li&gt;894 !                 func()&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;894 &gt;                 func()
-</span><span class='line'>895 &lt;br/&gt;
-</span><span class='line'>896 &gt;     def _runThread(self, storage, ksdata, payload, fallback, checkmount):
-</span><span class='line'>897           # This is the thread entry
-</span><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py</span>
-</span><span class='line'><span class="gu">@@ -102,10 +102,10 @@</span>
-</span><span class='line'>102           # Otherwise, fall back on increasingly vague information.
-</span><span class='line'>103 &gt;         if not part.isleaf:
-</span><span class='line'>104 &gt;             return self.storage.devicetree.getChildren(part)[0].name&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;105 &gt;         if getattr(part.format, &quot;label&quot;, None):&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;105 !         if getattr(part.format, &quot;label&quot;, None):
-</span><span class='line'>106 !             return part.format.label&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;107 &gt;         elif getattr(part.format, &quot;name&quot;, None):&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;108 &gt;             return part.format.name&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;107 !         elif getattr(part.format, &quot;name&quot;, None):&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;108 !             return part.format.name
-</span><span class='line'>109 !         else:
-</span><span class='line'>110 !             return &quot;&quot;
-</span><span class='line'>111 &lt;br/&gt;
-</span><span class='line'><span class="gu">@@ -315,10 +315,10 @@</span>
-</span><span class='line'>315 &gt;     def on_key_pressed(self, window, event, *args):
-</span><span class='line'>316           # Handle any keyboard events.  Right now this is just delete for
-</span><span class='line'>317           # removing a partition, but it could include more later.&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;318 &gt;         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;318 !         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:
-</span><span class='line'>319 !             return
-</span><span class='line'>320&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;321 &gt;         if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;321 !         if event.keyval == Gdk.KEY_Delete and self.&lt;em&gt;deleteButton.get_sensitive():
-</span><span class='line'>322 !             self.&lt;/em&gt;deleteButton.emit(&quot;clicked&quot;)
-</span><span class='line'>323 &lt;br/&gt;
-</span><span class='line'>324 &gt;     def &lt;em&gt;sumReclaimableSpace(self, model, path, itr, *args):
-</span><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py</span>
-</span><span class='line'><span class="gu">@@ -634,7 +634,7 @@</span>
-</span><span class='line'>634           # Wait to make sure the other threads are done before sending ready, otherwise
-</span><span class='line'>635           # the spoke may not get be sensitive by &lt;/em&gt;handleCompleteness in the hub.
-</span><span class='line'>636 &gt;         while not self.ready:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;637 !             time.sleep(1)&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;637 &gt;             time.sleep(1)
-</span><span class='line'>638 &gt;         hubQ.send_ready(self.&lt;strong&gt;class&lt;/strong&gt;.&lt;strong&gt;name&lt;/strong&gt;, False)
-</span><span class='line'>639 &lt;br/&gt;
-</span><span class='line'>640 &gt;     def refresh(self):
-</span></code></pre></td></tr></table></div></figure></notextile></div></li>
-</ul>
-
-
-<p>The difference in <code>source.py</code> is from timing/synchronization and can safely be ignored.
-I'm not exactly sure about <code>__init__.py</code> but doesn't look much of a big deal.
-We're left with <code>resize.py</code>. The differences in <em>on_key_pressed()</em> are because
-I've probably used the keyboard instead the mouse (these are indeed manual installs).
-The other difference is in how the partition labels are displayed. One of the installs
-was probably using fresh disks while the other not.</p>
-
-<p>Example: SATA vs. SCSI - no difference</p>
-
-<p>Example: SATA vs. SAS (mpt2sas driver)</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py</span>
-</span><span class='line'><span class="gu">@@ -109,10 +109,10 @@&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;109 &amp;gt;     try:
-</span><span class='line'>110 &amp;gt;         opts.parity = arg[idx+0]
-</span><span class='line'>111 &amp;gt;         opts.word   = arg[idx+1]
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;ul&gt;
-</span><span class='line'>&lt;li&gt;112 !         opts.flow   = arg[idx+2]&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;113 !     except IndexError:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;114 &gt;         pass&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;115 &gt;     return opts&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;112 &gt;         opts.flow   = arg[idx+2]&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;113 &gt;     except IndexError:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;114 !         pass&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;115 !     return opts
-</span><span class='line'>116 &lt;br/&gt;
-</span><span class='line'>117 ! def _is_on_iscsi(device):
-</span><span class='line'>118 !     &quot;&quot;&quot;Tells whether a given device is on an iSCSI disk or not.&quot;&quot;&quot;
-</span><span class='line'><span class="gu">@@ -1075,13 +1075,13 @@</span>
-</span><span class='line'>1075 &gt;             command = [&quot;serial&quot;]
-</span><span class='line'>1076 &gt;             s = parse_serial_opt(self.console_options)
-</span><span class='line'>1077 &gt;             if unit and unit != &#39;0&#39;:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1078 !                 command.append(&quot;--unit=%s&quot; % unit)&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1078 &gt;                 command.append(&quot;--unit=%s&quot; % unit)
-</span><span class='line'>1079 &gt;             if s.speed and s.speed != &#39;9600&#39;:
-</span><span class='line'>1080 &gt;                 command.append(&quot;--speed=%s&quot; % s.speed)
-</span><span class='line'>1081 &gt;             if s.parity:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1082 !                 if s.parity == &#39;o&#39;:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1082 &gt;                 if s.parity == &#39;o&#39;:
-</span><span class='line'>1083 !                     command.append(&quot;--parity=odd&quot;)&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1084 !                 elif s.parity == &#39;e&#39;:&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;1084 &gt;                 elif s.parity == &#39;e&#39;:
-</span><span class='line'>1085 !                     command.append(&quot;--parity=even&quot;)
-</span><span class='line'>1086 &gt;             if s.word and s.word != &#39;8&#39;:
-</span><span class='line'>1087 !                 command.append(&quot;--word=%s&quot; % s.word)
-</span></code></pre></td></tr></table></div></figure></notextile></div></li>
-</ul>
-
-
-<p>As you can see the difference is minimal, mostly related to the underlying
-hardware. As far as I can tell this has to do with how the bootloader is
-installed on disk but I'm no expert on this particular piece of code.
-I've seen the same difference in other comparisons so it probably has to do
-more with hardware than with what kind of disk/driver is used.</p>
-
-<p>Example: RAID 0 vs. RAID 1 - manual install</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py</span>
-</span><span class='line'><span class="gi">+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py</span>
-</span><span class='line'><span class="gu">@@ -490,9 +490,9 @@&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;490
-</span><span class='line'>491 &amp;gt;         time_init_thread = threadMgr.get(constants.THREAD_TIME_INIT)
-</span><span class='line'>492 &amp;gt;         if time_init_thread is not None:
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;ul&gt;
-</span><span class='line'>&lt;li&gt;493 &gt;             hubQ.send_message(self.&lt;strong&gt;class&lt;/strong&gt;.&lt;strong&gt;name&lt;/strong&gt;,&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;494 &gt;                              _(&quot;Restoring hardware time...&quot;))&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;495 &gt;             threadMgr.wait(constants.THREAD_TIME_INIT)&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;493 !             hubQ.send_message(self.&lt;strong&gt;class&lt;/strong&gt;.&lt;strong&gt;name&lt;/strong&gt;,&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;494 !                              _(&quot;Restoring hardware time...&quot;))&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;495 !             threadMgr.wait(constants.THREAD_TIME_INIT)
-</span><span class='line'>496 &lt;br/&gt;
-</span><span class='line'>497 &gt;         hubQ.send_ready(self.&lt;strong&gt;class&lt;/strong&gt;.&lt;strong&gt;name&lt;/strong&gt;, False)
-</span><span class='line'>498 &lt;br/&gt;
-</span></code></pre></td></tr></table></div></figure></notextile></div></li>
-</ul>
-
-
-<p>As far as I can tell the difference is related to hardware clock settings,
-probably due to different defaults in BIOS on the various hardware.
-Additional tests with RAID 5 and RAID 6 reveals the same exact difference.
-RAID 0 vs. RAID 10 shows no difference at all. Indeed as far as I know anaconda
-delegates the creation of RAID arrays to mdadm once the desired configuration
-is known so these results are to be expected.</p>
-
-<h2>Conclusion</h2>
-
-<p>As you can see sometimes there are tests which appear to be very important
-but in reality they cover a corner case of the base test. For example if any
-of the RAID levels works we can be pretty confident
-<strike>all of them work</strike> <em>they won't break in anaconda</em>
-(thanks Adam Williamson)!</p>
-
-<p>What you do with this information is up to you. Sometimes QA is able to
-execute all the tests and life is good. Sometimes we have to compromise,
-skip some testing and accept the risks of doing so. Sometimes you can
-execute all tests for every build, sometimes only once per milestone.
-Whatever the case having the information to back up your decision is vital!</p>
-
-<p>In my next post on this topic I'm going to talk more about functional tests
-vs. unit tests. Both anaconda and blivet have both kinds of tests and I'm
-interested to know if tests from the two categories focus on the same
-functionality how are they different. If we have a unit test for feature X,
-does it warrant to spend the resources doing functional testing for X as well?</p>
 ]]></content>
   </entry>
   

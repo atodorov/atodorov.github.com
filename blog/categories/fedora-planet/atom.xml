@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-21T11:41:54+02:00</updated>
+  <updated>2015-11-23T16:15:43+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,60 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Bad Stub Design in DNF, Pt.2 ]]></title>
+    <link href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/"/>
+    <updated>2015-11-23T15:55:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf</id>
+    <content type="html"><![CDATA[<p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn't have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a>
+<blockquote><p>Note: the benefit of this patch are quite subtle.<br/>I've played around with creating a few more tests and the benefit I see affect<br/>only a few lines of code.</p></p><p><p>For #114 there doesn't seem to be any need to test _get_query directly,<br/>although we call<br/>```</p></p><p><pre><code>   q = self.base.sack.query()<br/>   q = q.available()<br/></code></pre></p><p><p>```</p></p><p><p>which will benefit from this PR b/c we're stubbing out the entire Sack object.<br/>I will work on a test later today/tomorrow to see how it looks.</p></p><p><p>OTOH for #113 where we modify _get_query the test can look something like this:</p></p><p><p>```</p></p><p><pre><code>def test_get_query_with_local_rpm(self):<br/>    try:<br/>        (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')<br/>        # b/c self.cmd.cli.base is a mock object add_remote_rpm<br/>        # will not update the available packages while testing.<br/>        # it is expected to hit an exception<br/>        with self.assertRaises(dnf.exceptions.PackageNotFoundError):<br/>            self.cmd._get_query(rpm_path)<br/>        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)<br/>    finally:<br/>        os.remove(rpm_path)<br/></code></pre></p><p><p>```</p></p><p><p>Note the comment above the with block. If we leave out <code>_get_query</code> as before<br/>(a simple stub function) we're not going to be able to use <code>assert_called_with</code><br/>later.</p></blockquote></p>
+
+<p>Now a more practical example. See
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tip: Running DNF Plugins from git]]></title>
+    <link href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/"/>
+    <updated>2015-11-23T15:50:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git</id>
+    <content type="html"><![CDATA[<p>This is mostly for self reference because it is not currently documented
+in the code. To use dnf plugins from a local git checkout modify your
+<code>/etc/dnf/dnf.conf</code> and add the following line under the <code>[main]</code> section:</p>
+
+<pre><code>pluginpath=/path/to/dnf-plugins-core/plugins
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Updated MacBook Air Drivers for RHEL 7.2]]></title>
@@ -101,494 +155,6 @@ also set SELinux to permissive, see
 
 <p>Please see <a href="https://github.com/rhinstaller/anaconda/pull/438">PR 438</a> for
 more details.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How Krasi Tsonev Broke Planet.SofiaValley.com]]></title>
-    <link href="http://atodorov.org/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/"/>
-    <updated>2015-11-13T10:09:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com</id>
-    <content type="html"><![CDATA[<p>Yesterday I've added <a href="http://krasimirtsonev.com/blog/">Krasimir Tsonev's blog</a> to
-<a href="http://planet.sofiavalley.com">http://planet.sofiavalley.com</a> and the planet broke. Suddenly it started showing
-only Krasi's articles and all of them with the same date. The problem was the RSS
-feed didn't have any timestamps. The fix is trivial:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- rss.xml.orig    2015-11-13 10:12:35.348625718 +0200</span>
-</span><span class='line'><span class="gi">+++ rss.xml 2015-11-13 10:12:45.157932304 +0200</span>
-</span><span class='line'><span class="gu">@@ -9,120 +9,160 @@&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;                         &amp;lt;title&amp;gt;&amp;lt;![CDATA[A modern React starter pack based on webpack]]&amp;gt;&amp;lt;/title&amp;gt;
-</span><span class='line'>                         &amp;lt;link&amp;gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&amp;lt;/link&amp;gt;
-</span><span class='line'>                         &amp;lt;description&amp;gt;&amp;lt;![CDATA[&amp;lt;p&amp;gt;&amp;lt;i&amp;gt;Checkout React webpack starter in &amp;lt;a href=\&quot;https://github.com/krasimir/react-web&amp;lt;br /&amp;gt;&amp;lt;p&amp;gt;You know how crazy is the JavaScript world nowadays. There are new frameworks, libraries and tools coming every day. Frequently I’m exploring some of these goodies. I got a week long holiday. I promised to myself that I’ll not code, read or watch about code. Well, it’s stronger than me. &amp;lt;a href=\&quot;https://github.com/krasimir/react-webpack-starter\&quot;&amp;gt;React werbpack starter&amp;lt;/a&amp;gt; is the result of my no-programming week.&amp;lt;/p&amp;gt;]]&amp;gt;&amp;lt;/description&amp;gt;
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;ul&gt;
-</span><span class='line'>&lt;li&gt;&lt;pre&gt;&lt;code&gt;                     &amp;lt;pubDate&amp;gt;Thu, 01 Oct 2015 00:00:00 +0300&amp;lt;/pubDate&amp;gt;
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;&lt;pre&gt;&lt;code&gt;                     &amp;lt;guid&amp;gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&amp;lt;/guid&amp;gt;
-</span><span class='line'>                 &amp;lt;/item&amp;gt;
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;
-</span></code></pre></td></tr></table></div></figure></notextile></div></p></li>
-</ul>
-
-
-<p>Thanks to Krasi for fixing this quickly and happy reading!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Building Docker Images with Anaconda]]></title>
-    <link href="http://atodorov.org/blog/2015/10/28/building-docker-images-with-anaconda/"/>
-    <updated>2015-10-28T16:10:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/10/28/building-docker-images-with-anaconda</id>
-    <content type="html"><![CDATA[<p>Anaconda, the Fedora and Red Hat Enterprise Linux installer, has gained some
-features to facilitate building Docker images. These are only available
-in kickstart. To build a Docker image for HTTPD, using packages provided in the
-distro use the following ks.cfg file:</p>
-
-<pre><code>install
-lang en_US.UTF-8
-keyboard us
-network --onboot yes --device eth0 --bootproto dhcp
-
-rootpw  --lock
-firewall --disabled
-timezone Europe/Sofia
-
-clearpart --all --initlabel
-part / --fstype=ext4 --size=1 --grow
-
-bootloader --disabled
-
-%packages --nocore --instLangs=en_US --excludedocs
-httpd
--kernel
-yum-langpacks # workaround for rhbz#1271766
-%end
-</code></pre>
-
-<p>The above kickstart file will:</p>
-
-<ul>
-<li>install HTTPD and its dependencies</li>
-<li>disable kernel installation by excluding it from the package list</li>
-<li>disable installation of the boot loader using <code>--disabled</code>. The resulting image
-will not be bootable</li>
-<li>disable firewall</li>
-<li>locks the root account so it can't login from the console</li>
-<li>prevent installing @core using <code>--nocore</code></li>
-<li>limit the installation of localization files using <code>--instLangs</code></li>
-<li>limit the installation of documentation using <code>--excludedocs</code></li>
-</ul>
-
-
-<p><strong>Note:</strong> the previous <code>--nobase</code> option is deprected and doesn't have any effect.</p>
-
-<p>After the VM installation is complete grab the contents of the root directory:</p>
-
-<pre><code># virt-tar-out -a /var/lib/libvirt/images/disk.qcow2 / myimage.tar
-</code></pre>
-
-<p>Import the tarball into Docker and inspect the result:</p>
-
-<pre><code># docker import myimage.tar local_images:ver1.0
-8a2324e6d0e940a998b990262335894a17d261450c33f57dc153d3d1987e4fc1
-
-# docker images
-REPOSITORY                                             TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-local_images                                           ver1.0              8a2324e6d0e9        13 seconds ago      320.6 MB
-registry.access.redhat.com/rhel                        latest              82ad5fa11820        6 weeks ago         158.3 MB
-registry.access.redhat.com/rhscl_beta/httpd-24-rhel7   latest              55a8a150cf2d        9 weeks ago         201.1 MB
-</code></pre>
-
-<p>Run commands into a new container:</p>
-
-<pre><code># docker run --name=bash_myimage -it 8a2324e6d0e9 /bin/bash
-bash-4.2# cat /etc/redhat-release 
-Red Hat Enterprise Linux Server release 7.2 Beta (Maipo)
-bash-4.2# rpm -q httpd
-httpd-2.4.6-40.el7.x86_64
-bash-4.2# exit
-
-# docker ps -a
-CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
-64f7ca6d5844        8a2324e6d0e9        "/bin/bash"         24 seconds ago      Exited (0) 19 seconds ago                       bash_myimage
-</code></pre>
-
-<p>As you can see the resulting image is bigger than stock images provided by Red Hat.
-At this moment I don't know if this is the minimum package set which satisfies
-dependencies or anaconda adds a bit more on its own. The full package list is
-given below. There are some packages like  device-mapper, dracut, e2fsprogs,
-iptables, kexec-tools, SELinux related, systemd and tzdata which look out
-of place. My guess is some of them are pulled in from the various kickstart
-commands and not really necessary. I will follow up with devel and see if
-the content can be stripped down even more.</p>
-
-<p>For more information check out these docs:</p>
-
-<ul>
-<li><a href="https://access.redhat.com/articles/881893">Get Started with Docker Formatted Container Images on Red Hat Systems</a></li>
-<li><a href="https://access.redhat.com/documentation/en/red-hat-enterprise-linux-atomic-host/version-7/red-hat-enterprise-linux-atomic-host-7-getting-started-with-containers/chapter-7-get-started-with-docker-formatted-container-images">Chapter 7. Get Started with Docker Formatted Container Images</a></li>
-</ul>
-
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>full package list </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-<span class='line-number'>114</span>
-<span class='line-number'>115</span>
-<span class='line-number'>116</span>
-<span class='line-number'>117</span>
-<span class='line-number'>118</span>
-<span class='line-number'>119</span>
-<span class='line-number'>120</span>
-<span class='line-number'>121</span>
-<span class='line-number'>122</span>
-<span class='line-number'>123</span>
-<span class='line-number'>124</span>
-<span class='line-number'>125</span>
-<span class='line-number'>126</span>
-<span class='line-number'>127</span>
-<span class='line-number'>128</span>
-<span class='line-number'>129</span>
-<span class='line-number'>130</span>
-<span class='line-number'>131</span>
-<span class='line-number'>132</span>
-<span class='line-number'>133</span>
-<span class='line-number'>134</span>
-<span class='line-number'>135</span>
-<span class='line-number'>136</span>
-<span class='line-number'>137</span>
-<span class='line-number'>138</span>
-<span class='line-number'>139</span>
-<span class='line-number'>140</span>
-<span class='line-number'>141</span>
-<span class='line-number'>142</span>
-<span class='line-number'>143</span>
-<span class='line-number'>144</span>
-<span class='line-number'>145</span>
-<span class='line-number'>146</span>
-<span class='line-number'>147</span>
-<span class='line-number'>148</span>
-<span class='line-number'>149</span>
-<span class='line-number'>150</span>
-<span class='line-number'>151</span>
-<span class='line-number'>152</span>
-<span class='line-number'>153</span>
-<span class='line-number'>154</span>
-<span class='line-number'>155</span>
-<span class='line-number'>156</span>
-<span class='line-number'>157</span>
-<span class='line-number'>158</span>
-<span class='line-number'>159</span>
-<span class='line-number'>160</span>
-<span class='line-number'>161</span>
-<span class='line-number'>162</span>
-<span class='line-number'>163</span>
-<span class='line-number'>164</span>
-<span class='line-number'>165</span>
-<span class='line-number'>166</span>
-<span class='line-number'>167</span>
-<span class='line-number'>168</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>acl-2.2.51-12.el7.x86_64
-</span><span class='line'>apr-1.4.8-3.el7.x86_64
-</span><span class='line'>apr-util-1.5.2-6.el7.x86_64
-</span><span class='line'>audit-libs-2.4.1-5.el7.x86_64
-</span><span class='line'>basesystem-10.0-7.el7.noarch
-</span><span class='line'>bash-4.2.46-19.el7.x86_64
-</span><span class='line'>bind-libs-lite-9.9.4-29.el7.x86_64
-</span><span class='line'>bind-license-9.9.4-29.el7.noarch
-</span><span class='line'>binutils-2.23.52.0.1-54.el7.x86_64
-</span><span class='line'>bzip2-libs-1.0.6-13.el7.x86_64
-</span><span class='line'>ca-certificates-2015.2.4-71.el7.noarch
-</span><span class='line'>chkconfig-1.3.61-5.el7.x86_64
-</span><span class='line'>chrony-2.1.1-1.el7.x86_64
-</span><span class='line'>coreutils-8.22-15.el7.x86_64
-</span><span class='line'>cpio-2.11-24.el7.x86_64
-</span><span class='line'>cracklib-2.9.0-11.el7.x86_64
-</span><span class='line'>cracklib-dicts-2.9.0-11.el7.x86_64
-</span><span class='line'>cryptsetup-libs-1.6.7-1.el7.x86_64
-</span><span class='line'>curl-7.29.0-25.el7.x86_64
-</span><span class='line'>cyrus-sasl-lib-2.1.26-19.2.el7.x86_64
-</span><span class='line'>dbus-1.6.12-13.el7.x86_64
-</span><span class='line'>dbus-glib-0.100-7.el7.x86_64
-</span><span class='line'>dbus-libs-1.6.12-13.el7.x86_64
-</span><span class='line'>dbus-python-1.1.1-9.el7.x86_64
-</span><span class='line'>device-mapper-1.02.107-5.el7.x86_64
-</span><span class='line'>device-mapper-libs-1.02.107-5.el7.x86_64
-</span><span class='line'>dhclient-4.2.5-42.el7.x86_64
-</span><span class='line'>dhcp-common-4.2.5-42.el7.x86_64
-</span><span class='line'>dhcp-libs-4.2.5-42.el7.x86_64
-</span><span class='line'>diffutils-3.3-4.el7.x86_64
-</span><span class='line'>dracut-033-358.el7.x86_64
-</span><span class='line'>dracut-network-033-358.el7.x86_64
-</span><span class='line'>e2fsprogs-1.42.9-7.el7.x86_64
-</span><span class='line'>e2fsprogs-libs-1.42.9-7.el7.x86_64
-</span><span class='line'>ebtables-2.0.10-13.el7.x86_64
-</span><span class='line'>elfutils-libelf-0.163-3.el7.x86_64
-</span><span class='line'>elfutils-libs-0.163-3.el7.x86_64
-</span><span class='line'>ethtool-3.15-2.el7.x86_64
-</span><span class='line'>expat-2.1.0-8.el7.x86_64
-</span><span class='line'>file-libs-5.11-31.el7.x86_64
-</span><span class='line'>filesystem-3.2-20.el7.x86_64
-</span><span class='line'>findutils-4.5.11-5.el7.x86_64
-</span><span class='line'>firewalld-0.3.9-14.el7.noarch
-</span><span class='line'>gawk-4.0.2-4.el7.x86_64
-</span><span class='line'>gdbm-1.10-8.el7.x86_64
-</span><span class='line'>glib2-2.42.2-5.el7.x86_64
-</span><span class='line'>glibc-2.17-105.el7.x86_64
-</span><span class='line'>glibc-common-2.17-105.el7.x86_64
-</span><span class='line'>gmp-6.0.0-11.el7.x86_64
-</span><span class='line'>gnupg2-2.0.22-3.el7.x86_64
-</span><span class='line'>gobject-introspection-1.42.0-1.el7.x86_64
-</span><span class='line'>gpgme-1.3.2-5.el7.x86_64
-</span><span class='line'>grep-2.20-2.el7.x86_64
-</span><span class='line'>gzip-1.5-8.el7.x86_64
-</span><span class='line'>hardlink-1.0-19.el7.x86_64
-</span><span class='line'>hostname-3.13-3.el7.x86_64
-</span><span class='line'>httpd-2.4.6-40.el7.x86_64
-</span><span class='line'>httpd-tools-2.4.6-40.el7.x86_64
-</span><span class='line'>info-5.1-4.el7.x86_64
-</span><span class='line'>initscripts-9.49.30-1.el7.x86_64
-</span><span class='line'>iproute-3.10.0-54.el7.x86_64
-</span><span class='line'>iptables-1.4.21-16.el7.x86_64
-</span><span class='line'>iputils-20121221-7.el7.x86_64
-</span><span class='line'>kexec-tools-2.0.7-37.el7.x86_64
-</span><span class='line'>keyutils-libs-1.5.8-3.el7.x86_64
-</span><span class='line'>kmod-20-5.el7.x86_64
-</span><span class='line'>kmod-libs-20-5.el7.x86_64
-</span><span class='line'>kpartx-0.4.9-85.el7.x86_64
-</span><span class='line'>krb5-libs-1.13.2-10.el7.x86_64
-</span><span class='line'>langtable-0.0.31-3.el7.noarch
-</span><span class='line'>langtable-data-0.0.31-3.el7.noarch
-</span><span class='line'>langtable-python-0.0.31-3.el7.noarch
-</span><span class='line'>libacl-2.2.51-12.el7.x86_64
-</span><span class='line'>libassuan-2.1.0-3.el7.x86_64
-</span><span class='line'>libattr-2.4.46-12.el7.x86_64
-</span><span class='line'>libblkid-2.23.2-26.el7.x86_64
-</span><span class='line'>libcap-2.22-8.el7.x86_64
-</span><span class='line'>libcap-ng-0.7.5-4.el7.x86_64
-</span><span class='line'>libcom_err-1.42.9-7.el7.x86_64
-</span><span class='line'>libcurl-7.29.0-25.el7.x86_64
-</span><span class='line'>libdb-5.3.21-19.el7.x86_64
-</span><span class='line'>libdb-utils-5.3.21-19.el7.x86_64
-</span><span class='line'>libedit-3.0-12.20121213cvs.el7.x86_64
-</span><span class='line'>libffi-3.0.13-16.el7.x86_64
-</span><span class='line'>libgcc-4.8.5-4.el7.x86_64
-</span><span class='line'>libgcrypt-1.5.3-12.el7_1.1.x86_64
-</span><span class='line'>libgpg-error-1.12-3.el7.x86_64
-</span><span class='line'>libidn-1.28-4.el7.x86_64
-</span><span class='line'>libmnl-1.0.3-7.el7.x86_64
-</span><span class='line'>libmount-2.23.2-26.el7.x86_64
-</span><span class='line'>libnetfilter_conntrack-1.0.4-2.el7.x86_64
-</span><span class='line'>libnfnetlink-1.0.1-4.el7.x86_64
-</span><span class='line'>libpwquality-1.2.3-4.el7.x86_64
-</span><span class='line'>libselinux-2.2.2-6.el7.x86_64
-</span><span class='line'>libselinux-python-2.2.2-6.el7.x86_64
-</span><span class='line'>libsemanage-2.1.10-18.el7.x86_64
-</span><span class='line'>libsepol-2.1.9-3.el7.x86_64
-</span><span class='line'>libss-1.42.9-7.el7.x86_64
-</span><span class='line'>libssh2-1.4.3-10.el7.x86_64
-</span><span class='line'>libstdc++-4.8.5-4.el7.x86_64
-</span><span class='line'>libtasn1-3.8-2.el7.x86_64
-</span><span class='line'>libuser-0.60-7.el7_1.x86_64
-</span><span class='line'>libutempter-1.1.6-4.el7.x86_64
-</span><span class='line'>libuuid-2.23.2-26.el7.x86_64
-</span><span class='line'>libverto-0.2.5-4.el7.x86_64
-</span><span class='line'>libxml2-2.9.1-5.el7_1.2.x86_64
-</span><span class='line'>lua-5.1.4-14.el7.x86_64
-</span><span class='line'>lzo-2.06-8.el7.x86_64
-</span><span class='line'>mailcap-2.1.41-2.el7.noarch
-</span><span class='line'>ncurses-5.9-13.20130511.el7.x86_64
-</span><span class='line'>ncurses-base-5.9-13.20130511.el7.noarch
-</span><span class='line'>ncurses-libs-5.9-13.20130511.el7.x86_64
-</span><span class='line'>nspr-4.10.8-1.el7_1.x86_64
-</span><span class='line'>nss-3.19.1-17.el7.x86_64
-</span><span class='line'>nss-softokn-3.16.2.3-13.el7_1.x86_64
-</span><span class='line'>nss-softokn-freebl-3.16.2.3-13.el7_1.x86_64
-</span><span class='line'>nss-sysinit-3.19.1-17.el7.x86_64
-</span><span class='line'>nss-tools-3.19.1-17.el7.x86_64
-</span><span class='line'>nss-util-3.19.1-3.el7_1.x86_64
-</span><span class='line'>openldap-2.4.40-8.el7.x86_64
-</span><span class='line'>openssl-libs-1.0.1e-42.el7_1.9.x86_64
-</span><span class='line'>p11-kit-0.20.7-3.el7.x86_64
-</span><span class='line'>p11-kit-trust-0.20.7-3.el7.x86_64
-</span><span class='line'>pam-1.1.8-12.el7_1.1.x86_64
-</span><span class='line'>pcre-8.32-15.el7.x86_64
-</span><span class='line'>pinentry-0.8.1-14.el7.x86_64
-</span><span class='line'>pkgconfig-0.27.1-4.el7.x86_64
-</span><span class='line'>popt-1.13-16.el7.x86_64
-</span><span class='line'>procps-ng-3.3.10-3.el7.x86_64
-</span><span class='line'>pth-2.0.7-23.el7.x86_64
-</span><span class='line'>pygobject3-base-3.14.0-3.el7.x86_64
-</span><span class='line'>pygpgme-0.3-9.el7.x86_64
-</span><span class='line'>pyliblzma-0.5.3-11.el7.x86_64
-</span><span class='line'>python-2.7.5-34.el7.x86_64
-</span><span class='line'>python-decorator-3.4.0-3.el7.noarch
-</span><span class='line'>python-iniparse-0.4-9.el7.noarch
-</span><span class='line'>python-libs-2.7.5-34.el7.x86_64
-</span><span class='line'>python-pycurl-7.19.0-17.el7.x86_64
-</span><span class='line'>python-slip-0.4.0-2.el7.noarch
-</span><span class='line'>python-slip-dbus-0.4.0-2.el7.noarch
-</span><span class='line'>python-urlgrabber-3.10-7.el7.noarch
-</span><span class='line'>pyxattr-0.5.1-5.el7.x86_64
-</span><span class='line'>qrencode-libs-3.4.1-3.el7.x86_64
-</span><span class='line'>readline-6.2-9.el7.x86_64
-</span><span class='line'>redhat-logos-70.0.3-4.el7.noarch
-</span><span class='line'>redhat-release-server-7.2-7.el7.x86_64
-</span><span class='line'>rpm-4.11.3-17.el7.x86_64
-</span><span class='line'>rpm-build-libs-4.11.3-17.el7.x86_64
-</span><span class='line'>rpm-libs-4.11.3-17.el7.x86_64
-</span><span class='line'>rpm-python-4.11.3-17.el7.x86_64
-</span><span class='line'>sed-4.2.2-5.el7.x86_64
-</span><span class='line'>setup-2.8.71-6.el7.noarch
-</span><span class='line'>shadow-utils-4.1.5.1-18.el7.x86_64
-</span><span class='line'>shared-mime-info-1.1-9.el7.x86_64
-</span><span class='line'>snappy-1.1.0-3.el7.x86_64
-</span><span class='line'>sqlite-3.7.17-8.el7.x86_64
-</span><span class='line'>systemd-219-19.el7.x86_64
-</span><span class='line'>systemd-libs-219-19.el7.x86_64
-</span><span class='line'>sysvinit-tools-2.88-14.dsf.el7.x86_64
-</span><span class='line'>tzdata-2015g-1.el7.noarch
-</span><span class='line'>ustr-1.0.4-16.el7.x86_64
-</span><span class='line'>util-linux-2.23.2-26.el7.x86_64
-</span><span class='line'>xz-5.1.2-12alpha.el7.x86_64
-</span><span class='line'>xz-libs-5.1.2-12alpha.el7.x86_64
-</span><span class='line'>yum-3.4.3-132.el7.noarch
-</span><span class='line'>yum-langpacks-0.4.2-4.el7.noarch
-</span><span class='line'>yum-metadata-parser-1.1.4-10.el7.x86_64
-</span><span class='line'>zlib-1.2.7-15.el7.x86_64</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 ]]></content>
   </entry>
   

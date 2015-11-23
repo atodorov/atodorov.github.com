@@ -9,8 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Happy new year everyone. During the holidays I&#8217;ve discovered several interesting
-bugs which will be revealed in this blog. Starting today with &hellip;">
+  <meta name="description" content="Image source Pocketnow Recently I&#8217;ve been playing around with a
+Samsung Gear Fit
+and while the hardware seems good I&#8217;m a bit disapointed &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +77,199 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/">Pedometer Bug in Samsung Gear Fit Smartwatch</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-09T10:53:00+02:00" pubdate data-updated="true">Jan 9<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a style="float:left;display:inline-block;margin-right:10px;" href="http://www.amazon.com/gp/product/B00J4DY8RU/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00J4DY8RU&linkCode=as2&tag=atodorovorg-20&linkId=RNJGVYUTOOJFGWOU">
+<img src="/images/samsung/gear_fit.jpg" />
+</a>
+<sub>
+Image source <a href="http://pocketnow.com/2014/05/02/samsung-gear-fit-review-pre-buttal-video">Pocketnow</a>
+<sub></p>
+
+<p>Recently I&#8217;ve been playing around with a
+<a href="http://www.amazon.com/gp/product/B00J4DY8RU/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00J4DY8RU&linkCode=as2&tag=atodorovorg-20&linkId=RNJGVYUTOOJFGWOU">Samsung Gear Fit</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00J4DY8RU" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+and while the hardware seems good I&#8217;m a bit disapointed on the software side.
+There is at least one bug which is clearly visible - <strong>pedometer counts calories twice
+when it&#8217;s on and exercise mode is started</strong>.</p>
+
+<p>How to test:</p>
+
+<ul>
+<li>Start the <em>Pedometer</em> app and record any initial readings;</li>
+<li>Walk a fixed distance and at the end record all readings;</li>
+<li>Now go back to the <em>Exercise</em> app and select a <em>Walking</em>
+exercise from the menu. Tap <em>Start</em>;</li>
+<li>Walk back the same distance/road as before. At the end of the journey
+stop the walking exercise and record all readings.</li>
+</ul>
+
+
+<p>Expected results:</p>
+
+<p>At the end of the trip I expect to see roughly the same calories burned
+for both directions.</p>
+
+<p>Actual results:</p>
+
+<p>The return trip counted twice as many calories compared to the forward trip.
+Here&#8217;s some actual data to prove it:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>+--------------------------+----------+----------------+---------+-------------+---------+
+</span><span class='line'>|                          | Initial  | Forward trip   |         | Return trip |         |
+</span><span class='line'>|                          | Readings | Pedometer only |  Delta  | Pedometer & |  Delta  |
+</span><span class='line'>|                          |          |                |         | Exercise    |         |
+</span><span class='line'>+--------------------------+----------+----------------+---------+-------------+---------+
+</span><span class='line'>|              Total Steps | 14409 st | 14798 st       | 389 st  | 15246 st    | 448 st  |
+</span><span class='line'>+--------------------------+----------+----------------+---------+-------------+---------+
+</span><span class='line'>|           Total Distance | 12,19 km | 12,52 km       | 0,33 km | 12,90 km    | 0,38 km |
+</span><span class='line'>+--------------------------+----------+----------------+---------+-------------+---------+
+</span><span class='line'>| Cal burned via Pedometer |  731 Cal |  751 Cal       | 20 Cal  |  772 Cal    | 21 Cal  |
+</span><span class='line'>+--------------------------+----------+----------------+=========+-------------+=========+
+</span><span class='line'>| Cal burned via Exercise  |  439 Cal |  439 Cal       | 0       |  460 Cal    | 21 Cal  |
+</span><span class='line'>+--------------------------+----------+----------------+---------+-------------+=========+
+</span><span class='line'>|    Total calories burned | 1170 Cal | 1190 Cal       | 20 cal  | 1232 Cal    | 42 Cal  |
+</span><span class='line'>+--------------------------+----------+----------------+=========+-------------+=========+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Note:</strong> Data values above were taken from Samsung&#8217;s <em>S Health</em> app which is easier to work with
+instead of the Gear Fit itself.</p>
+
+<p>The problem is that both apps are accessing the sensor simultaneously and not aware of each other.
+In theory it should be relatively easy to block access of one app while the other is running but
+that may not be so easy to implement on the limited platform the Gear Fit is.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/07/2-barcode-related-bugs-in-myfitnesspal/">2 Barcode Related Bugs in MyFitnessPal</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-07T14:44:00+02:00" pubdate data-updated="true">Jan 7<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/01/07/2-barcode-related-bugs-in-myfitnesspal/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/barcode/fail.jpg" title="Barcode that fails to scan" alt="Barcode that fails to scan" /></p>
+
+<p><strong>Did you know that the popular <em>MyFitnessPal</em> application can&#8217;t scan barcodes
+printed on curved surfaces?</strong> The above barcode fails to scan because it is
+printed on a metal can full of roasted almonds :). In contrast the
+<em>Barcode Scanner</em> from <em>ZXing Team</em> understands it just fine. My bet is
+<em>MyFitnessPal</em> uses less advanced barcode scanning library. Judging from
+the visual clues in the app the issue is between 6 and 0 where white space is wider.</p>
+
+<p><img src="/images/barcode/pass.jpg" title="Barcode that scans fine" alt="Barcode that scans fine" /></p>
+
+<p>Despite being a bit blurry this second barcode is printed on a flat surface and
+is understood by both <em>MyFitnessPal</em> and &#8220;ZXing Barcode Scanner&#8221;.</p>
+
+<p><strong>NOTE</strong> I get the same results regardless if I try to scan the actual barcode
+printed on packaging, a picture from a mobile device screen or these two images
+from the laptop screen.</p>
+
+<p><strong>MyFitnessPal also has problems with duplicate barcodes!</strong> Barcodes are not unique
+and many producers use the same code for multiple products. I&#8217;ve seen this in the
+case of two different varieties of salami from the same manufacturer on the good end
+and two different products produced across the world (eggs and popcorn) on the
+extreme end.</p>
+
+<p>Once the user scans their barcodes and establish that the existing information is
+not correct they can <em>Create a Food</em> and update the calories database. This is then
+synced back to MyFitnesPal servers and overrides any existing information. When the same
+barcode is scanned for the second time only the new DB entry is visible.</p>
+
+<p>How to reproduce:</p>
+
+<ul>
+<li>Scan an existing barcode and enter it to MFP database if not already there;</li>
+<li>Scan the same barcode one more time and pretend the information is not correct;</li>
+<li>Click the <em>Create a Food</em> button and fill-in the fields. For example use a
+different food name to distinguish between the two database entries. Save!</li>
+<li>From another device with different account (to verify information in DB)
+scan the same barcode again.</li>
+</ul>
+
+
+<p>Actual results:
+The last entered information is shown.</p>
+
+<p>Expected results:
+User is shown both DB records and can select between them.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1971,199 +2165,6 @@ source code upon request.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/11/summary-of-evolve-digital/">Summary of Evolve Digital</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-11T22:29:00+03:00" pubdate data-updated="true">Jun 11<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/06/11/summary-of-evolve-digital/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/evolve_digital.jpg" title="Grand Coalition for Digital Jobs" alt="Grand Coalition for Digital Jobs" /></p>
-
-<p>Yesterday I&#8217;ve visited an event organized by the
-<a href="http://www.atlantic-club.org/index.php?en">Atlantic Club of Bulgaria</a> which
-officially marked the launch of a digital national alliance in Bulgaria. This is
-part of an initiative of the European Commission, called
-<a href="http://ec.europa.eu/digital-agenda/en/grand-coalition-digital-jobs">Grand Coalition for Digital Jobs</a>,
-which aims to address the lack of
-sufficient amount and quality professionals in Europe working in the
-field of Information and Communication technologies.</p>
-
-<p>The first part was few short keynotes, including one from deputy prime minister
-and memorandum signing and group photo. In the keynotes (and afterwards)
-the stress was on the lack of relevant ICT skills and the need of an estimated
-1 million digital workers by 2020 in EU alone.</p>
-
-<p>The next two sessions were panel discussions. The first one presenting the local
-chapter of the Digital Coalition in Bulgaria.</p>
-
-<p>The goals of the coalition are to:</p>
-
-<ul>
-<li>help more people master more digital skills (not only as developers but also
-proper usage of social media, how to create content, etc)</li>
-<li>enable more people to choose digital jobs</li>
-<li>help local talents present themselves on the global scene</li>
-</ul>
-
-
-<p>How it (is supposed to) works:</p>
-
-<ul>
-<li>initiate own ideas and propose them for implementation (to the ICT industry and broad public I guess)</li>
-<li>stimulate learning through doing, learning by example using real use cases</li>
-<li>help (and possibly sponsor) outside projects and ideas</li>
-</ul>
-
-
-<p>Then the various companies supporting the coalition pledged how they are going to
-help. The most interesting news from this panel was the announcement of a new HP
-data center in Sofia which will be used as a training lab with access available to
-students.</p>
-
-<p>The second panel was about education and how to bridge the gap! The interesting points were:</p>
-
-<ul>
-<li>Ministry of Education and Science admits they have finally realized that our educational
-system and programs are behind current tendencies and need concrete steps in order to boost
-education and science research;</li>
-<li>Samsung will open their innovation lab at Sofia University to outside students as well;</li>
-<li>We need to pay more attention to content and training of teachers because they also have
-a skills gap while young children do not;</li>
-</ul>
-
-
-<p>I particularly liked what Prof. Petar Kenderov from the Institute of Mathematics and Informatics
-at Bulgarian Academy of Sciences said - in the outside world children are constantly sharing
-and communicating with each other while at school (also to some extent in universities) they
-are expected to not communicate, not share and keep quiet. He emphasized the value of learning through
-experimentation vs. learning through reading and writing, e.g. the current way things work
-and the old way of teaching.</p>
-
-<p>Another thing that was obvious was that otherwise competing companies (e.g. Microsoft, Oracle, SAP,
-VMware) were working together to fix some of the problems mentioned. However I&#8217;m a bit skeptical
-that large multi-national companies will be flexible enough to make a positive change.
-I&#8217;d bet on the independent organizations like <a href="https://hackbulgaria.com/">HackBulgaria</a> and
-Svetlin Nakov&#8217;s <a href="https://softuni.bg/">Software University</a> or initiatives by local Bulgarian companies
-like the already proven <a href="http://academy.telerik.com/">Telerik Academy</a>.</p>
-
-<p>Here&#8217;s the entire program of the event, for anyone interested:</p>
-
-<blockquote><p>“EVOLVE DIGITAL”<br/>10th June 2014 (Tuesday)</p><p>10:00 – 10:10 Opening: Gergana Passy, Digital Champion Bulgaria</p><p>10:10 – 10:20 Daniela Bobeva, Deputy Prime-Minister of the Republic of Bulgaria<br/>10:20 – 10:30 Constantijn van Oranje, Head of Cabinet of Vice-President of EC Neelie Kroes<br/>10:30 – 10:40 Jonathan Murray, Director, Digital Europe<br/>Special guest: Sandi Češko, Founder & President, Studio Moderna</p><p>10:40 – 10:50 Memorandum Signing and Group Photo<br/>10:50 – 11:00 Pause</p><p>11:00 – 12:15 Digital Coalition Bulgaria<br/>                Moderator: Boyan Benev, Founder, Forward.li</p><p>                Rennie Popcheva, CEO, Digital Coalition Bulgaria<br/>                Boyko Iaramov, Co-founder & Chief Process Officer, Telerik<br/>                Marta Poslad, Senior Policy Advisor, CEE Google<br/>                Petar Ivanov, General Manager, Microsoft Bulgaria<br/>                Iravan Hira, General Manager, Hewlett-Packard Bulgaria<br/>                Atanas Dobrev, CEO, VIVACOM<br/>                Danny Gooris, Senior Manager, Oracle Academy<br/>                Dimitar Dimitrov, Relationship Business Development, Lenovo<br/>                Stamen Kochkov, Vice-president, SAP Labs Bulgaria, Chairman of BASSCOM</p><p><br/>12:15 – 12:30 Coffee Break</p><p>12:30 – 13:45 Education in the Digital Era<br/>                Moderator: Boyan Benev, Founder, Forward.li</p><p>                Ivan Krastev, Deputy Minister, Ministry of Education and Science, Republic of Bulgaria<br/>                George Stoytchev, Executive Director, Open Society Institute Sofia<br/>                Sabina Stirb, Public Affairs & Corporate Citizenship Manager, Samsung<br/>                Prof. Petar Kenderov, Institute of Mathematics and Informatics, Bulgarian<br/>                Academy of Sciences<br/>                Dr. George Sharkov, Director, European Software Institute - Center Eastern<br/>                Europe<br/>                Elena Marinova, President, Musala Soft, Chair of the Educational Commission,<br/>                Bulgarian Association of Information Technologies<br/>                Svetlin Nakov, Founder, Software University</p><p>13:45 – Lunch in Restaurant “At the Eagles”<br/>                11 Dyakon Ygnatiy str., in the building of Ministry of transport, 18th Floor</p></blockquote>
-
-
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/02/bulgaria-web-summit-report/">Bulgaria Web Summit Report</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-02T09:02:00+03:00" pubdate data-updated="true">Jun 2<span>nd</span>, 2014</time>
-        
-         | <a href="/blog/2014/06/02/bulgaria-web-summit-report/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Last week ended up with <a href="http://bulgariawebsummit.com/">Bulgaria Web Summit</a>.
-The event was very big this year, with 4 halls and 600 visitors.
-I was moderating the so called <em>JavaScript</em> hall and will concentrate on
-what happened there.</p>
-
-<p><img src="/images/bgws2014.jpg" title="BGWS Rhodopi Hall at 10:00" alt="BGWS Rhodopi Hall at 10:00" />
-This is what my hall looked like at around 10:00 and stayed pretty much the same
-during the entire day.</p>
-
-<p>Speakers at hall Rhodopi were (in order of appearance)</p>
-
-<ul>
-<li><a href="https://twitter.com/delian">Delian Delchev</a> talking about the JavaScript
-revolution taking over the world and how this language has become the most
-widely used programming language in the world.</li>
-<li><a href="https://twitter.com/hkdobrev">Haralan Dobrev</a> with some tips about development
-workflows, git, continuous integration and unit testing.</li>
-<li>Yoga for Geeks during the lunch break.</li>
-<li>Boyan Dzhumakov with topics about home automation and Internet of things, who
-demonstrated his bed side lamp controlled via a light sensor and Arduino.</li>
-<li><a href="http://www.boyanov.org/">Neven Boyanov</a> continuing on the hardware topics with
-comparison of ATmel, Arduino and Raspberry Pi and showing more examples of
-small programmable devices.</li>
-<li><a href="https://twitter.com/attodorov">Angel Todorov</a> from Infragistics with a very
-interesting talk about JavaScript instrumentation for performance analysis.
-A very cool presentation and you should definitely check out his
-<a href="https://github.com/attodorov/cheetah.js">cheetah.js</a> framework.</li>
-<li><a href="https://twitter.com/KrasimirTsonev">Krasimir Tsonev</a> with
-<a href="http://absurdjs.com/">AbsurdJS</a> - a JavaScript library with superpowers.
-Teaser: Krasimir is also publishing a book caled
-<a href="https://twitter.com/atodorov_/status/472723298053537792">Node.js Blueprints</a>.</li>
-<li><a href="https://twitter.com/krokodilerian">Vasil Kolev</a> with a talk about security
-and web service design and how most of the web is doing it wrong :).</li>
-</ul>
-
-
-<p>Unfortunately there is no video or audio recording available. If you find
-some of the talks interesting and would like to get more info about it let
-me know. I will ask the presenters to share their slides or give more details
-where possible.</p>
-
-<p>Don&#8217;t worry if you&#8217;ve missed the Web Summit in Sofia. There will be another one
-in the autumn, held at Veliko Tarnovo. For more info please subscribe to the
-<a href="http://bulgariawebsummit.us6.list-manage.com/subscribe?u=44058a4036fe9516b0ea2004c&amp;id=e768a8c09a">newsletter</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/4/">&larr; Older</a>
@@ -2215,6 +2216,14 @@ in the autumn, held at Veliko Tarnovo. For more info please subscribe to the
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2 </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins from git</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/">Updated MacBook Air Drivers for RHEL 7.2</a>
       </li>
     
@@ -2244,14 +2253,6 @@ in the autumn, held at Veliko Tarnovo. For more info please subscribe to the
     
       <li class="post">
         <a href="/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/15/anaconda-coverage.py-details/">Anaconda &amp; coverage.py - Pt.2 - Details</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">Anaconda &amp; coverage.py - Pt.1 - Introduction</a>
       </li>
     
   </ul>

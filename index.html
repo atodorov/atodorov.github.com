@@ -9,10 +9,9 @@
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Yesterday I&#8217;ve upgraded to
-Red Hat Enterprise Linux 7.2
-on my MacBook Air and I decided to rebuild the wifi and backlight drivers.
-Wifi broke &hellip;">
+  <meta name="description" content="Do you remember my example of a
+bad stub design in DNF ?
+At that time I didn&#8217;t have a good example of why this is a bad design and what are the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +77,120 @@ you can logoff, but you can never leave
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-11-23T15:55:00+02:00" pubdate data-updated="true">Nov 23<span>rd</span>, 2015</time>
+        
+         | <a href="/blog/2015/11/23/bad-stub-design-in-dnf/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn&#8217;t have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a></p>
+
+<blockquote><p>Note: the benefit of this patch are quite subtle.<br/>I&#8217;ve played around with creating a few more tests and the benefit I see affect<br/>only a few lines of code.</p><p>For #114 there doesn&#8217;t seem to be any need to test _get_query directly,<br/>although we call<br/><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span><br/><span class='line-number'>2</span><br/></pre></td><td class='code'><pre><code class=''><span class='line'>   q = self.base.sack.query()<br/></span><span class='line'>   q = q.available()</span></code></pre></td></tr></table></div></figure></p><p>which will benefit from this PR b/c we&#8217;re stubbing out the entire Sack object.<br/>I will work on a test later today/tomorrow to see how it looks.</p><p>OTOH for #113 where we modify _get_query the test can look something like this:</p><p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span><br/><span class='line-number'>2</span><br/><span class='line-number'>3</span><br/><span class='line-number'>4</span><br/><span class='line-number'>5</span><br/><span class='line-number'>6</span><br/><span class='line-number'>7</span><br/><span class='line-number'>8</span><br/><span class='line-number'>9</span><br/><span class='line-number'>10</span><br/><span class='line-number'>11</span><br/></pre></td><td class='code'><pre><code class=''><span class='line'>def test_get_query_with_local_rpm(self):<br/></span><span class='line'>    try:<br/></span><span class='line'>        (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')<br/></span><span class='line'>        # b/c self.cmd.cli.base is a mock object add_remote_rpm<br/></span><span class='line'>        # will not update the available packages while testing.<br/></span><span class='line'>        # it is expected to hit an exception<br/></span><span class='line'>        with self.assertRaises(dnf.exceptions.PackageNotFoundError):<br/></span><span class='line'>            self.cmd._get_query(rpm_path)<br/></span><span class='line'>        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)<br/></span><span class='line'>    finally:<br/></span><span class='line'>        os.remove(rpm_path)</span></code></pre></td></tr></table></div></figure></p><p>Note the comment above the with block. If we leave out `_get_query` as before<br/>(a simple stub function) we&#8217;re not going to be able to use `assert_called_with`<br/>later.</p></blockquote>
+
+
+<p>Now a more practical example. See
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins From Git</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-11-23T15:50:00+02:00" pubdate data-updated="true">Nov 23<span>rd</span>, 2015</time>
+        
+         | <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This is mostly for self reference because it is not currently documented
+in the code. To use dnf plugins from a local git checkout modify your
+<code>/etc/dnf/dnf.conf</code> and add the following line under the <code>[main]</code> section:</p>
+
+<pre><code>pluginpath=/path/to/dnf-plugins-core/plugins
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1846,6 +1959,9 @@ in open source projects but it&#8217;s a great example nevertheless.</p>
 <p>For those of you who&#8217;d like to get started on unit testing I can recommend the book
 <a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 by Roy Osherove!</p>
+
+<p><strong>UPDATE</strong>: Part 2 with more practical examples can be found
+<a href="/blog/2015/11/23/bad-stub-design-in-dnf/">here</a>.</p>
 </div>
   
   
@@ -2228,154 +2344,6 @@ If you&#8217;re interested in speaking please get in touch with me ASAP.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/05/22/devit-conf-2015-impressions/">DEVit Conf 2015 Impressions</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-05-22T12:01:00+03:00" pubdate data-updated="true">May 22<span>nd</span>, 2015</time>
-        
-         | <a href="/blog/2015/05/22/devit-conf-2015-impressions/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>It&#8217;s been a busy week after <a href="http://devitconf.org/">DEVit conf</a> took place in
-Thessaloniki. Here are my impressions.</p>
-
-<p><img src="/images/devit2015.jpg" title="Crack, Train, Fix, Release" alt="Crack, Train, Fix, Release" /></p>
-
-<h2>Sessions</h2>
-
-<p>I&#8217;ve started the day with the session called &#8220;Crack, Train, Fix, Release&#8221; by
-Chris Heilmann. While it was very interesting for some unknown reason I
-was expecting a talk more closely related to software testing. Unfortunately at the
-same time in the other room was a talk called &#8220;Integration Testing from the Trenches&#8221;
-by Nicolas Frankel which I missed.</p>
-
-<p>At the end Chris answered the question &#8220;What to do about old versions of IE ?&#8221;.
-And the answer pretty much was &#8220;Don&#8217;t try to support everything, leave them with
-basic functionality so that users can achieve what they came for on your website.
-Don&#8217;t put nice buttons b/c IE 6 users are not used to nice things and they get confused.&#8221;</p>
-
-<p>If you remember I had a similar question to Jeremy Keith at
-<a href="/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/">Bulgaria Web Summit</a> last month
-and the answer was similar:</p>
-
-<blockquote><p>Q: Which one is Jeremy&#8217;s favorite device/browser to develop for. <br/>A: Your approach is wrong and instead we should be thinking in terms of what features are <br/>essential or non-essential for our websites and develop around features<br/>(if supported, if not supported) not around browsers!</p></blockquote>
-
-
-<p>Btw I did ask Chris if he knows Jeremy and he does.</p>
-
-<p>After the coffee break there was &#8220;JavaScript ♥ Unicode&#8221; by Mathias Bynens which
-I saw last year at <a href="http://how.camp/">How Camp</a> in Veliko Tarnovo so I just stopped by
-to say hi and went to listen to
-&#8220;The future of responsive web design: web component queries&#8221; by Nikos Zinas.
-As far as I understood Nikos is a local rock-star developer. I&#8217;m not much into web
-development but the opportunity to create your own HTML components (tags) looks
-very promising. I guess there will be more business coming for
-<a href="http://telerik.com">Telerik</a> :).</p>
-
-<p>I wanted to listen to &#8220;Live Productive Coder&#8221; by Heinz Kabutz but that one started
-in Greek so I switched the room for
-&#8220;iOS real time content modifications using websockets&#8221; by  Benny Weingarten-Gabbay.</p>
-
-<p>After lunch I went straight for
-&#8220;Introduction to Docker: What is it and why should I care?&#8221; by Ian Miell
-which IMO was the most interesting talk of the day. It wasn&#8217;t very technical but
-managed to clear some of the mysticism around Docker and what it actually is.
-I tried to grab a few minutes of Ian&#8217;s time and we found topics of common interest
-to talk about (<a href="http://www.projectatomic.io/">Project Atomic</a> anyone?) but later
-failed to find him and continue the talk. I guess I&#8217;ll have to follow online.</p>
-
-<p>Tim Perry with &#8220;Your Web Stack Would Betray You In An Instant&#8221; made a great show.
-The room was packed, I myself was actually standing the whole time. He described a series
-of failures across the entire web development stack which gave developers hard times
-patching and upgrading their services. The lesson: everything fails, be prepared!</p>
-
-<p>The last talk I visited was &#8220;GitHub Automation&#8221; by Forbes Lindesay. It was more of an
-inspirational talk, rather than technical one. GitHub provides cool API so why not use it?</p>
-
-<h2>Organization</h2>
-
-<p><img src="/images/devit2015team.jpg" title="DEVit team" alt="DEVit team" /></p>
-
-<p>From what I know this is the first year of DEVit. For a first timer the team did great!
-I particularly liked the two coffee breaks before lunch and in the early afternoon and the
-sponsors pitches in between the main talks.</p>
-
-<p>All talks were recorded but I have no idea what&#8217;s happening with the videos!</p>
-
-<p>I will definitely make a point of visiting Thessaloniki more often and follow the local
-IT and start-up scenes there. And tonight is Silicon Drinkabout which will be the official
-after party of <a href="http://digitalk.bg/">DigitalK</a> in Sofia.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/05/21/bug-in-vmware-open-house-website/">Bug in VMware Open House Website</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-05-21T14:55:00+03:00" pubdate data-updated="true">May 21<span>st</span>, 2015</time>
-        
-         | <a href="/blog/2015/05/21/bug-in-vmware-open-house-website/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/vmware_bug.png" title="Bug in VMware Open House website" alt="&quot;Open House website bug&quot;" /></p>
-
-<p>This is a slightly annoying UI bug in
-<a href="http://www.openhouse.vmware-bulgaria.com/">VMware&#8217;s Open House</a> website. I&#8217;ve reported
-it and hopefully they will fix it.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2425,6 +2393,14 @@ it and hopefully they will fix it.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2 </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins from git</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/">Updated MacBook Air Drivers for RHEL 7.2</a>
       </li>
     
@@ -2454,14 +2430,6 @@ it and hopefully they will fix it.</p>
     
       <li class="post">
         <a href="/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/15/anaconda-coverage.py-details/">Anaconda &amp; coverage.py - Pt.2 - Details</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">Anaconda &amp; coverage.py - Pt.1 - Introduction</a>
       </li>
     
   </ul>
