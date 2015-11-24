@@ -1,10 +1,8 @@
 ---
-layout: page
+layout: post
 title: "Give Away List"
 date: 2013-04-05 14:53
 comments: true
-sharing: true
-footer: true
 categories : ['books']
 ---
 
