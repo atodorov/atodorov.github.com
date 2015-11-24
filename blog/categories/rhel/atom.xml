@@ -4,7 +4,7 @@
   <title><![CDATA[Category: RHEL | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/rhel/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T17:19:35+02:00</updated>
+  <updated>2015-11-24T22:05:37+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python-libs in RHEL 7.2 broke SSL verification in s3cmd]]></title>
+    <link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
+    <updated>2015-11-24T21:44:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd</id>
+    <content type="html"><![CDATA[<p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+
+<pre><code>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</code></pre>
+
+<p>This looks a bit doggy as I don't quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+
+<p>Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Updated MacBook Air Drivers for RHEL 7.2]]></title>
@@ -107,54 +154,6 @@ but I have no idea what the status is. For more info see:</p>
 <li><a href="http://airlied.livejournal.com/80797.html">http://airlied.livejournal.com/80797.html</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Thunderbolt to Ethernet Adapter on Linux]]></title>
-    <link href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"/>
-    <updated>2015-05-04T22:27:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux</id>
-    <content type="html"><![CDATA[<p>As it seems my
-<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-works with
-<a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">RHEL 7 on a MacBook Air</a>
-despite some reports it may not.</p>
-
-<p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
-Detailed <em>lspci</em> below:</p>
-
-<pre><code>0a:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM57762 Gigabit Ethernet PCIe
-    Subsystem: Apple Inc. Device 00f6
-    Physical Slot: 9
-    Flags: bus master, fast devsel, latency 0, IRQ 19
-    Memory at cd800000 (64-bit, prefetchable) [size=64K]
-    Memory at cd810000 (64-bit, prefetchable) [size=64K]
-    [virtual] Expansion ROM at cd820000 [disabled] [size=64K]
-    Capabilities: [48] Power Management version 3
-    Capabilities: [50] Vital Product Data
-    Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
-    Capabilities: [a0] MSI-X: Enable+ Count=6 Masked-
-    Capabilities: [ac] Express Endpoint, MSI 00
-    Capabilities: [100] Advanced Error Reporting
-    Capabilities: [13c] Device Serial Number 00-00-ac-87-a3-25-20-33
-    Capabilities: [150] Power Budgeting &lt;?&gt;
-    Capabilities: [160] Virtual Channel
-    Capabilities: [1b0] Latency Tolerance Reporting
-    Kernel driver in use: tg3
-</code></pre>
-
-<p>Unplugging and pluggin back in the network cable works as expected.
-I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
-adapter but couldn't reproduce it repliably or grab more info.</p>
-
-<p>For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
-this
-<a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;id=16603153666d22df544ae9f9b3764fd18da28eeb">upstream commit</a>.
-I'm not sure why it works though.</p>
-
-<p>If I remember correctly <em>tg3</em> is available during installation so you should
-be able to use the Thunderbolt adapter instead of WiFi as well.</p>
 ]]></content>
   </entry>
   

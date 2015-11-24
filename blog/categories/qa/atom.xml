@@ -4,7 +4,7 @@
   <title><![CDATA[Category: QA | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T17:19:35+02:00</updated>
+  <updated>2015-11-24T22:05:37+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python-libs in RHEL 7.2 broke SSL verification in s3cmd]]></title>
+    <link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
+    <updated>2015-11-24T21:44:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd</id>
+    <content type="html"><![CDATA[<p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+
+<pre><code>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</code></pre>
+
+<p>This looks a bit doggy as I don't quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+
+<p>Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GitHub Bugzilla Hook]]></title>
@@ -139,28 +186,6 @@ enable accessibility, do a better job cleaning up after a failure,
 enable coverage and hook everything into <code>make ci</code>.</p>
 
 <p>Happy testing!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Running Anaconda from git]]></title>
-    <link href="http://atodorov.org/blog/2015/11/13/running-anaconda-from-git/"/>
-    <updated>2015-11-13T10:48:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/11/13/running-anaconda-from-git</id>
-    <content type="html"><![CDATA[<p>It is now possible to execute anaconda directly from a git checkout.</p>
-
-<p><strong>Disclaimer:</strong> this is only for testing purposes, you are not supposed to
-execute anaconda from git and install a running system! My intention is
-to use this feature and rewrite the Dogtail tests inside <code>tests/gui/</code> which
-rely on having a LiveCD.iso and running VMs to execute. For me this has proven
-very slow and difficult to debug problems in the past hence the change.</p>
-
-<p><em>Note:</em> you will need to have an active DISPLAY in your environment and
-also set SELinux to permissive, see
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1276376">rhbz#1276376</a>.</p>
-
-<p>Please see <a href="https://github.com/rhinstaller/anaconda/pull/438">PR 438</a> for
-more details.</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T17:19:35+02:00</updated>
+  <updated>2015-11-24T22:05:37+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python-libs in RHEL 7.2 broke SSL verification in s3cmd]]></title>
+    <link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
+    <updated>2015-11-24T21:44:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd</id>
+    <content type="html"><![CDATA[<p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it&#8217;s been broken since last Friday when I&#8217;ve upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+
+<pre><code>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</code></pre>
+
+<p>This looks a bit doggy as I don&#8217;t quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+
+<p>Notice the two try-except blocks. This is in case we&#8217;re running with a
+version that has a context but not the check_hostname parameter. I&#8217;ve found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn&#8217;t appear to be more elegant. I will describe this in more details in
+my next post.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GitHub Bugzilla Hook]]></title>
@@ -1633,53 +1680,6 @@ However this doesn&#8217;t work on Apple hardware
 (<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1253637">rhbz#1253637</a>)
 and maybe some other platforms. If this is the case try pressing <strong>F10</strong>
 instead. It works for me!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Call for Ideas: Graphical Test Coverage Reports]]></title>
-    <link href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/"/>
-    <updated>2015-07-27T13:04:00+03:00</updated>
-    <id>http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports</id>
-    <content type="html"><![CDATA[<p>If you are working with Python and writing unit tests chances are you are
-familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
-tool. However there are testing scenarios in which we either don&#8217;t use unit tests
-or maybe execute different code paths(test cases) independent of each other.</p>
-
-<p>For example, this is the case with installation testing in Fedora. Because anaconda
-- the installer is very complex the easiest way is to test it live, not with unit tests.
-Even though we can get a coverage report (anaconda is written in Python) it reflects
-only the test case it was collected from.</p>
-
-<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
-report. This can tell you how much test coverage you have across all your tests.</p>
-
-<p>As far as I can tell Python&#8217;s coverage doesn&#8217;t tell you how many times a particular
-line of code has been executed. It also doesn&#8217;t tell you which test cases executed
-a particular line
-(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
-In the Fedora example, I have the feeling many of our tests are touching the same
-code base and not contributing that much to the overall test coverage.
-So I started working on these items.</p>
-
-<p>I imagine a script which will read coverage data from several test executions
-(preferably in JSON format,
-<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a
-graphical report similar to what GitHub does for your commit activity.</p>
-
-<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
-
-<p>The example uses darker colors to indicate more line executions, lighter for less
-executions. Check the HTML for the actual numbers b/c there are no hints yet.
-The input JSON files are
-<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
-the script to generate the above HTML is at
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
-
-<p>Now I need your ideas and comments!</p>
-
-<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
-How do they look like ?</p>
 ]]></content>
   </entry>
   

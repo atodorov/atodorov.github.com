@@ -4,7 +4,7 @@
   <title><![CDATA[Category: fedora.planet | atodorov.org - you can logoff, but you can never leave]]></title>
   <link href="http://atodorov.org/blog/categories/fedora-planet/atom.xml" rel="self"/>
   <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T17:19:35+02:00</updated>
+  <updated>2015-11-24T22:05:37+02:00</updated>
   <id>http://atodorov.org/</id>
   <author>
     <name><![CDATA[Alexander Todorov]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python-libs in RHEL 7.2 broke SSL verification in s3cmd]]></title>
+    <link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
+    <updated>2015-11-24T21:44:00+02:00</updated>
+    <id>http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd</id>
+    <content type="html"><![CDATA[<p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+
+<pre><code>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</code></pre>
+
+<p>This looks a bit doggy as I don't quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+
+<p>Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GitHub Bugzilla Hook]]></title>
@@ -116,52 +163,6 @@ from the Desktop menu however appears to work. See
 <a href="https://github.com/patjak/mba6x_bl/issues/41">Issue #41</a>. I'd love to get some
 help in debugging what's going wrong and trying to fix it. At this point I have
 no idea where to look and if it's the driver to blame or something else on the system.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Revamping Anaconda's Dogtail Tests]]></title>
-    <link href="http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/"/>
-    <updated>2015-11-20T15:34:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests</id>
-    <content type="html"><![CDATA[<p>In my <a href="/blog/2015/11/13/running-anaconda-from-git/">previous post</a> I briefly talked
-about running anaconda from a git checkout. My goal was to rewrite <code>tests/gui/</code> so
-that they don't use a LiveCD and virtual machines anymore. I'm pleased to announce
-that this is already done (still not merged), see
-<a href="https://github.com/rhinstaller/anaconda/pull/457">PR#457</a>.</p>
-
-<p>The majority of the changes are just shuffling bits around and deleting
-unused code. The existing UI tests were mostly working and only needed minor
-changes. There are two things which didn't work and are temporarily disabled:</p>
-
-<ul>
-<li>Clicking the Help button results in
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1282432">rhbz#1282432</a>,
-which in turn may be hiding another bug behind it;</li>
-<li>Looping over the available languages resulted in AT-SPI NonImplementedError
-which I'm going to debug next.</li>
-</ul>
-
-
-<p>To play around with this make sure you have accessibility enabled and:</p>
-
-<pre><code># cd anaconda/
-# export top_srcdir=`pwd`
-# setenforce 0
-# cd tests/gui/
-# ./run_gui_tests.sh
-</code></pre>
-
-<p><strong>Note:</strong> you also need Dogtail for Python3 which isn't officially available
-yet. I'm building from
-<a href="https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm">https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm</a></p>
-
-<p>My future plans are to figure out how to re-enable what is temporarily
-disabled, update <code>run_gui_tests.sh</code> to properly start gnome-session and
-enable accessibility, do a better job cleaning up after a failure,
-enable coverage and hook everything into <code>make ci</code>.</p>
-
-<p>Happy testing!</p>
 ]]></content>
   </entry>
   

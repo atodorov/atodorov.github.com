@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Happy April Fools Day</title>
+  <title>python-libs in RHEL 7.2 broke SSL verification in s3cmd</title>
   <meta name="author" content="Alexander Todorov">
 
   
-  <meta name="description" content="Happy April Fools Day everyone! Here are few stories that I find particularly
-amusing. Top 5 Pranks Game Developers Pulled on Players
-- now that&# &hellip;">
+  <meta name="description" content="Today started with Planet Sofia Valley being
+broken again. Indeed it&#8217;s been broken since last Friday when I&#8217;ve upgraded to
+the latest &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +20,7 @@ amusing. Top 5 Pranks Game Developers Pulled on Players
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://atodorov.org/blog/2014/04/01/happy-april-fools-day/">
+  <link rel="canonical" href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -32,9 +32,9 @@ amusing. Top 5 Pranks Game Developers Pulled on Players
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 <link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
 <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM" />
-<meta property="og:title" content="Happy April Fools Day"/>
+<meta property="og:title" content="python-libs in RHEL 7.2 broke SSL verification in s3cmd"/>
 <meta property="og:type" content="website"/>
-<meta property="og:url" content="/blog/2014/04/01/happy-april-fools-day/"/>
+<meta property="og:url" content="/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
   
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -82,7 +82,7 @@ you can logoff, but you can never leave
   
   <header>
     
-      <h1 class="entry-title">Happy April Fools Day</h1>
+      <h1 class="entry-title">Python-libs in RHEL 7.2 Broke SSL Verification in S3cmd</h1>
     
     
       <p class="meta">
@@ -98,7 +98,7 @@ you can logoff, but you can never leave
   
 
 
-<time datetime="2014-04-01T11:35:00+03:00" pubdate data-updated="true">Apr 1<span>st</span>, 2014</time>
+<time datetime="2015-11-24T21:44:00+02:00" pubdate data-updated="true">Nov 24<span>th</span>, 2015</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -107,17 +107,45 @@ you can logoff, but you can never leave
   </header>
 
 
-<div class="entry-content"><p>Happy April Fools Day everyone! Here are few stories that I find particularly
-amusing.</p>
+<div class="entry-content"><p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it&#8217;s been broken since last Friday when I&#8217;ve upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
 
-<p><a href="http://thisisanothercastle.com/2014/03/26/april-fools-top-5-pranks-game-developers-pulled-on-players/">Top 5 Pranks Game Developers Pulled on Players</a>
-- now that&#8217;s what I call dedication. #1 is definitely worth a peek :)</p>
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
 
-<p><a href="http://signaltower.co/april-fools-pranks-for-developers/">April Fools Pranks for Developers</a> or
-office workers! This is pure evil which messes up with the default CSS settings
-on your computer.</p>
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
 
-<p>What other developer related pranks did you find ?</p>
+<pre><code>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</code></pre>
+
+<p>This looks a bit doggy as I don&#8217;t quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+
+<p>Notice the two try-except blocks. This is in case we&#8217;re running with a
+version that has a context but not the check_hostname parameter. I&#8217;ve found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn&#8217;t appear to be more elegant. I will describe this in more details in
+my next post.</p>
 </div>
 
 
@@ -140,8 +168,14 @@ on your computer.</p>
   
 
 
-<time datetime="2014-04-01T11:35:00+03:00" pubdate data-updated="true">Apr 1<span>st</span>, 2014</time>
+<time datetime="2015-11-24T21:44:00+02:00" pubdate data-updated="true">Nov 24<span>th</span>, 2015</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/qa/'>QA</a>, <a class='category' href='/blog/categories/rhel/'>RHEL</a>, <a class='category' href='/blog/categories/fedora-planet/'>fedora.planet</a>
+  
+</span>
 
 
     </p>
@@ -168,10 +202,8 @@ on your computer.</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/03/28/i-need-an-app-to-connect-with-my-facebook-page-fans/" title="Previous Post: I Need an App to Connect With My Facebook Page Fans">&laquo; I Need an App to Connect With My Facebook Page Fans</a>
+        <a class="basic-alignment left" href="/blog/2015/11/24/github-bugzilla-hook/" title="Previous Post: GitHub Bugzilla Hook">&laquo; GitHub Bugzilla Hook</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans/" title="Next Post: Positive Biological Effects of Open Source on Humans">Positive Biological Effects of Open Source on Humans &raquo;</a>
       
     </p>
   </footer>
@@ -317,8 +349,8 @@ if (uri.indexOf("?") > 0) {
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2014/04/01/happy-april-fools-day/';
-        var disqus_url = 'http://atodorov.org/blog/2014/04/01/happy-april-fools-day/';
+        var disqus_identifier = 'http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/';
+        var disqus_url = 'http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/';
         var disqus_script = 'embed.js';
       
     (function () {
