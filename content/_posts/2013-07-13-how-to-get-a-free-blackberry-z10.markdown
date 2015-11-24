@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Get a Free BlackBerry Z10"
+Title: How to Get a Free BlackBerry Z10
 date: 2013-07-13 11:30
 comments: true
 categories: ['BlackBerry', 'Z10']

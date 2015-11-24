@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fedora 20 GNOME 3.10 Test Day Post-mortem"
+Title: Fedora 20 GNOME 3.10 Test Day Post-mortem
 date: 2013-10-11 12:25
 comments: true
 categories: ['Fedora', 'QA']

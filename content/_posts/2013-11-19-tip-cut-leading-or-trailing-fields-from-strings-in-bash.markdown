@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Cut Leading or Trailing Fields From Strings in Bash"
+Title: Tip: Cut Leading or Trailing Fields From Strings in Bash
 date: 2013-11-19 00:16
 comments: true
 categories: ['tips', 'Fedora']

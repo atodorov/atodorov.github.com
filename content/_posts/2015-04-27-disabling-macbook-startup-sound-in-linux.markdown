@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Disabling MacBook Startup Sound in Linux"
+Title: Disabling MacBook Startup Sound in Linux
 date: 2015-04-27 23:23
 comments: true
 categories: ['Mac', 'fedora.planet', 'RHEL']

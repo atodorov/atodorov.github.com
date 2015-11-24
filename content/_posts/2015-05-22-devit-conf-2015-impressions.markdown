@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "DEVit Conf 2015 Impressions"
+Title: DEVit Conf 2015 Impressions
 date: 2015-05-22 12:01
 comments: true
 categories: ['fedora.planet', 'Django', 'events']

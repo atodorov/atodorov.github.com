@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Performance test of MD5, SHA1, SHA256 and SHA512"
+Title: Performance test of MD5, SHA1, SHA256 and SHA512
 date: 2013-02-05 10:33
 comments: true
 categories: ['Python', 'performance testing', 'QA']

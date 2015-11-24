@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bulgaria Web Summit Report"
+Title: Bulgaria Web Summit Report
 date: 2014-06-02 09:02
 comments: true
 categories: ['events']

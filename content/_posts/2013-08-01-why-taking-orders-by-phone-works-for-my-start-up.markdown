@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Why Taking Orders By Phone Works for My Start-up"
+Title: Why Taking Orders By Phone Works for My Start-up
 date: 2013-08-01 09:48
 comments: true
 categories: ['start-up']

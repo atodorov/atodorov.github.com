@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Building Docker Images with Anaconda"
+Title: Building Docker Images with Anaconda
 date: 2015-10-28 16:10
 comments: true
 categories: ['fedora.planet']

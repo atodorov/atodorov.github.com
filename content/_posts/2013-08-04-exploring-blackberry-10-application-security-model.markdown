@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Exploring BlackBerry 10 - Application Security Model"
+Title: Exploring BlackBerry 10 - Application Security Model
 date: 2013-08-04 00:02
 comments: true
 categories: ['BlackBerry']

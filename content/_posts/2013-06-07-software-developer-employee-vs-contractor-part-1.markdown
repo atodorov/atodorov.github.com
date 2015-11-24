@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Software Developer - Employee vs. Contractor, Part 1"
+Title: Software Developer - Employee vs. Contractor, Part 1
 date: 2013-06-07 10:00
 comments: true
 categories: ['start-up']

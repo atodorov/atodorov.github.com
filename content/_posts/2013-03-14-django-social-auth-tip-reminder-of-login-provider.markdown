@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "django-social-auth tip: Reminder of Login Provider"
+Title: django-social-auth tip: Reminder of Login Provider
 date: 2013-03-14 12:04
 comments: true
 categories: ['tips', 'Django', 'django-social-auth']

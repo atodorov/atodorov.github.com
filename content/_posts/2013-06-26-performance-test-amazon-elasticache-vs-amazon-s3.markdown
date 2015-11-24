@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Performance test: Amazon ElastiCache vs Amazon S3"
+Title: Performance test: Amazon ElastiCache vs Amazon S3
 date: 2013-06-26 21:22
 comments: true
 categories: ['Amazon', 'S3', 'ElastiCache', 'QA', 'performance testing', 'cloud']

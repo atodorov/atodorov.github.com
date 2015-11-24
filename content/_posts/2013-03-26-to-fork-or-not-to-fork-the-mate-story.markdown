@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "To fork or not to fork - the MATE story"
+Title: To fork or not to fork - the MATE story
 date: 2013-03-26 10:46
 comments: true
 categories: 

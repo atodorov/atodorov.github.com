@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HackFMI SMS Delivery Powered by Twilio"
+Title: HackFMI SMS Delivery Powered by Twilio
 date: 2014-11-17 15:00
 comments: true
 categories: ['Twilio']

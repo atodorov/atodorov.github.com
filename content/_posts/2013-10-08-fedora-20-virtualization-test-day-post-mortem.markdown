@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fedora 20 Virtualization Test Day Post-mortem"
+Title: Fedora 20 Virtualization Test Day Post-mortem
 date: 2013-10-08 22:01
 comments: true
 categories: ['Fedora', 'QA']

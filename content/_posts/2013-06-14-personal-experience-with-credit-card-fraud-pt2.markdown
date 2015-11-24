@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Personal Experience With Credit Card Fraud, Part 2"
+Title: Personal Experience With Credit Card Fraud, Part 2
 date: 2013-06-14 10:09
 comments: true
 categories: 

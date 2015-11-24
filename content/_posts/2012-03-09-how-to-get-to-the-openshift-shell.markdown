@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: How to Get to the OpenShift Shell"
+Title: Tip: How to Get to the OpenShift Shell
 date: 2012-03-09 21:43
 comments: true
 categories: ["tips", "OpenShift", "cloud"]

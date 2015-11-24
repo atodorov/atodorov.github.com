@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: How To Enable USB Networking Between BlackBerry Z10 and Red Hat Enterprise Linux 6"
+Title: Tip: How To Enable USB Networking Between BlackBerry Z10 and Red Hat Enterprise Linux 6
 date: 2013-07-17 11:06
 comments: true
 categories: ['tips', 'RHEL', 'BlackBerry', 'Z10']

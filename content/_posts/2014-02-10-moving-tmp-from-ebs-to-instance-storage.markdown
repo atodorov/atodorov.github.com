@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Moving /tmp from EBS to Instance Storage"
+Title: Moving /tmp from EBS to Instance Storage
 date: 2014-02-10 13:48
 comments: true
 categories: ['cloud', 'Amazon']

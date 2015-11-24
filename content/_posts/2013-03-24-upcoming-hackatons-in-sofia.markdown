@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Upcoming Hackathons in Sofia"
+Title: Upcoming Hackathons in Sofia
 date: 2013-03-24 22:02
 comments: true
 categories: ['hackathon', 'open government', 'hackfmi', 'events']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Book Review: UX for Lean Startups"
+Title: Book Review: UX for Lean Startups
 date: 2013-12-09 10:09
 comments: true
 categories: ['books', 'start-up']

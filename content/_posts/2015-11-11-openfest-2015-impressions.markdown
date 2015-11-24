@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "OpenFest 2015 Impressions"
+Title: OpenFest 2015 Impressions
 date: 2015-11-11 15:16
 comments: true
 categories: ['events']

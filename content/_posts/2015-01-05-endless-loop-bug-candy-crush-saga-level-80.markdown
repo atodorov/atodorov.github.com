@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Endless Loop Bug in Candy Crush Saga Level 80"
+Title: Endless Loop Bug in Candy Crush Saga Level 80
 date: 2015-01-05 15:44
 comments: true
 categories: ['QA']

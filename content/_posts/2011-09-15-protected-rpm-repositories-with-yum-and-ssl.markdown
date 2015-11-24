@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Protected RPM repositories with yum and SSL"
+Title: Protected RPM repositories with yum and SSL
 date: 2011-09-15 19:40
 comments: true
 categories: ['RHEL']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Give a Book, Get a Laptop With Discount"
+Title: Give a Book, Get a Laptop With Discount
 date: 2013-07-04 11:44
 comments: true
 categories: [start-up]

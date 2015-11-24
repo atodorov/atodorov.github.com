@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Lenovo Rants: Battery and Dock Flaws"
+Title: Lenovo Rants: Battery and Dock Flaws
 date: 2013-09-15 10:23
 comments: true
 categories: ['QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Book Review - January 2014"
+Title: Book Review - January 2014
 date: 2014-01-28 23:16
 comments: true
 categories: ['books']

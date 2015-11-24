@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up"
+Title: What Runs Your Start-up
 date: 2013-03-27 12:00
 comments: true
 categories: ["what runs", "start-up"]

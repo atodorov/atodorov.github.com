@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Email Logging for Django on RedHat OpenShift with Amazon SES"
+Title: Email Logging for Django on RedHat OpenShift with Amazon SES
 date: 2013-02-28 23:19
 comments: true
 categories: ['tips', 'Django', 'Amazon', 'SES', 'OpenShift', 'cloud']

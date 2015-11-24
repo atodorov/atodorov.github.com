@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Django Tips: Using Cache for Stateful HTTP"
+Title: Django Tips: Using Cache for Stateful HTTP
 date: 2013-06-19 13:50
 comments: true
 categories: ['Django', 'tips', 'Twilio', 'cloud']

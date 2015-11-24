@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Exploring BlackBerry 10 - nmap"
+Title: Exploring BlackBerry 10 - nmap
 date: 2013-07-17 23:16
 comments: true
 categories: ['BlackBerry', 'Z10']

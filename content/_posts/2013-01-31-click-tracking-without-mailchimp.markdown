@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Click Tracking without MailChimp"
+Title: Click Tracking without MailChimp
 date: 2013-01-31 21:23
 comments: true
 categories: ['JavaScript', 'Amazon', 'S3', 'SES', 'cloud']

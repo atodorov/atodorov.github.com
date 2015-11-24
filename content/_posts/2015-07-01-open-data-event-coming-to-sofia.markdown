@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Open Data Event Coming to Sofia"
+Title: Open Data Event Coming to Sofia
 date: 2015-07-01 11:58
 comments: true
 categories: ['events']

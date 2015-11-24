@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up - RETiDoc"
+Title: What Runs Your Start-up - RETiDoc
 date: 2013-07-29 12:13
 comments: true
 categories: ['what runs', 'start-up', 'Microsoft']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Django QuerySet tip - Search and Order By Exact Match"
+Title: Django QuerySet tip - Search and Order By Exact Match
 date: 2013-03-21 22:56
 comments: true
 categories: ['tips', 'Django']

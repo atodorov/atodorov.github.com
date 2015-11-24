@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Renaming Model Fields in Django"
+Title: Tip: Renaming Model Fields in Django
 date: 2013-04-06 01:18
 comments: true
 categories: ['tips', 'Django']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "BlackBerry Z10 is Killing My WiFi Router"
+Title: BlackBerry Z10 is Killing My WiFi Router
 date: 2014-12-22 15:46
 comments: true
 categories: ['BlackBerry', 'QA']

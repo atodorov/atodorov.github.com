@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SSH from Linux to BlackBerry Z10"
+Title: SSH from Linux to BlackBerry Z10
 date: 2013-07-19 23:31
 comments: true
 categories: ['tips', 'BlackBerry', 'Z10', 'RHEL']

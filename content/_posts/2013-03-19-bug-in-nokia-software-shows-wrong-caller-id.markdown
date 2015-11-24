@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bug in Nokia software shows wrong caller ID"
+Title: Bug in Nokia software shows wrong caller ID
 date: 2013-03-19 09:57
 comments: true
 categories: ['Nokia', 'QA']

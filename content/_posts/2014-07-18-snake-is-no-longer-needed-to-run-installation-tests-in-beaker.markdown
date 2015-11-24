@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SNAKE is no Longer Needed to Run Installation Tests in Beaker"
+Title: SNAKE is no Longer Needed to Run Installation Tests in Beaker
 date: 2014-07-18 23:05
 comments: true
 categories: ['Fedora', 'QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Text To Speech for Bulgarian"
+Title: Text To Speech for Bulgarian
 date: 2013-07-20 14:06
 comments: true
 categories: ['start-up']

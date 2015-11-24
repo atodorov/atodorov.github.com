@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fedora Test Days are Coming to Sofia"
+Title: Fedora Test Days are Coming to Sofia
 date: 2013-09-23 14:27
 comments: true
 categories: ['Fedora', 'QA']

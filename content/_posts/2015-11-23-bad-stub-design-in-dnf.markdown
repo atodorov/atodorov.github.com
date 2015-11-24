@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bad Stub Design in DNF, Pt.2 "
+Title: Bad Stub Design in DNF, Pt.2 
 date: 2015-11-23 15:55
 comments: true
 categories: ['QA', 'fedora.planet']

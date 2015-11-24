@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Happy April Fools Day"
+Title: Happy April Fools Day
 date: 2014-04-01 11:35
 comments: true
 categories: 

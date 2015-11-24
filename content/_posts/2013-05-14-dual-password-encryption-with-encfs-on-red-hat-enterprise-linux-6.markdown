@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6"
+Title: Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6
 date: 2013-05-14 21:26
 comments: true
 categories: ['RHEL']

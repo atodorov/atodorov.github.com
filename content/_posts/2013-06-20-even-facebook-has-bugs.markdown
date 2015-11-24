@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Even Facebook has Bugs"
+Title: Even Facebook has Bugs
 date: 2013-06-20 10:17
 comments: true
 categories: ['QA']

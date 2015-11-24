@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Creating RPM .spec Files From Scratch Using Vim"
+Title: Creating RPM .spec Files From Scratch Using Vim
 date: 2013-04-09 15:24
 comments: true
 categories: ['tips', 'RPM']

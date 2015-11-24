@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Why Instagram Could Not Be Founded In Europe"
+Title: Why Instagram Could Not Be Founded In Europe
 date: 2013-05-02 08:07
 comments: true
 categories: ["start-up"]

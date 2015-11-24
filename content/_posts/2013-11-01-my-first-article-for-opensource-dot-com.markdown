@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "My First Article for OpenSource.com"
+Title: My First Article for OpenSource.com
 date: 2013-11-01 12:47
 comments: true
 categories: ['Fedora']

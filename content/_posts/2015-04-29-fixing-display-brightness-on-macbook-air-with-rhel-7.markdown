@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fixing Display Brightness on MacBook Air with RHEL 7"
+Title: Fixing Display Brightness on MacBook Air with RHEL 7
 date: 2015-04-29 12:14
 comments: true
 categories: ['fedora.planet', 'Mac', 'RHEL']

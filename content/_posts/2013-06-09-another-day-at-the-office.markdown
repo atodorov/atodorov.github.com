@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Another Day At The Office"
+Title: Another Day At The Office
 date: 2013-06-09 00:08
 comments: true
 categories: [ADO]

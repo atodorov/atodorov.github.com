@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "FOSDEM 2014 Report - Day #2 Testing and Automation"
+Title: FOSDEM 2014 Report - Day #2 Testing and Automation
 date: 2014-02-03 22:54
 comments: true
 categories: ['events', 'Fedora', 'QA']

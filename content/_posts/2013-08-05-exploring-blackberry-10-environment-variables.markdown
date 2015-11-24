@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Exploring BlackBerry 10 - Environment Variables"
+Title: Exploring BlackBerry 10 - Environment Variables
 date: 2013-08-05 00:20
 comments: true
 categories: ['BlackBerry']

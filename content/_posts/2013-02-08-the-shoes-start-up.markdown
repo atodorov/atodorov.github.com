@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The shoes start-up"
+Title: The shoes start-up
 date: 2013-02-08 23:50
 comments: true
 categories: ['start-up']

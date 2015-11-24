@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up - MaistorPlus"
+Title: What Runs Your Start-up - MaistorPlus
 date: 2013-04-08 12:52
 comments: true
 categories: ['what runs', 'start-up', 'PHP', 'Symfony', 'PostgreSQL', 'jQuery']

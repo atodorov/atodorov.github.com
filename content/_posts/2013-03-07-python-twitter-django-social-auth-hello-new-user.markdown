@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Python Twitter + django-social-auth == Hello New User"
+Title: Python Twitter + django-social-auth == Hello New User
 date: 2013-03-07 21:47
 comments: true
 categories: ['Django', 'django-social-auth', 'Twitter', 'tips']

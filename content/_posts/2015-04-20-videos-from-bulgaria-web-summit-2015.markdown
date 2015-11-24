@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Videos from Bulgaria Web Summit 2015"
+Title: Videos from Bulgaria Web Summit 2015
 date: 2015-04-20 10:45
 comments: true
 categories: ['Django', 'Fedora']

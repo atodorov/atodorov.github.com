@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "7 Years and 1400 Bugs Later as Red Hat QA"
+Title: 7 Years and 1400 Bugs Later as Red Hat QA
 date: 2014-02-19 10:43
 comments: true
 categories: ['RHEL', 'Fedora', 'QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Mission Impossible - ABRT Bugzilla Plugin on RHEL6"
+Title: Mission Impossible - ABRT Bugzilla Plugin on RHEL6
 date: 2012-07-13 13:21
 comments: true
 categories: ['QA', 'RHEL']

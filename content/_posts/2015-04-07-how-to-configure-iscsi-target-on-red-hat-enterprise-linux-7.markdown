@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Configure iSCSI Target on Red Hat Enterprise Linux 7"
+Title: How to Configure iSCSI Target on Red Hat Enterprise Linux 7
 date: 2015-04-07 15:52
 comments: true
 categories: ['RHEL', 'Fedora']

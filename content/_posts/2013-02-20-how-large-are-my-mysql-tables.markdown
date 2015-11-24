@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How Large Are My MySQL Tables"
+Title: How Large Are My MySQL Tables
 date: 2013-02-20 12:03
 comments: true
 categories: ['MySQL', 'Amazon', 'S3']

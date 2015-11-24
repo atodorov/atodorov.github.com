@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How Krasi Tsonev Broke Planet.SofiaValley.com"
+Title: How Krasi Tsonev Broke Planet.SofiaValley.com
 date: 2015-11-13 10:09
 comments: true
 categories: ['QA', 'fedora.planet']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Book Review: The 4-Hour Workweek"
+Title: Book Review: The 4-Hour Workweek
 date: 2014-08-03 11:47
 comments: true
 categories: ['books']

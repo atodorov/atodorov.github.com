@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up - Imagga"
+Title: What Runs Your Start-up - Imagga
 date: 2013-07-29 12:32
 comments: true
 categories: ['what runs', 'start-up', 'Amazon', 'EC2']

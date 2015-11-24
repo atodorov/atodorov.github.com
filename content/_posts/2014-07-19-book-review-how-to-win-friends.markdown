@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Book Review: How to Win Friends"
+Title: Book Review: How to Win Friends
 date: 2014-07-19 18:05
 comments: true
 categories: ['books']

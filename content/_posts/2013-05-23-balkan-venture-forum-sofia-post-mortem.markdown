@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Balkan Venture Forum Sofia Post-mortem"
+Title: Balkan Venture Forum Sofia Post-mortem
 date: 2013-05-23 13:29
 comments: true
 categories: ['start-up', 'events']

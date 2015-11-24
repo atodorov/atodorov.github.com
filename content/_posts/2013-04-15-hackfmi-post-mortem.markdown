@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HackFMI Post-mortem"
+Title: HackFMI Post-mortem
 date: 2013-04-15 10:27
 comments: true
 categories: ['hackathon', 'hackfmi', 'events']

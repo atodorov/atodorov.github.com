@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Notes From Two Interesting GUADEC Talks"
+Title: Notes From Two Interesting GUADEC Talks
 date: 2013-08-07 14:33
 comments: true
 categories: ['QA', 'events']

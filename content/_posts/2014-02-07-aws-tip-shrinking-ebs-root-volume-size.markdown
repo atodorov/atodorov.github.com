@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AWS Tip: Shrinking EBS Root Volume Size"
+Title: AWS Tip: Shrinking EBS Root Volume Size
 date: 2014-02-07 00:23
 comments: true
 categories: ['tips', 'Amazon', 'cloud']

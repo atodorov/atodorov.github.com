@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "USB multi-seat on Red Hat Enterprise Linux 6"
+Title: USB multi-seat on Red Hat Enterprise Linux 6
 date: 2011-03-14 20:10
 comments: true
 categories: ['RHEL']

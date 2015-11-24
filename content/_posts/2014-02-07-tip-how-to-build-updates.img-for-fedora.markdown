@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: How to Build updates.img for Fedora"
+Title: Tip: How to Build updates.img for Fedora
 date: 2014-02-07 11:01
 comments: true
 categories: ['tips', 'Fedora']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Open Source Quality Assurance Infrastructure for Fedora QA"
+Title: Open Source Quality Assurance Infrastructure for Fedora QA
 date: 2013-11-19 14:12
 comments: true
 categories: ['Fedora', 'QA']

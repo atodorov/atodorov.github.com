@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "2 Barcode Related Bugs in MyFitnessPal"
+Title: 2 Barcode Related Bugs in MyFitnessPal
 date: 2015-01-07 14:44
 comments: true
 categories: ['QA']

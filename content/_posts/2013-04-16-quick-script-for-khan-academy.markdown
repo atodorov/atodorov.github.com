@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Quick Script for Khan Academy - Looking for Contributors"
+Title: Quick Script for Khan Academy - Looking for Contributors
 date: 2013-04-16 22:20
 comments: true
 categories: 

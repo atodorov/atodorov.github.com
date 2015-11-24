@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Shutdown Your Startup in 7 Steps"
+Title: Shutdown Your Startup in 7 Steps
 date: 2014-10-13 14:17
 comments: true
 categories: ['start-up']

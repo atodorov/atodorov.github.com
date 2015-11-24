@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bug in the Fridge"
+Title: Bug in the Fridge
 date: 2013-03-29 15:09
 comments: true
 categories: ['QA']

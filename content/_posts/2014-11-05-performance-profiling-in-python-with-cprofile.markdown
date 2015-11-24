@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Performance Profiling in Python with cProfile"
+Title: Performance Profiling in Python with cProfile
 date: 2014-11-05 14:40
 comments: true
 categories: ['Python', 'QA']

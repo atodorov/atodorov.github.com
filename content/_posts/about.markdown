@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "About Me"
+Title: About Me
 date: 2013-01-25 21:47
 comments: false
 ---

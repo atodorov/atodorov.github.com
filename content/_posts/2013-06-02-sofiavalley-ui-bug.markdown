@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SofiaValley UI bug"
+Title: SofiaValley UI bug
 date: 2013-06-02 21:04
 comments: true
 categories: ['QA']

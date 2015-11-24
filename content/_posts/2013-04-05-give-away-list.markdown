@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Give Away List"
+Title: Give Away List
 date: 2013-04-05 14:53
 comments: true
 categories : ['books']

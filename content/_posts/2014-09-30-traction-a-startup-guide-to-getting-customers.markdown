@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Traction: A Startup Guide to Getting Customers"
+Title: Traction: A Startup Guide to Getting Customers
 date: 2014-09-30 10:43
 comments: true
 categories: ['books', 'start-up']

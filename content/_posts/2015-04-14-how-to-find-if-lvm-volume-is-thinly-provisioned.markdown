@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Find if LVM Volume is Thinly Provisioned"
+Title: How to Find if LVM Volume is Thinly Provisioned
 date: 2015-04-14 15:40
 comments: true
 categories: ['RHEL', 'Fedora']

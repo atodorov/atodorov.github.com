@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Anaconda &amp; coverage.py - Pt.1 - Introduction"
+Title: Anaconda &amp; coverage.py - Pt.1 - Introduction
 date: 2015-10-14 13:44
 comments: true
 categories: ['QA', 'fedora.planet']

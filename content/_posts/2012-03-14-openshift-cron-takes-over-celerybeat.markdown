@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "OpenShift Cron Takes Over Celerybeat"
+Title: OpenShift Cron Takes Over Celerybeat
 date: 2012-03-14 20:48
 comments: true
 categories: ["tips", "OpenShift", "cloud"]

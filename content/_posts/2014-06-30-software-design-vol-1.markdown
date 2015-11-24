@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Software Design Vol. 1"
+Title: Software Design Vol. 1
 date: 2014-06-30 23:22
 comments: true
 categories: 

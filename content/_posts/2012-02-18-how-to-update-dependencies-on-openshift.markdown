@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Update Dependencies on OpenShift"
+Title: How to Update Dependencies on OpenShift
 date: 2012-02-18 01:00
 comments: true
 categories: ["tips", "OpenShift", "cloud"]

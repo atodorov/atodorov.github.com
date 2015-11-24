@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "GitHub Bugzilla Hook"
+Title: GitHub Bugzilla Hook
 date: 2015-11-24 13:32
 comments: true
 categories: ['QA', 'fedora.planet']

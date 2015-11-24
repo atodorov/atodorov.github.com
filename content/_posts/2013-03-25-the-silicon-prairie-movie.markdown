@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Silicon Prairie Movie"
+Title: The Silicon Prairie Movie
 date: 2013-03-25 11:44
 comments: true
 categories: ['start-up']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up - Deed"
+Title: What Runs Your Start-up - Deed
 date: 2013-04-23 10:56
 comments: true
 categories: ['what runs', 'start-up', 'Microsoft', 'Windows', 'Azure']

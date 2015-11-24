@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Hello World"
+Title: Hello World
 date: 2013-01-28 15:12
 comments: true
 categories: 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "UI Bug for OpenSource.com"
+Title: UI Bug for OpenSource.com
 date: 2013-07-31 21:39
 comments: true
 categories: ['QA']

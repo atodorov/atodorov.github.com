@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "RHEL 7 Repository for MacBook Air"
+Title: RHEL 7 Repository for MacBook Air
 date: 2015-04-29 13:00
 comments: true
 categories: ['RHEL', 'Mac', 'fedora.planet']

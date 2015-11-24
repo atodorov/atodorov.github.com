@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com"
+Title: Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com
 date: 2014-07-12 23:15
 comments: true
 categories: ['tips', 'Django', 'start-up']

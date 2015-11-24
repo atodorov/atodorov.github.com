@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Upstream Test Suite Status of Fedora 20"
+Title: Upstream Test Suite Status of Fedora 20
 date: 2013-12-24 08:01
 comments: true
 categories: ['Fedora', 'QA']

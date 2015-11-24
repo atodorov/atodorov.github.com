@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What Runs Your Start-up - Ucha.se"
+Title: What Runs Your Start-up - Ucha.se
 date: 2013-04-03 10:57
 comments: true
 categories: ['what runs', 'start-up', 'PHP', 'MySQL', 'jQuery', 'Nginx']

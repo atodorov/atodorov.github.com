@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Unit Testing Example - Bad Stub Design in DNF"
+Title: Unit Testing Example - Bad Stub Design in DNF
 date: 2015-09-25 11:20
 comments: true
 categories: ["QA", "fedora.planet"]

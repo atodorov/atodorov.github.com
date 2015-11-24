@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using USB to VGA Adapter on MacBook Air with Linux"
+Title: Using USB to VGA Adapter on MacBook Air with Linux
 date: 2015-05-05 14:02
 comments: true
 categories: ['RHEL', 'Mac', 'fedora.planet']

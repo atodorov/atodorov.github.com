@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering"
+Title: Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering
 date: 2014-06-26 10:10
 comments: true
 categories: 

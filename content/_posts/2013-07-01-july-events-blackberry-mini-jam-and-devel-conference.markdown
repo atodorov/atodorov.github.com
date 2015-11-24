@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "July Events - BlackBerry Mini Jam and Devel Conference"
+Title: July Events - BlackBerry Mini Jam and Devel Conference
 date: 2013-07-01 11:06
 comments: true
 categories: ['events']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Pedometer Bug in Samsung S Health"
+Title: Pedometer Bug in Samsung S Health
 date: 2015-08-17 16:43
 comments: true
 categories: ['QA', 'Samsung']

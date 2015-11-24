@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week"
+Title: Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week
 date: 2013-10-07 10:28
 comments: true
 categories: ['Fedora', 'QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Nibbler - W3C Validator on Steroids"
+Title: Nibbler - W3C Validator on Steroids
 date: 2013-06-18 23:59
 comments: true
 categories: ['tips']

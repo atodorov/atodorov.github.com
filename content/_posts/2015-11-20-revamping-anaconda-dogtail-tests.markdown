@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Revamping Anaconda's Dogtail Tests"
+Title: Revamping Anaconda's Dogtail Tests
 date: 2015-11-20 15:34
 comments: true
 categories: ['QA', 'fedora.planet']

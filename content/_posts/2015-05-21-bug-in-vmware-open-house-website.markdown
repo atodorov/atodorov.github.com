@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bug in VMware Open House Website"
+Title: Bug in VMware Open House Website
 date: 2015-05-21 14:55
 comments: true
 categories: ['QA']

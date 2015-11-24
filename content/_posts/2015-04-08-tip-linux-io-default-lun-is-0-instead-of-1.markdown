@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Linux-IO default LUN is 0 instead of 1"
+Title: Tip: Linux-IO default LUN is 0 instead of 1
 date: 2015-04-08 15:09
 comments: true
 categories: ['RHEL', 'Fedora', 'tips']

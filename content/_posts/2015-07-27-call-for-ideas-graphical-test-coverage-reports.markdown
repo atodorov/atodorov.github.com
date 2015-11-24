@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Call for Ideas: Graphical Test Coverage Reports"
+Title: Call for Ideas: Graphical Test Coverage Reports
 date: 2015-07-27 13:04
 comments: true
 categories: ['Fedora', "QA", 'Django', 'fedora.planet']

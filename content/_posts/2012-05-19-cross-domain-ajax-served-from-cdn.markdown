@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Cross-domain AJAX Served From CDN"
+Title: Cross-domain AJAX Served From CDN
 date: 2012-05-19 16:58
 comments: true
 categories: ['Amazon', 'CloudFront', 'cloud']

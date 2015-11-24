@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Pedometer Bug in Samsung Gear Fit Smartwatch"
+Title: Pedometer Bug in Samsung Gear Fit Smartwatch
 date: 2015-01-09 10:53
 comments: true
 categories: ['QA', 'Samsung']

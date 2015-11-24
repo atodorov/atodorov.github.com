@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Extending Btrfs Filesystem for Fedora Virtual Machine"
+Title: Tip: Extending Btrfs Filesystem for Fedora Virtual Machine
 date: 2013-10-13 14:53
 comments: true
 categories: ['tips', 'Fedora']

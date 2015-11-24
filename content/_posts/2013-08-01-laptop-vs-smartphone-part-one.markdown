@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Laptop vs Smartphone, Part 1, Requirements"
+Title: Laptop vs Smartphone, Part 1, Requirements
 date: 2013-08-01 21:02
 comments: true
 categories: ['BlackBerry']

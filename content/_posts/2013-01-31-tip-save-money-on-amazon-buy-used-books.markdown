@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Save Money on Amazon - Buy Used Books"
+Title: Tip: Save Money on Amazon - Buy Used Books
 date: 2013-01-31 22:41
 comments: true
 categories: ['tips', 'Amazon', 'books']

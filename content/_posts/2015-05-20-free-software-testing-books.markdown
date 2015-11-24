@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Free Software Testing Books"
+Title: Free Software Testing Books
 date: 2015-05-20 11:35
 comments: true
 categories: ['fedora.planet', 'QA', 'Django', 'books']

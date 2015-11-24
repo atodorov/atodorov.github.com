@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "OpenSource.com article - 10 steps to migrate your closed software to open source"
+Title: OpenSource.com article - 10 steps to migrate your closed software to open source
 date: 2014-05-06 16:14
 comments: true
 categories: ['Django', 'Fedora']

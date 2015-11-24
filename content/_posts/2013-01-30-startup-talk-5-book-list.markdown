@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "StartUP Talk#5 - book list"
+Title: StartUP Talk#5 - book list
 date: 2013-01-30 16:14
 comments: true
 categories: ['start-up', 'books']

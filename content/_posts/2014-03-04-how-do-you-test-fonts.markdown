@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How do You Test Fonts"
+Title: How do You Test Fonts
 date: 2014-03-04 21:30
 comments: true
 categories: ['Fedora', 'QA']

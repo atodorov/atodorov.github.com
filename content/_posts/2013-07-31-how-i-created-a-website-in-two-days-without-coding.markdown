@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How I Created a Website In Two Days Without Coding"
+Title: How I Created a Website In Two Days Without Coding
 date: 2013-07-31 21:55
 comments: true
 categories: ['Amazon', 'S3']

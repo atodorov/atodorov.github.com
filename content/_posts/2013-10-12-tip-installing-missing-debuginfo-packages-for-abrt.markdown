@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Installing Missing debuginfo Packages for ABRT"
+Title: Tip: Installing Missing debuginfo Packages for ABRT
 date: 2013-10-12 14:38
 comments: true
 categories: ['tips', 'Fedora']

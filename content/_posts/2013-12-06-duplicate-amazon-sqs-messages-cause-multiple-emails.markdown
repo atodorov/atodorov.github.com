@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Duplicate Amazon SQS Messages Cause Multiple Emails"
+Title: Duplicate Amazon SQS Messages Cause Multiple Emails
 date: 2013-12-06 22:47
 comments: true
 categories: ['cloud', 'Amazon', 'SQS', 'SES']

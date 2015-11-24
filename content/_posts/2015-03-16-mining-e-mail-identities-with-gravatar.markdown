@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Mining E-mail Identities with Gravatar"
+Title: Mining E-mail Identities with Gravatar
 date: 2015-03-16 23:16
 comments: true
 categories: 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "git History Stats and Project Cost Estimation"
+Title: git History Stats and Project Cost Estimation
 date: 2013-07-18 23:40
 comments: true
 categories: 

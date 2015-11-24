@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Enable backspace Key to Navigate Back in Firefox"
+Title: How to Enable backspace Key to Navigate Back in Firefox
 date: 2015-04-27 23:53
 comments: true
 categories: ['tips']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables"
+Title: This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables
 date: 2013-10-11 10:45
 comments: true
 categories: ['Python', 'cloud', 'OpenShift']

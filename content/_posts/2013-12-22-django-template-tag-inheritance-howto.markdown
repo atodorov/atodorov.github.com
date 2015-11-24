@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Django Template Tag Inheritance How-to"
+Title: Django Template Tag Inheritance How-to
 date: 2013-12-22 23:02
 comments: true
 categories: ['Django']

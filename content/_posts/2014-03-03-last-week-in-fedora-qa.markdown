@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Last Week in Fedora QA"
+Title: Last Week in Fedora QA
 date: 2014-03-03 10:23
 comments: true
 categories: ['Fedora', 'QA']

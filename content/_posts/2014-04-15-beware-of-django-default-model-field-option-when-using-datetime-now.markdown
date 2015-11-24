@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Beware of Django default Model Field Option When Using datetime.now()"
+Title: Beware of Django default Model Field Option When Using datetime.now()
 date: 2014-04-15 15:54
 comments: true
 categories: ['Django']

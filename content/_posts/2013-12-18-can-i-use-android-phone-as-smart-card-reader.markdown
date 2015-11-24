@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Can I Use Android Phone as Smart Card Reader"
+Title: Can I Use Android Phone as Smart Card Reader
 date: 2013-12-18 23:09
 comments: true
 categories: ['RHEL', 'Fedora', 'QA']

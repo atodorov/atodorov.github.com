@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Idempotent Django Email Sender with Amazon SQS and Memcache"
+Title: Idempotent Django Email Sender with Amazon SQS and Memcache
 date: 2013-12-11 23:29
 comments: true
 categories: ['cloud', 'Amazon', 'SQS', 'Django', 'Python']

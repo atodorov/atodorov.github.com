@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SMS PIN Verification with Twilio and Django"
+Title: SMS PIN Verification with Twilio and Django
 date: 2014-03-19 11:41
 comments: true
 categories: ['Django', 'cloud', 'Twilio']

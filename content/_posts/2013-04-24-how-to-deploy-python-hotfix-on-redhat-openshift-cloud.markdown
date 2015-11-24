@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How to Deploy Python Hotfix on RedHat OpenShift Cloud"
+Title: How to Deploy Python Hotfix on RedHat OpenShift Cloud
 date: 2013-04-24 11:58
 comments: true
 categories: ['tips', 'Python', 'OpenShift', 'cloud']

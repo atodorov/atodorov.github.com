@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The 51st Annual Meeting of the Association for Computational Linguistics"
+Title: The 51st Annual Meeting of the Association for Computational Linguistics
 date: 2013-08-07 12:10
 comments: true
 categories: ['events']

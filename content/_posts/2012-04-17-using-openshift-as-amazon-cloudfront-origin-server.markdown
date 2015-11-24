@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using OpenShift as Amazon CloudFront Origin Server"
+Title: Using OpenShift as Amazon CloudFront Origin Server
 date: 2012-04-17 17:30
 comments: true
 categories: ['OpenShift', 'Amazon', 'cloud']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Proxy Support for wrk HTTP Benchmarking Tool"
+Title: Proxy Support for wrk HTTP Benchmarking Tool
 date: 2014-11-18 10:04
 comments: true
 categories: ['QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Call of the Open Source Guru"
+Title: Call of the Open Source Guru
 date: 2013-05-31 12:12
 comments: true
 categories: 

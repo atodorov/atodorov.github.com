@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Keeping Backwards Compatibility for pykickstart"
+Title: Keeping Backwards Compatibility for pykickstart
 date: 2013-11-13 23:59
 comments: true
 categories: ['QA', 'Fedora']

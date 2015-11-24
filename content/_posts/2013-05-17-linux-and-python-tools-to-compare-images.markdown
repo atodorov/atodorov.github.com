@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Linux and Python Tools To Compare Images"
+Title: Linux and Python Tools To Compare Images
 date: 2013-05-17 21:13
 comments: true
 categories: ['Python', 'QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Summer Hackathon in Sofia"
+Title: Summer Hackathon in Sofia
 date: 2013-08-02 14:45
 comments: true
 categories: ['events', 'hackathon', 'hackfmi']

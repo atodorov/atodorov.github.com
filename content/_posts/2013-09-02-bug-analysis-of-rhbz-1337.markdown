@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bug Analysis Of RHBZ #1337"
+Title: Bug Analysis Of RHBZ #1337
 date: 2013-09-02 16:38
 comments: true
 categories: ['QA']

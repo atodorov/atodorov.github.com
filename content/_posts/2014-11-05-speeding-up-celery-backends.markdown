@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Speeding up Celery Backends, Part 1"
+Title: Speeding up Celery Backends, Part 1
 date: 2014-11-05 15:20
 comments: true
 categories: ['Python', 'Django', 'QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Importing vCard Contacts To BlackBerry Z10 Sucks"
+Title: Importing vCard Contacts To BlackBerry Z10 Sucks
 date: 2013-07-14 21:09
 comments: true
 categories: ['BlackBerry', 'Z10', 'Nokia']

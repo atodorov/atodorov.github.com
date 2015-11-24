@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Running Anaconda from git"
+Title: Running Anaconda from git
 date: 2015-11-13 10:48
 comments: true
 categories: ['QA', 'fedora.planet']

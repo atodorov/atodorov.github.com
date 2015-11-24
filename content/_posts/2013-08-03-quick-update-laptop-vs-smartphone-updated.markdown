@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Quick Update: Laptop vs Smartphone Updated"
+Title: Quick Update: Laptop vs Smartphone Updated
 date: 2013-08-03 23:58
 comments: true
 categories: 

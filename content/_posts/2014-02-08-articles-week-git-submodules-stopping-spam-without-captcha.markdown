@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA"
+Title: Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA
 date: 2014-02-08 23:00
 comments: true
 categories: 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Mocking Django AUTH_PROFILE_MODULE without a Database"
+Title: Mocking Django AUTH_PROFILE_MODULE without a Database
 date: 2014-02-27 16:18
 comments: true
 categories: ['Django']

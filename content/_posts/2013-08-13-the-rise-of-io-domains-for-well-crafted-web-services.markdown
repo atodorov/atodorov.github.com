@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Rise of .io Domains for Well Crafted Web Services"
+Title: The Rise of .io Domains for Well Crafted Web Services
 date: 2013-08-13 16:17
 comments: true
 categories: 

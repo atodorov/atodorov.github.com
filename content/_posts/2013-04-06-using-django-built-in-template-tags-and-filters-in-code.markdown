@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using Django built-in template tags and filters in code"
+Title: Using Django built-in template tags and filters in code
 date: 2013-04-06 22:26
 comments: true
 categories: ['tips', 'Django', 'Python']

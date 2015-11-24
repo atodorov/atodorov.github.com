@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Facebook UI Bug Strikes Again at HackFMI"
+Title: Facebook UI Bug Strikes Again at HackFMI
 date: 2013-09-23 23:33
 comments: true
 categories: ['QA']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Best IT School in Bulgaria"
+Title: The Best IT School in Bulgaria
 date: 2013-04-27 22:28
 comments: true
 categories: 

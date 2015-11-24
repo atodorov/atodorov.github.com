@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How Mtel, the Biggest Mobile Operator in Bulgaria, Fucked-Up Their Online Invoice System"
+Title: How Mtel, the Biggest Mobile Operator in Bulgaria, Fucked-Up Their Online Invoice System
 date: 2014-10-14 09:08
 comments: true
 categories: 

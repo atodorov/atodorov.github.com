@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Compiling Twinkle SIP Phone on RHEL 7"
+Title: Compiling Twinkle SIP Phone on RHEL 7
 date: 2015-05-01 15:04
 comments: true
 categories: ['RHEL', 'fedora.planet']

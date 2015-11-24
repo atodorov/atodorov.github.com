@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Speed Comparison of Web Proxies Written in Python Twisted and Go"
+Title: Speed Comparison of Web Proxies Written in Python Twisted and Go
 date: 2014-11-19 16:57
 comments: true
 categories: ['QA']

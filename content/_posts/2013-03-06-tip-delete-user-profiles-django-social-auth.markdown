@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Delete User Profiles with django-social-auth"
+Title: Tip: Delete User Profiles with django-social-auth
 date: 2013-03-06 21:02
 comments: true
 categories: ['tips', 'Django', 'django-social-auth']

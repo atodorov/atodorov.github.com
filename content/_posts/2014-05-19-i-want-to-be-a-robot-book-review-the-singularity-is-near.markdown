@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "I Want to Be a Robot - Book Review: The Singularity Is Near"
+Title: I Want to Be a Robot - Book Review: The Singularity Is Near
 date: 2014-05-19 21:43
 comments: true
 categories: ['books']

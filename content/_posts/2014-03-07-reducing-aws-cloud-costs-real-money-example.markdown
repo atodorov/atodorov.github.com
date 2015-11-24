@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Reducing AWS Cloud Costs - Real Money Example"
+Title: Reducing AWS Cloud Costs - Real Money Example
 date: 2014-03-07 17:14
 comments: true
 categories: ['Amazon', 'cloud']

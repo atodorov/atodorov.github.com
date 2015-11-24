@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "DigitalK Day 2 Report"
+Title: DigitalK Day 2 Report
 date: 2014-06-01 20:38
 comments: true
 categories: ['events']

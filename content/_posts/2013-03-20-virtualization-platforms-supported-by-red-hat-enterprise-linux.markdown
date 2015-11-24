@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Virtualization Platforms Supported by Red Hat Enterprise Linux"
+Title: Virtualization Platforms Supported by Red Hat Enterprise Linux
 date: 2013-03-20 15:04
 comments: true
 categories: ['RHEL', 'virtualization', 'tips']

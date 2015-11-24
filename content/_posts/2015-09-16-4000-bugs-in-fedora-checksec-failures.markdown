@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "4000+ bugs in Fedora - checksec failures"
+Title: 4000+ bugs in Fedora - checksec failures
 date: 2015-09-16 17:03
 comments: true
 categories: ['QA', 'fedora.planet']

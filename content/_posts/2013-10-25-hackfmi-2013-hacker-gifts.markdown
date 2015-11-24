@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HackFMI 2013 Hacker Gifts"
+Title: HackFMI 2013 Hacker Gifts
 date: 2013-10-25 16:33
 comments: true
 categories: ['events', 'hackathon', 'hackfmi']

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Positive Biological Effects of Open Source on Humans"
+Title: Positive Biological Effects of Open Source on Humans
 date: 2014-04-08 16:45
 comments: true
 categories: ['Fedora']

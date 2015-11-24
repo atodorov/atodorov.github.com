@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Twilio meetup and DigitalK 2014 Day 1"
+Title: Twilio meetup and DigitalK 2014 Day 1
 date: 2014-05-29 22:31
 comments: true
 categories: ['events']

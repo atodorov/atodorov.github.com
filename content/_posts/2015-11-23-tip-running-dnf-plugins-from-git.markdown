@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Running DNF Plugins from git"
+Title: Tip: Running DNF Plugins from git
 date: 2015-11-23 15:50
 comments: true
 categories: ['QA', 'fedora.planet', 'tips']

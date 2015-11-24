@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Howto: Django Forms with Dynamic Fields"
+Title: Howto: Django Forms with Dynamic Fields
 date: 2014-05-03 16:58
 comments: true
 categories: ['Django']

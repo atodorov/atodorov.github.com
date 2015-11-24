@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Spinning-up a Development Instance on OpenShift"
+Title: Spinning-up a Development Instance on OpenShift
 date: 2012-02-10 21:19
 comments: true
 categories: ["tips", "OpenShift", "cloud"]

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Upcoming Talk: Fedora Test Days in Sofia"
+Title: Upcoming Talk: Fedora Test Days in Sofia
 date: 2013-09-14 23:11
 comments: true
 categories: ['Fedora', 'QA', 'events']

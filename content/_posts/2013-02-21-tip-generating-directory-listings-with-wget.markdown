@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip: Generating Directory Listings with wget"
+Title: Tip: Generating Directory Listings with wget
 date: 2013-02-21 12:12
 comments: true
 categories: ['tips']

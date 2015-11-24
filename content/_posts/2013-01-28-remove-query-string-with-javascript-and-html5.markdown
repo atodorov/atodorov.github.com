@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Remove Query String with JavaScript and HTML5"
+Title: Remove Query String with JavaScript and HTML5
 date: 2013-01-28 15:52
 comments: true
 categories: ['JavaScript', 'HTML5']

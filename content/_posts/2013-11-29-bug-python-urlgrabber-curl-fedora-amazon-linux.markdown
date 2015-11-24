@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Bug in Python URLGrabber/cURL on Fedora and Amazon Linux"
+Title: Bug in Python URLGrabber/cURL on Fedora and Amazon Linux
 date: 2013-11-29 14:05
 comments: true
 categories: ['Fedora', 'QA', 'cloud', 'Python']

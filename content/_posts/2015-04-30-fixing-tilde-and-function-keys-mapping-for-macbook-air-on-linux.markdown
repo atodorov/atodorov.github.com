@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fixing Tilde and Function Keys Mapping for MacBook Air on Linux"
+Title: Fixing Tilde and Function Keys Mapping for MacBook Air on Linux
 date: 2015-04-30 11:33
 comments: true
 categories: ['RHEL', 'Mac', 'fedora.planet']

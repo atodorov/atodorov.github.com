@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HackFMI Code Stats"
+Title: HackFMI Code Stats
 date: 2013-04-19 10:00
 comments: true
 categories: ['hackfmi']
