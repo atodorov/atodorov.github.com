@@ -69,7 +69,7 @@ words very carefully and didn't reveal any sensational stories.
 
 The nice thing about all of that is I've started using the web in early 1998 and remember
 most of the events and websites described in the book. It's good to remember the history.
-I own the book and can give it to you if you like. It's on the [Give Away](/give-away/)
+I own the book and can give it to you if you like. It's on the [Give Away](/blog/2013/04/05/give-away-list/)
 list.
 
 

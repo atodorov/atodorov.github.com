@@ -17,7 +17,7 @@ I will donate an
 eeePC and a
 <a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&keywords=fujitsu%20laptop&linkCode=ur2&qid=1372944368&rh=i%3Acomputers%2Ck%3Afujitsu%20laptop&tag=atodorovorg-20">Fujitsu</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 laptop plus all books
-from my [Give Away List](/give-away/), which are not currently taken. 
+from my [Give Away List](/blog/2013/04/05/give-away-list/), which are not currently taken.
 Because this is not much I have an offer for everyone else, who would like to help. 
 
 <div style="clear:both"></div>
