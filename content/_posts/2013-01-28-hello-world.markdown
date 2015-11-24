@@ -6,7 +6,7 @@ comments: true
 categories: 
 ---
 
-Hi everyone and welcome to my blog! My name is Alex and you can read more [about me](/about/)
+Hi everyone and welcome to my blog! My name is Alex and you can read more [about me](/blog/2013/01/25/about-me/)
 if you like.
 
 After several years of rather unsuccessful blogging I decided to revamp my blog,
