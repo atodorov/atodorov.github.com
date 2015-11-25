@@ -7,7 +7,7 @@ Tags: RHEL, Mac, fedora.planet
 ---
 
 As it seems my
-<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 works with 
 [RHEL 7 on a MacBook Air](/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/)
 despite some reports it may not.

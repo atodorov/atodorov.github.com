@@ -26,7 +26,7 @@ I am capable of taking pictures of fast moving objects like flash lights.
 ![Flash light](/images/flashlight.jpg "Flash light")
 
 On the other hand I have access to an 
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=htc%20one&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=CZ33VB6BARW7FWZS">HTC One smartphone</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=htc%20one&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=CZ33VB6BARW7FWZS">HTC One smartphone</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 with Android. The burst
 mode feature there is particularly crappy. It shoots between 20 to 50 photos
 (haven't counted how much exactly), then takes a second to flash everything to disk,

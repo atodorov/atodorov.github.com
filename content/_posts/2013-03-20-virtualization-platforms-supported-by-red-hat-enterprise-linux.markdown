@@ -73,6 +73,6 @@ but I have no idea how well it works.
 
 If you are using a different virtualization platform
 (like LXC, OpenVZ, UML, 
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-brandtextbin=Parallels%20Software&linkCode=ur2&node=229534&tag=atodorovorg-20">Parallels</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-brandtextbin=Parallels%20Software&linkCode=ur2&node=229534&tag=atodorovorg-20">Parallels</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 or other) let me know if CentOS/Fedora works on it.
 Alternatively I can give it a try if you can provide me with ssh/VNC access to the machine.

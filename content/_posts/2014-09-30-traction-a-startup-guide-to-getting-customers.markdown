@@ -11,7 +11,7 @@ Tags: books, start-up
 > Mark Andreessen, venture capitalist
 
 
-<a href="http://www.amazon.com/gp/product/B00N06Y2DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00N06Y2DW&linkCode=as2&tag=atodorovorg-20&linkId=4GDHEYN66CPL7L72">Traction: A Startup Guide to Getting Customers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00N06Y2DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B00N06Y2DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00N06Y2DW&linkCode=as2&tag=atodorovorg-20&linkId=4GDHEYN66CPL7L72">Traction: A Startup Guide to Getting Customers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00N06Y2DW" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 introduces startup founders and employees to the "Bullseye Framework," 
 a five-step process successful companies use to get traction. 
 This framework helps founders find the marketing channel that will be key to unlocking the next stage of growth. 
@@ -49,12 +49,12 @@ to my current startup [Obuvki 41 Plus](http://obuvki41plus.com) and a future one
 To anyone building a startup of any kind I would recommend the following selection of books:
 
 
-* <a href="http://www.amazon.com/gp/product/1591847788/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1591847788&linkCode=as2&tag=atodorovorg-20&linkId=IR465SOS3KA4BJLF">Hooked: How to Build Habit-Forming Products</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1591847788" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> - 
+* <a href="http://www.amazon.com/gp/product/1591847788/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1591847788&linkCode=as2&tag=atodorovorg-20&linkId=IR465SOS3KA4BJLF">Hooked: How to Build Habit-Forming Products</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1591847788" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /> - 
 to learn how to make products (especially mobile apps) that customers keep using on their own without
 additional external marketing ([review here](/blog/2014/01/28/book-review-january-2014/))
-* <a href="http://www.amazon.com/gp/product/1449334911/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449334911&linkCode=as2&tag=atodorovorg-20&linkId=MHLGJPMJDO4FJDQB">UX for Lean Startups</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449334911" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> -
+* <a href="http://www.amazon.com/gp/product/1449334911/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449334911&linkCode=as2&tag=atodorovorg-20&linkId=MHLGJPMJDO4FJDQB">UX for Lean Startups</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449334911" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /> -
 lean product development ([review here](/blog/2013/12/09/book-review-ux-for-lean-startups/))
-* <a href="http://www.amazon.com/gp/product/B00N06Y2DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00N06Y2DW&linkCode=as2&tag=atodorovorg-20&linkId=AYMPCBH4MP5PC6G5">Traction: A Startup Guide to Getting Customers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00N06Y2DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /> -
+* <a href="http://www.amazon.com/gp/product/B00N06Y2DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00N06Y2DW&linkCode=as2&tag=atodorovorg-20&linkId=AYMPCBH4MP5PC6G5">Traction: A Startup Guide to Getting Customers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00N06Y2DW" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /> -
 customer growth development
 
 

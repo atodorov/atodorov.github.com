@@ -12,7 +12,7 @@ tech and start-up related to Japanese and kid stories. Here's my quick review.
 Lean UX
 --------
 
-<a href="http://www.amazon.com/gp/product/1449311652/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449311652&linkCode=as2&tag=atodorovorg-20&linkId=JNQIKHJJXU3KJ33H">Lean UX: Applying Lean Principles to Improve User Experience</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449311652" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/1449311652/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1449311652&linkCode=as2&tag=atodorovorg-20&linkId=JNQIKHJJXU3KJ33H">Lean UX: Applying Lean Principles to Improve User Experience</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1449311652" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 is the second book I read on the subject after first reading
 [UX for Lean Startups](/blog/2013/12/09/book-review-ux-for-lean-startups/).
 
@@ -24,7 +24,7 @@ Maybe if I had read these two books in reverse order it would have been better.
 The Hacienda - How Not to Run a Club
 -------------------------------------
 
-<a href="http://www.amazon.com/gp/product/B00DEKLESK/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00DEKLESK&linkCode=as2&tag=atodorovorg-20&linkId=FOMGYFQW4BHGPPOL">The Hacienda: How Not to Run a Club</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00DEKLESK" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B00DEKLESK/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00DEKLESK&linkCode=as2&tag=atodorovorg-20&linkId=FOMGYFQW4BHGPPOL">The Hacienda: How Not to Run a Club</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00DEKLESK" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 by Peter Hook is one of my favorites. It covers a great deal of music and clubland history,
 depicts crazy parties and describes the adventure of owning one of the most
 popular nightclubs in the world. All of that while struggling to make a buck and
@@ -47,7 +47,7 @@ or wants to read a piece of history. My favorite quote of the book:
 Simple Science Experiments
 ----------------------------
 
-<a href="http://www.amazon.com/gp/product/0713428945/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0713428945&linkCode=as2&tag=atodorovorg-20&linkId=HU6TVCNR6DG67EFG">Simple Science Experiments</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0713428945" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/0713428945/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0713428945&linkCode=as2&tag=atodorovorg-20&linkId=HU6TVCNR6DG67EFG">Simple Science Experiments</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0713428945" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 by Hans Jürgen Press is a very old book listing 200 experiments which you can
 do at home using household materials. It is great for teaching basic science
 to children. The book is very popular and is available in many languages
@@ -61,7 +61,7 @@ Ronia, the Robber's Daughter
 ----------------------------
 
 Decided to experiment a little bit and found
-<a href="http://www.amazon.com/gp/product/0140317201/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0140317201&linkCode=as2&tag=atodorovorg-20&linkId=FDHOPXQCZPMYCAA2">Ronia, the Robber's Daughter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0140317201" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.
+<a href="http://www.amazon.com/gp/product/0140317201/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0140317201&linkCode=as2&tag=atodorovorg-20&linkId=FDHOPXQCZPMYCAA2">Ronia, the Robber's Daughter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0140317201" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />.
 It's a child's book telling the story of two kids whose fathers are rival
 robbers. The book is an easy read (2-3 hrs before bed time) with stories
 of magic woods, dwarfs and scary creatures mixed with human emotions
@@ -86,7 +86,7 @@ The Singularity Is Near
 -----------------------
 
 I've also started 
-<a href="http://www.amazon.com/gp/product/0143037889/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0143037889&linkCode=as2&tag=atodorovorg-20&linkId=BKMQ47NQEXNTDDRR">The Singularity Is Near: When Humans Transcend Biology</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0143037889" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/0143037889/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0143037889&linkCode=as2&tag=atodorovorg-20&linkId=BKMQ47NQEXNTDDRR">The Singularity Is Near: When Humans Transcend Biology</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0143037889" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 by Ray Kurzweil.
 
 It's a bit hard to read because the book is full of so many technical details

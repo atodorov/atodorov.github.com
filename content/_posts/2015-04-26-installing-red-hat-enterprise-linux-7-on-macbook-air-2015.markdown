@@ -7,7 +7,7 @@ Tags: fedora.planet, RHEL, Mac
 ---
 
 Recently I've upgraded to a new 
-<a href="http://www.amazon.com/gp/product/B00UGECEUY/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00UGECEUY&linkCode=as2&tag=atodorovorg-20&linkId=3YENGI5TIYKEC5GM">MacBook Air</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00UGECEUY" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B00UGECEUY/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00UGECEUY&linkCode=as2&tag=atodorovorg-20&linkId=3YENGI5TIYKEC5GM">MacBook Air</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00UGECEUY" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 (13 inch, early 2015) laptop and luckily enough I'm running
 Red Hat Enterprise Linux 7.1 on it. Here is how to install it.
 
@@ -41,7 +41,7 @@ rebooting the system everything was fine. Subsequently I don't see any problems 
 USB networking card. The bug should be fixed in RHEL 7.2 btw.
 
 **Note:** I've been using a
-<a href="http://www.amazon.com/gp/product/B002PONXAI/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B002PONXAI&linkCode=as2&tag=atodorovorg-20&linkId=N4KGQKYSBSDWMMM6">USB docking station from Plugable</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B002PONXAI" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B002PONXAI/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B002PONXAI&linkCode=as2&tag=atodorovorg-20&linkId=N4KGQKYSBSDWMMM6">USB docking station from Plugable</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B002PONXAI" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 for years because their products are Linux friendly. In particular the networking chip is ASIX and
 there is no problems with drivers for Linux.
 

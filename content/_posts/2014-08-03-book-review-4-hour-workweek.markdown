@@ -7,7 +7,7 @@ Tags: books
 Slug: book-review-4-hour-workweek
 ---
 
-<a href="http://www.amazon.com/gp/product/0307465357/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0307465357&linkCode=as2&tag=atodorovorg-20&linkId=MNAE55VHLT2NVN2Z">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0307465357" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/0307465357/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0307465357&linkCode=as2&tag=atodorovorg-20&linkId=MNAE55VHLT2NVN2Z">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0307465357" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 by Timothy Ferriss is one of my all time favorite books.
 The basic idea is to ditch the traditional working environment
 and work less utilizing more automation.

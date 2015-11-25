@@ -85,7 +85,7 @@ I have no idea if this was a minor oversight or something which happens more fre
 in open source projects but it's a great example nevertheless.
 
 For those of you who'd like to get started on unit testing I can recommend the book
-<a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 by Roy Osherove!
 
 **UPDATE**: Part 2 with more practical examples can be found

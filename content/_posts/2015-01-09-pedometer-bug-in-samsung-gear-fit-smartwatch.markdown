@@ -15,7 +15,7 @@ Image source [Pocketnow](http://pocketnow.com/2014/05/02/samsung-gear-fit-review
 
 
 Recently I've been playing around with a
-<a href="http://www.amazon.com/gp/product/B00J4DY8RU/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00J4DY8RU&linkCode=as2&tag=atodorovorg-20&linkId=RNJGVYUTOOJFGWOU">Samsung Gear Fit</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00J4DY8RU" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B00J4DY8RU/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00J4DY8RU&linkCode=as2&tag=atodorovorg-20&linkId=RNJGVYUTOOJFGWOU">Samsung Gear Fit</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00J4DY8RU" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 and while the hardware seems good I'm a bit disapointed on the software side.
 There is at least one bug which is clearly visible - **pedometer counts calories twice
 when it's on and exercise mode is started**.

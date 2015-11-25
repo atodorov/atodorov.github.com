@@ -7,8 +7,8 @@ Tags: Nokia, QA
 ---
 
 During the past month one of my cell phones,
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Nokia&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps">Nokia</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-<a href="http://www.amazon.com/gp/product/B001SEAOC6/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001SEAOC6&linkCode=as2&tag=atodorovorg-20">5800 XpressMusic</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001SEAOC6" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Nokia&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps">Nokia</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B001SEAOC6/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001SEAOC6&linkCode=as2&tag=atodorovorg-20">5800 XpressMusic</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001SEAOC6" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 , was not showing the caller name when a friend was calling.
 The number in the contacts list was correct but the name wasn't showing,
 nor the custom assigned ringing tone. It turned out to be a bug!
@@ -25,7 +25,7 @@ phone is
 
 I wondered what will happen with multiple duplicates and if this was fixed in a later
 software version so I tested with another phone,
-<a href="http://www.amazon.com/gp/product/B002RXEI6U/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B002RXEI6U&linkCode=as2&tag=atodorovorg-20">Nokia 6303</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B002RXEI6U" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.
+<a href="http://www.amazon.com/gp/product/B002RXEI6U/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B002RXEI6U&linkCode=as2&tag=atodorovorg-20">Nokia 6303</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B002RXEI6U" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />.
 Software version is
 
     V 07.10
@@ -51,14 +51,14 @@ contact list, independent of name sort order.
 
 <del>
 Later today or tomorrow I will test on 
-<a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 which runs Symbian OS and update this post with more results.
 </del>
 
 **Updated on 2013-03-19 23:50**
 
 Finally managed to test on
-<a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.
+<a href="http://www.amazon.com/gp/product/B005MOW7S2/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B005MOW7S2&linkCode=as2&tag=atodorovorg-20">Nokia 700</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B005MOW7S2" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />.
 Software version is:
 
     Release
@@ -78,8 +78,8 @@ Android and iPhone
 ------------------
 
 I don't own any
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Android&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Delectronics">Android</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Android&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Delectronics">Android</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 or
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=iPhone&linkCode=ur2&rh=n%3A172282%2Ck%3AiPhone&tag=atodorovorg-20&url=search-alias%3Delectronics">iPhone</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=iPhone&linkCode=ur2&rh=n%3A172282%2Ck%3AiPhone&tag=atodorovorg-20&url=search-alias%3Delectronics">iPhone</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 devices so I'm not able to test on them. If you have one, please let me know if this bug is still present
 and how does the software behave when multiple contacts share the same number or have empty names! Thanks!

@@ -7,7 +7,7 @@ Tags: books
 ---
 
 I've just finished reading
-<a href="http://www.amazon.com/gp/product/B000QCSA7C/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B000QCSA7C&linkCode=as2&tag=atodorovorg-20&linkId=PY5X54XVJXYLZBIH">The Singularity Is Near: When Humans Transcend Biology</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B000QCSA7C" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a href="http://www.amazon.com/gp/product/B000QCSA7C/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B000QCSA7C&linkCode=as2&tag=atodorovorg-20&linkId=PY5X54XVJXYLZBIH">The Singularity Is Near: When Humans Transcend Biology</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B000QCSA7C" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 and all I have to say is "I want to be a robot"!
 
 This is one of the books that took me the longest time to read. It's a hard
