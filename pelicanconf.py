@@ -50,3 +50,4 @@ TWITTER_URL = "https://twitter.com/%s" % TWITTER_USERNAME
 GITHUB_URL = "https://github.com/atodorov"
 
 ADDTHIS_PUBID = "ra-5103cc5a2bc6ba17"
+FEEDBURNER_URL = "http://feeds.feedburner.com/atodorov"
