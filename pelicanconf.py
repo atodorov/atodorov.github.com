@@ -18,6 +18,10 @@ STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']
 
 HEADER_COVER = "/images/header_02.jpg"
 
+# the theme hijacks the form input fields
+# and the search box doesn't work
+DISABLE_CUSTOM_THEME_JAVASCRIPT = True
+
 COLOR_SCHEME_CSS = "github.css"
 
 PATH = 'content'
