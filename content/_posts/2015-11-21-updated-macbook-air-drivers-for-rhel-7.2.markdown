@@ -22,3 +22,8 @@ from the Desktop menu however appears to work. See
 [Issue #41](https://github.com/patjak/mba6x_bl/issues/41). I'd love to get some
 help in debugging what's going wrong and trying to fix it. At this point I have
 no idea where to look and if it's the driver to blame or something else on the system.
+
+**UPDATE 2015-11-25:**
+After the upgrade to RHEL 7.2 I also started seeing
+[rhbz#1284851](https://bugzilla.redhat.com/show_bug.cgi?id=1284851)
+- Mate power manager doesn't detect AC/DC changes on MacBook Air with RHEL 7.2
