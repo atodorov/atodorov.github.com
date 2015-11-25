@@ -47,13 +47,13 @@ jQuery and jQueryUI are widely used on the client side.
 Why Not Something Else?
 -----------------------
 
-{% blockquote Nikolay Zheynov %}
-True to our agile approach to incrementally enhance the product and the technology
-that goes along with it, we strongly believe in the scaling on demand practices.
-Ucha.se's own framework reflects exactly to that. It allows us to meet our growing
-user demands and provides at the same time, the dev-team with enough flexibility to
-quickly react on new business opportunities and technological (r)evolutions.
-{% endblockquote %}
+> True to our agile approach to incrementally enhance the product and the technology
+> that goes along with it, we strongly believe in the scaling on demand practices.
+> Ucha.se's own framework reflects exactly to that. It allows us to meet our growing
+> user demands and provides at the same time, the dev-team with enough flexibility to
+> quickly react on new business opportunities and technological (r)evolutions.
+> 
+> Nikolay Zheynov
 
 Want More Info?
 ---------------

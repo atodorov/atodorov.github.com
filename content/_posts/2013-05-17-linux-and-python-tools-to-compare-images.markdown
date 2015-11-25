@@ -69,16 +69,15 @@ that I'm comparing screen shots where only few areas changed
 I've prepared the baseline images with GIMP and tested couple of scenarios
 using `compare`. Here's how it looks in code:
 
-{% codeblock lang:python %}
-from PIL import Image
-from dogtail.utils import screenshot
-
-baseline_histogram = Image.open('/home/atodorov/baseline.png').histogram()
-
-img = Image.open(screenshot())
-region = img.crop((860, 300, 950, 320))
-print region.histogram() == baseline_histogram
-{% endcodeblock %}
+    :::python
+    from PIL import Image
+    from dogtail.utils import screenshot
+    
+    baseline_histogram = Image.open('/home/atodorov/baseline.png').histogram()
+    
+    img = Image.open(screenshot())
+    region = img.crop((860, 300, 950, 320))
+    print region.histogram() == baseline_histogram
 
 
 Results

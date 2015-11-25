@@ -10,12 +10,11 @@ Common functionality for websites is the 'DELETE ACCOUNT' or 'DISABLE ACCOUNT'
 button. This is how to implement it if using 
 [django-social-auth](https://github.com/omab/django-social-auth).
 
-{% codeblock views.py lang:python %}
-delete_objects_for_user(request.user.pk) # optional
-UserSocialAuth.objects.filter(user=request.user).delete()
-User.objects.filter(pk=request.user.pk).update(is_active=False, email=None)
-return HttpResponseRedirect(reverse('django.contrib.auth.views.logout'))
-{% endcodeblock %}
+    :::python views.py
+    delete_objects_for_user(request.user.pk) # optional
+    UserSocialAuth.objects.filter(user=request.user).delete()
+    User.objects.filter(pk=request.user.pk).update(is_active=False, email=None)
+    return HttpResponseRedirect(reverse('django.contrib.auth.views.logout'))
 
 This snippet does the following:
 
@@ -26,4 +25,3 @@ DSA will create new objects if the user logs in again;
 * Clear the email for the `User` object - if a new user is created after deletion
 we don't want duplicated email addresses in the database;
 * Finally redirect the user to the logout view.
-

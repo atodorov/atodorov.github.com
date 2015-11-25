@@ -36,15 +36,14 @@ JavaScript and HTML5 to the rescue
 
 Place this JavaScript code in the `<head>` section of your pages. Preferably near the top.
 
-{% codeblock lang:html %}
-<script type="text/javascript">
-var uri = window.location.toString();
-if (uri.indexOf("?") > 0) {
-    var clean_uri = uri.substring(0, uri.indexOf("?"));
-    window.history.replaceState({}, document.title, clean_uri);
-}
-</script>
-{% endcodeblock %}
+    :::html
+    <script type="text/javascript">
+    var uri = window.location.toString();
+    if (uri.indexOf("?") > 0) {
+        var clean_uri = uri.substring(0, uri.indexOf("?"));
+        window.history.replaceState({}, document.title, clean_uri);
+    }
+    </script>
 
 This code will clean the URL in the browser address bar without reloading the page.
 It works for HTML5 enabled browsers.
@@ -58,19 +57,18 @@ using this snippet on this very own blog as well.
 
 Here is another approach proposed by reader Kamen Mazdrashki: 
 
-{% codeblock lang:html %}
-<script type="text/javascript">
-var clean_uri = location.protocol + "//" + location.host + location.pathname;
-/*
-var hash_pos = location.href.indexOf("#");
-if (hash_pos > 0) {
-    var hash = location.href.substring(hash_pos, location.href.length);
-    clean_uri += hash;
-}
-*/
-window.history.replaceState({}, document.title, clean_uri);
-</script>
-{% endcodeblock %}
+    :::html
+    <script type="text/javascript">
+    var clean_uri = location.protocol + "//" + location.host + location.pathname;
+    /*
+    var hash_pos = location.href.indexOf("#");
+    if (hash_pos > 0) {
+        var hash = location.href.substring(hash_pos, location.href.length);
+        clean_uri += hash;
+    }
+    */
+    window.history.replaceState({}, document.title, clean_uri);
+    </script>
 
 If you'd like to keep the hash tag aka named anchor aka fragment identifier at the end of the URL
 then uncomment the commented section.

@@ -11,9 +11,9 @@ by Timothy Ferriss is one of my all time favorite books.
 The basic idea is to ditch the traditional working environment
 and work less utilizing more automation.
 
-{% blockquote MARK TWAIN %}
-Whenever you find yourself on the side of the majority, it is time to pause and reflect.
-{% endblockquote %}
+> Whenever you find yourself on the side of the majority, it is time to pause and reflect.
+> 
+> MARK TWAIN
 
 The book starts with a story about the Tango World Championship semifinals in
 Argentina and poses the question 
@@ -26,22 +26,21 @@ Step 1: Definition
 Tim defines two groups of people. The Deferrers, those who save it all for the
 end only to find that life has passed them by and the New Rich.
 
-{% blockquote %}
-* The employee who rearranges his schedule and negotiates a remote work agreement
-  to achieve 90% of the results in one-tenth of the time, which frees him to
-  practice cross-country skiing and take road trips with his family two weeks per
-  month.
 
-* The business owner who eliminates the least profitable customers and projects,
-  outsources all operations entirely, and travels the world collecting rare
-  documents, all while working remotely on a website to showcase her own
-  illustration work.
-
-* The student who elects to risk it all—which is nothing—to establish an online
-  video rental service that delivers $5,000 per month in income from a small niche
-  of Blu-ray aficionados, a two-hour-per-week side project that allows him to work
-  full-time as an animal rights lobbyist.
-{% endblockquote %}
+> * The employee who rearranges his schedule and negotiates a remote work agreement
+>   to achieve 90% of the results in one-tenth of the time, which frees him to
+>   practice cross-country skiing and take road trips with his family two weeks per
+>   month.
+> 
+> * The business owner who eliminates the least profitable customers and projects,
+>   outsources all operations entirely, and travels the world collecting rare
+>   documents, all while working remotely on a website to showcase her own
+>   illustration work.
+> 
+> * The student who elects to risk it all—which is nothing—to establish an online
+>   video rental service that delivers $5,000 per month in income from a small niche
+>   of Blu-ray aficionados, a two-hour-per-week side project that allows him to work
+>   full-time as an animal rights lobbyist.
 
 The possibilities are endless. What defines the New Rich is their unrestricted mobility
 and availability of free time! Money alone doesn't count anymore. Its practical value is
@@ -53,11 +52,11 @@ much more powerful than working 80 hours per week for a million dollars.
 Step 2: Elimination
 -------------------
 
-{% blockquote BRUCE LEE %}
-One does not accumulate but eliminate.
-It is not daily increase but daily decrease.
-The height of cultivation always runs to simplicity.
-{% endblockquote %}
+> One does not accumulate but eliminate.
+> It is not daily increase but daily decrease.
+> The height of cultivation always runs to simplicity.
+> 
+> BRUCE LEE
 
 
 In this chapter Tim talks about developing selective ignorance of information,
@@ -145,25 +144,25 @@ Extended edition
 This extended edition of the book completes with blog articles and bonus sections
 like *Killing Your BlackBerry*.
 
-{% blockquote ANDREW, self-employed in the UK %}
-I’m a 37-year-old Subway franchisee owning and operating 13 stores. 
-Been doing this for seven years. Prior to reading 4HWW I was KING at W4W
-(translate: work for work’s sake)
-...
-Crunched my “always open” workweek into four days and 20 hours. I immediately
-began taking Mondays OFF, giving me a nice three-day weekend.
-Tuesday to Friday I work 11 A.M.–4 P.M. (20 hours per week).
-...
-I was forced to appraise everything through the 80/20 filter and found that
-50% of the 80% was pure crap and the other 50% of the 80% could be done by someone
-on my payroll.
-...
-I still carry portable e-mail but I’ve killed “auto-sync”.
-Now it’s on a Tues–Fri, 11 A.M.–4 P.M. schedule.
-...
-My e-mail autoresponder eliminated 50% of my e-mail within two weeks as people sending
-me meaningless crap got fed up looking at my autoresponder and stopped including me.
-{% endblockquote %}
+> I’m a 37-year-old Subway franchisee owning and operating 13 stores. 
+> Been doing this for seven years. Prior to reading 4HWW I was KING at W4W
+> (translate: work for work’s sake)
+> 
+> Crunched my “always open” workweek into four days and 20 hours. I immediately
+> began taking Mondays OFF, giving me a nice three-day weekend.
+> Tuesday to Friday I work 11 A.M.–4 P.M. (20 hours per week).
+> 
+> I was forced to appraise everything through the 80/20 filter and found that
+> 50% of the 80% was pure crap and the other 50% of the 80% could be done by someone
+> on my payroll.
+> 
+> I still carry portable e-mail but I’ve killed “auto-sync”.
+> Now it’s on a Tues–Fri, 11 A.M.–4 P.M. schedule.
+> 
+> My e-mail autoresponder eliminated 50% of my e-mail within two weeks as people sending
+> me meaningless crap got fed up looking at my autoresponder and stopped including me.
+> 
+> ANDREW, self-employed in the UK
 
 
 

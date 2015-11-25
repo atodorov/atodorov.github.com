@@ -10,11 +10,9 @@ Do you want to have the latest and greatest devices on the market? For free?
 No problem if you are a software developer! Over the years I've got several
 devices for free and I will tell you how I did it. 
 
-{% blockquote %}
-Find a hardware vendor that has
-launched new products, is behind competitors in terms of software eco-system
-and present them with a great application which you will code on their device.
-{% endblockquote %}
+> Find a hardware vendor that has
+> launched new products, is behind competitors in terms of software eco-system
+> and present them with a great application which you will code on their device.
 
 <img src="/images/bbz10_tshirt.jpg" alt="BlackBerry Z10 T-Shirt" style="display:block;clear:both;" />
 

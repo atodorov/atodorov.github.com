@@ -48,10 +48,9 @@ loop 1 000 000 times I got 1908.0 tasks created per sec.
 
 
 Another interesting this worth outlining - in the kombu test there are these lines:
-{% codeblock %}
-with producers[connection].acquire(block=True) as producer:
-    for j in range(1000000):
-{% endcodeblock %}
+
+    with producers[connection].acquire(block=True) as producer:
+        for j in range(1000000):
 
 If we swap them the performance drops down to 3875 msg/sec which is comparable with the
 Celery results. Indeed inside Celery there's the same `with producer.acquire(block=True)`

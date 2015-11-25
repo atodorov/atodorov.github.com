@@ -24,42 +24,39 @@ The following steps work for me on a Fedora 20 system.
 * Download the source RPM for anaconda from the tree and extract the sources to a working
 directory. Then;
 
-{% codeblock lang:bash %}
-cd anaconda-20.25.16-1
-git init
-git add .
-git commit -m "initial import"
-git tag anaconda-20.25.16-1
-{% endcodeblock %}
+        :::bash
+        cd anaconda-20.25.16-1
+        git init
+        git add .
+        git commit -m "initial import"
+        git tag anaconda-20.25.16-1
 
 * The above steps will create a local git repository and tag the initial contents before
 modification. The tag is required later by the script which creates the updates image;
 
 * After making your changes commit them and from the top anaconda directory execute:
 
-{% codeblock lang:bash %}
-./scripts/makeupdates -t anaconda-20.25.16-1
-{% endcodeblock %}
+        :::bash
+        ./scripts/makeupdates -t anaconda-20.25.16-1
 
 You can also add RPM contents to the updates.img but you need to download the packages first:
 
-{% codeblock lang:bash %}
-yumdownloader python-coverage python-setuptools
-
-./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
-BUILDDIR /home/atodorov/anaconda-20.25.16-1
-Including anaconda
-2 RPMs added manually:
-python-setuptools-1.4.2-1.fc20.noarch.rpm
-python-coverage-3.7-1.fc20.x86_64.rpm
-cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
-3534 blocks
-cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
-1214 blocks
-<stdin> to <stdout> 4831 blocks
-
-updates.img ready
-{% endcodeblock %}
+    :::bash
+    yumdownloader python-coverage python-setuptools
+    
+    ./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
+    BUILDDIR /home/atodorov/anaconda-20.25.16-1
+    Including anaconda
+    2 RPMs added manually:
+    python-setuptools-1.4.2-1.fc20.noarch.rpm
+    python-coverage-3.7-1.fc20.x86_64.rpm
+    cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm | cpio -dium
+    3534 blocks
+    cd /home/atodorov/anaconda-20.25.16-1/updates && rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm | cpio -dium
+    1214 blocks
+    <stdin> to <stdout> 4831 blocks
+    
+    updates.img ready
 
 In the above example I have only modified the top level anaconda file (`/usr/sbin/anaconda`
 inside the installation environment) experimenting with
@@ -70,14 +67,14 @@ You are done! Make the `updates.img` available to Anaconda and start using it!
 **UPDATE 2014-02-08:** If you prefer working with the anaconda source tree here's
 how to do it:
 
-{% codeblock lang:bash %}
-git clone git://git.fedorahosted.org/git/anaconda.git
-cd anaconda/
-git checkout anaconda-20.25.16-1 -b my_feature-branch
+    :::bash
+    git clone git://git.fedorahosted.org/git/anaconda.git
+    cd anaconda/
+    git checkout anaconda-20.25.16-1 -b my_feature-branch
+    
+    ... make changes ...
+    
+    git commit -a -m "Fixed something"
+    
+    ./scripts/makeupdates -t anaconda-20.25.16-1
 
-... make changes ...
-
-git commit -a -m "Fixed something"
-
-./scripts/makeupdates -t anaconda-20.25.16-1
-{% endcodeblock %}

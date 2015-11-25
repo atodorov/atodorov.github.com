@@ -13,52 +13,50 @@ on. Test stubs provide canned answers to calls made during the test.
 I've discovered an improperly written stub method in one of
 [DNF](http://dnf.baseurl.org/)'s tests:
 
-{% codeblock lang:python tests/test_download.py %}
-class DownloadCommandTest(unittest.TestCase):
-    def setUp(self):
-        def stub_fn(pkg_spec):
-            if '.src.rpm' in pkg_spec:
-                return Query.filter(sourcerpm=pkg_spec)
-            else:
-                q = Query.latest()
-                return [pkg for pkg in q if pkg_spec == pkg.name]
-
-        cli = mock.MagicMock()
-        self.cmd = download.DownloadCommand(cli)
-        self.cmd.cli.base.repos = dnf.repodict.RepoDict()
-
-        self.cmd._get_query = stub_fn
-        self.cmd._get_query_source = stub_fn
-{% endcodeblock %}
+    :::python tests/test_download.py
+    class DownloadCommandTest(unittest.TestCase):
+        def setUp(self):
+            def stub_fn(pkg_spec):
+                if '.src.rpm' in pkg_spec:
+                    return Query.filter(sourcerpm=pkg_spec)
+                else:
+                    q = Query.latest()
+                    return [pkg for pkg in q if pkg_spec == pkg.name]
+    
+            cli = mock.MagicMock()
+            self.cmd = download.DownloadCommand(cli)
+            self.cmd.cli.base.repos = dnf.repodict.RepoDict()
+    
+            self.cmd._get_query = stub_fn
+            self.cmd._get_query_source = stub_fn
 
 The replaced methods look like this:
 
-{% codeblock lang:python plugins/download.py %}
-    def _get_query(self, pkg_spec):
-        """Return a query to match a pkg_spec."""
-        subj = dnf.subject.Subject(pkg_spec)
-        q = subj.get_best_query(self.base.sack)
-        q = q.available()
-        q = q.latest()
-        if len(q.run()) == 0:
-            msg = _("No package " + pkg_spec + " available.")
-            raise dnf.exceptions.PackageNotFoundError(msg)
-        return q
-
-    def _get_query_source(self, pkg_spec):
-        """"Return a query to match a source rpm file name."""
-        pkg_spec = pkg_spec[:-4]  # skip the .rpm
-        nevra = hawkey.split_nevra(pkg_spec)
-        q = self.base.sack.query()
-        q = q.available()
-        q = q.latest()
-        q = q.filter(name=nevra.name, version=nevra.version,
-                     release=nevra.release, arch=nevra.arch)
-        if len(q.run()) == 0:
-            msg = _("No package " + pkg_spec + " available.")
-            raise dnf.exceptions.PackageNotFoundError(msg)
-        return q
-{% endcodeblock %}
+    :::python plugins/download.py
+        def _get_query(self, pkg_spec):
+            """Return a query to match a pkg_spec."""
+            subj = dnf.subject.Subject(pkg_spec)
+            q = subj.get_best_query(self.base.sack)
+            q = q.available()
+            q = q.latest()
+            if len(q.run()) == 0:
+                msg = _("No package " + pkg_spec + " available.")
+                raise dnf.exceptions.PackageNotFoundError(msg)
+            return q
+    
+        def _get_query_source(self, pkg_spec):
+            """"Return a query to match a source rpm file name."""
+            pkg_spec = pkg_spec[:-4]  # skip the .rpm
+            nevra = hawkey.split_nevra(pkg_spec)
+            q = self.base.sack.query()
+            q = q.available()
+            q = q.latest()
+            q = q.filter(name=nevra.name, version=nevra.version,
+                         release=nevra.release, arch=nevra.arch)
+            if len(q.run()) == 0:
+                msg = _("No package " + pkg_spec + " available.")
+                raise dnf.exceptions.PackageNotFoundError(msg)
+            return q
 
 As seen here *stub_fn* replaces the *_get_query* methods from the class under
 test. At the time of writing this has probably seemed like a good idea to

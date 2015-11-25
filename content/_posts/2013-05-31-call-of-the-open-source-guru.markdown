@@ -26,9 +26,8 @@ Why hack open source
 --------------------
 
 That's the number one question students will ask. The answer is simple
-{% blockquote %}
-It gives you experience and you become a hacker!
-{% endblockquote %}
+
+> It gives you experience and you become a hacker!
 
 There is absolutely no way one could graduate in their early 20s, not work
 during study and have 3-5 years of experience as required by many job offers.
@@ -74,9 +73,7 @@ Eric Raymond you should do so right away. Then come back and finish this article
 For those who'd like to start coding but have no idea where to start take a look at
 [OpenHatch](http://openhatch.org/). 
 
-{% blockquote %}
-OpenHatch is a non-profit dedicated to matching prospective free software contributors with communities, tools, and education. 
-{% endblockquote %}
+> OpenHatch is a non-profit dedicated to matching prospective free software contributors with communities, tools, and education. 
 
 If you still like to be a developer but don't feel confident enough to hack on the core of
 the project I'd recommend you start by writing automated test cases. Writing test cases doesn't

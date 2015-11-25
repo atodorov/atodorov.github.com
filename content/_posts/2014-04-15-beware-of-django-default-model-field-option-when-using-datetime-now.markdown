@@ -24,16 +24,15 @@ metrics by calling an internal URL. The app was running as WSGI app and I wonder
 why I got records with duplicate dates in the DB. A more detailed (correct) example follows:
 
 
-{% codeblock lang:python %}
-def _strftime():
-    return datetime.now().strftime('%Y-%m-%d')
-
-class Metrics(models.Model):
-    key = models.IntegerField(db_index=True)
-    value = models.FloatField()
-    added_on = models.DateTimeField(db_index=True, default=datetime.now)
-    added_on_as_text = models.CharField(max_length=16, default=_strftime)
-{% endcodeblock %}
+    :::python
+    def _strftime():
+        return datetime.now().strftime('%Y-%m-%d')
+    
+    class Metrics(models.Model):
+        key = models.IntegerField(db_index=True)
+        value = models.FloatField()
+        added_on = models.DateTimeField(db_index=True, default=datetime.now)
+        added_on_as_text = models.CharField(max_length=16, default=_strftime)
 
 
 [Difio](http://www.dif.io) also had the same bug but didn't exhibit the problem

@@ -21,7 +21,7 @@ What you should see as the output from `checksec is`
 
 The first line is for binaries, the second one for libraries b/c
 DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
-e.g. `{% raw %}%{_libdir}/foo/{% endraw %}` and I've tried to exclude them unless
+e.g. `%{_libdir}/foo/` and I've tried to exclude them unless
 other offenses are found. The script which does this is
 [checksec-collect](https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect).
 

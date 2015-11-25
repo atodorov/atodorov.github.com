@@ -30,29 +30,28 @@ was able to pin-point some problematic areas:
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
 I called fastmemory which redefines the body_encoding property:
 
-{% codeblock lang:python %}
-    @cached_property
-    def body_encoding(self):
-        return None
-{% endcodeblock %}
+        :::python
+        @cached_property
+        def body_encoding(self):
+            return None
 
 * Celery uses json or pickle (or other) serializers to serialize the data.
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
 the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:
-{% codeblock lang:python %}
-from kombu.serialization import register
 
-def loads(s):
-    return s
-
-def dumps(s):
-    return s
-
-register('mem_serializer', dumps, loads,
-        content_type='application/x-memory',
-        content_encoding='binary')
-{% endcodeblock %}
+        :::python
+        from kombu.serialization import register
+        
+        def loads(s):
+            return s
+        
+        def dumps(s):
+            return s
+        
+        register('mem_serializer', dumps, loads,
+                content_type='application/x-memory',
+                content_encoding='binary')
 
 * `kombu/utils/__init__.py`: def uuid() - generates random unique identifiers
 which is a slow operation. Replacing it with `return "00000000"` boosts performance

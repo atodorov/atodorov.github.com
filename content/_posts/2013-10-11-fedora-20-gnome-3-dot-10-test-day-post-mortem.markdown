@@ -37,21 +37,20 @@ should be the default in GNOME simply because of
 [GNOME #709799](https://bugzilla.gnome.org/show_bug.cgi?id=709799). The default
 keyboard layout will be Bulgarian (traditional phonetic) aka bg+phonetic.
 
-{% blockquote %}
-(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
-(16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default
-(16,16,34) atodorov: rtcm: I'm a Bulgarian, however I can't tell which one. Both Phonetic and standard (BDS) are common
-(16,16,54) atodorov: a safe bet is to go with phonetic I guess. 
-(16,19,46) rtcm: atodorov: can you tell me which one is it in XKB terms? is it "bg", "bg+bas_phonetic" or "bg+phonetic" ?
-(16,20,51) rtcm: they're labeled as "Bulgarian", "Bulgarian (new phonetic)" and "Bulgarian (traditional phonetic)"
-(16,21,30) atodorov: bg+phonetic is the traditional phonetic
-(16,22,04) atodorov: bg labeled as "Bulgarian" is the standard one I guess. Here we call it BDS after the standardization institute
-(16,22,34) atodorov: bg+bas_phonetic is created from the Bulgarian Academy of Science and is not very popular as far as I know. I've never seen it in use
-(16,23,15) rtcm: atodorov: all I want to know is what most people would expect? like what does windows do by default? that's a good bet
-(16,27,46) atodorov: rtcm: I'm just being told that new Windows releases use yet another layout by default, which is like phonetic but with some characters in new places and people don't like that
-(16,27,53) atodorov: my safe bet goes to bg+phonetic
-(16,29,05) rtcm: ok, thanks
-{% endblockquote %}
+    (16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
+    (16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default
+    (16,16,34) atodorov: rtcm: I'm a Bulgarian, however I can't tell which one. Both Phonetic and standard (BDS) are common
+    (16,16,54) atodorov: a safe bet is to go with phonetic I guess. 
+    (16,19,46) rtcm: atodorov: can you tell me which one is it in XKB terms? is it "bg", "bg+bas_phonetic" or "bg+phonetic" ?
+    (16,20,51) rtcm: they're labeled as "Bulgarian", "Bulgarian (new phonetic)" and "Bulgarian (traditional phonetic)"
+    (16,21,30) atodorov: bg+phonetic is the traditional phonetic
+    (16,22,04) atodorov: bg labeled as "Bulgarian" is the standard one I guess. Here we call it BDS after the standardization institute
+    (16,22,34) atodorov: bg+bas_phonetic is created from the Bulgarian Academy of Science and is not very popular as far as I know. I've never seen it in use
+    (16,23,15) rtcm: atodorov: all I want to know is what most people would expect? like what does windows do by default? that's a good bet
+    (16,27,46) atodorov: rtcm: I'm just being told that new Windows releases use yet another layout by default, which is like phonetic but with some characters in new places and people don't like that
+    (16,27,53) atodorov: my safe bet goes to bg+phonetic
+    (16,29,05) rtcm: ok, thanks
+
 
 It is a rare occasion when you get to make a decision that affects a large group
 of people and I hope you don't hate me for that! 

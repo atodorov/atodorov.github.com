@@ -6,10 +6,8 @@ comments: true
 Tags: Django, Fedora
 ---
 
-{% blockquote %}
-Difio is a Django based application that keeps track of packages and tells you when they change.
-Difio was created as closed software, then I decided to migrate it to open source ....
-{% endblockquote %}
+> Difio is a Django based application that keeps track of packages and tells you when they change.
+> Difio was created as closed software, then I decided to migrate it to open source ....
 
 Read more at
 [OpenSource.com](http://opensource.com/business/14/5/10-steps-migrate-closed-to-open-source)

@@ -18,14 +18,13 @@ functionality but I didn't find an API for that and decided not to bother.
 Instead I've opted for Gravatar.
 
 
-{% codeblock lang:bash gravatars.sh %}
-#!/bin/bash
-
-while read LINE; do
-    HASH=`echo -n $LINE | md5sum | cut -f1 -d' '`
-    wget "http://gravatar.com/avatar/$HASH" -O "$LINE"
-done < /dev/stdin
-{% endcodeblock %}
+    :::bash gravatars.sh
+    #!/bin/bash
+    
+    while read LINE; do
+        HASH=`echo -n $LINE | md5sum | cut -f1 -d' '`
+        wget "http://gravatar.com/avatar/$HASH" -O "$LINE"
+    done < /dev/stdin
 
 
 Feed `gravatars.sh` with the email list and it will download all images to the
@@ -48,6 +47,3 @@ using Gravatar (or have used at some point) which are not on Facebook ?
 At least some of the remaining 4000 addresses are still active and used to send emails.
 Next I will be looking for ways to identify them. Any suggestions and comments are more
 than welcome!
-
-
-

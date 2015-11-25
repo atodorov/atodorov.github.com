@@ -39,7 +39,7 @@ Installation related tests at [fedora-beaker-tests](https://bitbucket.org/fedora
 have been updated with a `ks.cfg.tmpl` templates to use with this new workflow.
 
 This workflow also has the ability to return boot arguments for the installer if needed. 
-If any, they should be defined in a {% raw %}{% block kernel_options %}{% endblock %}{% endraw %}
+If any, they should be defined in a `{% block kernel_options %}{% endblock %}`
 block inside the template. A simpler variant is to define a comment line that stars with
 *## kernel_options:*
 

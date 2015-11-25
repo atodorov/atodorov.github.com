@@ -103,28 +103,25 @@ while keeping the old content until it expires.
 
 *Dojo* makes this very easy:
 
-{% codeblock lang:js %}
-require(["dojo/io/script"],
-    function(script) {
-            script.get({
-                url: "https://xyz.cloudfront.net/api/json/updates/1234",
-                callbackParamName: "callback",
-                content: {t: timeStamp},
-                load: function(jsonData) {
-                    ....
-                },
-....
-{% endcodeblock %}
+    :::javascript
+    require(["dojo/io/script"],
+        function(script) {
+                script.get({
+                    url: "https://xyz.cloudfront.net/api/json/updates/1234",
+                    callbackParamName: "callback",
+                    content: {t: timeStamp},
+                    load: function(jsonData) {
+                        ....
+                    },
 
 The *content* property allows additional key/value pairs to be sent in the query string. The
 *timeStamp* parameter serves only to control *Amazon CloudFront* cache. It's not processed server side.
 
 On the server-side we have:
 
-{% codeblock lang:python %}
-response['Cache-Control'] = 'max-age=31536000'
-response['Expires'] = (datetime.now()+timedelta(seconds=31536000)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-{% endcodeblock %}
+    :::python
+    response['Cache-Control'] = 'max-age=31536000'
+    response['Expires'] = (datetime.now()+timedelta(seconds=31536000)).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 Benefits
 --------

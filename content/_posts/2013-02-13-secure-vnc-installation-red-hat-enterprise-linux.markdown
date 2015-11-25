@@ -26,13 +26,13 @@ Meet your tools
 Starting with Red Hat Enterprise Linux 6 and all the latest Fedora releases, the
 installer supports SSH connections during install.
 
-{% blockquote Fedora https://fedoraproject.org/wiki/Anaconda/Kickstart#sshpw Kickstart manual %}
-Note that by default, root has a blank password.
-
-If you don't want any user to be able to ssh in and have full access to your hardware, 
-you must specify sshpw for username root. Also note that if Anaconda fails to parse the 
-kickstart file, it will allow anyone to login as root and have full access to your hardware.
-{% endblockquote %}
+> Note that by default, root has a blank password.
+> 
+> If you don't want any user to be able to ssh in and have full access to your hardware, 
+> you must specify sshpw for username root. Also note that if Anaconda fails to parse the 
+> kickstart file, it will allow anyone to login as root and have full access to your hardware.
+> 
+> Fedora Kickstart manual https://fedoraproject.org/wiki/Anaconda/Kickstart#sshpw
 
 Preparation
 -----------
@@ -40,15 +40,13 @@ Preparation
 We are going to use SSH port forwarding and tunnel VNC traffic through it.
 Create a kickstart file as shown below:
 
-{% codeblock ks.cfg %}
-install
-url --url http://example.com/path/to/rhel6
-lang en_US.UTF-8
-keyboard us
-network --onboot yes --device eth0 --bootproto dhcp
-vnc --password=s3cr3t
-sshpw --user=root s3cr3t
-{% endcodeblock %}
+    install
+    url --url http://example.com/path/to/rhel6
+    lang en_US.UTF-8
+    keyboard us
+    network --onboot yes --device eth0 --bootproto dhcp
+    vnc --password=s3cr3t
+    sshpw --user=root s3cr3t
 
 The first 5 lines configure the loader portion of the installer. They will setup
 networking and fetch the installer image called stage2. This is completely automated.
@@ -100,15 +98,13 @@ change mid-air and cause VNC client connection to freeze.
 
 The reason for this bug is evident from the code (rhel6-branch):
 
-{% codeblock iw/timezone_gui.py lang:python %}
+    :::python iw/timezone_gui.py
     if not anaconda.isKickstart:
         self.utcCheckbox.set_active(not hasWindows(anaconda.id.bootloader))
-{% endcodeblock %}
 
-{% codeblock textw/timezone_text.py lang:python %}
+    :::python textw/timezone_text.py
     if not anaconda.isKickstart and not hasWindows(anaconda.id.bootloader):
         asUtc = True
-{% endcodeblock %}
 
 Because we are using a kickstart file Anaconda will assume the system clock **DOES NOT**
 use UTC. If you forget to configure it manually you may see time on the server shifting

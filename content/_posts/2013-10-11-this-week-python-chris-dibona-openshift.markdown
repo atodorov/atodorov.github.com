@@ -27,22 +27,21 @@ Just read it at
 
 I particularly like the part where he called open source "brutal".
 
-{% blockquote %}
-You once called open source “brutal”. What did you mean by that?
+> You once called open source “brutal”. What did you mean by that?
+> 
+> ...
+> 
+> I think that it is because open source projects are able to only work with the
+> productive people and ignore everyone else. That behavior can come across as
+> very harsh or exclusionary, and that's because it is that: brutally harsh and
+> exclusionary of anyone who isn't contributing.
+> 
+> ...
+> 
+> So, I guess what I'm saying is that survival of the fittest as practiced in the
+> open source world is a pretty brutal mechanism, but it works very very well for
+> producing quality software. Boy is it hard on newcomers though...
 
-...
-
-I think that it is because open source projects are able to only work with the
-productive people and ignore everyone else. That behavior can come across as
-very harsh or exclusionary, and that's because it is that: brutally harsh and
-exclusionary of anyone who isn't contributing.
-
-...
-
-So, I guess what I'm saying is that survival of the fittest as practiced in the
-open source world is a pretty brutal mechanism, but it works very very well for
-producing quality software. Boy is it hard on newcomers though...
-{% endblockquote %}
 
 OpenShift Finally Introduces Environment Variables
 ---------------------------------------------------

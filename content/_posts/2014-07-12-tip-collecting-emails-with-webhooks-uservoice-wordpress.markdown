@@ -19,31 +19,30 @@ Settings -> Webhooks and add a new webhook with action `comment_post`
 and fields `comment_author`, `comment_author_email`. A simple
 Django view that handles the input is shown below.
 
-{% codeblock lang:python %}
-@csrf_exempt
-def hook_wp_comment_post(request):
-    if not request.POST:
-        return HttpResponse("Not a POST\n", content_type='text/plain', status=403)
-
-    hook = request.POST.get("hook", "")
-
-    if hook != "comment_post":
-        return HttpResponse("Go away\n", content_type='text/plain', status=403)
-
-    name = request.POST.get("comment_author", "")
-    first_name = name.split(' ')[0]
-    last_name = ' '.join(name.split(' ')[1:])
-
-    details = {
-        'first_name' : first_name,
-        'last_name' : last_name,
-        'email' : request.POST.get("comment_author_email", ""),
-    }
-
-    store_user_details(details)
-
-    return HttpResponse("OK\n", content_type='text/plain', status=200)
-{% endcodeblock %}
+    :::python
+    @csrf_exempt
+    def hook_wp_comment_post(request):
+        if not request.POST:
+            return HttpResponse("Not a POST\n", content_type='text/plain', status=403)
+    
+        hook = request.POST.get("hook", "")
+    
+        if hook != "comment_post":
+            return HttpResponse("Go away\n", content_type='text/plain', status=403)
+    
+        name = request.POST.get("comment_author", "")
+        first_name = name.split(' ')[0]
+        last_name = ' '.join(name.split(' ')[1:])
+    
+        details = {
+            'first_name' : first_name,
+            'last_name' : last_name,
+            'email' : request.POST.get("comment_author_email", ""),
+        }
+    
+        store_user_details(details)
+    
+        return HttpResponse("OK\n", content_type='text/plain', status=200)
 
 
 UserVoice
@@ -53,28 +52,27 @@ For UserVoice navigate to Admin Dashboard -> Settings -> Integrations ->
 Service Hooks and add a custom web hook for the New Ticket notification.
 Then use a sample code like that:
 
-{% codeblock lang:python %}
-@csrf_exempt
-def hook_uservoice_new_ticket(request):
-    if not request.POST:
-        return HttpResponse("Not a POST\n", content_type='text/plain', status=403)
-
-    data = request.POST.get("data", "")
-    event = request.POST.get("event", "")
-
-    if event != "new_ticket":
-        return HttpResponse("Go away\n", content_type='text/plain', status=403)
-
-    data = json.loads(data)
-
-    details = {
-        'email' : data['ticket']['contact']['email'],
-    }
-
-    store_user_details(details)
-
-    return HttpResponse("OK\n", content_type='text/plain', status=200)
-{% endcodeblock %}
+    :::python
+    @csrf_exempt
+    def hook_uservoice_new_ticket(request):
+        if not request.POST:
+            return HttpResponse("Not a POST\n", content_type='text/plain', status=403)
+    
+        data = request.POST.get("data", "")
+        event = request.POST.get("event", "")
+    
+        if event != "new_ticket":
+            return HttpResponse("Go away\n", content_type='text/plain', status=403)
+    
+        data = json.loads(data)
+    
+        details = {
+            'email' : data['ticket']['contact']['email'],
+        }
+    
+        store_user_details(details)
+    
+        return HttpResponse("OK\n", content_type='text/plain', status=200)
 
 
 `store_user_details()` is a function which handles the email/name received in the webhook,

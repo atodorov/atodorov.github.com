@@ -28,9 +28,7 @@ invited me 10 days ago with an interesting proposal - distribute [Difio](http://
 
 So I was there for the networking. As I used to say when people asked me if I was pitching
 
-{% blockquote %}
-I am pitching at the bar!
-{% endblockquote %}
+> I am pitching at the bar!
 
 Networking was very intensive both during the coffee breaks and cocktail and during the sessions.
 I've now got close to 50 new business cards in my pocket. I've met very cool guys and gals both

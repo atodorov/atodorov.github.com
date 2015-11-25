@@ -12,16 +12,16 @@ the messages being sent. This happened today at [Difio](http://www.dif.io)
 and is really annoying to users. In this post I will explain why there is no easy
 way of fixing it.
 
-{% blockquote Amazon FAQ %}
-Q: Can a deleted message be received again?
-
-Yes, under rare circumstances you might receive a previously deleted message again.
-This can occur in the rare situation in which a DeleteMessage operation doesn't
-delete all copies of a message because one of the servers in the distributed
-Amazon SQS system isn't available at the time of the deletion. That message copy
-can then be delivered again. You should design your application so that no errors
-or inconsistencies occur if you receive a deleted message again.
-{% endblockquote %}
+> Q: Can a deleted message be received again?
+> 
+> Yes, under rare circumstances you might receive a previously deleted message again.
+> This can occur in the rare situation in which a DeleteMessage operation doesn't
+> delete all copies of a message because one of the servers in the distributed
+> Amazon SQS system isn't available at the time of the deletion. That message copy
+> can then be delivered again. You should design your application so that no errors
+> or inconsistencies occur if you receive a deleted message again.
+> 
+> Amazon FAQ
 
 In my case the cron scheduler logs say:
 

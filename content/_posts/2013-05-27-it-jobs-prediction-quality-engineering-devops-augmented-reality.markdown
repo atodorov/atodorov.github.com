@@ -11,10 +11,8 @@ young students. Speakers are well-known IT professionals and I'm honored to be i
 
 One of the preliminary questions posted from students is
 
-{% blockquote %}
-In which field to expect saturation of junior specialists in the next 5 years?
-Which technologies will see higher demand and which will not?
-{% endblockquote %}
+> In which field to expect saturation of junior specialists in the next 5 years?
+> Which technologies will see higher demand and which will not?
 
 While I don't have a clear answer here are my favorites and comments. If I was a 20 year old
 student I would definitely be paying attention to these. 

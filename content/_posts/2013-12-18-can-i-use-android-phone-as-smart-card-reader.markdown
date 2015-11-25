@@ -20,15 +20,14 @@ For some reason it will not detect the card inside and was unusable.
 I've found the solution in 
 [RHBZ #531998](https://bugzilla.redhat.com/show_bug.cgi?id=531998). 
 
-{% blockquote Pierre Ossman https://bugzilla.redhat.com/show_bug.cgi?id=531998#c12 Comment #12 %}
-
-I've found the problem, and it's purely mechanical.
-Omnikey has simply screwed up when they designed this reader.
-When the reader is inserted into the ExpressCard slot, it gets slightly
-compressed. This is enough to trigger the mechanical switch that detects
-insertions. If I jam something in there and force it apart, then pcscd
-starts reporting that the slot is empty.
-{% endblockquote %}
+> I've found the problem, and it's purely mechanical.
+> Omnikey has simply screwed up when they designed this reader.
+> When the reader is inserted into the ExpressCard slot, it gets slightly
+> compressed. This is enough to trigger the mechanical switch that detects
+> insertions. If I jam something in there and force it apart, then pcscd
+> starts reporting that the slot is empty.
+> 
+> Pierre Ossman, https://bugzilla.redhat.com/show_bug.cgi?id=531998#c12
 
 So I tried moving the smart card a millimeter back and forth inside the reader and
 that fixed it for me.

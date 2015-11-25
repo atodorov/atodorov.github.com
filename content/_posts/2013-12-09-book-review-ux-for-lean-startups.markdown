@@ -20,17 +20,19 @@ It has nothing to do with visual design.
 
 The author Laura Klein summarizes the book as follows:
 
-{% blockquote %}
-User research
-    Listen to your users. All the time. I mean it.
+> User research
+> 
+>   Listen to your users. All the time. I mean it.
+> 
+> Validation
+> 
+>   When you make assumptions or create hypotheses,
+>   test them before spending lots of time building products around them.
+> 
+> Design
+> 
+>   Iterate. Iterate. Iterate.
 
-Validation
-    When you make assumptions or create hypotheses,
-    test them before spending lots of time building products around them.
-
-Design
-    Iterate. Iterate. Iterate.
-{% endblockquote %}
 
 
 Early Validation
@@ -44,35 +46,34 @@ I will also add that by using some of these research techniques around a
 vague idea/area of interest you may come around a particular trend/pattern or problem 
 and develop your business from there.
 
-{% blockquote %}
-You’ll know that you’ve validated a problem when you start to hear
-particular groups of people complaining about something specific.
+> You’ll know that you’ve validated a problem when you start to hear
+> particular groups of people complaining about something specific.
+> 
+> ...
+> 
+> Your goal in validating your market is to begin to narrow down the
+> group of people who will want their problems solved badly enough to buy
+> your product. Your secondary goal is to understand exactly why they’re
+> interested so you can find other markets that might be similarly motivated.
+> 
+> ...
+> 
+> You’ll know that you’ve successfully validated your market when you can
+> accurately predict that a particular type of person will have a specific
+> problem and that the problem will be severe enough that that person is
+> interested in purchasing a solution.
+> 
+> ...
+> 
+> Just because you have discovered a real problem and have a group of people
+> willing to pay you to solve their problem, that doesn’t necessarily mean that
+> your product is the right solution. 
+> 
+> ...
+> 
+> You’ll know that you’ve validated your product when a large percentage of
+> your target market offers to pay you money to solve their problem.
 
-...
-
-Your goal in validating your market is to begin to narrow down the
-group of people who will want their problems solved badly enough to buy
-your product. Your secondary goal is to understand exactly why they’re
-interested so you can find other markets that might be similarly motivated.
-
-...
-
-You’ll know that you’ve successfully validated your market when you can
-accurately predict that a particular type of person will have a specific
-problem and that the problem will be severe enough that that person is
-interested in purchasing a solution.
-
-...
-
-Just because you have discovered a real problem and have a group of people
-willing to pay you to solve their problem, that doesn’t necessarily mean that
-your product is the right solution. 
-
-...
-
-You’ll know that you’ve validated your product when a large percentage of
-your target market offers to pay you money to solve their problem.
-{% endblockquote %}
 
 
 User Research
@@ -85,24 +86,24 @@ etc.
 Qualitative vs. Quantitative Research
 ---------------------------------------
 
-{% blockquote %}
-Quantitative research is about measuring what real people are actually
-doing with your product. It doesn’t involve speaking with specific humans.
-It’s about the data in aggregate. It should always be statistically significant.
 
-...
+> Quantitative research is about measuring what real people are actually
+> doing with your product. It doesn’t involve speaking with specific humans.
+> It’s about the data in aggregate. It should always be statistically significant.
+> 
+> ...
+> 
+> Quantitative research tells you **what** your problem is. Qualitative
+> research tells you **why** you have that problem.
+> 
+> ...
+> 
+> If you want to measure something that exists, like traffic or revenue or how
+> many people click on a particular button, then you want quantitative data.
+> If you want to know why you lose people out of your purchase funnel or
+> why people all leave once they hit a specific page, or why people seem not
+> to click that button, then you need qualitative.
 
-Quantitative research tells you **what** your problem is. Qualitative
-research tells you **why** you have that problem.
-
-...
-
-If you want to measure something that exists, like traffic or revenue or how
-many people click on a particular button, then you want quantitative data.
-If you want to know why you lose people out of your purchase funnel or
-why people all leave once they hit a specific page, or why people seem not
-to click that button, then you need qualitative.
-{% endblockquote %}
 
 Part Two: Design
 ----------------

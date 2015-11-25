@@ -13,41 +13,38 @@ consequences of it. Today I have!
 
 From my comment on
 [PR #118](https://github.com/rpm-software-management/dnf-plugins-core/pull/118)
-{% blockquote %}
-Note: the benefit of this patch are quite subtle.
-I've played around with creating a few more tests and the benefit I see affect
-only a few lines of code.
 
-For #114 there doesn't seem to be any need to test _get_query directly,
-although we call
-```
-       q = self.base.sack.query()
-       q = q.available()
-```
+> Note: the benefit of this patch are quite subtle.
+> I've played around with creating a few more tests and the benefit I see affect
+> only a few lines of code.
+> 
+> For #114 there doesn't seem to be any need to test _get_query directly,
+> although we call
+> 
+>        q = self.base.sack.query()
+>        q = q.available()
+> 
+> which will benefit from this PR b/c we're stubbing out the entire Sack object.
+> I will work on a test later today/tomorrow to see how it looks.
+> 
+> OTOH for #113 where we modify _get_query the test can look something like this:
+> 
+>     def test_get_query_with_local_rpm(self):
+>         try:
+>             (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')
+>             # b/c self.cmd.cli.base is a mock object add_remote_rpm
+>             # will not update the available packages while testing.
+>             # it is expected to hit an exception
+>             with self.assertRaises(dnf.exceptions.PackageNotFoundError):
+>                 self.cmd._get_query(rpm_path)
+>             self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)
+>         finally:
+>             os.remove(rpm_path)
+> 
+> Note the comment above the with block. If we leave out `_get_query` as before
+> (a simple stub function) we're not going to be able to use `assert_called_with`
+> later.
 
-which will benefit from this PR b/c we're stubbing out the entire Sack object.
-I will work on a test later today/tomorrow to see how it looks.
-
-OTOH for #113 where we modify _get_query the test can look something like this:
-
-```
-    def test_get_query_with_local_rpm(self):
-        try:
-            (fs, rpm_path) = tempfile.mkstemp('foobar-99.99-1.x86_64.rpm')
-            # b/c self.cmd.cli.base is a mock object add_remote_rpm
-            # will not update the available packages while testing.
-            # it is expected to hit an exception
-            with self.assertRaises(dnf.exceptions.PackageNotFoundError):
-                self.cmd._get_query(rpm_path)
-            self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)
-        finally:
-            os.remove(rpm_path)
-```
-
-Note the comment above the with block. If we leave out `_get_query` as before
-(a simple stub function) we're not going to be able to use `assert_called_with`
-later.
-{% endblockquote %}
 
 
 Now a more practical example. See 

@@ -24,15 +24,14 @@ The most simple method is to update everything to the latest upstream versions.
 1. If you haven't specified any particular version in `setup.py` it will
 look like this:
 
-{% codeblock lang:python %}
-...
-install_requires=[
-                'difio-openshift-python',
-                'MySQL-python',
-                'Markdown',
-               ],
-...
-{% endcodeblock %}
+        :::python
+        ...
+        install_requires=[
+                        'difio-openshift-python',
+                        'MySQL-python',
+                        'Markdown',
+                       ],
+        ...
 
 1. To update simply push to OpenShift instructing it to rebuild your virtualenv:
 
@@ -50,10 +49,9 @@ Keeping some packages unchanged
 Suppose that before the update you have `Markdown-2.0.1` and you want to keep it!
 This is easily solved by adding versioned dependency to `setup.py`
 
-{% codeblock lang:diff %}
--       'Markdown',
-+       'Markdown==2.0.1',
-{% endcodeblock %}
+    :::diff
+    -       'Markdown',
+    +       'Markdown==2.0.1',
 
 If you do that OpenShift will install the same `Markdown` version when rebuilding your
 application. Everything else will use the latest available versions.
@@ -71,12 +69,11 @@ Unless your application is really simple or you have tested the updates, I suspe
 you want to update only selected packages. This can be done without rebuilding the whole
 virtualenv. Use versioned dependencies in `setup.py` :
 
-{% codeblock lang:diff %}
--       'Markdown==2.0.1',
--       'django-countries',
-+       'Markdown>=2.1',
-+       'django-countries>=1.1.2',
-{% endcodeblock %}
+    :::diff
+    -       'Markdown==2.0.1',
+    -       'django-countries',
+    +       'Markdown>=2.1',
+    +       'django-countries>=1.1.2',
 
 No need for `force_clean_build` this time. Just
 
@@ -89,10 +86,9 @@ the latest versions.
 
 **Note:** this will not work without `force_clean_build`
 
-{% codeblock lang:diff %}
--       'django-countries==1.0.5',
-+       'django-countries',
-{% endcodeblock %}
+    :::diff
+    -       'django-countries==1.0.5',
+    +       'django-countries',
 
 Warning
 -------

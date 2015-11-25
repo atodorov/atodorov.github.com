@@ -12,12 +12,12 @@ directory where [Difio](http://www.dif.io) operates.
 
 It should be noted that although instance storage may be available for some instance
 types it may not be attached by default. Use this command to check:
-{% codeblock lang:bash %}
-$ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
-ami
-root
-swap
-{% endcodeblock %}
+
+    :::bash
+    $ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+    ami
+    root
+    swap
 
 In the above example there is no instance storage present. 
 
@@ -37,50 +37,46 @@ any instance store volumes specified in the block device mapping for the AMI.
 As far as I can see the AWS Console doesn't indicate if instance storage is attached
 or not. For instance with 1 ephemeral volume:
 
-{% codeblock lang:bash %}
-$ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
-ami
-ephemeral0
-root
-swap
-
-$ curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
-sdb
-{% endcodeblock %}
-
+    :::bash
+    $ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+    ami
+    ephemeral0
+    root
+    swap
+    
+    $ curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
+    sdb
 
 Ephemeral devices can be mounted in `/media/ephemeralX/`, but not all volumes.
 I've found that usually only `ephemeral0` is mounted automatically.
 
-{% codeblock lang:bash %}
-$ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
-ami
-ephemeral0
-ephemeral1
-root
-
-$ ls -l /media/
-drwxr-xr-x 3 root root 4096 21 ное  2009 ephemeral0
-{% endcodeblock %}
-
+    :::bash
+    $ curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+    ami
+    ephemeral0
+    ephemeral1
+    root
+    
+    $ ls -l /media/
+    drwxr-xr-x 3 root root 4096 21 ное  2009 ephemeral0
 
 
 For Difio I have an init.d script which executes when the system
 boots. To enable `/tmp` on ephemeral storage I just added the following snippet:
-{% codeblock lang:bash %}
-echo $"Mounting /tmp on ephemeral storage:"
-for ef in `curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2>/dev/null | grep ephemeral`; do
-    disk=`curl http://169.254.169.254/latest/meta-data/block-device-mapping/$ef 2>/dev/null`
-    echo $"Unmounting /dev/$disk"
-    umount /dev/$disk
 
-    echo $"mkfs /dev/$disk"
-    mkfs.ext4 -q /dev/$disk
-
-    echo $"Mounting /dev/$disk"
-    mount -t ext4 /dev/$disk /tmp && chmod 1777 /tmp && success || failure
-done
-{% endcodeblock %}
+    :::bash
+    echo $"Mounting /tmp on ephemeral storage:"
+    for ef in `curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2>/dev/null | grep ephemeral`; do
+        disk=`curl http://169.254.169.254/latest/meta-data/block-device-mapping/$ef 2>/dev/null`
+        echo $"Unmounting /dev/$disk"
+        umount /dev/$disk
+    
+        echo $"mkfs /dev/$disk"
+        mkfs.ext4 -q /dev/$disk
+    
+        echo $"Mounting /dev/$disk"
+        mount -t ext4 /dev/$disk /tmp && chmod 1777 /tmp && success || failure
+    done
 
 **NB:** success and failure are from `/etc/rc.d/init.d/functions`.
 If you are using LVM or RAID you need to reconstruct your block devices

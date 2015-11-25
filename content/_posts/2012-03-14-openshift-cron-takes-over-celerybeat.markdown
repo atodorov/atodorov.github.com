@@ -61,36 +61,35 @@ the cron cartridge and I decided to give it a try.
 The first thing I did is to write a simple script which can execute any task from the difio.tasks module
 by piping it to the Django shell (a Python shell actually).
 
-{% codeblock lang:bash run_celery_task %}
-#!/bin/bash
-#
-# Copyright (c) 2012, Alexander Todorov <atodorov@nospam.otb.bg>
-#
-# This script is symlinked to from the hourly/minutely, etc. directories
-#
-# SYNOPSIS
-#
-# ./run_celery_task cron_search_dates
-#
-# OR
-#
-# ln -s run_celery_task cron_search_dates
-# ./cron_search_dates
-#
-
-TASK_NAME=$1
-[ -z "$TASK_NAME" ] && TASK_NAME=$(basename $0)
-
-if [ -n "$OPENSHIFT_APP_DIR" ]; then
-    source $OPENSHIFT_APP_DIR/virtenv/bin/activate
-    export PYTHON_EGG_CACHE=$OPENSHIFT_DATA_DIR/.python-eggs
-    REPO_DIR=$OPENSHIFT_REPO_DIR
-else
-    REPO_DIR=$(dirname $0)"/../../.."
-fi
-
-echo "import difio.tasks; difio.tasks.$TASK_NAME.delay()" | $REPO_DIR/wsgi/difio/manage.py shell
-{% endcodeblock %}
+    :::bash run_celery_task
+    #!/bin/bash
+    #
+    # Copyright (c) 2012, Alexander Todorov <atodorov@nospam.otb.bg>
+    #
+    # This script is symlinked to from the hourly/minutely, etc. directories
+    #
+    # SYNOPSIS
+    #
+    # ./run_celery_task cron_search_dates
+    #
+    # OR
+    #
+    # ln -s run_celery_task cron_search_dates
+    # ./cron_search_dates
+    #
+    
+    TASK_NAME=$1
+    [ -z "$TASK_NAME" ] && TASK_NAME=$(basename $0)
+    
+    if [ -n "$OPENSHIFT_APP_DIR" ]; then
+        source $OPENSHIFT_APP_DIR/virtenv/bin/activate
+        export PYTHON_EGG_CACHE=$OPENSHIFT_DATA_DIR/.python-eggs
+        REPO_DIR=$OPENSHIFT_REPO_DIR
+    else
+        REPO_DIR=$(dirname $0)"/../../.."
+    fi
+    
+    echo "import difio.tasks; difio.tasks.$TASK_NAME.delay()" | $REPO_DIR/wsgi/difio/manage.py shell
 
 
 This is a multicall script which allows symlinks with different names to point to it. 

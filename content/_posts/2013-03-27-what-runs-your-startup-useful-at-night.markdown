@@ -40,29 +40,28 @@ called Divan (simple CouchDB like).
 Why Not Something Else?
 -----------------------
 
-{% blockquote %}
-We chose Node.js for our application servers, because it enables us to build efficient
-distributed systems while sharing significant amounts of code between client and server.
-Things get really interesting when you couple Node.js with Redis for data structure
-sharing and message passing, as the two technologies play very well together.
+> We chose Node.js for our application servers, because it enables us to build efficient
+> distributed systems while sharing significant amounts of code between client and server.
+> Things get really interesting when you couple Node.js with Redis for data structure
+> sharing and message passing, as the two technologies play very well together.
+> 
+> We chose CouchDB as our main back-end because it is the most schema-less data-store that
+> supports secondary indexing. Once you get fluent with its map-reduce views, you can
+> compute an index out of practically anything. For comparison, even MongoDB requires
+> that you design your documents as to enable certain indexing patterns. Put otherwise,
+> we'd say CouchDB is a data-store that enables truly lean engineering - we have never had
+> to re-bake or migrate our data since day one, while we're constantly experimenting with
+> new ways to index, aggregate and query it.
+> 
+> We chose HTML5 as our front-end technology, because it's cross-platform and because we
+> believe it's ... almost ready. Things are still really problematic on Android, but iOS
+> boasts a gorgeous web presentation platform, and Windows 8 is also joining the game with
+> a very good web engine. Obviously we're constantly running into issues and limitations,
+> mostly related to the unfortunate fact that in spite of some recent developments,
+> a web app is still mostly single threaded. However, we're getting there, and we're proud
+> to say we're running a pretty graphically complex hybrid app with near-native GUI performance
+> on the iPhone 4S and above.
 
-We chose CouchDB as our main back-end because it is the most schema-less data-store that
-supports secondary indexing. Once you get fluent with its map-reduce views, you can
-compute an index out of practically anything. For comparison, even MongoDB requires
-that you design your documents as to enable certain indexing patterns. Put otherwise,
-we'd say CouchDB is a data-store that enables truly lean engineering - we have never had
-to re-bake or migrate our data since day one, while we're constantly experimenting with
-new ways to index, aggregate and query it.
-
-We chose HTML5 as our front-end technology, because it's cross-platform and because we
-believe it's ... almost ready. Things are still really problematic on Android, but iOS
-boasts a gorgeous web presentation platform, and Windows 8 is also joining the game with
-a very good web engine. Obviously we're constantly running into issues and limitations,
-mostly related to the unfortunate fact that in spite of some recent developments,
-a web app is still mostly single threaded. However, we're getting there, and we're proud
-to say we're running a pretty graphically complex hybrid app with near-native GUI performance
-on the iPhone 4S and above.
-{% endblockquote %}
 
 Want More Info?
 ---------------

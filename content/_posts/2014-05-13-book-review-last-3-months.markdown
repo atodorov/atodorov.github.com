@@ -36,14 +36,12 @@ and later on being demolished.
 A must read for anyone who is considering business in the entertainment industry
 or wants to read a piece of history. My favorite quote of the book:
 
-{% blockquote %}
-Years after, Tony Wilson found himself sitting opposite Madonna at dinner.
-
-‘I eventually plucked up the courage to look across the table to Madonna and ask,
-“Are you aware that the first place you appeared outside of New York was our club in Manchester?”
-
-‘She gave me an ice-cold stare and said, “My memory seems to have wiped that.”’
-{% endblockquote %}
+> Years after, Tony Wilson found himself sitting opposite Madonna at dinner.
+> 
+> ‘I eventually plucked up the courage to look across the table to Madonna and ask,
+> “Are you aware that the first place you appeared outside of New York was our club in Manchester?”
+> 
+> ‘She gave me an ice-cold stare and said, “My memory seems to have wiped that.”’
 
 
 Simple Science Experiments
@@ -102,9 +100,3 @@ read and I will tell you more about it when I finish it.
 What have you been reading since January ? I'd love to see your book list
 or connect on 
 [Goodreads](https://www.goodreads.com/user/show/16191345-alexander-todorov).
-
-
-
-
-
-

@@ -6,9 +6,10 @@ comments: true
 Tags: books, start-up
 ---
 
-{% blockquote Mark Andreessen, venture capitalist %}
-Many entrepreneurs who build great products simply don't have a good distribution strategy.
-{% endblockquote %}
+> Many entrepreneurs who build great products simply don't have a good distribution strategy.
+> 
+> Mark Andreessen, venture capitalist
+
 
 <a href="http://www.amazon.com/gp/product/B00N06Y2DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00N06Y2DW&linkCode=as2&tag=atodorovorg-20&linkId=4GDHEYN66CPL7L72">Traction: A Startup Guide to Getting Customers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00N06Y2DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
 introduces startup founders and employees to the "Bullseye Framework," 

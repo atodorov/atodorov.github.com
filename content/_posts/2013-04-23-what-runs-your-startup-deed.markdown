@@ -38,13 +38,13 @@ Source code revision control is managed with Mercurial and build scripts are wri
 Why Not Something Else?
 -----------------------
 
-{% blockquote Emil Stoychev %}
-The Deed team had experience with Microsoft technologies initially so it was natural
-for us to choose this stack. While not perfect and costly in terms of hosting fees,
-it serves its purpose for the moment. When you start a new project and you want to get
-up and running fast your best choice is to use what you already mastered.
-That in our case was the Microsoft stack.
-{% endblockquote %}
+> The Deed team had experience with Microsoft technologies initially so it was natural
+> for us to choose this stack. While not perfect and costly in terms of hosting fees,
+> it serves its purpose for the moment. When you start a new project and you want to get
+> up and running fast your best choice is to use what you already mastered.
+> That in our case was the Microsoft stack.
+> 
+> Emil Stoychev
 
 Indeed I strongly support this! Always use technologies you are a master at and change and
 adapt along the way if necessary.

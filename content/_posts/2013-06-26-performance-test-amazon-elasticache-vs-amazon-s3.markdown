@@ -41,94 +41,89 @@ test cases, which use the standard timeit module. The object which is stored in 
 is very small - it holds a phone/address identifiers and couple of user made selections.
 The code looks like this:
 
-{% codeblock lang:python %}
-import timeit
-
-s3_set = timeit.Timer(
-"""
-for i in range(1000):
-    my_cache.set(i, MyObject)
-"""
-,
-"""
-from django.core import cache
-
-my_cache = cache.get_cache('default')
-
-MyObject = {
-    'from' : '359123456789',
-    'address' : '6afce9f7-acff-49c5-9fbe-14e238f73190',
-    'hour' : '12:30',
-    'weight' : 5,
-    'type' : 1,
-}
-"""
-)
-
-s3_get = timeit.Timer(
-"""
-for i in range(1000):
-    MyObject = my_cache.get(i)
-"""
-,
-"""
-from django.core import cache
-
-my_cache = cache.get_cache('default')
-"""
-)
-
-### skip ###
-{% endcodeblock %}
+    :::python
+    import timeit
+    
+    s3_set = timeit.Timer(
+    """
+    for i in range(1000):
+        my_cache.set(i, MyObject)
+    """
+    ,
+    """
+    from django.core import cache
+    
+    my_cache = cache.get_cache('default')
+    
+    MyObject = {
+        'from' : '359123456789',
+        'address' : '6afce9f7-acff-49c5-9fbe-14e238f73190',
+        'hour' : '12:30',
+        'weight' : 5,
+        'type' : 1,
+    }
+    """
+    )
+    
+    s3_get = timeit.Timer(
+    """
+    for i in range(1000):
+        MyObject = my_cache.get(i)
+    """
+    ,
+    """
+    from django.core import cache
+    
+    my_cache = cache.get_cache('default')
+    """
+    )
 
 
 Tests were executed from the Django shell <del>on my laptop</del>
 on an EC2 instance in the us-east-1a availability zone. ElastiCache nodes
 were freshly created/rebooted before test execution. S3 bucket had no objects.
 
-{% codeblock lang:python %}
-
-$ ./manage.py shell
-Python 2.6.8 (unknown, Mar 14 2013, 09:31:22) 
-[GCC 4.6.2 20111027 (Red Hat 4.6.2-2)] on linux2
-Type "help", "copyright", "credits" or "license" for more information.
-(InteractiveConsole)
->>> from test import *
->>> 
->>> 
->>> 
->>> s3_set.repeat(repeat=3, number=1)
-[68.089607000350952, 70.806712865829468, 72.49261999130249]
->>> 
->>> 
->>> s3_get.repeat(repeat=3, number=1)
-[43.778793096542358, 43.054368019104004, 36.19232702255249]
->>> 
->>> 
->>> pymc_set.repeat(repeat=3, number=1)
-[0.40637087821960449, 0.3568730354309082, 0.35815882682800293]
->>> 
->>> 
->>> pymc_get.repeat(repeat=3, number=1)
-[0.35759496688842773, 0.35180497169494629, 0.39198613166809082]
->>> 
->>> 
->>> libmc_set.repeat(repeat=3, number=1)
-[0.3902890682220459, 0.30157709121704102, 0.30596804618835449]
->>> 
->>> 
->>> libmc_get.repeat(repeat=3, number=1)
-[0.28874802589416504, 0.30520200729370117, 0.29050207138061523]
->>> 
->>> 
->>> libmc_large_set.repeat(repeat=3, number=1)
-[1.0291709899902344, 0.31709098815917969, 0.32010698318481445]
->>> 
->>> 
->>> libmc_large_get.repeat(repeat=3, number=1)
-[0.2957158088684082, 0.29067802429199219, 0.29692888259887695]
->>> 
-{% endcodeblock %}
+    :::python
+    $ ./manage.py shell
+    Python 2.6.8 (unknown, Mar 14 2013, 09:31:22) 
+    [GCC 4.6.2 20111027 (Red Hat 4.6.2-2)] on linux2
+    Type "help", "copyright", "credits" or "license" for more information.
+    (InteractiveConsole)
+    >>> from test import *
+    >>> 
+    >>> 
+    >>> 
+    >>> s3_set.repeat(repeat=3, number=1)
+    [68.089607000350952, 70.806712865829468, 72.49261999130249]
+    >>> 
+    >>> 
+    >>> s3_get.repeat(repeat=3, number=1)
+    [43.778793096542358, 43.054368019104004, 36.19232702255249]
+    >>> 
+    >>> 
+    >>> pymc_set.repeat(repeat=3, number=1)
+    [0.40637087821960449, 0.3568730354309082, 0.35815882682800293]
+    >>> 
+    >>> 
+    >>> pymc_get.repeat(repeat=3, number=1)
+    [0.35759496688842773, 0.35180497169494629, 0.39198613166809082]
+    >>> 
+    >>> 
+    >>> libmc_set.repeat(repeat=3, number=1)
+    [0.3902890682220459, 0.30157709121704102, 0.30596804618835449]
+    >>> 
+    >>> 
+    >>> libmc_get.repeat(repeat=3, number=1)
+    [0.28874802589416504, 0.30520200729370117, 0.29050207138061523]
+    >>> 
+    >>> 
+    >>> libmc_large_set.repeat(repeat=3, number=1)
+    [1.0291709899902344, 0.31709098815917969, 0.32010698318481445]
+    >>> 
+    >>> 
+    >>> libmc_large_get.repeat(repeat=3, number=1)
+    [0.2957158088684082, 0.29067802429199219, 0.29692888259887695]
+    >>> 
 
 Results
 --------

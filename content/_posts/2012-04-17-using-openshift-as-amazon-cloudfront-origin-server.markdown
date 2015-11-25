@@ -105,7 +105,7 @@ Luckily I was able to use symlinks to point to the content. Here's how it looks:
         STATIC_URL = '//d71ktrt2emu2j.cloudfront.net/static/v1/'
 
         HTML template:
-        {% raw %}<link type="text/css" rel="stylesheet" media="screen" href="{{ STATIC_URL }}css/style.css" />{% endraw %}
+        <link type="text/css" rel="stylesheet" media="screen" href="{{ STATIC_URL }}css/style.css" />
 
 
 How to implement it

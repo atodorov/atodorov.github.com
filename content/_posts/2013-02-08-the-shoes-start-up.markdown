@@ -9,13 +9,13 @@ Tags: start-up
 Did you know there is a start-up company producing men's shoes? Me neither,
 and I love good quality shoes.
 
-{% blockquote Julie Strickland http://www.inc.com/julie-strickland/mens-fashion-startups.html Men's Fashion: 5 Start-ups to Watch %}
-Beckett Simonon launched in 2012, and slashed prices by working with local manufacturers and
-selling directly to customers online.
-
-The company, which currently operates out of Bogota, Colombia, says it has 
-generated $80,000 in revenue after two months in operation, and has five employees.
-{% endblockquote %}
+> Beckett Simonon launched in 2012, and slashed prices by working with local manufacturers and
+> selling directly to customers online.
+> 
+> The company, which currently operates out of Bogota, Colombia, says it has 
+> generated $80,000 in revenue after two months in operation, and has five employees.
+> 
+> Julie Strickland http://www.inc.com/julie-strickland/mens-fashion-startups.html
 
 <img src="/images/Bailey_Chukka_Boot.jpg" style="float: left; margin-right: 10px;"/>
 

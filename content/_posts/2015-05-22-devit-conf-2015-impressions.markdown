@@ -29,12 +29,11 @@ If you remember I had a similar question to Jeremy Keith at
 [Bulgaria Web Summit](/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/) last month
 and the answer was similar:
 
-{% blockquote %}
-Q: Which one is Jeremy's favorite device/browser to develop for. 
-A: Your approach is wrong and instead we should be thinking in terms of what features are 
-essential or non-essential for our websites and develop around features
-(if supported, if not supported) not around browsers!
-{% endblockquote %}
+> Q: Which one is Jeremy's favorite device/browser to develop for.
+>
+> A: Your approach is wrong and instead we should be thinking in terms of what features are 
+> essential or non-essential for our websites and develop around features
+> (if supported, if not supported) not around browsers!
 
 Btw I did ask Chris if he knows Jeremy and he does.
 

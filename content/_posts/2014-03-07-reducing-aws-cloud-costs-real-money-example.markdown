@@ -20,13 +20,13 @@ increased package processing (resulting in more I/O):
 * December 2013 - $10.55
 * January 2014 - $11.97
 
-{% codeblock January 2014 %}
-EBS
-$0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
-$0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
-$0.10  per 1 million I/O requests               9,405,243 IOs   $0.94
-                                                        Total: $11.97
-{% endcodeblock %}
+January 2014:
+
+    EBS
+    $0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
+    $0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
+    $0.10  per 1 million I/O requests               9,405,243 IOs   $0.94
+                                                            Total: $11.97
 
 In February there was one new system added to process additional requests
 (cluster nodes run as spot instances) and an increased number of temporary
@@ -38,13 +38,13 @@ have driven the costs up in the region of $15 per month only for EBS.
 After implementing the stated minimal improvements and having Amazon reduced the prices by
 half the bill looks like this:
 
-{% codeblock February 2014 %}
-EBS
-$0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
-$0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
-$0.05  per 1 million I/O requests               5,704,482 IOs   $0.29
-                                                        Total:  $4.01
-{% endcodeblock %}
+February 2014:
+
+    EBS
+    $0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
+    $0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
+    $0.05  per 1 million I/O requests               5,704,482 IOs   $0.29
+                                                            Total:  $4.01
 
 
 Explanation

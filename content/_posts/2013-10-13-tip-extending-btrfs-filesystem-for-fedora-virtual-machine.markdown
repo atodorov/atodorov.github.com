@@ -60,70 +60,69 @@ Before extending the filesystem you have to extend the underlying disk partition
 trickiest part. Using fdisk or parted you have to delete the partition and add it again.
 Make sure to use the **SAME** starting sector for the new partition (line 33)!
 
-{% codeblock %}
-# fdisk /dev/vda
-
-Welcome to fdisk (util-linux 2.24-rc1).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
-
-
-Command (m for help): p
-Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
-Disk label type: dos
-Disk identifier: 0x0000330f
-
-Device    Boot     Start       End   Blocks  Id System
-/dev/vda1 *         2048   1026047   512000  83 Linux
-/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
-/dev/vda3        5253120  31457279 13102080  83 Linux
-
-Command (m for help): d
-Partition number (1-3, default 3): 3
-
-Partition 3 is deleted
-
-Command (m for help): n
-
-Partition type:
-   p   primary (2 primary, 0 extended, 2 free)
-   e   extended
-Select (default p): p
-Partition number (3,4, default 3): 3
-First sector (5253120-41943039, default 5253120): 
-Last sector, +sectors or +size{K,M,G,T,P} (5253120-41943039, default 41943039): 
-
-Created a new partition 3 of type 'Linux' and of size 17,5 GiB.
-
-Command (m for help): p
-Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
-Disk label type: dos
-Disk identifier: 0x0000330f
-
-Device    Boot     Start       End   Blocks  Id System
-/dev/vda1 *         2048   1026047   512000  83 Linux
-/dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
-/dev/vda3        5253120  41943039 18344960  83 Linux
-
-Command (m for help): w
-
-The partition table has been altered.
-Calling ioctl() to re-read partition table.
-Re-reading the partition table failed.: Device or resource busy
-
-The kernel still uses the old table. The new table will be used at the next reboot or after you run partprobe(8) or kpartx(8).
-
-# partprobe
-Error: Partition(s) 3 on /dev/vda have been written, but we have been unable to inform the kernel of the change, probably because it/they are in use.  As a result, the old partition(s) will remain in use.  You should reboot now before making further changes.
-
-# reboot
-{% endcodeblock %}
+    #!bash
+    # fdisk /dev/vda
+    
+    Welcome to fdisk (util-linux 2.24-rc1).
+    Changes will remain in memory only, until you decide to write them.
+    Be careful before using the write command.
+    
+    
+    Command (m for help): p
+    Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x0000330f
+    
+    Device    Boot     Start       End   Blocks  Id System
+    /dev/vda1 *         2048   1026047   512000  83 Linux
+    /dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
+    /dev/vda3        5253120  31457279 13102080  83 Linux
+    
+    Command (m for help): d
+    Partition number (1-3, default 3): 3
+    
+    Partition 3 is deleted
+    
+    Command (m for help): n
+    
+    Partition type:
+       p   primary (2 primary, 0 extended, 2 free)
+       e   extended
+    Select (default p): p
+    Partition number (3,4, default 3): 3
+    First sector (5253120-41943039, default 5253120): 
+    Last sector, +sectors or +size{K,M,G,T,P} (5253120-41943039, default 41943039): 
+    
+    Created a new partition 3 of type 'Linux' and of size 17,5 GiB.
+    
+    Command (m for help): p
+    Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x0000330f
+    
+    Device    Boot     Start       End   Blocks  Id System
+    /dev/vda1 *         2048   1026047   512000  83 Linux
+    /dev/vda2        1026048   5253119  2113536  82 Linux swap / Solaris
+    /dev/vda3        5253120  41943039 18344960  83 Linux
+    
+    Command (m for help): w
+    
+    The partition table has been altered.
+    Calling ioctl() to re-read partition table.
+    Re-reading the partition table failed.: Device or resource busy
+    
+    The kernel still uses the old table. The new table will be used at the next reboot or after you run partprobe(8) or kpartx(8).
+    
+    # partprobe
+    Error: Partition(s) 3 on /dev/vda have been written, but we have been unable to inform the kernel of the change, probably because it/they are in use.  As a result, the old partition(s) will remain in use.  You should reboot now before making further changes.
+    
+    # reboot
 
 
 See lines 36 and 49 above. The new partition has a greater size.

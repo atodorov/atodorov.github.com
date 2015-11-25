@@ -60,14 +60,12 @@ are incorrect which is the first of its kind I've seen in a book.
 Epilogue
 --------
 
-{% blockquote %}
-Human Centrality. A common view is that science has consistently been correcting our overly inflated view of our
-own significance. Stephen Jay Gould said, "The most important scientific revolutions all include, as their only
-common feature, the dethronement of human arrogance from one pedestal after another of previous convictions about
-our centrality in the cosmos."
-
-But it turns out that we are central, after all. Our ability to create models-virtual realities-in our brains, combined
-with our modest-looking thumbs, has been sufficient to usher in another form of evolution: technology. That
-development enabled the persistence of the accelerating pace that started with biological evolution. It will continue
-until the entire universe is at our fingertips.
-{% endblockquote %}
+> Human Centrality. A common view is that science has consistently been correcting our overly inflated view of our
+> own significance. Stephen Jay Gould said, "The most important scientific revolutions all include, as their only
+> common feature, the dethronement of human arrogance from one pedestal after another of previous convictions about
+> our centrality in the cosmos."
+> 
+> But it turns out that we are central, after all. Our ability to create models-virtual realities-in our brains, combined
+> with our modest-looking thumbs, has been sufficient to usher in another form of evolution: technology. That
+> development enabled the persistence of the accelerating pace that started with biological evolution. It will continue
+> until the entire universe is at our fingertips.

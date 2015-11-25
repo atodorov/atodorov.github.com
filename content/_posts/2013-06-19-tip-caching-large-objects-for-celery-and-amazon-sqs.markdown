@@ -15,32 +15,29 @@ Recently I've made some changes in [Difio](http://www.dif.io) which require pass
 larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
 same problem. Here is the solution using a cache back-end: 
 
-{% codeblock lang:python %}
-
-from celery.task import task
-from django.core import cache as cache_module
-
-def some_method():
-    ... skip ...
-
-    task_cache = cache_module.get_cache('taskq')
-    task_cache.set(uuid, data, 3600)
-
-    handle_data.delay(uuid)
-
-    ... skip ...
-
-@task
-def handle_data(uuid):
-    task_cache = cache_module.get_cache('taskq')
-    data = task_cache.get(uuid)
-
-    if data is None:
-        return
-
-    ... do stuff ...
-
-{% endcodeblock %}
+    :::python
+    from celery.task import task
+    from django.core import cache as cache_module
+    
+    def some_method():
+        ... skip ...
+    
+        task_cache = cache_module.get_cache('taskq')
+        task_cache.set(uuid, data, 3600)
+    
+        handle_data.delay(uuid)
+    
+        ... skip ...
+    
+    @task
+    def handle_data(uuid):
+        task_cache = cache_module.get_cache('taskq')
+        data = task_cache.get(uuid)
+    
+        if data is None:
+            return
+    
+        ... do stuff ...
 
 Objects are persisted in a secondary cache back-end, not the default one, to avoid
 accidental destruction. `uuid` parameter is a string.

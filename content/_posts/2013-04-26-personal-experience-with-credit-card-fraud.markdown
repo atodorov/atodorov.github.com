@@ -69,11 +69,9 @@ worked in your favor or not?
 
 The picture above shows a new credit card concept. Per the author:
 
-{% blockquote %}
-Kudelski and Mastercard are showing me the credit card of the future.
-This model can generate a new passcode on the fly, so if your card's number
-gets copied it won't be able to generate the right passcode.
-{% endblockquote %}
+> Kudelski and Mastercard are showing me the credit card of the future.
+> This model can generate a new passcode on the fly, so if your card's number
+> gets copied it won't be able to generate the right passcode.
 
 If you have more insight on the credit card industry please share with us!
 

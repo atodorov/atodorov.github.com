@@ -42,15 +42,14 @@ How I did it
 I decided to go for option 4 above: 
 change the field name to `size` but continue to use the `lines` DB column.
 
-{% codeblock lang:diff %}
-diff --git a/models.py b/models.py
-index e06d2b2..18cad6f 100644
---- a/models.py
-+++ b/models.py
-@@ -667,7 +667,7 @@ class Package(models.Model):
--    lines = models.IntegerField(default=None, null=True, blank=True)
-+    size  = models.IntegerField(default=None, null=True, blank=True, db_column='lines')
-{% endcodeblock %}
+    :::diff
+    diff --git a/models.py b/models.py
+    index e06d2b2..18cad6f 100644
+    --- a/models.py
+    +++ b/models.py
+    @@ -667,7 +667,7 @@ class Package(models.Model):
+    -    lines = models.IntegerField(default=None, null=True, blank=True)
+    +    size  = models.IntegerField(default=None, null=True, blank=True, db_column='lines')
 
 1. Removed all references to `lines` from the code except the model class. This served as clean up as well. 
 1. Renamed the model field to `size` but continued using the `lines` DB column as shown above.
@@ -62,5 +61,3 @@ The entire process happened for under 10 minutes. I will also opt for renaming t
 This is to sync the naming used in Python code and in MySQL in case I ever need to use raw SQL or anything but Django.
 
 If you were me, how would you do this? Please share in the comments below.
-
-

@@ -39,29 +39,28 @@ were static templates, no variable substitution.
 
 The other possibility is Python templates based on Pykickstart:
 
-{% codeblock lang:python %}
-from pykickstart.constants import KS_SCRIPT_POST
-from pykickstart.parser import Script
-from installdefaults import InstallKs
-
-def ks(**context):
-    '''Anaconda autopart'''
-
-    ks=InstallKs()
-    ks.packages.add(['@base'])
-
-    ks.clearpart(initAll=True)
-    ks.autopart(autopart=True)
-
-    script = '''
-cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || \
-cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg
-'''
-    post = Script(script, type=KS_SCRIPT_POST, inChroot=False)
-    ks.scripts.append(post)
-
-    return ks
-{% endcodeblock %}
+    :::python
+    from pykickstart.constants import KS_SCRIPT_POST
+    from pykickstart.parser import Script
+    from installdefaults import InstallKs
+    
+    def ks(**context):
+        '''Anaconda autopart'''
+    
+        ks=InstallKs()
+        ks.packages.add(['@base'])
+    
+        ks.clearpart(initAll=True)
+        ks.autopart(autopart=True)
+    
+        script = '''
+    cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || \
+    cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg
+    '''
+        post = Script(script, type=KS_SCRIPT_POST, inChroot=False)
+        ks.scripts.append(post)
+    
+        return ks
 
 At the moment SNAKE is essentially abandoned but feature complete.
 I'm thinking about adopting the project just in case we need to make some fixes.

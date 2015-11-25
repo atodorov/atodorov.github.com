@@ -37,23 +37,22 @@ Everything is beautifully styled with CSS.
 Why Not Something Else
 ----------------------
 
-{% blockquote Boris Sanchez %}
-The original development team already had experience with Symfony, Zend, Spring and
-some other web application development frameworks. We opted for Symfony for two
-main reasons. First, Symfony is constantly improving, and has a strong and
-continuously growing community that offers 3rd party add-on components for free.
-Second, PHP is a bit easier to "learn as you go" then Java. The members of our
-design team didn't have a lot of prior programming experience, so we wanted to
-make sure we set a low barrier of entry for them, as we didn't have the enough
-development staff to have a distinct separation between design creation and design
-integration in our team.
-
-For the initial prototype we used the MySQL database management system. After a
-while we wanted to add spatial features to the business logic, and discovered that
-MySQL does not have proper support for spatial indexing. We therefore decided to
-migrate to PostgreSQL, which supports spatial data with add-ons like PostGIS.
-
-{% endblockquote %}
+> The original development team already had experience with Symfony, Zend, Spring and
+> some other web application development frameworks. We opted for Symfony for two
+> main reasons. First, Symfony is constantly improving, and has a strong and
+> continuously growing community that offers 3rd party add-on components for free.
+> Second, PHP is a bit easier to "learn as you go" then Java. The members of our
+> design team didn't have a lot of prior programming experience, so we wanted to
+> make sure we set a low barrier of entry for them, as we didn't have the enough
+> development staff to have a distinct separation between design creation and design
+> integration in our team.
+> 
+> For the initial prototype we used the MySQL database management system. After a
+> while we wanted to add spatial features to the business logic, and discovered that
+> MySQL does not have proper support for spatial indexing. We therefore decided to
+> migrate to PostgreSQL, which supports spatial data with add-ons like PostGIS.
+> 
+> Boris Sanchez
 
 Want More Info?
 ---------------

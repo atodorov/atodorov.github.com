@@ -46,20 +46,20 @@ They use C++ and Python bindings for
 Why Not Something Else?
 -----------------------
 
-{% blockquote Georgi Kadrev %}
-As an initially bootstrapping start-up we chose something that is basically free,
-reliable and popular - that's why started with the LAMP stack. It proved to be
-stable and convenient for our web needs and we preserved it.
-The use of C++ is a natural choice for computational intensive tasks that we
-need to perform for the purpose of our core expertise - image processing. 
-Though we initially wrote the whole core technology code from scratch, we later
-switched to OpenCV for some of the building blocks as it is very well optimized
-and continuously extended image processing library.
-
-With the raise of affordable high-performance GPU processors and their availability
-in server instances, we decided it's time to take advantage of this highly parallel
-architecture, perfectly suitable for image processing tasks.
-{% endblockquote %}
+> As an initially bootstrapping start-up we chose something that is basically free,
+> reliable and popular - that's why started with the LAMP stack. It proved to be
+> stable and convenient for our web needs and we preserved it.
+> The use of C++ is a natural choice for computational intensive tasks that we
+> need to perform for the purpose of our core expertise - image processing. 
+> Though we initially wrote the whole core technology code from scratch, we later
+> switched to OpenCV for some of the building blocks as it is very well optimized
+> and continuously extended image processing library.
+> 
+> With the raise of affordable high-performance GPU processors and their availability
+> in server instances, we decided it's time to take advantage of this highly parallel
+> architecture, perfectly suitable for image processing tasks.
+> 
+> Georgi Kadrev
 
 Want More Info?
 ---------------

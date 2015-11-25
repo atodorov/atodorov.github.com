@@ -71,54 +71,48 @@ like the already proven [Telerik Academy](http://academy.telerik.com/).
 
 Here's the entire program of the event, for anyone interested:
 
-{% blockquote %}
-“EVOLVE DIGITAL”
-10th June 2014 (Tuesday)
-
-10:00 – 10:10 Opening: Gergana Passy, Digital Champion Bulgaria
-
-10:10 – 10:20 Daniela Bobeva, Deputy Prime-Minister of the Republic of Bulgaria
-10:20 – 10:30 Constantijn van Oranje, Head of Cabinet of Vice-President of EC Neelie Kroes
-10:30 – 10:40 Jonathan Murray, Director, Digital Europe
-Special guest: Sandi Češko, Founder & President, Studio Moderna
-
-10:40 – 10:50 Memorandum Signing and Group Photo
-10:50 – 11:00 Pause
-
-11:00 – 12:15 Digital Coalition Bulgaria
-                Moderator: Boyan Benev, Founder, Forward.li
-
-                Rennie Popcheva, CEO, Digital Coalition Bulgaria
-                Boyko Iaramov, Co-founder & Chief Process Officer, Telerik
-                Marta Poslad, Senior Policy Advisor, CEE Google
-                Petar Ivanov, General Manager, Microsoft Bulgaria
-                Iravan Hira, General Manager, Hewlett-Packard Bulgaria
-                Atanas Dobrev, CEO, VIVACOM
-                Danny Gooris, Senior Manager, Oracle Academy
-                Dimitar Dimitrov, Relationship Business Development, Lenovo
-                Stamen Kochkov, Vice-president, SAP Labs Bulgaria, Chairman of BASSCOM
-
-
-12:15 – 12:30 Coffee Break
-
-12:30 – 13:45 Education in the Digital Era
-                Moderator: Boyan Benev, Founder, Forward.li
-
-                Ivan Krastev, Deputy Minister, Ministry of Education and Science, Republic of Bulgaria
-                George Stoytchev, Executive Director, Open Society Institute Sofia
-                Sabina Stirb, Public Affairs & Corporate Citizenship Manager, Samsung
-                Prof. Petar Kenderov, Institute of Mathematics and Informatics, Bulgarian
-                Academy of Sciences
-                Dr. George Sharkov, Director, European Software Institute - Center Eastern
-                Europe
-                Elena Marinova, President, Musala Soft, Chair of the Educational Commission,
-                Bulgarian Association of Information Technologies
-                Svetlin Nakov, Founder, Software University
-
-13:45 – Lunch in Restaurant “At the Eagles”
-                11 Dyakon Ygnatiy str., in the building of Ministry of transport, 18th Floor
-{% endblockquote %}
-
-
-
-
+> “EVOLVE DIGITAL”
+> 10th June 2014 (Tuesday)
+> 
+> 10:00 – 10:10 Opening: Gergana Passy, Digital Champion Bulgaria
+> 
+> 10:10 – 10:20 Daniela Bobeva, Deputy Prime-Minister of the Republic of Bulgaria
+> 
+> 10:20 – 10:30 Constantijn van Oranje, Head of Cabinet of Vice-President of EC Neelie Kroes
+> 
+> 10:30 – 10:40 Jonathan Murray, Director, Digital Europe
+>       Special guest: Sandi Češko, Founder & President, Studio Moderna
+> 
+> 10:40 – 10:50 Memorandum Signing and Group Photo
+> 
+> 10:50 – 11:00 Pause
+> 
+> 11:00 – 12:15 Digital Coalition Bulgaria
+>       Moderator: Boyan Benev, Founder, Forward.li
+>       Rennie Popcheva, CEO, Digital Coalition Bulgaria
+>       Boyko Iaramov, Co-founder & Chief Process Officer, Telerik
+>       Marta Poslad, Senior Policy Advisor, CEE Google
+>       Petar Ivanov, General Manager, Microsoft Bulgaria
+>       Iravan Hira, General Manager, Hewlett-Packard Bulgaria
+>       Atanas Dobrev, CEO, VIVACOM
+>       Danny Gooris, Senior Manager, Oracle Academy
+>       Dimitar Dimitrov, Relationship Business Development, Lenovo
+>       Stamen Kochkov, Vice-president, SAP Labs Bulgaria, Chairman of BASSCOM
+> 
+> 12:15 – 12:30 Coffee Break
+> 
+> 12:30 – 13:45 Education in the Digital Era
+>       Moderator: Boyan Benev, Founder, Forward.li
+>       Ivan Krastev, Deputy Minister, Ministry of Education and Science, Republic of Bulgaria
+>       George Stoytchev, Executive Director, Open Society Institute Sofia
+>       Sabina Stirb, Public Affairs & Corporate Citizenship Manager, Samsung
+>       Prof. Petar Kenderov, Institute of Mathematics and Informatics, Bulgarian
+>       Academy of Sciences
+>       Dr. George Sharkov, Director, European Software Institute - Center Eastern
+>       Europe
+>       Elena Marinova, President, Musala Soft, Chair of the Educational Commission,
+>       Bulgarian Association of Information Technologies
+>       Svetlin Nakov, Founder, Software University
+> 
+> 13:45 – Lunch in Restaurant “At the Eagles”
+>       11 Dyakon Ygnatiy str., in the building of Ministry of transport, 18th Floor

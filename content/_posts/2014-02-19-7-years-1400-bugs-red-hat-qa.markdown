@@ -260,14 +260,14 @@ me and devel banging our heads against the wall until we figured out that on thi
 particular system the NUMA configuration was not suitable for running Xen virtualization.
 
 Can you spot the problem here ?
-{% codeblock lang:python %}
-try:
-    import kickstartGui
-except:
-    print (_("Could not open display because no X server is running."))
-    print (_("Try running 'system-config-kickstart --help' for a list of options."))
-    sys.exit(0)
-{% endcodeblock %}
+
+    :::python
+    try:
+        import kickstartGui
+    except:
+        print (_("Could not open display because no X server is running."))
+        print (_("Try running 'system-config-kickstart --help' for a list of options."))
+        sys.exit(0)
 
 Be honest and use the comments form to tell me what you've found. If you struggled
 then see [RHBZ #703085](https://bugzilla.redhat.com/show_bug.cgi?id=703085) and come

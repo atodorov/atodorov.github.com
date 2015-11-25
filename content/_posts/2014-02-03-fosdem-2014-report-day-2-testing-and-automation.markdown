@@ -35,13 +35,11 @@ a look at.
 cwrap
 ------
 
-{% blockquote %}
-cwrap is...
-
-a set of tools to create a fully isolated network environment to test client/server components on a single host.
-It provides synthetic account information, hostname resolution and support for privilege separation.
-The heart of cwrap consists of three libraries you can preload to any executable.
-{% endblockquote %}
+> cwrap is...
+> 
+> a set of tools to create a fully isolated network environment to test client/server components on a single host.
+> It provides synthetic account information, hostname resolution and support for privilege separation.
+> The heart of cwrap consists of three libraries you can preload to any executable.
 
 That one was the coolest technology I've seen so far although I may not need to use it at all,
 hmmm maybe testing DHCP fits the case.

@@ -33,14 +33,12 @@ Test Suite Execution In %check
 [Fedora Packaging Guidelines](https://fedoraproject.org/wiki/Packaging:Guidelines#Test_Suites)
 state
 
-{% blockquote %}
-If the source code of the package provides a test suite,
-it should be executed in the {% raw %}%check{% endraw %} section,
-whenever it is practical to do so.
-{% endblockquote %}
+> If the source code of the package provides a test suite,
+> it should be executed in the %check section,
+> whenever it is practical to do so.
 
 
-In my research I found **738** SRPMs on the DVD which have a {% raw %}%check{% endraw %}
+In my research I found **738** SRPMs on the DVD which have a %check
 section and **4838** such packages under `Everything/`. This is **28,6%** and **33,6%**
 respectively.
 
@@ -60,7 +58,7 @@ test suites.
 The scripts and raw output are available at <https://github.com/atodorov/fedora-scripts>.
 
 So it looks like on average **30%** of the packages execute their test suites at build
-time in the {% raw %}%check{% endraw %} section and less than **35%** have test suites at all!
+time in the %check section and less than **35%** have test suites at all!
 There's definitely room for improvement and I plan to focus on this during 2014!
 
 

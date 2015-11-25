@@ -6,9 +6,7 @@ comments: true
 Tags: start-up
 ---
 
-{% blockquote %}
-Not all innovation needs to come out of Silicon Valley!
-{% endblockquote %}
+> Not all innovation needs to come out of Silicon Valley!
 
 I've just watched [Silicon Prairie](http://www.siliconprairiefilm.com/)
 (download for free or as much as you can afford).

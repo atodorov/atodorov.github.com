@@ -8,11 +8,10 @@ Tags: Fedora, QA
 
 Around Christmas 2013
 [I said](/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/)
-{% blockquote %}
-... it looks like on average 30% of the packages execute their test suites at
-build time in the %check section and less than 35% have test suites at all!
-There’s definitely room for improvement and I plan to focus on this during 2014!
-{% endblockquote %}
+
+> ... it looks like on average 30% of the packages execute their test suites at
+> build time in the %check section and less than 35% have test suites at all!
+> There’s definitely room for improvement and I plan to focus on this during 2014!
 
 I've recently started working on this goal by first identifying potential offending
 packages and discussing the idea on Fedora's

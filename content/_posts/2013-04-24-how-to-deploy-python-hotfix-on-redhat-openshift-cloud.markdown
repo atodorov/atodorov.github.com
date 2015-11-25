@@ -63,20 +63,20 @@ Modify `setup.py` and specify the hotfix version. Because this version is not on
 and will not be on OpenShift's local mirror you need to provide the location where it can
 be found. This is done with the `dependency_links` parameter to `setup()`. Here's how it looks:
 
-{% codeblock lang:diff %}
-diff --git a/setup.py b/setup.py
-index c6e837c..2daa2a9 100644
---- a/setup.py
-+++ b/setup.py
-@@ -6,5 +6,6 @@ setup(name='YourAppName',
-       author='Your Name',
-       author_email='example@example.com',
-       url='http://www.python.org/sigs/distutils-sig/',
--      install_requires=['python-magic==0.4.3'],
-+      dependency_links=['https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz'],
-+      install_requires=['python-magic==0.4.3.1'],
-      )
-{% endcodeblock %}
+    :::diff
+    diff --git a/setup.py b/setup.py
+    index c6e837c..2daa2a9 100644
+    --- a/setup.py
+    +++ b/setup.py
+    @@ -6,5 +6,6 @@ setup(name='YourAppName',
+           author='Your Name',
+           author_email='example@example.com',
+           url='http://www.python.org/sigs/distutils-sig/',
+    -      install_requires=['python-magic==0.4.3'],
+    +      dependency_links=['https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz'],
+    +      install_requires=['python-magic==0.4.3.1'],
+          )
+
 
 Now just git push to OpenShift and observe the console output:
 

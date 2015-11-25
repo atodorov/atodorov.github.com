@@ -19,18 +19,17 @@ In django-social-auth the authentication workflow is handled by an operations
 pipeline where custom functions can be added or default items can be removed to
 provide custom behavior. This is how our pipeline looks:
 
-{% codeblock settings.py lang:python %}
-SOCIAL_AUTH_PIPELINE = (
-    'social_auth.backends.pipeline.social.social_auth_user',
-    #'social_auth.backends.pipeline.associate.associate_by_email',
-    'social_auth.backends.pipeline.user.get_username',
-    'social_auth.backends.pipeline.user.create_user',
-    'social_auth.backends.pipeline.social.associate_user',
-    'social_auth.backends.pipeline.social.load_extra_data',
-    'social_auth.backends.pipeline.user.update_user_details',
-    'myproject.tasks.welcome_new_user'
-)
-{% endcodeblock %}
+    :::python settings.py
+    SOCIAL_AUTH_PIPELINE = (
+        'social_auth.backends.pipeline.social.social_auth_user',
+        #'social_auth.backends.pipeline.associate.associate_by_email',
+        'social_auth.backends.pipeline.user.get_username',
+        'social_auth.backends.pipeline.user.create_user',
+        'social_auth.backends.pipeline.social.associate_user',
+        'social_auth.backends.pipeline.social.load_extra_data',
+        'social_auth.backends.pipeline.user.update_user_details',
+        'myproject.tasks.welcome_new_user'
+    )
 
 This is the default plus an additional method at the end to welcome new users.
 
@@ -44,29 +43,28 @@ Custom pipeline actions
 
 This is how the custom pipeline action should look:
 
-{% codeblock myproject/tasks.py lang:python %}
-from urlparse import parse_qs
-
-def welcome_new_user(backend, user, social_user, is_new=False, new_association=False, *args, **kwargs):
-    """
-        Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer
-        @backend - social_auth.backends.twitter.TwitterBackend (or other) object
-        @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)
-        @social_user - UserSocialAuth object
-    """
-    if is_new:
-        send_welcome_email.delay(user.email, user.first_name)
-
-    if backend.name == 'twitter':
-        if is_new or new_association:
-            access_token = social_user.extra_data['access_token']
-            parsed_tokens = parse_qs(access_token)
-            oauth_token = parsed_tokens['oauth_token'][0]
-            oauth_secret = parsed_tokens['oauth_token_secret'][0]
-            tweet_on_join.delay(oauth_token, oauth_secret)
-
-    return None
-{% endcodeblock %}
+    :::python myproject/tasks.py
+    from urlparse import parse_qs
+    
+    def welcome_new_user(backend, user, social_user, is_new=False, new_association=False, *args, **kwargs):
+        """
+            Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer
+            @backend - social_auth.backends.twitter.TwitterBackend (or other) object
+            @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)
+            @social_user - UserSocialAuth object
+        """
+        if is_new:
+            send_welcome_email.delay(user.email, user.first_name)
+    
+        if backend.name == 'twitter':
+            if is_new or new_association:
+                access_token = social_user.extra_data['access_token']
+                parsed_tokens = parse_qs(access_token)
+                oauth_token = parsed_tokens['oauth_token'][0]
+                oauth_secret = parsed_tokens['oauth_token_secret'][0]
+                tweet_on_join.delay(oauth_token, oauth_secret)
+    
+        return None
 
 This code works with django-social-auth==0.7.21 or newer. In older versions the
 `new_association` parameter is missing as 
@@ -85,29 +83,27 @@ for more information on how to configure emailing with SES.
 
 Here is how the Twitter code looks:
 
-{% codeblock myproject/tasks.py lang:python %}
-
-import twitter
-from celery.task import task
-from settings import TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
-
-@task
-def tweet_on_join(oauth_token, oauth_secret):
-    """
-        Tweet when the user is logged in for the first time or
-        when new Twitter account is associated.
-
-        @oauth_token - string
-        @oauth_secret - string
-    """
-    t = twitter.Twitter(
-            auth=twitter.OAuth(
-                oauth_token, oauth_secret,
-                TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
+    :::python myproject/tasks.py
+    import twitter
+    from celery.task import task
+    from settings import TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
+    
+    @task
+    def tweet_on_join(oauth_token, oauth_secret):
+        """
+            Tweet when the user is logged in for the first time or
+            when new Twitter account is associated.
+    
+            @oauth_token - string
+            @oauth_secret - string
+        """
+        t = twitter.Twitter(
+                auth=twitter.OAuth(
+                    oauth_token, oauth_secret,
+                    TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
+                )
             )
-        )
-    t.statuses.update(status='Started following open source changes at http://www.dif.io!')
-{% endcodeblock %}
+        t.statuses.update(status='Started following open source changes at http://www.dif.io!')
 
 This will post a new tweet on behalf of the user, telling everyone they joined
 your website!
