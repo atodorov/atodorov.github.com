@@ -39,9 +39,6 @@ organization. This list contains current ventures and some of the more interesti
 previous ones.
 
 
-Shoes 41 Plus
---------------
-
 <img style="float: left; margin-right: 10px;" src="/images/logos/obuvki41plus.png" alt="obuvki41plus" />
 
 [Shoes 41 Plus](http://obuvki41plus.com) is niche oriented business selling ladies shoes with
@@ -50,9 +47,6 @@ who prefer ladies shoes!
 <br />
 
 
-Open Technologies Bulgaria
----------------------------
-
 !["OTB"](/images/logos/otb.png "OTB")
 
 [Open Technologies Bulgaria, Ltd](http://otb.bg) is a company I founded in 2009 which
@@ -60,9 +54,6 @@ mainly does open source consulting for some local clients and QA services to Red
 also an authorized
 [Red Hat re-seller in Bulgaria](http://redhat.force.com/finder/PFPartnerDetail?id=0016000000LxykhAAB).
 
-
-Red Hat
--------
 
 <img style="float: left; margin-right: 10px;" src="/images/logos/redhat.png" alt="RedHat" />
 
@@ -74,18 +65,11 @@ a) they didn't fail me once and b) I know how much hard work is done into making
 kick ass.
 
 
-
-Difio
------
-
 <img style="float: left; margin-right: 10px;" src="/images/logos/difio.png" alt="Difio" />
 
 [Difio](http://www.dif.io) was a service targeted at developers
 who use open source packages and libraries. It shut down on Sept 10th 2014.
 <br /><br />
-
-One Laptop Per Child Bulgarian Chapter
---------------------------------------
 
 <img style="float: left; margin-right: 10px;" src="/images/logos/olpcbg.png" alt="OLPC.bg" />
 
