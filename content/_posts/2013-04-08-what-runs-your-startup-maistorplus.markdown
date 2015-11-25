@@ -4,6 +4,7 @@ Title: What Runs Your Start-up - MaistorPlus
 date: 2013-04-08 12:52
 comments: true
 Tags: what runs, start-up, PHP, Symfony, PostgreSQL, jQuery
+Slug: what-runs-your-startup-maistorplus
 ---
 
 <img src="/images/startup/maistorplus.jpg" alt="MaistorPlus logo" style="float:left; margin-right: 15px;"/>

@@ -4,6 +4,7 @@ Title: How Krasi Tsonev Broke Planet.SofiaValley.com
 date: 2015-11-13 10:09
 comments: true
 Tags: QA, fedora.planet
+Slug: how-krasi-tsonev-broke-planet.sofiavalley.com
 ---
 
 Yesterday I've added [Krasimir Tsonev's blog](http://krasimirtsonev.com/blog/) to

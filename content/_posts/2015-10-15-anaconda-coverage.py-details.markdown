@@ -4,6 +4,7 @@ Title: Anaconda &amp; coverage.py - Pt.2 - Details
 date: 2015-10-15 14:15
 comments: true
 Tags: QA, fedora.planet
+Slug: anaconda-coverage.py-details
 ---
 
 My [previous post](/blog/2015/10/14/anaconda-coverage.py-introduction/)

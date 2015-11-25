@@ -4,6 +4,7 @@ Title: Minor Typo Bug in Messenger for bg_BG.UTF-8
 date: 2015-08-20 16:34
 comments: true
 Tags: QA
+Slug: minor-typo-bug-in-messenger
 ---
 
 ![Messenger typo](/images/messenger_typo.png "Messenger typo")

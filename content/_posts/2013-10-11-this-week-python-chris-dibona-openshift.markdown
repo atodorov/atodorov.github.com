@@ -4,6 +4,7 @@ Title: This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV 
 date: 2013-10-11 10:45
 comments: true
 Tags: Python, cloud, OpenShift
+Slug: this-week-python-chris-dibona-openshift
 ---
 
 Here is a random collection of links I came across this week which

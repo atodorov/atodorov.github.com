@@ -4,6 +4,7 @@ Title: What Runs Your Start-up - Ucha.se
 date: 2013-04-03 10:57
 comments: true
 Tags: what runs, start-up, PHP, MySQL, jQuery, Nginx
+Slug: what-runs-your-startup-ucha.se
 ---
 
 <img src="/images/startup/uchase.jpg" alt="Ucha.se logo" style="float:left;margin-right:10px;"/>

@@ -4,6 +4,7 @@ Title: Updated MacBook Air Drivers for RHEL 7.2
 date: 2015-11-21 11:27
 comments: true
 Tags: Mac, RHEL, fedora.planet
+Slug: updated-macbook-air-drivers-for-rhel-7.2
 ---
 
 Yesterday I've upgraded to

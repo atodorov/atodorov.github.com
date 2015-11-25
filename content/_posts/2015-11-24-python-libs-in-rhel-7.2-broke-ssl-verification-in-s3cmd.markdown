@@ -4,6 +4,7 @@ Title: python-libs in RHEL 7.2 broke SSL verification in s3cmd
 date: 2015-11-24 21:44
 comments: true
 Tags: QA, fedora.planet, RHEL, Python
+Slug: python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd
 ---
 
 Today started with [Planet Sofia Valley](http://planet.sofiavalley.com) being

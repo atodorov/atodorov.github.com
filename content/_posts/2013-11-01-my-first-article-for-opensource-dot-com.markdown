@@ -4,6 +4,7 @@ Title: My First Article for OpenSource.com
 date: 2013-11-01 12:47
 comments: true
 Tags: Fedora
+Slug: my-first-article-for-opensource-dot-com
 ---
 
 !["Annoying bugs"](/images/annoyingbugs.png "Annoying bugs")

@@ -4,6 +4,7 @@ Title: What Runs Your Start-up - Imagga
 date: 2013-07-29 12:32
 comments: true
 Tags: what runs, start-up, Amazon, EC2
+Slug: what-runs-your-startup-imagga
 ---
 
 <img src="/images/startup/imagga.png" alt="Imagga" style="float:left; margin-right:10px;" />

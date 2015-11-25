@@ -4,6 +4,7 @@ Title: What Runs Your Start-up - RETiDoc
 date: 2013-07-29 12:13
 comments: true
 Tags: what runs, start-up, Microsoft
+Slug: what-runs-your-startup-retidoc
 ---
 
 <img src="/images/startup/retidoc.gif" alt="RETiDoc" style="float:left; margin-right: 15px;" />

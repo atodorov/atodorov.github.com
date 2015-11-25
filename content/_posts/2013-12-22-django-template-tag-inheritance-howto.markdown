@@ -4,6 +4,7 @@ Title: Django Template Tag Inheritance How-to
 date: 2013-12-22 23:02
 comments: true
 Tags: Django
+Slug: django-template-tag-inheritance-howto
 ---
 
 While working on open-sourcing [Difio](http://www.dif.io) I needed to remove

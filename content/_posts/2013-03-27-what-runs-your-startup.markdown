@@ -4,6 +4,7 @@ Title: What Runs Your Start-up
 date: 2013-03-27 12:00
 comments: true
 Tags: what runs, start-up
+Slug: what-runs-your-startup
 ---
 
 I am starting a new section called 

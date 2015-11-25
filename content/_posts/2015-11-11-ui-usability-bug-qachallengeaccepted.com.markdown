@@ -4,6 +4,7 @@ Title: UI Usability Bug for QAChallengeAccepted.com
 date: 2015-11-11 22:36
 comments: true
 Tags: QA
+Slug: ui-usability-bug-qachallengeaccepted.com
 ---
 
 ![Initial view](/images/qachallenge1.png "Initial view")

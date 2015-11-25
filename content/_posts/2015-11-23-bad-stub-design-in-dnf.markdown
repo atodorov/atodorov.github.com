@@ -4,6 +4,7 @@ Title: Bad Stub Design in DNF, Pt.2
 date: 2015-11-23 15:55
 comments: true
 Tags: QA, fedora.planet
+Slug: bad-stub-design-in-dnf
 ---
 
 Do you remember my example of a

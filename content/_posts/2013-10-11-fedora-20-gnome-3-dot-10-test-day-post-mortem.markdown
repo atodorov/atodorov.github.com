@@ -4,6 +4,7 @@ Title: Fedora 20 GNOME 3.10 Test Day Post-mortem
 date: 2013-10-11 12:25
 comments: true
 Tags: Fedora, QA
+Slug: fedora-20-gnome-3-dot-10-test-day-post-mortem
 ---
 
 !["Fedora sausage banner"](/images/fedora/sausage-banner.png "Fedora sausage banner")

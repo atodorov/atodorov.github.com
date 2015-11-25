@@ -4,6 +4,7 @@ Title: Why does sysctl not write under /sys
 date: 2015-05-13 12:34
 comments: true
 Tags: fedora.planet
+Slug: why-does-sysctl-not-write-under-slash-sys
 ---
 
 Recently I've been looking into 

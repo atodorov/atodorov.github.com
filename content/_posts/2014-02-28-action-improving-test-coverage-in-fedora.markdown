@@ -4,6 +4,7 @@ Title: Call to Action: Improving Overall Test Coverage in Fedora
 date: 2014-02-28 14:46
 comments: true
 Tags: Fedora, QA
+Slug: action-improving-test-coverage-in-fedora
 ---
 
 Around Christmas 2013

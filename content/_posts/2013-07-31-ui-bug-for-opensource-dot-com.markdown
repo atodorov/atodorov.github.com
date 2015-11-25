@@ -4,6 +4,7 @@ Title: UI Bug for OpenSource.com
 date: 2013-07-31 21:39
 comments: true
 Tags: QA
+Slug: ui-bug-for-opensource-dot-com
 ---
 
 !["UI bug"](/images/opensource.com_ui_bug.png "UI bug")

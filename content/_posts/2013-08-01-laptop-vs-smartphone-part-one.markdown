@@ -4,6 +4,7 @@ Title: Laptop vs Smartphone, Part 1, Requirements
 date: 2013-08-01 21:02
 comments: true
 Tags: BlackBerry
+Slug: laptop-vs-smartphone-part-one
 ---
 
 As some of you may know or have heard I'm in the process of  ditching my 

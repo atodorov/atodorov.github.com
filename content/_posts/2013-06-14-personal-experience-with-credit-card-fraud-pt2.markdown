@@ -3,7 +3,7 @@ layout: post
 Title: Personal Experience With Credit Card Fraud, Part 2
 date: 2013-06-14 10:09
 comments: true
-Tags:
+Slug: personal-experience-with-credit-card-fraud-pt2
 ---
 
 Earlier I wrote about my

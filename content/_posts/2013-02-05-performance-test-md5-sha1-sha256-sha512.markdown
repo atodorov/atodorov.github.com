@@ -4,6 +4,7 @@ Title: Performance test of MD5, SHA1, SHA256 and SHA512
 date: 2013-02-05 10:33
 comments: true
 Tags: Python, performance testing, QA
+Slug: performance-test-md5-sha1-sha256-sha512
 ---
 
 A few months ago I wrote

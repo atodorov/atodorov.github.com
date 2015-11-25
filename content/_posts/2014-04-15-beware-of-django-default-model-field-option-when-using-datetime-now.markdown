@@ -4,6 +4,7 @@ Title: Beware of Django default Model Field Option When Using datetime.now()
 date: 2014-04-15 15:54
 comments: true
 Tags: Django
+Slug: beware-of-django-default-model-field-option-when-using-datetime-now
 ---
 
 Beware if you are using code like this:

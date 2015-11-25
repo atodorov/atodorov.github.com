@@ -4,6 +4,7 @@ Title: StartUP Talk#5 - book list
 date: 2013-01-30 16:14
 comments: true
 Tags: start-up, books
+Slug: startup-talk-5-book-list
 ---
 
 Yesterday I have visited an interesting talk by

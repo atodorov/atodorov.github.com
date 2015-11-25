@@ -4,6 +4,7 @@ Title: Revamping Anaconda's Dogtail Tests
 date: 2015-11-20 15:34
 comments: true
 Tags: QA, fedora.planet
+Slug: revamping-anaconda-dogtail-tests
 ---
 
 In my [previous post](/blog/2015/11/13/running-anaconda-from-git/) I briefly talked

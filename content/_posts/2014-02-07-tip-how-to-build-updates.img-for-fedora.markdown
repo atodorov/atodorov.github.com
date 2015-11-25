@@ -4,6 +4,7 @@ Title: Tip: How to Build updates.img for Fedora
 date: 2014-02-07 11:01
 comments: true
 Tags: tips, Fedora
+Slug: tip-how-to-build-updates.img-for-fedora
 ---
 
 Anaconda the Fedora, CentOS and Red Hat Enterprise Linux installer has the

@@ -4,6 +4,7 @@ Title: OpenSource.com article - 10 steps to migrate your closed software to open
 date: 2014-05-06 16:14
 comments: true
 Tags: Django, Fedora
+Slug: opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source
 ---
 
 > Difio is a Django based application that keeps track of packages and tells you when they change.

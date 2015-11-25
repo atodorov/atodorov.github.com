@@ -4,6 +4,7 @@ Title: HackFMI 3.0 Post-mortem
 date: 2014-04-30 00:03
 comments: true
 Tags: hackathon, hackfmi, events
+Slug: hackfmi-post-mortem
 ---
 
 <img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" />

@@ -4,6 +4,7 @@ Title: Unit Testing Example - Bad Stub Design in DNF
 date: 2015-09-25 11:20
 comments: true
 Tags: QA, fedora.planet
+Slug: unit-testing-bad-stub-design-in-dnf
 ---
 
 In software testing, usually unit testing, test stubs are programs that simulate

@@ -4,6 +4,7 @@ Title: Speeding up Celery Backends, Part 1
 date: 2014-11-05 15:20
 comments: true
 Tags: Python, Django, QA
+Slug: speeding-up-celery-backends
 ---
 
 I'm working on an application which fires a lot of Celery tasks - the more

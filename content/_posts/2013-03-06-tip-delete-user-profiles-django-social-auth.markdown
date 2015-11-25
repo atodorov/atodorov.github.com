@@ -4,6 +4,7 @@ Title: Tip: Delete User Profiles with django-social-auth
 date: 2013-03-06 21:02
 comments: true
 Tags: tips, Django, django-social-auth
+Slug: tip-delete-user-profiles-django-social-auth
 ---
 
 Common functionality for websites is the 'DELETE ACCOUNT' or 'DISABLE ACCOUNT'

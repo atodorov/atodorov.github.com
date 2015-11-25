@@ -4,6 +4,7 @@ Title: Mocking Django AUTH_PROFILE_MODULE without a Database
 date: 2014-02-27 16:18
 comments: true
 Tags: Django
+Slug: mocking-django-auth-profile-module-without-database
 ---
 
 [Difio](http://www.dif.io) is a Django based service which uses a profile

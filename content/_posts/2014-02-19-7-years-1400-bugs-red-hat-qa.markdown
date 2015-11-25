@@ -4,6 +4,7 @@ Title: 7 Years and 1400 Bugs Later as Red Hat QA
 date: 2014-02-19 10:43
 comments: true
 Tags: RHEL, Fedora, QA
+Slug: 7-years-1400-bugs-red-hat-qa
 ---
 
 Today I celebrate my 7th year working at Red Hat's Quality Engineering department.
