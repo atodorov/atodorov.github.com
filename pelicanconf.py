@@ -23,6 +23,7 @@ HEADER_COVER = "/images/header_02.jpg"
 DISABLE_CUSTOM_THEME_JAVASCRIPT = True
 
 COLOR_SCHEME_CSS = "github.css"
+CSS_OVERRIDE = "override.css"
 
 PATH = 'content'
 
