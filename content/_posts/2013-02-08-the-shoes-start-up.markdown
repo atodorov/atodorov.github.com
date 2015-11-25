@@ -3,7 +3,7 @@ layout: post
 Title: The shoes start-up
 date: 2013-02-08 23:50
 comments: true
-categories: ['start-up']
+Tags: 'start-up'
 ---
 
 Did you know there is a start-up company producing men's shoes? Me neither,

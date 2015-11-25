@@ -3,7 +3,7 @@ layout: post
 Title: What Runs Your Start-up - RETiDoc
 date: 2013-07-29 12:13
 comments: true
-categories: ['what runs', 'start-up', 'Microsoft']
+Tags: 'what runs', 'start-up', 'Microsoft'
 ---
 
 <img src="/images/startup/retidoc.gif" alt="RETiDoc" style="float:left; margin-right: 15px;" />

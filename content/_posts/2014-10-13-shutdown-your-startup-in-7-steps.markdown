@@ -3,7 +3,7 @@ layout: post
 Title: Shutdown Your Startup in 7 Steps
 date: 2014-10-13 14:17
 comments: true
-categories: ['start-up']
+Tags: 'start-up'
 ---
 
 A month ago one of my startups Difio stopped working forever.

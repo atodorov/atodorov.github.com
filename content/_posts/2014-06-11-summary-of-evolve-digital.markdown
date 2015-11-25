@@ -3,7 +3,7 @@ layout: post
 Title: Summary of Evolve Digital
 date: 2014-06-11 22:29
 comments: true
-categories: ['events']
+Tags: 'events'
 ---
 
 

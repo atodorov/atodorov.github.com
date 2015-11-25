@@ -3,7 +3,7 @@ layout: post
 Title: Last Week in Fedora QA
 date: 2014-03-03 10:23
 comments: true
-categories: ['Fedora', 'QA']
+Tags: 'Fedora', 'QA'
 ---
 
 Here are some highlights from the past week discussions in Fedora which I found

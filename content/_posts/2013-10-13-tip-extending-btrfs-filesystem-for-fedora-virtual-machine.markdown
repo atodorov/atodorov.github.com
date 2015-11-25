@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Extending Btrfs Filesystem for Fedora Virtual Machine
 date: 2013-10-13 14:53
 comments: true
-categories: ['tips', 'Fedora']
+Tags: 'tips', 'Fedora'
 ---
 
 I was testing Fedora 20 inside a KVM guest this week when the disk

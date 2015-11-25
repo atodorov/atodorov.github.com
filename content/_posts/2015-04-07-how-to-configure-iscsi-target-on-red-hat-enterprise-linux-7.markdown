@@ -3,7 +3,7 @@ layout: post
 Title: How to Configure iSCSI Target on Red Hat Enterprise Linux 7
 date: 2015-04-07 15:52
 comments: true
-categories: ['RHEL', 'Fedora']
+Tags: 'RHEL', 'Fedora'
 ---
 
 Linux-IO (LIO) Target is an open-source implementation of the SCSI target that

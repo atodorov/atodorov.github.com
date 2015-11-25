@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Save Money on Amazon - Buy Used Books
 date: 2013-01-31 22:41
 comments: true
-categories: ['tips', 'Amazon', 'books']
+Tags: 'tips', 'Amazon', 'books'
 ---
 
 I like to buy books, the real ones, printed on paper. This however comes at

@@ -3,7 +3,7 @@ layout: post
 Title: DEVit Conf 2015 Impressions
 date: 2015-05-22 12:01
 comments: true
-categories: ['fedora.planet', 'Django', 'events']
+Tags: 'fedora.planet', 'Django', 'events'
 ---
 
 It's been a busy week after [DEVit conf](http://devitconf.org/) took place in

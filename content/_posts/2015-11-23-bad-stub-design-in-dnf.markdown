@@ -3,7 +3,7 @@ layout: post
 Title: Bad Stub Design in DNF, Pt.2 
 date: 2015-11-23 15:55
 comments: true
-categories: ['QA', 'fedora.planet']
+Tags: 'QA', 'fedora.planet'
 ---
 
 Do you remember my example of a

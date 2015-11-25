@@ -3,7 +3,7 @@ layout: post
 Title: Facebook UI Bug Strikes Again at HackFMI
 date: 2013-09-23 23:33
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 Does this look familiar to you ? 

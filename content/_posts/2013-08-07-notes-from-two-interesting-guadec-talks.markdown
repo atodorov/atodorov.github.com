@@ -3,7 +3,7 @@ layout: post
 Title: Notes From Two Interesting GUADEC Talks
 date: 2013-08-07 14:33
 comments: true
-categories: ['QA', 'events']
+Tags: 'QA', 'events'
 ---
 
 As this year's [GUADEC](https://www.guadec.org/) is coming to an end

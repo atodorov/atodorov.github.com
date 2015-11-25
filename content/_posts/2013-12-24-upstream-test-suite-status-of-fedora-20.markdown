@@ -3,7 +3,7 @@ layout: post
 Title: Upstream Test Suite Status of Fedora 20
 date: 2013-12-24 08:01
 comments: true
-categories: ['Fedora', 'QA']
+Tags: 'Fedora', 'QA'
 ---
 
 Last week I've expressed my thoughts about the state of

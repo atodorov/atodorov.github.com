@@ -3,7 +3,7 @@ layout: post
 Title: Mining E-mail Identities with Gravatar
 date: 2015-03-16 23:16
 comments: true
-categories: 
+Tags:
 ---
 
 Recently I've laid my hands on a list of little over 7000 email addresses.

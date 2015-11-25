@@ -3,7 +3,7 @@ layout: post
 Title: Bug in the Fridge
 date: 2013-03-29 15:09
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 <img src="/images/liebherr_kbgb_3864.jpg" alt="Liebherr KBGB 3864" style="float:left; margin-right: 20px;" />

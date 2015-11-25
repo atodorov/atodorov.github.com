@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com
 date: 2014-07-12 23:15
 comments: true
-categories: ['tips', 'Django', 'start-up']
+Tags: 'tips', 'Django', 'start-up'
 ---
 
 In my practice I like to use webhooks and integrate auxiliary services with

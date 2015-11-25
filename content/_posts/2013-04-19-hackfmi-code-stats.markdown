@@ -3,7 +3,7 @@ layout: post
 Title: HackFMI Code Stats
 date: 2013-04-19 10:00
 comments: true
-categories: ['hackfmi']
+Tags: 'hackfmi'
 ---
 
 It's Friday - five days after the first [HackFMI](http://hackfmi.com)

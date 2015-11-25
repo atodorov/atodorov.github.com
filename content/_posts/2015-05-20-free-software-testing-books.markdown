@@ -3,7 +3,7 @@ layout: post
 Title: Free Software Testing Books
 date: 2015-05-20 11:35
 comments: true
-categories: ['fedora.planet', 'QA', 'Django', 'books']
+Tags: 'fedora.planet', 'QA', 'Django', 'books'
 ---
 
 There's a huge list of 

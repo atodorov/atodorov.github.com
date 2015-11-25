@@ -3,7 +3,7 @@ layout: post
 Title: Using OpenShift as Amazon CloudFront Origin Server
 date: 2012-04-17 17:30
 comments: true
-categories: ['OpenShift', 'Amazon', 'cloud']
+Tags: 'OpenShift', 'Amazon', 'cloud'
 ---
 
 It's been several months after the start of [*Difio*](http://www.dif.io) and I started

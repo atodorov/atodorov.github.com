@@ -3,7 +3,7 @@ layout: post
 Title: Give a Book, Get a Laptop With Discount
 date: 2013-07-04 11:44
 comments: true
-categories: [start-up]
+Tags: start-up
 ---
 
 <img src="/images/startup/timeheroes.png" alt="Time Heroes" style="float:left; margin-right:10px;"/>

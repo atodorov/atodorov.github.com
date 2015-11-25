@@ -3,7 +3,7 @@ layout: post
 Title: git History Stats and Project Cost Estimation
 date: 2013-07-18 23:40
 comments: true
-categories: 
+Tags:
 ---
 
 How do you generate useful stats from a git repo? In particular how do you

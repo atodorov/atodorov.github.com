@@ -3,7 +3,7 @@ layout: post
 Title: The Rise of .io Domains for Well Crafted Web Services
 date: 2013-08-13 16:17
 comments: true
-categories: 
+Tags:
 ---
 
 Back in February 2013 Russell Beattie has published an article on his blog

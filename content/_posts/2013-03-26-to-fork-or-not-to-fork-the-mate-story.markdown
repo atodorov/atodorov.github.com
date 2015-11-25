@@ -3,7 +3,7 @@ layout: post
 Title: To fork or not to fork - the MATE story
 date: 2013-03-26 10:46
 comments: true
-categories: 
+Tags:
 ---
 
 !["MATE Desktop"](/images/MATE.png "MATE Desktop")

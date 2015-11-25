@@ -3,7 +3,7 @@ layout: post
 Title: Remove Query String with JavaScript and HTML5
 date: 2013-01-28 15:52
 comments: true
-categories: ['JavaScript', 'HTML5']
+Tags: 'JavaScript', 'HTML5'
 ---
 
 A [query string](http://en.wikipedia.org/wiki/Query_string) is the stuff after

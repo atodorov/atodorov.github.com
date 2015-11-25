@@ -3,7 +3,7 @@ layout: post
 Title: Articles of The Week: Git Submodules and Stopping SPAM Without CAPTCHA
 date: 2014-02-08 23:00
 comments: true
-categories: 
+Tags:
 ---
 
 Here are two articles which I found very useful and interesting this week:

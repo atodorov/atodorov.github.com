@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Cut Leading or Trailing Fields From Strings in Bash
 date: 2013-11-19 00:16
 comments: true
-categories: ['tips', 'Fedora']
+Tags: 'tips', 'Fedora'
 ---
 
 Today I was looking for a command sequence to cut a string in two by predefined

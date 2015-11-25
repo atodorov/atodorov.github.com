@@ -3,7 +3,7 @@ layout: post
 Title: I Need an App to Connect With My Facebook Page Fans
 date: 2014-03-28 23:18
 comments: true
-categories: 
+Tags:
 ---
 
 The biggest problem of Facebook is the sheer number of news items 

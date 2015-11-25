@@ -3,7 +3,7 @@ layout: post
 Title: Happy April Fools Day
 date: 2014-04-01 11:35
 comments: true
-categories: 
+Tags:
 ---
 
 Happy April Fools Day everyone! Here are few stories that I find particularly

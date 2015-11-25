@@ -3,7 +3,7 @@ layout: post
 Title: OpenFest 2015 Impressions
 date: 2015-11-11 15:16
 comments: true
-categories: ['events']
+Tags: 'events'
 ---
 
 This past weekend I've attended [OpenFest](http://openfest.org) in Sofia. I have

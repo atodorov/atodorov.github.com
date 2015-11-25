@@ -3,7 +3,7 @@ layout: post
 Title: Book Review: UX for Lean Startups
 date: 2013-12-09 10:09
 comments: true
-categories: ['books', 'start-up']
+Tags: 'books', 'start-up'
 ---
 
 Recently I've finished reading [UX for Lean Startups](http://amzn.to/1fi1KeE)

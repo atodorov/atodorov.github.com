@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Setting Secure ENV variables on Red Hat OpenShift
 date: 2013-07-08 21:39
 comments: true
-categories: ['tips', 'OpenShift', 'cloud']
+Tags: 'tips', 'OpenShift', 'cloud'
 ---
 
 OpenShift is

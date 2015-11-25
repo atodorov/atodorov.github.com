@@ -3,7 +3,7 @@ layout: post
 Title: Exploring BlackBerry 10 - nmap
 date: 2013-07-17 23:16
 comments: true
-categories: ['BlackBerry', 'Z10']
+Tags: 'BlackBerry', 'Z10'
 ---
 
 This is the first post in upcoming series while I explore my

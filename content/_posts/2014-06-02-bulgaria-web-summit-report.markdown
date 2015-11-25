@@ -3,7 +3,7 @@ layout: post
 Title: Bulgaria Web Summit Report
 date: 2014-06-02 09:02
 comments: true
-categories: ['events']
+Tags: 'events'
 ---
 
 Last week ended up with [Bulgaria Web Summit](http://bulgariawebsummit.com/).

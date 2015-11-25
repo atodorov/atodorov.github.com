@@ -3,7 +3,7 @@ layout: post
 Title: Spinning-up a Development Instance on OpenShift
 date: 2012-02-10 21:19
 comments: true
-categories: ["tips", "OpenShift", "cloud"]
+Tags: "tips", "OpenShift", "cloud"
 ---
 
 [Difio](http://www.dif.io) is hosted on [OpenShift](http://openshift.redhat.com).

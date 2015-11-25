@@ -3,7 +3,7 @@ layout: post
 Title: How to Deploy Python Hotfix on RedHat OpenShift Cloud
 date: 2013-04-24 11:58
 comments: true
-categories: ['tips', 'Python', 'OpenShift', 'cloud']
+Tags: 'tips', 'Python', 'OpenShift', 'cloud'
 ---
 
 In this article I will show you how to deploy hotfix versions for

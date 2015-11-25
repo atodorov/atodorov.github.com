@@ -3,7 +3,7 @@ layout: post
 Title: AWS Tip: Shrinking EBS Root Volume Size
 date: 2014-02-07 00:23
 comments: true
-categories: ['tips', 'Amazon', 'cloud']
+Tags: 'tips', 'Amazon', 'cloud'
 ---
 
 Amazon's Elastic Block Store volumes are easy to use and expand but notoriously

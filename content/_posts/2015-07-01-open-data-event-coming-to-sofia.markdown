@@ -3,7 +3,7 @@ layout: post
 Title: Open Data Event Coming to Sofia
 date: 2015-07-01 11:58
 comments: true
-categories: ['events']
+Tags: 'events'
 ---
 
 [Open Data and Intelligent Government](https://www.eventbrite.co.uk/e/17565601186)

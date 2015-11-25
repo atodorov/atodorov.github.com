@@ -3,7 +3,7 @@ layout: post
 Title: UI Usability Bug for QAChallengeAccepted.com
 date: 2015-11-11 22:36
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 ![Initial view](/images/qachallenge1.png "Initial view")

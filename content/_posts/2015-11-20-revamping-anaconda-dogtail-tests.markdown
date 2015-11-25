@@ -3,7 +3,7 @@ layout: post
 Title: Revamping Anaconda's Dogtail Tests
 date: 2015-11-20 15:34
 comments: true
-categories: ['QA', 'fedora.planet']
+Tags: 'QA', 'fedora.planet'
 ---
 
 In my [previous post](/blog/2015/11/13/running-anaconda-from-git/) I briefly talked

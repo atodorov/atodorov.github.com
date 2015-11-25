@@ -3,7 +3,7 @@ layout: post
 Title: Thunderbolt to VGA adapter on Linux
 date: 2015-09-30 11:59
 comments: true
-categories: ['Mac', 'RHEL', 'fedora.planet']
+Tags: 'Mac', 'RHEL', 'fedora.planet'
 ---
 
 I've previously written about my

@@ -3,7 +3,7 @@ layout: post
 Title: Screen Magnifier and Smart Phone! Has Anyone Used It ?
 date: 2014-05-04 10:25
 comments: true
-categories: ['Fedora']
+Tags: 'Fedora'
 ---
 
 Do you remember I was going to

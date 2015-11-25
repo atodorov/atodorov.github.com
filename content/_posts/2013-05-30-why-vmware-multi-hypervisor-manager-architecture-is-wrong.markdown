@@ -3,7 +3,7 @@ layout: post
 Title: Why VMware Multi-Hypervisor Manager Architecture Is Wrong
 date: 2013-05-30 23:36
 comments: true
-categories: 
+Tags:
 ---
 
 Today I've visited the annual 

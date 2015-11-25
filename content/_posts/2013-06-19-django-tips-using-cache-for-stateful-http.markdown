@@ -3,7 +3,7 @@ layout: post
 Title: Django Tips: Using Cache for Stateful HTTP
 date: 2013-06-19 13:50
 comments: true
-categories: ['Django', 'tips', 'Twilio', 'cloud']
+Tags: 'Django', 'tips', 'Twilio', 'cloud'
 ---
 
 How do you keep state when working with a stateless protocol like HTTP? 

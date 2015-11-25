@@ -3,7 +3,7 @@ layout: post
 Title: FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks
 date: 2014-02-03 21:37
 comments: true
-categories: ['events', 'Fedora', 'Python']
+Tags: 'events', 'Fedora', 'Python'
 ---
 
 As promised I'm starting catching up on blogging after being sick and traveling.

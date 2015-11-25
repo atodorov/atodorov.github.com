@@ -3,7 +3,7 @@ layout: post
 Title: Fedora 20 GNOME 3.10 Test Day Post-mortem
 date: 2013-10-11 12:25
 comments: true
-categories: ['Fedora', 'QA']
+Tags: 'Fedora', 'QA'
 ---
 
 !["Fedora sausage banner"](/images/fedora/sausage-banner.png "Fedora sausage banner")

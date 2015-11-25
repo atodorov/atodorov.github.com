@@ -3,7 +3,7 @@ layout: post
 Title: Performance test of MD5, SHA1, SHA256 and SHA512
 date: 2013-02-05 10:33
 comments: true
-categories: ['Python', 'performance testing', 'QA']
+Tags: 'Python', 'performance testing', 'QA'
 ---
 
 A few months ago I wrote

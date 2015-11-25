@@ -3,7 +3,7 @@ layout: post
 Title: Thunderbolt to Ethernet Adapter on Linux
 date: 2015-05-04 22:27
 comments: true
-categories: ['RHEL', 'Mac', 'fedora.planet']
+Tags: 'RHEL', 'Mac', 'fedora.planet'
 ---
 
 As it seems my

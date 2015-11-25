@@ -3,7 +3,7 @@ layout: post
 Title: Fedora 20 Virtualization Test Day Post-mortem
 date: 2013-10-08 22:01
 comments: true
-categories: ['Fedora', 'QA']
+Tags: 'Fedora', 'QA'
 ---
 
 !["Fedora 20 banner"](/images/fedora/fedora20-banner.png "Fedora 20 banner")

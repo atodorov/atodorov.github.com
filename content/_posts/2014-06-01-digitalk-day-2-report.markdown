@@ -3,7 +3,7 @@ layout: post
 Title: DigitalK Day 2 Report
 date: 2014-06-01 20:38
 comments: true
-categories: ['events']
+Tags: 'events'
 ---
 
 Continuing to report on the last few events that took place in Sofia this week.

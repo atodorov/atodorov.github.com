@@ -3,7 +3,7 @@ layout: post
 Title: Hello World
 date: 2013-01-28 15:12
 comments: true
-categories: 
+Tags:
 ---
 
 Hi everyone and welcome to my blog! My name is Alex and you can read more [about me](/blog/2013/01/25/about-me/)

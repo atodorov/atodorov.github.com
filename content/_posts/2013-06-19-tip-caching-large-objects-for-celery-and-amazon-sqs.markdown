@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Caching Large Objects for Celery and Amazon SQS 
 date: 2013-06-19 14:29
 comments: true
-categories: ['tips', 'Amazon', 'SQS', 'cloud']
+Tags: 'tips', 'Amazon', 'SQS', 'cloud'
 ---
 
 Some time ago a guy called Matt

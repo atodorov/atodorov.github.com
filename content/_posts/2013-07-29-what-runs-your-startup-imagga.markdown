@@ -3,7 +3,7 @@ layout: post
 Title: What Runs Your Start-up - Imagga
 date: 2013-07-29 12:32
 comments: true
-categories: ['what runs', 'start-up', 'Amazon', 'EC2']
+Tags: 'what runs', 'start-up', 'Amazon', 'EC2'
 ---
 
 <img src="/images/startup/imagga.png" alt="Imagga" style="float:left; margin-right:10px;" />

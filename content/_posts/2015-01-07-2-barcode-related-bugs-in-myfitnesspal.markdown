@@ -3,7 +3,7 @@ layout: post
 Title: 2 Barcode Related Bugs in MyFitnessPal
 date: 2015-01-07 14:44
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 ![Barcode that fails to scan](/images/barcode/fail.jpg "Barcode that fails to scan")

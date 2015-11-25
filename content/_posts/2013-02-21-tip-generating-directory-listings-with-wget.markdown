@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Generating Directory Listings with wget
 date: 2013-02-21 12:12
 comments: true
-categories: ['tips']
+Tags: 'tips'
 ---
 
 Today I was looking to generate a list of all files under remote site directory,

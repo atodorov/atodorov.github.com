@@ -3,7 +3,7 @@ layout: post
 Title: SMS PIN Verification with Twilio and Django
 date: 2014-03-19 11:41
 comments: true
-categories: ['Django', 'cloud', 'Twilio']
+Tags: 'Django', 'cloud', 'Twilio'
 ---
 
 This is a quick example of SMS PIN verification using Twilio cloud services and

@@ -3,7 +3,7 @@ layout: post
 Title: Bug in Python URLGrabber/cURL on Fedora and Amazon Linux
 date: 2013-11-29 14:05
 comments: true
-categories: ['Fedora', 'QA', 'cloud', 'Python']
+Tags: 'Fedora', 'QA', 'cloud', 'Python'
 ---
 
 Accidentally I have discovered a bug for Python's

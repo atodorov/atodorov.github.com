@@ -3,7 +3,7 @@ layout: post
 Title: Software Developer - Employee vs. Contractor, Part 1
 date: 2013-06-07 10:00
 comments: true
-categories: ['start-up']
+Tags: 'start-up'
 ---
 
 <img src="/images/goldrush.jpg" alt="Gold prospectors" style="clear:both;display:block;"/>

@@ -3,7 +3,7 @@ layout: post
 Title: Speed Comparison of Web Proxies Written in Python Twisted and Go
 date: 2014-11-19 16:57
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 After I figured out that

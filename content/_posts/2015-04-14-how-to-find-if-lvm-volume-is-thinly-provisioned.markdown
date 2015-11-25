@@ -3,7 +3,7 @@ layout: post
 Title: How to Find if LVM Volume is Thinly Provisioned
 date: 2015-04-14 15:40
 comments: true
-categories: ['RHEL', 'Fedora']
+Tags: 'RHEL', 'Fedora'
 ---
 
 The latest versions of Red Hat Enterprise Linux, CentOS and Fedora all

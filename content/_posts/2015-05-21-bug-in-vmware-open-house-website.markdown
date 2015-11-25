@@ -3,7 +3,7 @@ layout: post
 Title: Bug in VMware Open House Website
 date: 2015-05-21 14:55
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 !["Open House website bug"](/images/vmware_bug.png "Bug in VMware Open House website")

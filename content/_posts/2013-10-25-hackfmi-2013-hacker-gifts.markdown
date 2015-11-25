@@ -3,7 +3,7 @@ layout: post
 Title: HackFMI 2013 Hacker Gifts
 date: 2013-10-25 16:33
 comments: true
-categories: ['events', 'hackathon', 'hackfmi']
+Tags: 'events', 'hackathon', 'hackfmi'
 ---
 
 [HackFMI](http://hackfmi.com) starts tonight!

@@ -3,7 +3,7 @@ layout: post
 Title: The Best IT School in Bulgaria
 date: 2013-04-27 22:28
 comments: true
-categories: 
+Tags:
 ---
 
 <img src="/images/tues/9gag_test_robots.jpg" alt="How TUES tests robots" style="clear:both;display:block;"/>

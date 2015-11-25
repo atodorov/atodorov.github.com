@@ -3,7 +3,7 @@ layout: post
 Title: What Runs Your Start-up
 date: 2013-03-27 12:00
 comments: true
-categories: ["what runs", "start-up"]
+Tags: "what runs", "start-up"
 ---
 
 I am starting a new section called 

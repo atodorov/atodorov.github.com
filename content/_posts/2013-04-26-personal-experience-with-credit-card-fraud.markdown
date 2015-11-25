@@ -3,7 +3,7 @@ layout: post
 Title: Personal Experience With Credit Card Fraud
 date: 2013-04-26 23:39
 comments: true
-categories: 
+Tags:
 ---
 
 <img src="/images/creditcard.jpg" alt="Credit Card Of The Future" style="display:block;clear:both;"/>

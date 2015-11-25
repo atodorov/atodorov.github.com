@@ -3,7 +3,7 @@ layout: post
 Title: Running Anaconda from git
 date: 2015-11-13 10:48
 comments: true
-categories: ['QA', 'fedora.planet']
+Tags: 'QA', 'fedora.planet'
 ---
 
 It is now possible to execute anaconda directly from a git checkout.

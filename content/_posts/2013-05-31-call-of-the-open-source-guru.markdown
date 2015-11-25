@@ -3,7 +3,7 @@ layout: post
 Title: Call of the Open Source Guru
 date: 2013-05-31 12:12
 comments: true
-categories: 
+Tags:
 ---
 
 This week (28.05.2013) I've attended an interesting

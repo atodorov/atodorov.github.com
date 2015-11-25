@@ -3,7 +3,7 @@ layout: post
 Title: Duplicate Amazon SQS Messages Cause Multiple Emails
 date: 2013-12-06 22:47
 comments: true
-categories: ['cloud', 'Amazon', 'SQS', 'SES']
+Tags: 'cloud', 'Amazon', 'SQS', 'SES'
 ---
 
 Beware if using Amazon Simple Queue Service to send email messages!

@@ -3,7 +3,7 @@ layout: post
 Title: Book Review: The 4-Hour Workweek
 date: 2014-08-03 11:47
 comments: true
-categories: ['books']
+Tags: 'books'
 ---
 
 <a href="http://www.amazon.com/gp/product/0307465357/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0307465357&linkCode=as2&tag=atodorovorg-20&linkId=MNAE55VHLT2NVN2Z">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0307465357" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />

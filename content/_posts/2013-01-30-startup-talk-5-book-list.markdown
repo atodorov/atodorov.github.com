@@ -3,7 +3,7 @@ layout: post
 Title: StartUP Talk#5 - book list
 date: 2013-01-30 16:14
 comments: true
-categories: ['start-up', 'books']
+Tags: 'start-up', 'books'
 ---
 
 Yesterday I have visited an interesting talk by

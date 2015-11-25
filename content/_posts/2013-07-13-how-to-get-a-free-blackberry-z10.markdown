@@ -3,7 +3,7 @@ layout: post
 Title: How to Get a Free BlackBerry Z10
 date: 2013-07-13 11:30
 comments: true
-categories: ['BlackBerry', 'Z10']
+Tags: 'BlackBerry', 'Z10'
 ---
 
 Do you want to have the latest and greatest devices on the market? For free?

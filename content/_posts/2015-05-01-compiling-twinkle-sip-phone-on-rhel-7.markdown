@@ -3,7 +3,7 @@ layout: post
 Title: Compiling Twinkle SIP Phone on RHEL 7
 date: 2015-05-01 15:04
 comments: true
-categories: ['RHEL', 'fedora.planet']
+Tags: 'RHEL', 'fedora.planet'
 ---
 
 One of the best SIP clients for Linux is [Twinkle](http://twinklephone.com/).

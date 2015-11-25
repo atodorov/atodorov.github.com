@@ -3,7 +3,7 @@ layout: post
 Title: Spoiler: How to Open Source Existing Proprietary Code in 10 Steps
 date: 2014-04-23 22:47
 comments: true
-categories: ['Fedora', 'Django']
+Tags: 'Fedora', 'Django'
 ---
 
 We've heard about companies opening up their proprietary software products,

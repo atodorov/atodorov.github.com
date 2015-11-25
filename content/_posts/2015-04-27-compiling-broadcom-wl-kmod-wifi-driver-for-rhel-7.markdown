@@ -3,7 +3,7 @@ layout: post
 Title: Compiling Broadcom wl-kmod WiFi Driver for RHEL 7
 date: 2015-04-27 12:17
 comments: true
-categories: ['fedora.planet', 'RHEL', 'Mac']
+Tags: 'fedora.planet', 'RHEL', 'Mac'
 ---
 
 After I got my 

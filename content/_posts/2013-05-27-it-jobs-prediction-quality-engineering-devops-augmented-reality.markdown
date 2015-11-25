@@ -3,7 +3,7 @@ layout: post
 Title: IT Jobs Prediction: Quality Engineering, DevOps, Augmented Reality
 date: 2013-05-27 21:14
 comments: true
-categories: 
+Tags:
 ---
 
 Tomorrow I'm taking part in a discussion at Sofia University targeted towards

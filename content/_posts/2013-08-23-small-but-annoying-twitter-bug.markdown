@@ -3,7 +3,7 @@ layout: post
 Title: Small But Annoying Twitter Bug
 date: 2013-08-23 12:09
 comments: true
-categories: ['QA']
+Tags: 'QA'
 ---
 
 !["Tweet Embed Bug"](/images/twitter_embed_bug.png "Tweet Embed Bug")

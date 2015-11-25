@@ -3,7 +3,7 @@ layout: post
 Title: Software Design Vol. 1
 date: 2014-06-30 23:22
 comments: true
-categories: 
+Tags:
 ---
 
 I'm starting a new series where I will share my thoughts about software design,

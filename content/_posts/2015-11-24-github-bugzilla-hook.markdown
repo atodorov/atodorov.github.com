@@ -3,7 +3,7 @@ layout: post
 Title: GitHub Bugzilla Hook
 date: 2015-11-24 13:32
 comments: true
-categories: ['QA', 'fedora.planet']
+Tags: 'QA', 'fedora.planet'
 ---
 
 Last month I've created a tool which adds comments to Bugzilla when a commit

@@ -3,7 +3,6 @@ layout: post
 Title: Another Day At The Office
 date: 2013-06-09 00:08
 comments: true
-categories: [ADO]
 ---
 
 I just found [Office Snapshots](http://officesnapshots.com/) and they don't have

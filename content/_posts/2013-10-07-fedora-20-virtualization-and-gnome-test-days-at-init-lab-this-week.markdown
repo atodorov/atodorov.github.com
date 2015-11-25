@@ -3,7 +3,7 @@ layout: post
 Title: Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week
 date: 2013-10-07 10:28
 comments: true
-categories: ['Fedora', 'QA']
+Tags: 'Fedora', 'QA'
 ---
 
 Fedora 20 Virtualization and GNOME test days will be tomorrow (8th Oct) and on

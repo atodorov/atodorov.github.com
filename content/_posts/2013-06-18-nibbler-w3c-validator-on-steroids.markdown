@@ -3,7 +3,7 @@ layout: post
 Title: Nibbler - W3C Validator on Steroids
 date: 2013-06-18 23:59
 comments: true
-categories: ['tips']
+Tags: 'tips'
 ---
 
 I've recently found Nibbler which gives you a report scoring the website out of
