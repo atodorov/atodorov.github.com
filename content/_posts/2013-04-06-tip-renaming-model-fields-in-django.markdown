@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Renaming Model Fields in Django
 date: 2013-04-06 01:18
 comments: true
-Tags: 'tips', 'Django'
+Tags: tips, Django
 ---
 
 Did you ever have to re-purpose a column in your database schema? 

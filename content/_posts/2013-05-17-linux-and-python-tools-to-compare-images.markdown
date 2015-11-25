@@ -3,7 +3,7 @@ layout: post
 Title: Linux and Python Tools To Compare Images
 date: 2013-05-17 21:13
 comments: true
-Tags: 'Python', 'QA'
+Tags: Python, QA
 ---
 
 How to compare two images in Python? A tricky question with quite a few answers.

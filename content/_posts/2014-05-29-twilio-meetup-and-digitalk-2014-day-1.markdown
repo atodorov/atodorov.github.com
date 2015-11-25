@@ -3,7 +3,7 @@ layout: post
 Title: Twilio meetup and DigitalK 2014 Day 1
 date: 2014-05-29 22:31
 comments: true
-Tags: 'events'
+Tags: events
 ---
 
 The conference season (this week) is officially open! So here's my report about it.

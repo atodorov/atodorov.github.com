@@ -3,7 +3,7 @@ layout: post
 Title: Bug in Nokia software shows wrong caller ID
 date: 2013-03-19 09:57
 comments: true
-Tags: 'Nokia', 'QA'
+Tags: Nokia, QA
 ---
 
 During the past month one of my cell phones,

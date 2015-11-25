@@ -3,7 +3,7 @@ layout: post
 Title: Performance Profiling in Python with cProfile
 date: 2014-11-05 14:40
 comments: true
-Tags: 'Python', 'QA'
+Tags: Python, QA
 ---
 
 This is a quick reference on profiling Python applications with

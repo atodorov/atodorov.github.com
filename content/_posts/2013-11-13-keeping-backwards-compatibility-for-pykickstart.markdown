@@ -3,7 +3,7 @@ layout: post
 Title: Keeping Backwards Compatibility for pykickstart
 date: 2013-11-13 23:59
 comments: true
-Tags: 'QA', 'Fedora'
+Tags: QA, Fedora
 ---
 
 Consider the following scenario:

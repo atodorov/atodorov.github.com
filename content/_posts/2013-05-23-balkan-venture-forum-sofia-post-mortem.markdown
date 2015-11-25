@@ -3,7 +3,7 @@ layout: post
 Title: Balkan Venture Forum Sofia Post-mortem
 date: 2013-05-23 13:29
 comments: true
-Tags: 'start-up', 'events'
+Tags: start-up, events
 ---
 
 <img src="/images/bkvf_sofia.png" alt="BkVF Sofia" style="float:left;margin-right:10px;"/>

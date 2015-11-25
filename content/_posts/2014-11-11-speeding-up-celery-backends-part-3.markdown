@@ -3,7 +3,7 @@ layout: post
 Title: Speeding Up Celery Backends, Part 3
 date: 2014-11-11 15:59
 comments: true
-Tags: 'Python', 'Django', 'QA'
+Tags: Python, Django, QA
 ---
 
 In the second part of this article we've seen 

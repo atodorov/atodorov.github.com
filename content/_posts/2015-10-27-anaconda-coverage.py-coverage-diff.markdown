@@ -3,7 +3,7 @@ layout: post
 Title: Anaconda &amp; coverage.py - Pt.3 - coverage-diff
 date: 2015-10-27 11:12
 comments: true
-Tags: 'QA', 'fedora.planet'
+Tags: QA, fedora.planet
 ---
 
 In my [previous post](/blog/2015/10/15/anaconda-coverage.py-details/)

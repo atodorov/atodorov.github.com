@@ -3,7 +3,7 @@ layout: post
 Title: Proxy Support for wrk HTTP Benchmarking Tool
 date: 2014-11-18 10:04
 comments: true
-Tags: 'QA'
+Tags: QA
 ---
 
 Few times recently I've seen people using an HTTP benchmarking tool called

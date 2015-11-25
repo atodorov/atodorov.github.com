@@ -3,7 +3,7 @@ layout: post
 Title: Python Twitter + django-social-auth == Hello New User
 date: 2013-03-07 21:47
 comments: true
-Tags: 'Django', 'django-social-auth', 'Twitter', 'tips'
+Tags: Django, django-social-auth, Twitter, tips
 ---
 
 I have been experimenting with the [twitter](https://pypi.python.org/pypi/twitter)

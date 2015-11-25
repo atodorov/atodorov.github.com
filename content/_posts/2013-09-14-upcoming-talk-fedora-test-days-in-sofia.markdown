@@ -3,7 +3,7 @@ layout: post
 Title: Upcoming Talk: Fedora Test Days in Sofia
 date: 2013-09-14 23:11
 comments: true
-Tags: 'Fedora', 'QA', 'events'
+Tags: Fedora, QA, events
 ---
 
 On September 28th I will be giving a short talk about

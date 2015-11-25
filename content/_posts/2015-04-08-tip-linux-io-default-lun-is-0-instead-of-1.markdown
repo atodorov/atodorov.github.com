@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Linux-IO default LUN is 0 instead of 1
 date: 2015-04-08 15:09
 comments: true
-Tags: 'RHEL', 'Fedora', 'tips'
+Tags: RHEL, Fedora, tips
 ---
 
 I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target

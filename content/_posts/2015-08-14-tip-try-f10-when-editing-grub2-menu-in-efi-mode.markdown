@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Try F10 When Editing grub2 Menu in EFI Mode
 date: 2015-08-14 14:06
 comments: true
-Tags: 'Fedora', 'RHEL', 'Mac', 'fedora.planet', 'tips'
+Tags: Fedora, RHEL, Mac, fedora.planet, tips
 ---
 
 When editing the grub2 menu (especially in EFI mode) it tells you to

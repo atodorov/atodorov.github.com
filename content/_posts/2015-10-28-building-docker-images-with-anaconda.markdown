@@ -3,7 +3,7 @@ layout: post
 Title: Building Docker Images with Anaconda
 date: 2015-10-28 16:10
 comments: true
-Tags: 'fedora.planet'
+Tags: fedora.planet
 ---
 
 Anaconda, the Fedora and Red Hat Enterprise Linux installer, has gained some

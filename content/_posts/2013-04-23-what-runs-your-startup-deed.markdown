@@ -3,7 +3,7 @@ layout: post
 Title: What Runs Your Start-up - Deed
 date: 2013-04-23 10:56
 comments: true
-Tags: 'what runs', 'start-up', 'Microsoft', 'Windows', 'Azure'
+Tags: what runs, start-up, Microsoft, Windows, Azure
 ---
 
 <img src="/images/startup/deed.jpg" alt="Deed" style="float:left; margin-right: 15px;" />

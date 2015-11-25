@@ -3,7 +3,7 @@ layout: post
 Title: Cross-domain AJAX Served From CDN
 date: 2012-05-19 16:58
 comments: true
-Tags: 'Amazon', 'CloudFront', 'cloud'
+Tags: Amazon, CloudFront, cloud
 ---
 
 This week Amazon [announced](http://aws.typepad.com/aws/2012/05/amazon-cloudfront-support-for-dynamic-content.html)

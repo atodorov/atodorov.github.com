@@ -3,7 +3,7 @@ layout: post
 Title: Exploring BlackBerry 10 - Environment Variables
 date: 2013-08-05 00:20
 comments: true
-Tags: 'BlackBerry'
+Tags: BlackBerry
 ---
 
 Just a quick reference of environment variables as seen by the 

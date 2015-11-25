@@ -3,7 +3,7 @@ layout: post
 Title: Fedora Test Days are Coming to Sofia
 date: 2013-09-23 14:27
 comments: true
-Tags: 'Fedora', 'QA'
+Tags: Fedora, QA
 ---
 
 As I [mentioned earlier](/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/)

@@ -3,7 +3,7 @@ layout: post
 Title: How I Created a Website In Two Days Without Coding
 date: 2013-07-31 21:55
 comments: true
-Tags: 'Amazon', 'S3'
+Tags: Amazon, S3
 ---
 
 ![header image](/images/logos/obuvki41plus_header.png "header image")

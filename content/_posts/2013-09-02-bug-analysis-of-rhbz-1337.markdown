@@ -3,7 +3,7 @@ layout: post
 Title: Bug Analysis Of RHBZ #1337
 date: 2013-09-02 16:38
 comments: true
-Tags: 'QA'
+Tags: QA
 ---
 
 In my [previous post](/blog/2013/08/23/red-hats-ebugzilla-hits-one-million-bugs/)

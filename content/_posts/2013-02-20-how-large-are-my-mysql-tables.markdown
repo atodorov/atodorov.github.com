@@ -3,7 +3,7 @@ layout: post
 Title: How Large Are My MySQL Tables
 date: 2013-02-20 12:03
 comments: true
-Tags: 'MySQL', 'Amazon', 'S3'
+Tags: MySQL, Amazon, S3
 ---
 
 <img src="/images/database.jpg" alt="database" style="display:block;clear:both;"/>

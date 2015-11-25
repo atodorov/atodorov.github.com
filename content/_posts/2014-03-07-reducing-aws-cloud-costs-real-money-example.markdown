@@ -3,7 +3,7 @@ layout: post
 Title: Reducing AWS Cloud Costs - Real Money Example
 date: 2014-03-07 17:14
 comments: true
-Tags: 'Amazon', 'cloud'
+Tags: Amazon, cloud
 ---
 
 [Last month](http://aws.amazon.com/ebs/pricing/effective-february-2014/) Amazon

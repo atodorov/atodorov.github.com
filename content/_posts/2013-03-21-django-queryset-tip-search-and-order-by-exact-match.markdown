@@ -3,7 +3,7 @@ layout: post
 Title: Django QuerySet tip - Search and Order By Exact Match
 date: 2013-03-21 22:56
 comments: true
-Tags: 'tips', 'Django'
+Tags: tips, Django
 ---
 
 How do you order Django QuerySet results so that first item is the
@@ -14,7 +14,7 @@ mailing list.
 {% codeblock Solution by Tom Evans, example is mine lang:python %}
 >>> from django.db.models import Q
 >>> Package.objects.filter(
-        Q(name='Django') | Q(name__icontains='Django')
+        Q(name=Django) | Q(name__icontains=Django)
     ).extra(
         select={'match' : 'name = "Django"'}
     ).order_by('-match', 'name')

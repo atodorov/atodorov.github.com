@@ -3,7 +3,7 @@ layout: post
 Title: Positive Biological Effects of Open Source on Humans
 date: 2014-04-08 16:45
 comments: true
-Tags: 'Fedora'
+Tags: Fedora
 ---
 
 Recently I watched a [talk by Simon Sinek](http://www.youtube.com/watch?v=ReRcHdeUG9Y)

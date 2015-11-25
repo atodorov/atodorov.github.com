@@ -3,7 +3,7 @@ layout: post
 Title: Call for Ideas: Graphical Test Coverage Reports
 date: 2015-07-27 13:04
 comments: true
-Tags: 'Fedora', "QA", 'Django', 'fedora.planet'
+Tags: Fedora, QA, Django, fedora.planet
 ---
 
 If you are working with Python and writing unit tests chances are you are

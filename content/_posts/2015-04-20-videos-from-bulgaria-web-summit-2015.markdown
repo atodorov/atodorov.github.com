@@ -3,7 +3,7 @@ layout: post
 Title: Videos from Bulgaria Web Summit 2015
 date: 2015-04-20 10:45
 comments: true
-Tags: 'Django', 'Fedora'
+Tags: Django, Fedora
 ---
 
 ![We're full](/images/bgws2015.jpg "We're full")

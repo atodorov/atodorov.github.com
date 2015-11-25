@@ -3,7 +3,7 @@ layout: post
 Title: Howto: Django Forms with Dynamic Fields
 date: 2014-05-03 16:58
 comments: true
-Tags: 'Django'
+Tags: Django
 ---
 
 Last week at [HackFMI 3.0](http://hackfmi.com) one team had to display a form

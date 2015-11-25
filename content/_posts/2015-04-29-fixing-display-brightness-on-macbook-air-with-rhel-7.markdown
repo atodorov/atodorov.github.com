@@ -3,7 +3,7 @@ layout: post
 Title: Fixing Display Brightness on MacBook Air with RHEL 7
 date: 2015-04-29 12:14
 comments: true
-Tags: 'fedora.planet', 'Mac', 'RHEL'
+Tags: fedora.planet, Mac, RHEL
 ---
 
 One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control

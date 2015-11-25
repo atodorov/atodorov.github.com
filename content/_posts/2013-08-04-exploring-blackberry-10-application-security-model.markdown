@@ -3,7 +3,7 @@ layout: post
 Title: Exploring BlackBerry 10 - Application Security Model
 date: 2013-08-04 00:02
 comments: true
-Tags: 'BlackBerry'
+Tags: BlackBerry
 ---
 
 BlackBerry 10 OS application security model is enforced by two major components:

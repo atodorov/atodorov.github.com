@@ -3,7 +3,7 @@ layout: post
 Title: Text To Speech for Bulgarian
 date: 2013-07-20 14:06
 comments: true
-Tags: 'start-up'
+Tags: start-up
 ---
 
 I've been exploring text-to-speech synthesizers for Bulgarian in the past

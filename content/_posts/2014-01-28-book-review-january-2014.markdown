@@ -3,7 +3,7 @@ layout: post
 Title: Book Review - January 2014
 date: 2014-01-28 23:16
 comments: true
-Tags: 'books'
+Tags: books
 ---
 
 Sorry for not being able to write anything this month. I've been very sick

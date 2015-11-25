@@ -3,7 +3,7 @@ layout: post
 Title: Performance Test: Amazon EBS vs. Instance Storage, Pt.1
 date: 2013-02-26 23:02
 comments: true
-Tags: 'performance testing', 'QA', 'Amazon', 'EC2', 'cloud'
+Tags: performance testing, QA, Amazon, EC2, cloud
 ---
 
 I'm exploring the possibility to speed-up my cloud database so I've run some

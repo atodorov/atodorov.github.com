@@ -3,7 +3,7 @@ layout: post
 Title: Open Source Quality Assurance Infrastructure for Fedora QA
 date: 2013-11-19 14:12
 comments: true
-Tags: 'Fedora', 'QA'
+Tags: Fedora, QA
 ---
 
 !["Beaker test lab"](/images/fedora/beaker.png "Beaker test lab")

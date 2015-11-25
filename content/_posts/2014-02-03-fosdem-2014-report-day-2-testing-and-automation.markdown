@@ -3,7 +3,7 @@ layout: post
 Title: FOSDEM 2014 Report - Day #2 Testing and Automation
 date: 2014-02-03 22:54
 comments: true
-Tags: 'events', 'Fedora', 'QA'
+Tags: events, Fedora, QA
 ---
 
 ![Testing and Automation](/images/fosdem/2014/testing_automation.jpg "Testing and Automation")

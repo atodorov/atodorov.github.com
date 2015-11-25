@@ -3,7 +3,7 @@ layout: post
 Title: Secure VNC Installation of Red Hat Enterprise Linux 6
 date: 2013-02-13 15:40
 comments: true
-Tags: "RHEL", 'tips'
+Tags: RHEL, tips
 ---
 
 <img src="/images/rhel6_welcome.png" alt="RHEL 6 welcome screen" />

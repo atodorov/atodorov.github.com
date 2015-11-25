@@ -3,7 +3,7 @@ layout: post
 Title: How do You Test Fonts
 date: 2014-03-04 21:30
 comments: true
-Tags: 'Fedora', 'QA'
+Tags: Fedora, QA
 ---
 
 [Previously](/blog/2014/03/03/last-week-in-fedora-qa/) I mentioned about testing

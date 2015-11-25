@@ -3,7 +3,7 @@ layout: post
 Title: How to Update Dependencies on OpenShift
 date: 2012-02-18 01:00
 comments: true
-Tags: "tips", "OpenShift", "cloud"
+Tags: tips, OpenShift, cloud
 ---
 
 If you are already running some cool application on [OpenShift](http://openshift.redhat.com)

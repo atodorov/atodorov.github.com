@@ -3,7 +3,7 @@ layout: post
 Title: July Events - BlackBerry Mini Jam and Devel Conference
 date: 2013-07-01 11:06
 comments: true
-Tags: 'events'
+Tags: events
 ---
 
 If you happen to be on holiday in Bulgaria but would still like to meet

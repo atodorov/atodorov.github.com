@@ -3,7 +3,7 @@ layout: post
 Title: Protected RPM repositories with yum and SSL
 date: 2011-09-15 19:40
 comments: true
-Tags: 'RHEL'
+Tags: RHEL
 ---
 
 In this article I'm going to describe a simple way to set-up RPM repositories with access control using only standard tools such as yum, SSL and Apache.

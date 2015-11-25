@@ -3,7 +3,7 @@ layout: post
 Title: Book Review: How to Win Friends
 date: 2014-07-19 18:05
 comments: true
-Tags: 'books'
+Tags: books
 ---
 
 <a href="http://www.amazon.com/gp/product/0091906350/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0091906350&linkCode=as2&tag=atodorovorg-20&linkId=Q2DBNO4UJBZ6HQX2">How to Win Friends & Influence People</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0091906350" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />

@@ -3,7 +3,7 @@ layout: post
 Title: Moving /tmp from EBS to Instance Storage
 date: 2014-02-10 13:48
 comments: true
-Tags: 'cloud', 'Amazon'
+Tags: cloud, Amazon
 ---
 
 I've seen a fair amount of stories about moving away from Amazon's EBS volumes

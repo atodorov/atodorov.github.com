@@ -3,7 +3,7 @@ layout: post
 Title: django-social-auth tip: Reminder of Login Provider
 date: 2013-03-14 12:04
 comments: true
-Tags: 'tips', 'Django', 'django-social-auth'
+Tags: tips, Django, django-social-auth
 ---
 
 Every now and then users forget their passwords. This is why I prefer using

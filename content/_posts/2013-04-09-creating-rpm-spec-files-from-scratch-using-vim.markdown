@@ -3,7 +3,7 @@ layout: post
 Title: Creating RPM .spec Files From Scratch Using Vim
 date: 2013-04-09 15:24
 comments: true
-Tags: 'tips', 'RPM'
+Tags: tips, RPM
 ---
 
 On a Red Hat Enterprise Linux or Fedora (or compatible) system execute

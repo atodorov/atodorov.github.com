@@ -3,7 +3,7 @@ layout: post
 Title: OpenSource.com article - 10 steps to migrate your closed software to open source
 date: 2014-05-06 16:14
 comments: true
-Tags: 'Django', 'Fedora'
+Tags: Django, Fedora
 ---
 
 {% blockquote %}

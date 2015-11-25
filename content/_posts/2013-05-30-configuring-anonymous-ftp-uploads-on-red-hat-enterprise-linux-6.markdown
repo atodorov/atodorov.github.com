@@ -3,7 +3,7 @@ layout: post
 Title: Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6
 date: 2013-05-30 13:07
 comments: true
-Tags: 'RHEL', 'tips'
+Tags: RHEL, tips
 ---
 
 Install related packages and make configuration changes:

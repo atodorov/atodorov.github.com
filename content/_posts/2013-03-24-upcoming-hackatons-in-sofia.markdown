@@ -3,7 +3,7 @@ layout: post
 Title: Upcoming Hackathons in Sofia
 date: 2013-03-24 22:02
 comments: true
-Tags: 'hackathon', 'open government', 'hackfmi', 'events'
+Tags: hackathon, open government, hackfmi, events
 ---
 
 [Hackathons](https://en.wikipedia.org/wiki/Hackathon)

@@ -3,7 +3,7 @@ layout: post
 Title: Tip: Installing Missing debuginfo Packages for ABRT
 date: 2013-10-12 14:38
 comments: true
-Tags: 'tips', 'Fedora'
+Tags: tips, Fedora
 ---
 
 !["Reporting disabled"](/images/reporting_disabled.png "Reporting disabled")

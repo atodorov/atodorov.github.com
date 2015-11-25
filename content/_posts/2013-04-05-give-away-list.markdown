@@ -3,7 +3,7 @@ layout: post
 Title: Give Away List
 date: 2013-04-05 14:53
 comments: true
-categories : ['books']
+categories : [books]
 ---
 
 I have accumulated some items which I don't need or will not use anymore.

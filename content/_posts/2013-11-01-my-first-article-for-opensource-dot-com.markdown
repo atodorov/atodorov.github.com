@@ -3,7 +3,7 @@ layout: post
 Title: My First Article for OpenSource.com
 date: 2013-11-01 12:47
 comments: true
-Tags: 'Fedora'
+Tags: Fedora
 ---
 
 !["Annoying bugs"](/images/annoyingbugs.png "Annoying bugs")

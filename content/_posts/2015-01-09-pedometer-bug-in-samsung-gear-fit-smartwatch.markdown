@@ -3,7 +3,7 @@ layout: post
 Title: Pedometer Bug in Samsung Gear Fit Smartwatch
 date: 2015-01-09 10:53
 comments: true
-Tags: 'QA', 'Samsung'
+Tags: QA, Samsung
 ---
 
 <a style="float:left;display:inline-block;margin-right:10px;" href="http://www.amazon.com/gp/product/B00J4DY8RU/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00J4DY8RU&linkCode=as2&tag=atodorovorg-20&linkId=RNJGVYUTOOJFGWOU">

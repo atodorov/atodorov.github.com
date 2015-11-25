@@ -3,7 +3,7 @@ layout: post
 Title: Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6
 date: 2013-05-14 21:26
 comments: true
-Tags: 'RHEL'
+Tags: RHEL
 ---
 
 This article is a step-by-step guide to using two passwords with [EncFS](http://www.arg0.net/encfs).

@@ -3,7 +3,7 @@ layout: post
 Title: The Silicon Prairie Movie
 date: 2013-03-25 11:44
 comments: true
-Tags: 'start-up'
+Tags: start-up
 ---
 
 {% blockquote %}

@@ -3,7 +3,7 @@ layout: post
 Title: Anaconda &amp; coverage.py - Pt.1 - Introduction
 date: 2015-10-14 13:44
 comments: true
-Tags: 'QA', 'fedora.planet'
+Tags: QA, fedora.planet
 ---
 
 Since early 2015 I've been working on testing installation related

@@ -3,7 +3,7 @@ layout: post
 Title: OpenShift Cron Takes Over Celerybeat
 date: 2012-03-14 20:48
 comments: true
-Tags: "tips", "OpenShift", "cloud"
+Tags: tips, OpenShift, cloud
 ---
 
 [*Celery*](http://celeryproject.org/) is an asynchronous task queue/job queue

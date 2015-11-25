@@ -3,7 +3,7 @@ layout: post
 Title: Skip or Render Specific Blocks from Jinja2 Templates
 date: 2014-02-21 00:08
 comments: true
-Tags: 'Python', 'Django', 'Fedora'
+Tags: Python, Django, Fedora
 ---
 
 I wasn't able to find detailed information on how to skip rendering

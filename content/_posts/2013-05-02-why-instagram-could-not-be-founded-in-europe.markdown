@@ -3,7 +3,7 @@ layout: post
 Title: Why Instagram Could Not Be Founded In Europe
 date: 2013-05-02 08:07
 comments: true
-Tags: "start-up"
+Tags: start-up
 ---
 
 *Can a company like Instagram be founded in Europe and successfully exit for

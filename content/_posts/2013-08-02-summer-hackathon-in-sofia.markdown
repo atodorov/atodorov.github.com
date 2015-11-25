@@ -3,7 +3,7 @@ layout: post
 Title: Summer Hackathon in Sofia
 date: 2013-08-02 14:45
 comments: true
-Tags: 'events', 'hackathon', 'hackfmi'
+Tags: events, hackathon, hackfmi
 ---
 
 <img src="/images/hackfmi/Logo_SummerHackFMI.png" alt="Summer HackFMI" style="display:block;clear:both" />

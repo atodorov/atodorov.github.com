@@ -3,7 +3,7 @@ layout: post
 Title: How to Configure targetcli to Listen on IPv4 and IPv6
 date: 2015-04-08 11:46
 comments: true
-Tags: 'RHEL', 'Fedora'
+Tags: RHEL, Fedora
 ---
 
 In order to configure *targetcli* to listen on both IPv4 and IPv6 one has to

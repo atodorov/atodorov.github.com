@@ -3,7 +3,7 @@ layout: post
 Title: Tip: How to Get to the OpenShift Shell
 date: 2012-03-09 21:43
 comments: true
-Tags: "tips", "OpenShift", "cloud"
+Tags: tips, OpenShift, cloud
 ---
 
 I wanted to examine the Perl environment on OpenShift and got tired of making snapshots,

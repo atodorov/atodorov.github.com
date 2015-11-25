@@ -3,7 +3,7 @@ layout: post
 Title: How Do You Test Thai Scalable Fonts
 date: 2014-03-17 22:51
 comments: true
-Tags: 'Fedora', 'QA'
+Tags: Fedora, QA
 ---
 
 Recently I wrote about [testing fonts](/blog/2014/03/04/how-do-you-test-fonts/).
