@@ -1,0 +1,27 @@
+---
+layout: post
+Title: Another Day At The Office
+date: 2013-06-09 00:08
+comments: true
+---
+
+I just found [Office Snapshots](http://officesnapshots.com/) and they don't have
+any submissions from Bulgarian companies. No coincidence given the fact that many Bulgarian
+offices are years behind contemporary work space design and architecture.
+
+<img src="/images/troopers_skyscraper.jpg" alt="Troopers atop a Skyscraper" />
+Image by [egerbver](http://www.flickr.com/photos/egerbver/6196391731/lightbox/)
+
+So I got an idea - 
+start my own blog section on this topic. It would be interesting to see the spaces
+Bulgarian IT operates in. If the place is good - embrace it, if it sucks - despise it!
+What do you think?  
+
+Selection rules are as follow: 
+
+* Needs to be local Bulgarian company or a local branch of a foreign company;
+* Can also be a start-up, an NGO or other organization;
+* Business is in the field of IT and technology; Co-working spaces are exception;
+
+
+Let me know which companies you want to see featured here! Can you arrange a visit for me - let me know!
