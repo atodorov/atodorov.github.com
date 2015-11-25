@@ -18,6 +18,8 @@ STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']
 
 HEADER_COVER = "/images/bricks.jpg"
 
+COLOR_SCHEME_CSS = "github.css"
+
 PATH = 'content'
 
 TIMEZONE = 'Europe/Sofia'
@@ -43,7 +45,8 @@ DEFAULT_PAGINATION = 10
 
 THEME = '../pelican-clean-blog'
 
-DISQUS_SITENAME = "atodorov"
 TWITTER_USERNAME = "atodorov_"
 TWITTER_URL = "https://twitter.com/%s" % TWITTER_USERNAME
 GITHUB_URL = "https://github.com/atodorov"
+
+ADDTHIS_PUBID = "ra-5103cc5a2bc6ba17"
