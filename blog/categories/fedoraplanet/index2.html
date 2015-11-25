@@ -83,6 +83,36 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/" rel="bookmark" title="Permalink to Why does sysctl not write under /sys">
+                <h2 class="post-title">
+                    Why does sysctl not write under /sys
+                </h2>
+            </a>
+            <p>Recently I've been looking into 
+<a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/">fixing tilde and Fn keys mapping for MacBook Air</a>
+and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
+possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is 
+<a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
+<div class="highlight"><pre>static const char PROC_PATH[] = &quot;/proc/sys/&quot;;
+</pre></div>
+
+
+<p>IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
+The only open question I see is backward compatibility - maybe adding new parameter (e.g. --sysfs)
+or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.</p>
+<p>I've asked sysctl maintainers on the 
+<a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys">procps mailing list</a>
+but so far got no answer. </p>
+<p>Is anyone else interested in this? How do you set parameter values under /sys then ?</p>
+<p><strong>NOTE:</strong> for my particular purposes I could have used config files under
+<em>/etc/modprobe.d/</em> or a startup script (I used that) instead.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 13 May 2015
+<p>There are <a href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/" rel="bookmark" title="Permalink to Using USB to VGA Adapter on MacBook Air with Linux">
                 <h2 class="post-title">
                     Using USB to VGA Adapter on MacBook Air with Linux
@@ -1167,8 +1197,6 @@ Could not create NetworkPortal in configFS.
     <!-- Bootstrap Core JavaScript -->
     <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
 
-    <!-- Custom Theme JavaScript -->
-    <script src="http://atodorov.org/theme/js/clean-blog.min.js"></script>
 
     <script type="text/javascript">
     var _gaq = _gaq || [];

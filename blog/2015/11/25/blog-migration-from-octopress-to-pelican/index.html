@@ -8,7 +8,7 @@
         <meta name="description" content="">
         <meta name="author" content="">
 
-        <title> How to Find if LVM Volume is Thinly Provisioned</title>
+        <title> Blog Migration: from Octopress to Pelican</title>
 
             <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
 
@@ -37,8 +37,8 @@
 
 
 
-        <meta name="tags" contents="RHEL" />
-        <meta name="tags" contents="Fedora" />
+        <meta name="tags" contents="fedora.planet" />
+        <meta name="tags" contents="Django" />
 
 
 			<meta property="og:locale" content="en">
@@ -46,11 +46,11 @@
 
 	<meta property="og:type" content="article">
 	<meta property="article:author" content="">
-	<meta property="og:url" content="http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/">
-	<meta property="og:title" content="How to Find if LVM Volume is Thinly Provisioned">
+	<meta property="og:url" content="http://atodorov.org/blog/2015/11/25/blog-migration-from-octopress-to-pelican/">
+	<meta property="og:title" content="Blog Migration: from Octopress to Pelican">
 	<meta property="og:description" content="">
 	<meta property="og:image" content="http://atodorov.org/">
-	<meta property="article:published_time" content="2015-04-14 15:40:00+03:00">
+	<meta property="article:published_time" content="2015-11-25 17:24:00+02:00">
 </head>
 
 <body>
@@ -86,10 +86,10 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>How to Find if LVM Volume is Thinly Provisioned</h1>
+                        <h1>Blog Migration: from Octopress to Pelican</h1>
                         <span class="meta">Posted by
                                 <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                             on Tue 14 April 2015
+                             on Wed 25 November 2015
                         </span>
                         
                     </div>
@@ -104,40 +104,51 @@
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
     <!-- Post Content -->
     <article>
-        <p>The latest versions of Red Hat Enterprise Linux, CentOS and Fedora all
-support LVM thin provisioning. Here's how to tell if a logical volume
-has been thinly provisioned or not.</p>
-<p>Using <code>lvs</code> to display volume information look under the <em>Attr</em> column.
-Attribute values have the following meaning:</p>
-<blockquote>
-<p>The lv_attr bits are:</p>
-<p>1  Volume type: (C)ache, (m)irrored, (M)irrored without initial sync, (o)rigin,
-(O)rigin  with  merging  snapshot, (r)aid,  (R)aid  without  initial  sync,
-(s)napshot,  merging  (S)napshot, (p)vmove, (v)irtual, mirror or raid (i)mage,
-mirror or raid (I)mage out-of-sync, mirror (l)og device, under  (c)onversion,
-thin  (V)olume,  (t)hin pool, (T)hin pool data, raid or pool m(e)tadata or
-pool metadata spare.</p>
-</blockquote>
-<p>This is how <code>lvs</code> looks like when you have a regular LVM setup:</p>
-<div class="highlight"><pre># lvs
-  LV   VG              Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
-  root rhel_dhcp70-183 -wi-ao---- 17,47g                                                    
-  swap rhel_dhcp70-183 -wi-ao----  2,00g
-</pre></div>
-
-
-<p>When using LVM thin provisioning you're looking for the left-most attribute bit
-to be V, t or T. Here's an example:</p>
-<div class="highlight"><pre># lvs
-  LV     VG              Attr       LSize  Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert
-  pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                            
-  root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                   
-  swap   rhel_dhcp71-101 -wi-ao----  2,00g
-</pre></div>
+        <p>Finally I have migrated this blog from <a href="http://octopress.org">Octopress</a> to
+<a href="https://github.com/getpelican/pelican">Pelican</a>. I am using the
+<a href="https://github.com/gilsondev/pelican-clean-blog/">clean-blog</a> theme with
+<a href="https://github.com/gilsondev/pelican-clean-blog/pull/3">modifications</a>.</p>
+<p>See the
+<a href="https://github.com/atodorov/atodorov.github.com/commits/pelican_migration">pelican_migration</a>
+branch for technical details. Here's the summary:</p>
+<ul>
+<li>I removed pretty much everything that Octopress uses, only left the content files;</li>
+<li>I've added my own CSS overrides;</li>
+<li>I had several Octopress pages, these were merged and converted into blog posts;</li>
+<li>In Octopress all titles had quotes, which were removed using sed;</li>
+<li>Octopress categories were converted to Pelican tags and removed quotes around them,
+again using sed;</li>
+<li>Manually updated Octopress's <code>{% codeblock %}</code> and <code>{% blockquote %}</code> tags to
+match Pelican syntax. This is the biggest content change;</li>
+<li>I was trying to keep as much as the original URLs as possible. <code>ARTICLE_URL</code>,
+<code>ARTICLE_SAVE_AS</code>, <code>TAG_URL</code>, <code>TAG_SAVE_AS</code>, <code>FEED_ALL_ATOM</code> and <code>TAG_FEED_ATOM</code>
+are the relevant settings. For 50+ posts I had to manually specify the <code>Slug:</code>
+variable so that they match existing Octopress URLs. Verifying the resulting names
+was as simple as diffing the file listings from both Octopress and Pelican.
+<strong>NOTE:</strong> The <em>fedora.planet</em> tag changed its URL because there's no way
+to assign slugs for tags in Pelican. The new URL is missing the dot! Luckily
+I make use of this only in one place which was manually updated!</li>
+</ul>
+<p>I've also found a few bugs and missing functionality:</p>
+<ul>
+<li>There's no <code>rake new_post</code> counterpart in Pelican;</li>
+<li>As far as I can tell the preview server doesn't regenerate files automatically;</li>
+<li>Pelican will merge code blocks and quotes which follow one after another
+but are separated with a newline in Markdown. This makes it visually impossible
+to distinguish code from two files, or quotes from two people, which are published
+without any other comments in between;</li>
+<li>The syntax doesn't allow to specify filename or a quote title when publishing
+code blocks and quotes. Octopress did that easily. I will be happy with something
+like <code>:::python settings.py</code>.</li>
+<li>There's no way to specify slugs for tag URLs in order to keep compatibility
+with existing URLs.</li>
+</ul>
+<p>I will be filling Issues and pull requests for both Pelican and the clear-blog theme
+in the next few days so stay tuned!</p>
     </article>
 
         <div class="tags">
-            <p>tags: <a href="http://atodorov.org/blog/categories/rhel/">RHEL</a>, <a href="http://atodorov.org/blog/categories/fedora/">Fedora</a>, </p>
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, <a href="http://atodorov.org/blog/categories/django/">Django</a>, </p>
         </div>
 
         <hr>
@@ -166,8 +177,8 @@ to be V, t or T. Here's an example:</p>
             <div id="disqus_thread"></div>
             <script type="text/javascript">
                 var disqus_shortname = 'atodorov';
-                var disqus_identifier = 'blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/';
-                var disqus_url = 'http://atodorov.org/blog/2015/04/14/how-to-find-if-lvm-volume-is-thinly-provisioned/';
+                var disqus_identifier = 'blog/2015/11/25/blog-migration-from-octopress-to-pelican/';
+                var disqus_url = 'http://atodorov.org/blog/2015/11/25/blog-migration-from-octopress-to-pelican/';
                 (function() {
                     var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
                     dsq.src = '//atodorov.disqus.com/embed.js';
