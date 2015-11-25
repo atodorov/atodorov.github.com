@@ -1,126 +1,118 @@
-
 <!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <title>Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</title>
-  <meta name="author" content="Alexander Todorov">
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
 
-  
-  <meta name="description" content="This article is a step-by-step guide to using two passwords with EncFS.
-The primary password is required and may be used to secure all data;
-the &hellip;">
-  
+        <title> Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</title>
 
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
 
-  
-  <link rel="canonical" href="http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="http://feeds.feedburner.com/atodorov" rel="alternate" title="atodorov.org - you can logoff, but you can never leave" type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Russo+One" rel="stylesheet" type="text/css" />
-<meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM" />
-<meta property="og:title" content="Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6"/>
-<meta property="og:type" content="website"/>
-<meta property="og:url" content="/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/"/>
-  
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
 
-  ga('create', 'UA-37979549-1', 'atodorov.org');
-  ga('send', 'pageview');
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+        <link href="http://atodorov.org/override.css" rel="stylesheet">
 
-</script>
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
 
 
+
+
+        <meta name="tags" contents="RHEL" />
+
+
+			<meta property="og:locale" content="en">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+	<meta property="article:author" content="">
+	<meta property="og:url" content="http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/">
+	<meta property="og:title" content="Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6">
+	<meta property="og:description" content="">
+	<meta property="og:image" content="http://atodorov.org/">
+	<meta property="article:published_time" content="2013-05-14 21:26:00+03:00">
 </head>
 
-<body   >
-  <header role="banner"><hgroup>
-<div id="logo-container">
-<div id="logo">atodorov.org</div>
-<div id="logo-sub"><em>
-you can logoff, but you can never leave
-</em></div>
-</div>
-</hgroup>
+<body>
 
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="http://feeds.feedburner.com/atodorov" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-<ul class="main-navigation">
-  <li><a href="/">Home</a></li>
-  <li><a href="/give-away/">Give Away List</a></li>
-  <li><a href="/projects/">Projects</a></li>
-  <li><a href="/domains/">Domains</a></li>
-  <li><a href="http://amzn.to/1wTPaLe">Previous: Traction</a></li>
-  <li><a href="http://amzn.to/1lLi5NU">Previous: How to Win Friends</a></li>
-</ul>
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
 
-</nav>
-  <div id="main">
-    <div id="content">
-      <div>
-<article class="hentry" role="article">
-  
-  <header>
-    
-      <h1 class="entry-title">Dual Password Encryption With EncFS on Red Hat Enterprise Linux 6</h1>
-    
-    
-      <p class="meta">
-        
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
 
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
 
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Tue 14 May 2013
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-14T21:26:00+03:00" pubdate data-updated="true">May 14<span>th</span>, 2013</time>
-        
-         | <a href="#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-<div class="entry-content"><p>This article is a step-by-step guide to using two passwords with <a href="http://www.arg0.net/encfs">EncFS</a>.
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>This article is a step-by-step guide to using two passwords with <a href="http://www.arg0.net/encfs">EncFS</a>.
 The primary password is required and may be used to secure all data;
 the secondary password is optional and may be stored on USB stick or
-other removable media and used to secure more sensitive data.</p>
-
+other removable media and used to secure more sensitive data. </p>
 <p><img src="/images/encfs_raleigh.jpg" alt="Article in Raleigh" style="clear:both;display:block;"/>
-The original article in Red Hat&#8217;s Raleigh HQ!</p>
-
+The original article in Red Hat's Raleigh HQ!</p>
 <p>This article has been originally written for and published by
 <a href="http://magazine.redhat.com/2007/06/13/dual-password-encryption-with-encfs/">Red Hat Magazine</a>.
 Here is a shortened version with updated commands for Red Hat Enterprise Linux 6.</p>
-
 <h2>Technical Information</h2>
-
 <p>EncFS provides an encrypted filesystem in user-space. EncFS provides security
 against offline attacks like a stolen notebook.
 EncFS works on files and directories, not an entire block device.
@@ -129,46 +121,40 @@ The data is stored on the underlying filesystem and meta-data is preserved.
 File attributes such as ownership, modification date and permission bits are not encrypted
 and are visible to anybody. EncFS is acting like a translator between the user and
 the filesystem, encrypting and decrypting on the fly.</p>
-
 <p>EncFS is easy to use and requires no special setup. A local user has to be in the ‘fuse’
 group to use EncFS. It does not require ‘root’ privileges.
-EncFS can be used with secondary passwords. This could be used to store a separate set of files on the same encrypted filesystem.
-EncFS ignores files which do not decode properly, so files created with separate passwords will
+EncFS can be used with secondary passwords. This could be used to store a separate set of files on the same encrypted filesystem. 
+EncFS ignores files which do not decode properly, so files created with separate passwords will 
 only be visible when the filesystem is mounted with the associated password.
-There is the option to read passwords from an external program or stdin (standard input).
+There is the option to read passwords from an external program or stdin (standard input). 
 This option combined with custom scripting makes EncFS very flexible.
-By default, all FUSE based filesystems are visible only to the user who mounted them.
+By default, all FUSE based filesystems are visible only to the user who mounted them. 
 No other users (including root) can view the filesystem contents.</p>
-
 <h2>Installing EncFS</h2>
-
 <p>Install fuse-encfs from <a href="https://fedoraproject.org/wiki/EPEL">EPEL</a>:</p>
+<div class="highlight"><pre># yum install fuse-encfs
+</pre></div>
 
-<pre><code># yum install fuse-encfs
-</code></pre>
 
 <p>Load the FUSE module:</p>
+<div class="highlight"><pre># /sbin/modprobe fuse
+</pre></div>
 
-<pre><code># /sbin/modprobe fuse
-</code></pre>
 
 <p>And, finally, add any users that will use EncFS to group ‘fuse’:</p>
+<div class="highlight"><pre># usermod -Gfuse jdoe
+</pre></div>
 
-<pre><code># usermod -Gfuse jdoe
-</code></pre>
 
 <h2>Using EncFS</h2>
-
 <p>Using EncFS does not differ from using any other filesystem.
-The only thing you need to do is to mount it somewhere and start creating
+The only thing you need to do is to mount it somewhere and start creating 
 files and directories under the mount point.</p>
-
 <p><strong>Warning:</strong> Use only absolute path names with EncFS!</p>
-
 <p>Create working directories:</p>
+<div class="highlight"><pre><span class="nv">$ </span>mkdir -p ~/encrypted ~/plain
+</pre></div>
 
-<pre><code>$ mkdir -p ~/encrypted ~/plain
-</code></pre>
 
 <ul>
 <li><code>plain/</code> – looks like a normal directory. All files stored here look like normal
@@ -176,382 +162,260 @@ files for the user who mounted this directory with EncFS. This acts like a virtu
 directory performing encryption and decryption.</li>
 <li><code>encrypted/</code> – looks garbled. The actual data is stored here and is encrypted.</li>
 </ul>
-
-
 <p>Now you can mount the new EncFS volume for the first time. This assumes a default configuration:</p>
-
-<pre><code>$ encfs /home/jdoe/encrypted /home/jdoe/plain
+<div class="highlight"><pre><span class="nv">$ </span>encfs /home/jdoe/encrypted /home/jdoe/plain
 Creating new encrypted volume.
 Please choose from one of the following options:
- enter "x" for expert configuration mode,
- enter "p" for pre-configured paranoia mode,
- anything else, or an empty line will select standard mode.
-?&gt; 
+ enter <span class="s2">&quot;x&quot;</span> <span class="k">for</span> expert configuration mode,
+ enter <span class="s2">&quot;p&quot;</span> <span class="k">for</span> pre-configured paranoia mode,
+ anything <span class="k">else</span>, or an empty line will <span class="k">select</span> standard mode.
+?&gt;
 
 Standard configuration selected.
 
 Configuration finished.  The filesystem to be created has
 the following properties:
-Filesystem cipher: "ssl/aes", version 3:0:2
-Filename encoding: "nameio/block", version 3:0:1
-Key Size: 192 bits
-Block Size: 1024 bytes
-Each file contains 8 byte header with unique IV data.
+Filesystem cipher: <span class="s2">&quot;ssl/aes&quot;</span>, version 3:0:2
+Filename encoding: <span class="s2">&quot;nameio/block&quot;</span>, version 3:0:1
+Key Size: <span class="m">192</span> bits
+Block Size: <span class="m">1024</span> bytes
+Each file contains <span class="m">8</span> byte header with unique IV data.
 Filenames encoded using IV chaining mode.
 File holes passed through to ciphertext.
 
-Now you will need to enter a password for your filesystem.
+Now you will need to enter a password <span class="k">for</span> your filesystem.
 You will need to remember this password, as there is absolutely
 no recovery mechanism.  However, the password can be changed
 later using encfsctl.
 
 New Encfs Password: **********
 Verify Encfs Password: **********
-</code></pre>
+</pre></div>
+
 
 <p>Create a file:</p>
+<div class="highlight"><pre><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;some content&quot;</span> &gt; ~/plain/file.one
+</pre></div>
 
-<pre><code>$ echo "some content" &gt; ~/plain/file.one
-</code></pre>
 
 <p>Check contents in <code>plain/</code>:</p>
-
-<pre><code>$ ls -la ~/plain/
+<div class="highlight"><pre><span class="nv">$ </span>ls -la ~/plain/
 total 12
-drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
-drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
--rw-rw-r--. 1 jdoe jdoe   13 May 14 21:31 file.one
+drwxrwxr-x. <span class="m">2</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:31 .
+drwx------. <span class="m">6</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:29 ..
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe   <span class="m">13</span> May <span class="m">14</span> 21:31 file.one
 
-$ cat ~/plain/file.one 
+<span class="nv">$ </span>cat ~/plain/file.one 
 some content
-</code></pre>
+</pre></div>
+
 
 <p>Check what’s in <code>encrypted/</code>:</p>
-
-<pre><code>$ ls -la ~/encrypted/
+<div class="highlight"><pre><span class="nv">$ </span>ls -la ~/encrypted/
 total 16
-drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
-drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
--rw-rw-r--. 1 jdoe jdoe 1083 May 14 21:30 .encfs6.xml
--rw-rw-r--. 1 jdoe jdoe   21 May 14 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
-</code></pre>
+drwxrwxr-x. <span class="m">2</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:31 .
+drwx------. <span class="m">6</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:29 ..
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe <span class="m">1083</span> May <span class="m">14</span> 21:30 .encfs6.xml
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe   <span class="m">21</span> May <span class="m">14</span> 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
+</pre></div>
+
 
 <p><strong>Warning:</strong> <code>.encfs6.xml</code> is a special file. When performing backups or restoring data,
 make sure to keep this file!</p>
-
 <p>Inspect the contents of encrypted file:</p>
+<div class="highlight"><pre><span class="nv">$ </span>cat ~/encrypted/Wq5NZ6q-yP-fYNWYsjzFhHf9 
+���r�N�M���<span class="s2">&quot;p��</span>
+</pre></div>
 
-<pre><code>$ cat ~/encrypted/Wq5NZ6q-yP-fYNWYsjzFhHf9 
-���r�N�M���"p��
-</code></pre>
 
 <p>Unmount the filesystem and mount it again with another password:</p>
-
-<pre><code>$ fusermount -u ~/plain/
-$ encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
+<div class="highlight"><pre><span class="nv">$ </span>fusermount -u ~/plain/
+<span class="nv">$ </span>encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
 EncFS Password: *****
-</code></pre>
+</pre></div>
 
-<p><strong>Caution:</strong> We are using the &#8211;anykey option to allow secondary passwords.</p>
 
+<p><strong>Caution:</strong> We are using the --anykey option to allow secondary passwords.</p>
 <p>Check <code>plain/</code> again. The directory is empty. Previous files were not decoded with the new password.</p>
-
-<pre><code>$ ls -la ~/plain/
+<div class="highlight"><pre><span class="nv">$ </span>ls -la ~/plain/
 total 8
-drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:31 .
-drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
-</code></pre>
+drwxrwxr-x. <span class="m">2</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:31 .
+drwx------. <span class="m">6</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:29 ..
+</pre></div>
+
 
 <p>Now create another file that will be in “hidden” mode:</p>
+<div class="highlight"><pre><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;hidden contents&quot;</span> &gt; ~/plain/file.two
+</pre></div>
 
-<pre><code>$ echo "hidden contents" &gt; ~/plain/file.two
-</code></pre>
 
 <p>Check again what’s in <code>encrypted/</code>. Both files are stored in the same directory:</p>
-
-<pre><code>$ ls -la ~/encrypted/
+<div class="highlight"><pre><span class="nv">$ </span>ls -la ~/encrypted/
 total 20
-drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:35 .
-drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
--rw-rw-r--. 1 jdoe jdoe 1083 May 14 21:30 .encfs6.xml
--rw-rw-r--. 1 jdoe jdoe   24 May 14 21:35 PfkZHs16YsKkznnTujaVsOuS
--rw-rw-r--. 1 jdoe jdoe   21 May 14 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
-</code></pre>
+drwxrwxr-x. <span class="m">2</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:35 .
+drwx------. <span class="m">6</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:29 ..
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe <span class="m">1083</span> May <span class="m">14</span> 21:30 .encfs6.xml
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe   <span class="m">24</span> May <span class="m">14</span> 21:35 PfkZHs16YsKkznnTujaVsOuS
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe   <span class="m">21</span> May <span class="m">14</span> 21:31 Wq5NZ6q-yP-fYNWYsjzFhHf9
+</pre></div>
+
 
 <p>Unmount and mount again using the first password:</p>
-
-<pre><code>$ fusermount -u ~/plain/
-$ encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
+<div class="highlight"><pre><span class="nv">$ </span>fusermount -u ~/plain/
+<span class="nv">$ </span>encfs --anykey /home/jdoe/encrypted /home/jdoe/plain
 EncFS Password: **********
-</code></pre>
+</pre></div>
+
 
 <p>Inspect the contents of <code>plain/</code> again. The second file was not decoded properly and is not shown:</p>
-
-<pre><code>$ ls -la ~/plain/
+<div class="highlight"><pre><span class="nv">$ </span>ls -la ~/plain/
 total 12
-drwxrwxr-x. 2 jdoe jdoe 4096 May 14 21:35 .
-drwx------. 6 jdoe jdoe 4096 May 14 21:29 ..
--rw-rw-r--. 1 jdoe jdoe   13 May 14 21:31 file.one
-</code></pre>
+drwxrwxr-x. <span class="m">2</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:35 .
+drwx------. <span class="m">6</span> jdoe jdoe <span class="m">4096</span> May <span class="m">14</span> 21:29 ..
+-rw-rw-r--. <span class="m">1</span> jdoe jdoe   <span class="m">13</span> May <span class="m">14</span> 21:31 file.one
+</pre></div>
+
 
 <h2>Summary</h2>
-
 <p>You have learned how to use encryption to protect your data.
-There is also a nice graphical application
+There is also a nice graphical application 
 for using EncFS with KDE called <a href="http://kde-apps.org/content/show.php?content=54078">K-EncFS</a>.
-I&#8217;ll be happy to answer any questions or comments.</p>
-</div>
+I'll be happy to answer any questions or comments.</p>
+    </article>
 
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/rhel/">RHEL</a>, </p>
+        </div>
 
-  <footer>
-    <p class="meta">
-      
-  
+        <hr>
+        <div class="sharing">
+            <!-- AddThis Button BEGIN -->
+            <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+                <a class="addthis_button_preferred_1"></a>
+                <a class="addthis_button_preferred_2"></a>
+                <a class="addthis_button_preferred_3"></a>
+                <a class="addthis_button_preferred_4"></a>
+                <a class="addthis_button_preferred_5"></a>
+                <a class="addthis_button_preferred_6"></a>
+                <a class="addthis_button_preferred_7"></a>
+                <a class="addthis_button_preferred_8"></a>
+                <a class="addthis_button_preferred_9"></a>
+                <a class="addthis_button_compact"></a>
+                <a class="addthis_counter addthis_bubble_style"></a>
+            </div>
+            <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+            <!-- AddThis Button END -->
+        </div>
 
-<span class="byline author vcard">Posted by <span class="fn">Alexander Todorov</span></span>
+        <hr>
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/';
+                var disqus_url = 'http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
 
-      
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-14T21:26:00+03:00" pubdate data-updated="true">May 14<span>th</span>, 2013</time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/rhel/'>RHEL</a>
-  
-</span>
-
-
-    </p>
-    
-      <div class="sharing">
-<!-- AddThis Button BEGIN -->
-<div class="addthis_toolbox addthis_default_style addthis_32x32_style">
-<a class="addthis_button_preferred_1"></a>
-<a class="addthis_button_preferred_2"></a>
-<a class="addthis_button_preferred_3"></a>
-<a class="addthis_button_preferred_4"></a>
-<a class="addthis_button_preferred_5"></a>
-<a class="addthis_button_preferred_6"></a>
-<a class="addthis_button_preferred_7"></a>
-<a class="addthis_button_preferred_8"></a>
-<a class="addthis_button_preferred_9"></a>
-<a class="addthis_button_compact"></a>
-<a class="addthis_counter addthis_bubble_style"></a>
-</div>
-<script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
-<!-- AddThis Button END -->
-</div>
-
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2013/05/02/why-instagram-could-not-be-founded-in-europe/" title="Previous Post: Why Instagram Could Not Be Founded In Europe">&laquo; Why Instagram Could Not Be Founded In Europe</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/" title="Next Post: Linux and Python Tools To Compare Images">Linux and Python Tools To Compare Images &raquo;</a>
-      
-    </p>
-  </footer>
-</article>
-
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-  </section>
-
-</div>
-
-<aside class="sidebar">
-  
-    <section>
-  <p>
-    I am a QA contractor at Red Hat responsible for over
-    <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
-    a general purpose open source developer, Red Hat Certified professional,
-    cloud hacker and an <a href="/projects/">entrepreneur</a>.
-  </p>
-
-  <p>
-    I'm living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
-    which is emerging as a busy place for start-up founders and tech enthusiasts
-    in Eastern Europe! You can find more about me <a href="/about/">here</a>.
-  </p>
-</section>
-
-<section>
-  
-    <a href="http://twitter.com/atodorov_" class="twitter-follow-button" data-show-count="true">Follow @atodorov_</a>
-  
-</section>
-
-
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="sitesearch" value="atodorov.org" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-
-<section>
-    <h1>
-        <a href="/blog/categories/books/">Book Reviews</a>
-    </h1>
-</section>
-<section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">python-libs in RHEL 7.2 broke SSL verification in s3cmd</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/24/github-bugzilla-hook/">GitHub Bugzilla Hook</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF, Pt.2 </a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/23/tip-running-dnf-plugins-from-git/">Tip: Running DNF Plugins from git</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/">Updated MacBook Air Drivers for RHEL 7.2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/20/revamping-anaconda-dogtail-tests/">Revamping Anaconda's Dogtail Tests</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/13/running-anaconda-from-git/">Running Anaconda from git</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/">How Krasi Tsonev Broke Planet.SofiaValley.com</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/11/ui-usability-bug-qachallengeaccepted.com/">UI Usability Bug for QAChallengeAccepted.com</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/11/11/openfest-2015-impressions/">OpenFest 2015 Impressions</a>
-      </li>
-    
-  </ul>
-</section>
-<section>
-  <h1>Disclaimer</h1>
-  <p>
-Some of the links contained within this site have my referral id (e.g., Amazon), which provides me with a small commission for each sale. Thank you for your support.
-  </p>
-</section>
-
-
-
-
-  
-</aside>
-
-
+            </div>
+        </div>
     </div>
-  </div>
-  <footer role="contentinfo"><p>
-  <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a>
-  &amp;
-  <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
-  2011-2015 &diams; Alexander Todorov
-  &diams;
-  <a href="/about/">About Me</a>
-  &diams;
-  Popular categories:
-<a href="/blog/categories/rhel/">Red Hat</a>,
-<a href="/blog/categories/cloud/">Cloud</a>,
-<a href="/blog/categories/fedora/">Fedora</a>,
-<a href="/blog/categories/qa/">QA</a>,
-<a href="/blog/categories/start-up/">Start-up</a>
 
-  <a href="http://planet.sofiavalley.com" style="float:right">SofiaValley Blog</a>
-</p>
+    <hr>
 
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                        <li>
+                            <a href="https://twitter.com/atodorov_">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/atodorov">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    </ul>
+
+
+                    <section>
+                        <p>
+                            I am a QA contractor at Red Hat responsible for over
+                            <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
+                            a general purpose open source developer, Red Hat Certified professional,
+                            cloud hacker and an entrepreneur!
+                        </p>
+
+                        <p>
+                            I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+                            which is emerging as a busy place for start-up founders and tech enthusiasts
+                            in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+                          </p>
+                    </section>
+
+                    <form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+                        <fieldset role="search">
+                            <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+                            <input class="search" type="text" name="q" results="0" placeholder="Search" style="width:100%"/>
+                        </fieldset>
+                    </form>
+
+                    <p class="copyright text-muted">
+                        <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+                        <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+                        2011-2015 &diams; Alexander Todorov &diams;
+                        <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="http://atodorov.org/theme/js/clean-blog.min.js"></script>
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
 <script type="text/javascript">
-var uri = window.location.toString();
-if (uri.indexOf("?") > 0) {
-    var clean_uri = uri.substring(0, uri.indexOf("?"));
-    window.history.replaceState({}, document.title, clean_uri);
-}
-</script>
-
-</footer>
-  
-
-<script type="text/javascript">
-      var disqus_shortname = 'atodorov';
-      
-        
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/';
-        var disqus_url = 'http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/';
-        var disqus_script = 'embed.js';
-      
+    var disqus_shortname = 'atodorov';
     (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
     }());
 </script>
-
-
-
-<div id="fb-root"></div>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) {return;}
-  js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
-      script.src = 'https://apis.google.com/js/plusone.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
-    })();
-  </script>
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
 </body>
+
 </html>

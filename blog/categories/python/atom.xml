@@ -1,105 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-
-  <title><![CDATA[Category: Python | atodorov.org - you can logoff, but you can never leave]]></title>
-  <link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"/>
-  <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T22:05:37+02:00</updated>
-  <id>http://atodorov.org/</id>
-  <author>
-    <name><![CDATA[Alexander Todorov]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
-
-  
-  <entry>
-    <title type="html"><![CDATA[python-libs in RHEL 7.2 broke SSL verification in s3cmd]]></title>
-    <link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"/>
-    <updated>2015-11-24T21:44:00+02:00</updated>
-    <id>http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd</id>
-    <content type="html"><![CDATA[<p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-11-24T21:44:00+02:00</updated><entry><title>python-libs in RHEL 7.2 broke SSL verification in s3cmd</title><link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="alternate"></link><updated>2015-11-24T21:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-24:blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/</id><summary type="html">&lt;p&gt;Today started with &lt;a href="http://planet.sofiavalley.com"&gt;Planet Sofia Valley&lt;/a&gt; being
 broken again. Indeed it's been broken since last Friday when I've upgraded to
 the latest RHEL 7.2. I quickly identified that I was hitting
-<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+&lt;a href="https://github.com/s3tools/s3cmd/issues/647"&gt;Issue #647&lt;/a&gt;. Then I tried the
 git checkout without any luck. This is when I started to suspect that python-libs
-has been updated in an incompatible way.</p>
-
-<p>After series of reported bugs,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
-<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
-<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+has been updated in an incompatible way.&lt;/p&gt;
+&lt;p&gt;After series of reported bugs,
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916"&gt;rhbz#1284916&lt;/a&gt;,
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930"&gt;rhbz#1284930&lt;/a&gt;,
+&lt;a href="http://bugs.python.org/issue25722"&gt;Python#25722&lt;/a&gt;, it was clear that
+&lt;code&gt;ssl.py&lt;/code&gt; was working according to RFC6125, that Amazon S3 was not playing
 nicely with this same RFC and that my patch proposal was wrong.
-This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
-
-<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
-<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
-also supplied the logic which performs SSL hostname validation.</p>
-
-<pre><code>if not self._context.check_hostname and self._check_hostname:
+This immediately had me looking upper in the stack at &lt;code&gt;httplib.py&lt;/code&gt; and &lt;code&gt;s3cmd&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Indeed there was a change in &lt;code&gt;httplib.py&lt;/code&gt; which introduced two parameters,
+&lt;em&gt;context&lt;/em&gt; and &lt;em&gt;check_hostname&lt;/em&gt;, to &lt;code&gt;HTTPSConnection.__init__&lt;/code&gt;. The change
+also supplied the logic which performs SSL hostname validation.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
     try:
         ssl.match_hostname(self.sock.getpeercert(), server_hostname)
     except Exception:
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
         raise
-</code></pre>
+&lt;/pre&gt;&lt;/div&gt;
 
-<p>This looks a bit doggy as I don't quite understand the intention behind
-<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+
+&lt;p&gt;This looks a bit doggy as I don't quite understand the intention behind
+&lt;em&gt;not PREDICATE and PREDICATE&lt;/em&gt;. Anyway to disable the validation you need
 both parameters set to False, which is
-<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
-
-<p>Notice the two try-except blocks. This is in case we're running with a
+&lt;a href="https://github.com/s3tools/s3cmd/pull/668"&gt;PR #668&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Notice the two try-except blocks. This is in case we're running with a
 version that has a context but not the check_hostname parameter. I've found
-the <em>inspect.getmembers</em> function which can be used to figure out what
+the &lt;em&gt;inspect.getmembers&lt;/em&gt; function which can be used to figure out what
 parameters are there for the init method but a solution based on it
 doesn't appear to be more elegant. I will describe this in more details in
-my next post.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding Up Celery Backends, Part 3]]></title>
-    <link href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/"/>
-    <updated>2014-11-11T15:59:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3</id>
-    <content type="html"><![CDATA[<p>In the second part of this article we've seen
-<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
-Now let's explore what happens inside and see if we can't speed things up.</p>
-
-<p>I've used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
+my next post.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="RHEL"></category><category term="Python"></category></entry><entry><title>Speeding Up Celery Backends, Part 3</title><link href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/" rel="alternate"></link><updated>2014-11-11T15:59:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-11-11:blog/2014/11/11/speeding-up-celery-backends-part-3/</id><summary type="html">&lt;p&gt;In the second part of this article we've seen 
+&lt;a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/"&gt;how slow Celery actually is&lt;/a&gt;.
+Now let's explore what happens inside and see if we can't speed things up.&lt;/p&gt;
+&lt;p&gt;I've used &lt;a href="http://pycallgraph.slowchop.com/en/latest/"&gt;pycallgraph&lt;/a&gt; to create
 call graph visualizations of my application. It has the nice feature to also show
-execution time and use different colors for fast and slow operations.</p>
-
-<p>Full command line is:</p>
-
-<pre><code>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
-</code></pre>
-
-<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
-
-<h2>General findings</h2>
-
-<p><img src="/images/celery/general.png" title="call graph" alt="call graph" /></p>
-
-<ul>
-<li>The first four calls is where most of the time is spent as seen on the picture.</li>
-<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
-transport Kombu (not shown on picture)</li>
-<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
-<code>celery.app.base.Celery.send_task</code></li>
-<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
-rewrites the code.</li>
-</ul>
+execution time and use different colors for fast and slow operations.&lt;/p&gt;
+&lt;p&gt;Full command line is:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+&lt;/pre&gt;&lt;/div&gt;
 
 
-<h2>More findings</h2>
-
-<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-
-<pre><code>349         with self.producer_or_acquire(producer) as P:
+&lt;p&gt;where the &lt;code&gt;--include&lt;/code&gt; is used to limit the graph to a particular Python module(s).&lt;/p&gt;
+&lt;h2&gt;General findings&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="call graph" src="/images/celery/general.png" title="call graph" /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The first four calls is where most of the time is spent as seen on the picture. &lt;/li&gt;
+&lt;li&gt;As it seems most of the slow down comes from Celery itself, not the underlying messaging
+transport Kombu (not shown on picture)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;celery.app.amqp.TaskProducer.publish_task&lt;/code&gt; takes half of the execution time of
+&lt;code&gt;celery.app.base.Celery.send_task&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;celery.app.task.Task.delay&lt;/code&gt; directly executes &lt;code&gt;.apply_async&lt;/code&gt; and can be skipped if one
+rewrites the code.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;More findings&lt;/h2&gt;
+&lt;p&gt;In &lt;code&gt;celery.app.base.Celery.send_task&lt;/code&gt; there is this block of code:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;349         with self.producer_or_acquire(producer) as P:
 350             self.backend.on_task_call(P, task_id)
 351             task_id = P.publish_task(
 352                 name, args, kwargs, countdown=countdown, eta=eta,
@@ -107,331 +67,641 @@ rewrites the code.</li>
 354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
 355                 reply_to=reply_to or self.oid, **options
 356             )
-</code></pre>
+&lt;/pre&gt;&lt;/div&gt;
 
-<p><code>producer</code> is always None because delay() doesn't pass it as argument.
-I've tried passing it explicitly to apply_async() as so:</p>
 
-<pre><code>from djapp.celery import *
+&lt;p&gt;&lt;code&gt;producer&lt;/code&gt; is always None because delay() doesn't pass it as argument.
+I've tried passing it explicitly to apply_async() as so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;djapp.celery&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
 
-# app = debug_task._get_app() # if not defined in djapp.celery
-producer = app.amqp.producer_pool.acquire(block=True)
-debug_task.apply_async(producer=producer)
-</code></pre>
+&lt;span class="c"&gt;# app = debug_task._get_app() # if not defined in djapp.celery&lt;/span&gt;
+&lt;span class="n"&gt;producer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;app&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;amqp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;producer_pool&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;acquire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;block&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;debug_task&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;apply_async&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;producer&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;producer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
-<p>However this doesn't speedup anything. If we replace the above code block like this:</p>
 
-<pre><code>349         with producer as P:
-</code></pre>
+&lt;p&gt;However this doesn't speedup anything. If we replace the above code block like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;349         with producer as P:
+&lt;/pre&gt;&lt;/div&gt;
 
-<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
 
-<p>If you are unfamiliar with the with statement in Python please read
-<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
-a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
-<code>self.release()</code> on exit of the with statement.</p>
-
-<p>I also tried killing the with statement and using producer directly but with limited success. While
+&lt;p&gt;it blows up on the second iteration because producer and its channel is already None !?!&lt;/p&gt;
+&lt;p&gt;If you are unfamiliar with the with statement in Python please read
+&lt;a href="http://effbot.org/zone/python-with-statement.htm"&gt;this article&lt;/a&gt;. In short the with statement is
+a compact way of writing try/finally. The underlying &lt;code&gt;kombu.messaging.Producer&lt;/code&gt; class does a
+&lt;code&gt;self.release()&lt;/code&gt; on exit of the with statement.&lt;/p&gt;
+&lt;p&gt;I also tried killing the with statement and using producer directly but with limited success. While
 it was not released(was non None) on subsequent iterations the memory usage grew much more and there
-wasn't any performance boost.</p>
-
-<h2>Conclusion</h2>
-
-<p>The with statement is used throughout both Celery and Kombu and I'm not at all sure if
+wasn't any performance boost.&lt;/p&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;The with statement is used throughout both Celery and Kombu and I'm not at all sure if
 there's a mechanism for keep-alive connections. My time constraints are limited and I'll probably
-not spend anymore time on this problem soon.</p>
-
-<p>Since my use case involves task producer and consumers on localhost I'll try to workaround the
-current limitations by using Kombu directly
-(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
-uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding up Celery Backends, Part 2]]></title>
-    <link href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/"/>
-    <updated>2014-11-07T15:48:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2</id>
-    <content type="html"><![CDATA[<p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+not spend anymore time on this problem soon.&lt;/p&gt;
+&lt;p&gt;Since my use case involves task producer and consumers on localhost I'll try to workaround the
+current limitations by using Kombu directly 
+(see &lt;a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7"&gt;this gist&lt;/a&gt;) with a transport that
+uses either a UNIX domain socket or a name pipe (FIFO) file.&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>Speeding up Celery Backends, Part 2</title><link href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/" rel="alternate"></link><updated>2014-11-07T15:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-11-07:blog/2014/11/07/speeding-up-celery-backends-part-2/</id><summary type="html">&lt;p&gt;In the &lt;a href="/blog/2014/11/05/speeding-up-celery-backends/"&gt;first part&lt;/a&gt; of this
 post I looked at a few celery backends and discovered they didn't meet my needs.
-Why is the Celery stack slow? How slow is it actually?</p>
-
-<h2>How slow is Celery in practice</h2>
-
-<ul>
-<li>Queue: 500`000 msg/sec</li>
-<li>Kombu:  14`000 msg/sec</li>
-<li>Celery:  2`000 msg/sec</li>
-</ul>
-
-
-<h2>Detailed test description</h2>
-
-<p>There are three main components of the Celery stack:</p>
-
-<ul>
-<li>Celery itself</li>
-<li>Kombu which handles the transport layer</li>
-<li>Python Queue()'s underlying everything</li>
-</ul>
-
-
-<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
-run for 1 000 000 messages I got the following results:</p>
-
-<ul>
-<li>Raw Python Queue: Msgs per sec: 500`000</li>
-<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0
-
-<ul>
-<li>with json serializer: Msgs per sec: 5`988</li>
-<li>with pickle serializer: Msgs per sec: 12`820</li>
-<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
-Msgs per sec: 14`492</li>
-</ul>
-</li>
-</ul>
-
-
-<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
-25`000 msg/sec then the performance is saturated. I've observed similar behavior
+Why is the Celery stack slow? How slow is it actually?&lt;/p&gt;
+&lt;h2&gt;How slow is Celery in practice&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Queue: 500`000 msg/sec&lt;/li&gt;
+&lt;li&gt;Kombu:  14`000 msg/sec&lt;/li&gt;
+&lt;li&gt;Celery:  2`000 msg/sec&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Detailed test description&lt;/h2&gt;
+&lt;p&gt;There are three main components of the Celery stack: &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Celery itself&lt;/li&gt;
+&lt;li&gt;Kombu which handles the transport layer&lt;/li&gt;
+&lt;li&gt;Python Queue()'s underlying everything&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Using the &lt;a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7"&gt;Queue and Kombu tests&lt;/a&gt;
+run for 1 000 000 messages I got the following results:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Raw Python Queue: Msgs per sec: 500`000&lt;/li&gt;
+&lt;li&gt;Raw Kombu without Celery where &lt;code&gt;kombu/utils/__init__.py:uuid()&lt;/code&gt; is set to return 0&lt;ul&gt;
+&lt;li&gt;with json serializer: Msgs per sec: 5`988&lt;/li&gt;
+&lt;li&gt;with pickle serializer: Msgs per sec: 12`820&lt;/li&gt;
+&lt;li&gt;with the custom mem_serializer from &lt;a href="/blog/2014/11/05/speeding-up-celery-backends/"&gt;part 1&lt;/a&gt;:
+Msgs per sec: 14`492&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I've observed similar behavior 
 with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
 exceptions. This is probably the main reason performance becomes saturated over a longer
-execution.</p>
+execution.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Using &lt;a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953"&gt;celery_load_test.py&lt;/a&gt; modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Another interesting this worth outlining - in the kombu test there are these lines:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;with producers[connection].acquire(block=True) as producer:
+    for j in range(1000000):
+&lt;/pre&gt;&lt;/div&gt;
 
-<ul>
-<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
-loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
-</ul>
 
-
-<p>Another interesting this worth outlining - in the kombu test there are these lines:
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>with producers[connection].acquire(block=True) as producer:&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>for j in range(1000000):
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
-Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
-construct which is executed every time a new task is published. Next I will be looking
-into this to figure out exactly where the slowliness comes from.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Speeding up Celery Backends, Part 1]]></title>
-    <link href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/"/>
-    <updated>2014-11-05T15:20:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends</id>
-    <content type="html"><![CDATA[<p>I'm working on an application which fires a lot of Celery tasks - the more
+&lt;p&gt;If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there's the same &lt;code&gt;with producer.acquire(block=True)&lt;/code&gt;
+construct which is executed every time a new task is published. Next I will be looking 
+into this to figure out exactly where the slowliness comes from.&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>Speeding up Celery Backends, Part 1</title><link href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/" rel="alternate"></link><updated>2014-11-05T15:20:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-11-05:blog/2014/11/05/speeding-up-celery-backends/</id><summary type="html">&lt;p&gt;I'm working on an application which fires a lot of Celery tasks - the more
 the better! Unfortunately Celery backends seem to be rather slow :(.
-Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
-command for Django I was able to capture some metrics:</p>
-
-<ul>
-<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
-<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
-<li>Memory backend: around 3000 tasks/sec</li>
-</ul>
-
-
-<p>Not bad but I need in the order of 10000 tasks created per sec!
+Using the &lt;a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953"&gt;celery_load_test.py&lt;/a&gt;
+command for Django I was able to capture some metrics:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Amazon SQS backend: 2 or 3 tasks/sec&lt;/li&gt;
+&lt;li&gt;Filesystem backend: 2000 - 2500 tasks/sec&lt;/li&gt;
+&lt;li&gt;Memory backend: around 3000 tasks/sec&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Not bad but I need in the order of 10000 tasks created per sec!
 The other noticeable thing is that memory backend isn't much faster compared to
-the filesystem one! NB: all of these backends actually come from the kombu package.</p>
-
-<h2>Why is Celery slow ?</h2>
-
-<p>Using <code>celery_load_test.py</code> together with
-<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
-was able to pin-point some problematic areas:</p>
-
-<ul>
-<li><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+the filesystem one! NB: all of these backends actually come from the kombu package.&lt;/p&gt;
+&lt;h2&gt;Why is Celery slow ?&lt;/h2&gt;
+&lt;p&gt;Using &lt;code&gt;celery_load_test.py&lt;/code&gt; together with 
+&lt;a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/"&gt;cProfile&lt;/a&gt; I
+was able to pin-point some problematic areas:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;kombu/transports/virtual/__init__.py&lt;/code&gt;: class Channel.basic_publish() - does
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
-I called fastmemory which redefines the body_encoding property:</li>
-</ul>
+I called fastmemory which redefines the body_encoding property:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@cached_property&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;body_encoding&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nd">@cached_property</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">return</span> <span class="bp">None</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<ul>
-<li>Celery uses json or pickle (or other) serializers to serialize the data.
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Celery uses json or pickle (or other) serializers to serialize the data.
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
-the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:
-<div class='bogus-wrapper'><notextile><figure class='code'> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">s</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">s</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;kombu.serialization&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;register&lt;/span&gt;
 
-<ul>
-<li><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
-which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
-to 7000 tasks/sec.</li>
-</ul>
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;loads&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;dumps&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;
+
+&lt;span class="n"&gt;register&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;mem_serializer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;dumps&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;loads&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="n"&gt;content_type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;application/x-memory&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="n"&gt;content_encoding&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;binary&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
 
-<p>It's clear that a constant UUID is not of any practical use but serves well to illustrate
-how much does this function affect performance.</p>
-
-<p><strong>Note:</strong>
-Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;kombu/utils/__init__.py&lt;/code&gt;: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with &lt;code&gt;return "00000000"&lt;/code&gt; boosts performance
+to 7000 tasks/sec.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance. &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt;
+Subsequent executions of &lt;code&gt;celery_load_test&lt;/code&gt; seem to report degraded performance even with
 the most optimized transport backend. I'm not sure why is this. One possibility is the random
 UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
-generating more random numbers becomes slower. If you know better please tell me!</p>
-
-<p>I will be looking for a better understanding
+generating more random numbers becomes slower. If you know better please tell me!&lt;/p&gt;
+&lt;p&gt;I will be looking for a better understanding
 of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I'll be
 exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
-If you have any suggestions or pointers please share them in the comments.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Performance Profiling in Python with cProfile]]></title>
-    <link href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/"/>
-    <updated>2014-11-05T14:40:00+02:00</updated>
-    <id>http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile</id>
-    <content type="html"><![CDATA[<p>This is a quick reference on profiling Python applications with
-<a href="https://docs.python.org/2/library/profile.html#module-cProfile">cProfile</a>:</p>
+If you have any suggestions or pointers please share them in the comments.&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>Performance Profiling in Python with cProfile</title><link href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/" rel="alternate"></link><updated>2014-11-05T14:40:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-11-05:blog/2014/11/05/performance-profiling-in-python-with-cprofile/</id><summary type="html">&lt;p&gt;This is a quick reference on profiling Python applications with
+&lt;a href="https://docs.python.org/2/library/profile.html#module-cProfile"&gt;cProfile&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;python -m cProfile -s &lt;span class="nb"&gt;time &lt;/span&gt;application.py
+&lt;/pre&gt;&lt;/div&gt;
 
-<pre><code>$ python -m cProfile -s time application.py
-</code></pre>
 
-<p>The output is sorted by execution time <code>-s time</code></p>
+&lt;p&gt;The output is sorted by execution time &lt;code&gt;-s time&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;     &lt;span class="mi"&gt;9072842&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;8882140&lt;/span&gt; &lt;span class="nx"&gt;primitive&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="mf"&gt;9.830&lt;/span&gt; &lt;span class="nx"&gt;CPU&lt;/span&gt; &lt;span class="nx"&gt;seconds&lt;/span&gt;
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code> 9072842 function calls (8882140 primitive calls) in 9.830 CPU seconds
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>   Ordered by: internal time&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>   ncalls  tottime  percall  cumtime  percall filename:lineno(function)&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>61868    0.575    0.000    0.861    0.000 abstract.py:28(__init__)
-</span><span class='line'>41250    0.527    0.000    0.660    0.000 uuid.py:101(__init__)
-</span><span class='line'>61863    0.405    0.000    1.054    0.000 abstract.py:40(as_dict)
-</span><span class='line'>41243    0.343    0.000    1.131    0.000 __init__.py:143(uuid4)
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>   577388    0.338    0.000    0.649    0.000 abstract.py:46(&lt;genexpr>)&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>20622    0.289    0.000    8.824    0.000 base.py:331(send_task)
-</span><span class='line'>61907    0.232    0.000    0.477    0.000 datastructures.py:467(__getitem__)
-</span><span class='line'>20622    0.225    0.000    9.298    0.000 task.py:455(apply_async)
-</span><span class='line'>61863    0.218    0.000    2.502    0.000 abstract.py:52(__copy__)
-</span><span class='line'>20621    0.208    0.000    4.766    0.000 amqp.py:208(publish_task)
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>   462640    0.193    0.000    0.247    0.000 {isinstance}
-</span><span class='line'>   515525    0.162    0.000    0.193    0.000 abstract.py:41(f)&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>41246    0.153    0.000    0.633    0.000 entity.py:143(__init__)
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+   &lt;span class="nx"&gt;Ordered&lt;/span&gt; &lt;span class="nx"&gt;by&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;internal&lt;/span&gt; &lt;span class="nx"&gt;time&lt;/span&gt;
 
-<p>In the example above (actual application) first line is kombu's
-<code>abstract.py: class Object(object).__init__()</code>
+   &lt;span class="nx"&gt;ncalls&lt;/span&gt;  &lt;span class="nx"&gt;tottime&lt;/span&gt;  &lt;span class="nx"&gt;percall&lt;/span&gt;  &lt;span class="nx"&gt;cumtime&lt;/span&gt;  &lt;span class="nx"&gt;percall&lt;/span&gt; &lt;span class="nx"&gt;filename&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="nx"&gt;lineno&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kd"&gt;function&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;61868&lt;/span&gt;    &lt;span class="mf"&gt;0.575&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.861&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="kr"&gt;abstract&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;28&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;41250&lt;/span&gt;    &lt;span class="mf"&gt;0.527&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.660&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;101&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;61863&lt;/span&gt;    &lt;span class="mf"&gt;0.405&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;1.054&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="kr"&gt;abstract&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;as_dict&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;41243&lt;/span&gt;    &lt;span class="mf"&gt;0.343&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;1.131&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;143&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;uuid4&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+   &lt;span class="mi"&gt;577388&lt;/span&gt;    &lt;span class="mf"&gt;0.338&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.649&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="kr"&gt;abstract&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;46&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="nx"&gt;genexpr&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;20622&lt;/span&gt;    &lt;span class="mf"&gt;0.289&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;8.824&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;331&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;send_task&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;61907&lt;/span&gt;    &lt;span class="mf"&gt;0.232&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.477&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;datastructures&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;467&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__getitem__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;20622&lt;/span&gt;    &lt;span class="mf"&gt;0.225&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;9.298&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;task&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;455&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;apply_async&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;61863&lt;/span&gt;    &lt;span class="mf"&gt;0.218&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;2.502&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="kr"&gt;abstract&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;52&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__copy__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;20621&lt;/span&gt;    &lt;span class="mf"&gt;0.208&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;4.766&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;amqp&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;208&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;publish_task&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+   &lt;span class="mi"&gt;462640&lt;/span&gt;    &lt;span class="mf"&gt;0.193&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.247&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="nx"&gt;isinstance&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+   &lt;span class="mi"&gt;515525&lt;/span&gt;    &lt;span class="mf"&gt;0.162&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.193&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="kr"&gt;abstract&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;41&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;41246&lt;/span&gt;    &lt;span class="mf"&gt;0.153&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt;    &lt;span class="mf"&gt;0.633&lt;/span&gt;    &lt;span class="mf"&gt;0.000&lt;/span&gt; &lt;span class="nx"&gt;entity&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;py&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;143&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In the example above (actual application) first line is kombu's
+&lt;code&gt;abstract.py: class Object(object).__init__()&lt;/code&gt;
 and the second one is Python's
-<code>uuid.py: class UUID().__init__()</code>.</p>
-]]></content>
-  </entry>
-  
-</feed>
+&lt;code&gt;uuid.py: class UUID().__init__()&lt;/code&gt;.&lt;/p&gt;</summary><category term="Python"></category><category term="QA"></category></entry><entry><title>Skip or Render Specific Blocks from Jinja2 Templates</title><link href="http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/" rel="alternate"></link><updated>2014-02-21T00:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-02-21:blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/</id><summary type="html">&lt;p&gt;I wasn't able to find detailed information on how to skip rendering
+or only render specific blocks from Jinja2 templates so here's my solution.
+Hopefully you find it useful too.&lt;/p&gt;
+&lt;p&gt;With below template I want to be able to render &lt;strong&gt;only&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt; block
+as a single line and then render the rest of the template &lt;strong&gt;excluding&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;console=tty0&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;debug&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;        debug=1&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endblock&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endblock&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+
+&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;OS_MAJOR&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="m"&gt;5&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;key --skip&lt;/span&gt;
+&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endif&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+
+&lt;span class="x"&gt;%packages&lt;/span&gt;
+&lt;span class="x"&gt;@base&lt;/span&gt;
+&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;OS_MAJOR&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="m"&gt;5&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;%end&lt;/span&gt;
+&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endif&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;To render a particular block you have to use the low level Jinja API
+&lt;em&gt;&lt;a href="http://jinja.pocoo.org/docs/api/#jinja2.Template.blocks"&gt;template.blocks&lt;/a&gt;&lt;/em&gt;.
+This will return a dict of block rendering functions which need a &lt;em&gt;Context&lt;/em&gt; to work with.&lt;/p&gt;
+&lt;p&gt;The second part is trickier. To remove a block we have to create an extension
+which will filter it out. The provided &lt;em&gt;SkipBlockExtension&lt;/em&gt; class does
+exactly this.&lt;/p&gt;
+&lt;p&gt;Last but not least - if you'd like to use both together you have to disable
+caching in the &lt;em&gt;Environment&lt;/em&gt; (so you get a fresh template every time), render
+your blocks first, configure &lt;em&gt;env.skip_blocks&lt;/em&gt; and render the entire template
+without the specified blocks.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;jinja2.ext&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Extension&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;jinja2&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Environment&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;FileSystemLoader&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Extension&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;extend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;[])&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;filter_stream&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;token&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block_begin&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;current&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                    &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+                    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;look&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;block_level&lt;/span&gt;
+
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;endblock&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;yield&lt;/span&gt; &lt;span class="n"&gt;token&lt;/span&gt;
+
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block_end&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;in_endblock&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+                    &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+
+                    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;block_level&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;context&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;OS_MAJOR&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ARCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;x86_64&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="n"&gt;abs_path&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;abspath&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+    &lt;span class="n"&gt;dir_name&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dirname&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;abs_path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;base_name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;basename&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;abs_path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;env&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Environment&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="n"&gt;loader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;FileSystemLoader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dir_name&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+                &lt;span class="n"&gt;extensions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+                &lt;span class="n"&gt;cache_size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c"&gt;# disable cache b/c we do 2 get_template()&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c"&gt;# first render only the block we want&lt;/span&gt;
+    &lt;span class="n"&gt;template&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_template&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;base_name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;lines&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;blocks&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;kernel_options&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;](&lt;/span&gt;&lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;new_context&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="p"&gt;)):&lt;/span&gt;
+        &lt;span class="n"&gt;lines&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strip&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Boot Args:&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lines&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;---------------------------&amp;quot;&lt;/span&gt;
+
+    &lt;span class="c"&gt;# now instruct SkipBlockExtension which blocks we don&amp;#39;t want&lt;/span&gt;
+    &lt;span class="c"&gt;# and get a new instance of the template with these blocks removed&lt;/span&gt;
+    &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;kernel_options&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;template&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_template&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;base_name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;---------------------------&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The above code results in the following output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
+&lt;span class="n"&gt;Boot&lt;/span&gt; &lt;span class="nl"&gt;Args&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tty0&lt;/span&gt; &lt;span class="n"&gt;debug&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; 
+&lt;span class="o"&gt;---------------------------&lt;/span&gt;
+
+&lt;span class="n"&gt;key&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;skip&lt;/span&gt;
+
+&lt;span class="nf"&gt;%packages&lt;/span&gt;
+&lt;span class="err"&gt;@&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;
+&lt;span class="o"&gt;---------------------------&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Teaser: this is part of my effort to replace SNAKE with a client side
+kickstart template engine for
+&lt;a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/"&gt;Beaker&lt;/a&gt;
+so stay tuned!&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="Fedora"></category></entry><entry><title>FOSDEM 2014 Report - Day #1 Python, Stands and Lightning Talks</title><link href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/" rel="alternate"></link><updated>2014-02-03T21:37:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-02-03:blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/</id><summary type="html">&lt;p&gt;As promised I'm starting catching up on blogging after being sick and traveling.
+Here's my report of what I saw and found interesting at this year's
+&lt;a href="https://fosdem.org/2014/"&gt;FOSDEM&lt;/a&gt; which was held the last weekend in Brussels.&lt;/p&gt;
+&lt;p&gt;On Friday evening I've tried to attend the FOSDEM beer event at Delirium Cafe but
+had a bad luck. At 21:30 the place was already packed with people. I managed to get
+access to only one of the rooms but it looked like the wrong one :(. I think the space
+is definitely small for all who are willing to attend.&lt;/p&gt;
+&lt;p&gt;During Saturday morning I did a quick sight-seeing most notably 
+&lt;a href="www.migsworldwines.be/"&gt;Mig's wine shop&lt;/a&gt; and the area around it since I've never
+been to this part of the city before. Then I took off to FOSDEM arriving at noon
+(IOW not too late).&lt;/p&gt;
+&lt;p&gt;I've spent most of my day at building K where project stands were and I stayed quite
+a long time around the Python and Perl stands meeting new people and talking to them
+about their upgrade practices and how they manage package dependencies
+(aka promoting &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Fedora Octopus" src="/images/fosdem/2014/fedora_octopus.jpg" title="Fedora Octopus" /&gt;&lt;/p&gt;
+&lt;p&gt;Fedora stand was busy with 3D printing this year. I've seen 3D printing
+before but here I was amazed of the fine-grained quality of the pieces produced.
+This is definitely something to have in mind if you are building physical products.&lt;/p&gt;
+&lt;p&gt;Red Hat's presence was very strong this year. In addition to the numerous talks they
+gave there were also oVirt and OpenShift Origin stands which were packed with people.
+I couldn't even get close to say hi or take a picture. &lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/fosdem/2014/doudou_linux.png" alt="DoudouLinux" style="float:left;margin-right:10px;"/&gt;&lt;/p&gt;
+&lt;p&gt;Near the end of the day I went to listen to some of the lightning talks. The ones that
+I liked the most were MATE Desktop and DoudouLinux. &lt;/p&gt;
+&lt;p&gt;The thing about MATE which I liked
+is that they have a &lt;a href="https://github.com/mate-desktop/mate-university"&gt;MATE University&lt;/a&gt;
+initiative which is targeting developers who want to learn how to develop MATE extensions.
+This is pretty cool with respect to community and developers on-boarding. &lt;/p&gt;
+&lt;p&gt;&lt;a href="http://www.doudoulinux.org"&gt;DoudouLinux&lt;/a&gt; is a Debian based distribution targeted at
+small children (2 or 3 years old) based on simple desktop and educational activities.
+I've met project leader and founder Jean-Michel Philippe who gave the talk. We chatted for
+a while when Alejandro Simon from &lt;a href="http://www.kano.me/"&gt;Kano&lt;/a&gt; came around and showed us a prototype
+of their computer for children. I will definitely give DoudouLinux a try and maybe pre-order Kano as well.&lt;/p&gt;
+&lt;p&gt;In the evening there was a Python beer event at Delirium and after that dinner at
+Chez Leon where I had snails and rabbit with cherries in cherry beer sauce.
+I've had a few beers with Marc-Andre from &lt;a href="http://egenix.com"&gt;eGenix&lt;/a&gt;
+and Charlie from &lt;a href="http://www.clark-consulting.eu/"&gt;Clark Consulting&lt;/a&gt; and the talk
+was mostly about non-technical stuff which was nice.&lt;/p&gt;
+&lt;p&gt;After that we went back to Delirium and
+re-united with &lt;a href="http://akurtakov.blogspot.com"&gt;Alexander Kurtakov&lt;/a&gt; and other folks from
+Red Hat for more cherry beer!&lt;/p&gt;
+&lt;p&gt;Report of the second day of FOSDEM'14 on Sunday is
+&lt;a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="events"></category><category term="Fedora"></category><category term="Python"></category></entry><entry><title>Idempotent Django Email Sender with Amazon SQS and Memcache</title><link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/" rel="alternate"></link><updated>2013-12-11T23:29:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-11:blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/</id><summary type="html">&lt;p&gt;Recently I wrote about my problem with
+&lt;a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/"&gt;duplicate Amazon SQS messages causing multiple emails&lt;/a&gt;
+for &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;. After considering several options and
+feedback from 
+&lt;a href="https://twitter.com/atodorov_/status/409429840820199424"&gt;@Answers4AWS&lt;/a&gt;
+I wrote a small decorator to fix this.&lt;/p&gt;
+&lt;p&gt;It uses the cache backend to prevent the task from executing twice
+during the specified time frame. The code is available at
+&lt;a href="https://djangosnippets.org/snippets/3010/"&gt;https://djangosnippets.org/snippets/3010/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;As stated on Twitter you should use Memcache (or ElastiCache) for this.
+If using Amazon S3 with my
+&lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt; don't use the
+&lt;code&gt;us-east-1&lt;/code&gt; region because it is eventually consistent.&lt;/p&gt;
+&lt;p&gt;The solution is fast and simple on the development side and uses my existing
+cache infrastructure so it doesn't cost anything more!&lt;/p&gt;
+&lt;p&gt;There is still a race condition between marking the message as processed
+and the second check but nevertheless this should minimize the possibility of
+receiving duplicate emails to an accepted level. Only time will tell though!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="Django"></category><category term="Python"></category></entry><entry><title>Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</title><link href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/" rel="alternate"></link><updated>2013-11-29T14:05:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-11-29:blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/</id><summary type="html">&lt;p&gt;Accidentally I have discovered a bug for Python's
+URLGrabber module which has to do with change in behavior in libcurl.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlgrabber.grabber&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;reget&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlgrab&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;/tmp/columnize.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&amp;lt;console&amp;gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;module&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;976&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;urlgrab&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_retry&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;opts&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;retryfunc&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;880&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;_retry&lt;/span&gt;
+    &lt;span class="n"&gt;r&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;apply&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;opts&lt;/span&gt;&lt;span class="p"&gt;,)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;{})&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;962&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;retryfunc&lt;/span&gt;
+    &lt;span class="n"&gt;fo&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;PyCurlFileObject&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;opts&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;1056&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;__init__&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_do_open&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;1307&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;_do_open&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_set_opts&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;1161&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;_set_opts&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;curl_obj&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pycurl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SSL_VERIFYHOST&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;opts&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ssl_verify_host&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
+newer. As explained by 
+&lt;a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html"&gt;Zdenek Pavlas&lt;/a&gt;
+the reason is an internal change in libcurl which doesn't accept a value of 1 anymore!&lt;/p&gt;
+&lt;p&gt;The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
+from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
+Fedora and Amazon Linux already have the fix.&lt;/p&gt;
+&lt;p&gt;I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
+there aren't any updates released on PyPI though!&lt;/p&gt;</summary><category term="Fedora"></category><category term="QA"></category><category term="cloud"></category><category term="Python"></category></entry><entry><title>This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables</title><link href="http://atodorov.org/blog/2013/10/11/this-week-python-chris-dibona-openshift/" rel="alternate"></link><updated>2013-10-11T10:45:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-10-11:blog/2013/10/11/this-week-python-chris-dibona-openshift/</id><summary type="html">&lt;p&gt;Here is a random collection of links I came across this week which
+appear interesting to me but I don't have time to blog about in details.&lt;/p&gt;
+&lt;h2&gt;Making a Multi-branch Test Server for Python Apps&lt;/h2&gt;
+&lt;p&gt;If you are wondering how to test different feature branches of your Python
+application but don't have the resources to create separate test servers this
+is for you: 
+&lt;a href="http://depressedoptimism.com/blog/2013/10/8/making-a-multi-branch-test-server"&gt;http://depressedoptimism.com/blog/2013/10/8/making-a-multi-branch-test-server&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Kudos to the python-django-bulgaria Google group for finding this link!&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;OpenSource.com Interview with Chris DiBona&lt;/h2&gt;
+&lt;p&gt;Just read it at
+&lt;a href="http://opensource.com/business/13/10/interview-chris-dibona"&gt;http://opensource.com/business/13/10/interview-chris-dibona&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I particularly like the part where he called open source "brutal".&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;You once called open source “brutal”. What did you mean by that?&lt;/p&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;I think that it is because open source projects are able to only work with the
+productive people and ignore everyone else. That behavior can come across as
+very harsh or exclusionary, and that's because it is that: brutally harsh and
+exclusionary of anyone who isn't contributing.&lt;/p&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;So, I guess what I'm saying is that survival of the fittest as practiced in the
+open source world is a pretty brutal mechanism, but it works very very well for
+producing quality software. Boy is it hard on newcomers though...&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;OpenShift Finally Introduces Environment Variables&lt;/h2&gt;
+&lt;p&gt;Yes! Finally! &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    rhc set-env VARIABLE1=VALUE1 -a myapp
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;No need for 
+&lt;a href="/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/"&gt;my work around&lt;/a&gt;
+anymore! I will give the new feature a go very soon. &lt;/p&gt;
+&lt;p&gt;Read more about it at the OpenShift blog:
+&lt;a href="https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps"&gt;https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Have you found anything interesting this week? Please share in the comments below! Thanks!&lt;/p&gt;</summary><category term="Python"></category><category term="cloud"></category><category term="OpenShift"></category></entry><entry><title>Linux and Python Tools To Compare Images</title><link href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/" rel="alternate"></link><updated>2013-05-17T21:13:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-05-17:blog/2013/05/17/linux-and-python-tools-to-compare-images/</id><summary type="html">&lt;p&gt;How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler!&lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/difio_compare.png" alt="Difio Google +1 changes" style="clear:both;display:block"/&gt;
+&lt;a href="http://www.dif.io"&gt;dif.io&lt;/a&gt; homepage before and after it got a G+1.&lt;/p&gt;
+&lt;h2&gt;ImageMagic is magic&lt;/h2&gt;
+&lt;p&gt;If you haven't heard of &lt;a href="http://www.imagemagick.org/"&gt;ImageMagic&lt;/a&gt; then you've been
+living in a cave on a deserted island! The suite contains the &lt;code&gt;compare&lt;/code&gt; command
+which mathematically and visually annotates the difference between two images.&lt;/p&gt;
+&lt;p&gt;The third image above was produced with:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;compare difio_10.png difio_11.png difio_diff.png
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Differences are displayed in red (default) and the original image is seen in the
+background. As shown, the Google +1 button and count has changed between the two
+images. &lt;code&gt;compare&lt;/code&gt; is a nice tool for manual inspection and debugging.
+It works well in this case because the images are lossless PNGs and are regions of
+screen shots where most objects are the same.&lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/chestnut_compare.jpg" alt="JPEG quality reduction" style="clear:both;display:block"/&gt;
+Chestnuts I had in Rome. 100% to 99% quality reduction.&lt;/p&gt;
+&lt;p&gt;As seen on the second image set only 1% of JPEG quality change leads to many small
+differences in the image, which are invisible to the naked eye.&lt;/p&gt;
+&lt;h2&gt;Python Imaging Library aka PIL&lt;/h2&gt;
+&lt;p&gt;&lt;a href="http://www.pythonware.com/products/pil/"&gt;PIL&lt;/a&gt; is another powerful tool for
+image manipulation. I googled around and found some answers to my original
+questions
+&lt;a href="http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way"&gt;here&lt;/a&gt;.
+The proposed solution is to calculate
+&lt;a href="https://en.wikipedia.org/wiki/Root_mean_square"&gt;RMS&lt;/a&gt; of the two images
+and compare that with some threshold to establish the level of certainty that
+two images are identical.&lt;/p&gt;
+&lt;h2&gt;Simple solution&lt;/h2&gt;
+&lt;p&gt;I've been working on a script lately which needs to know what is displayed on
+the screen and recognize some of the objects. Calculating image similarity is
+quite complex but comparing if two images are &lt;strong&gt;exactly&lt;/strong&gt; identical is not.
+Given my environment and the fact
+that I'm comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution: &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Take a screen shot;&lt;/li&gt;
+&lt;li&gt;Crop a particular area of the image which needs to be examined;&lt;/li&gt;
+&lt;li&gt;Compare to a baseline image of the same area created manually;&lt;/li&gt;
+&lt;li&gt;Don't use RMS, use the image histogram only to speed up calculation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I've prepared the baseline images with GIMP and tested couple of scenarios
+using &lt;code&gt;compare&lt;/code&gt;. Here's how it looks in code:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;PIL&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;dogtail.utils&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;screenshot&lt;/span&gt;
+
+&lt;span class="n"&gt;baseline_histogram&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;/home/atodorov/baseline.png&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;histogram&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+&lt;span class="n"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;screenshot&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+&lt;span class="n"&gt;region&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;img&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crop&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="mi"&gt;860&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;300&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;950&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;320&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;region&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;histogram&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;baseline_histogram&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Results&lt;/h2&gt;
+&lt;p&gt;The presented solution was easy to program, works fast and reliably for my use case.
+In fact after several iterations I've added a second baseline image to account for some
+unidentified noise which appears randomly in the first region. As far as I can tell
+the two checks combined are 100% accurate. &lt;/p&gt;
+&lt;h2&gt;Field of application&lt;/h2&gt;
+&lt;p&gt;I'm working on QA automation where this comes handy. However you may try some
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code. &lt;/p&gt;
+&lt;p&gt;I'd love to hear
+about interesting projects which didn't get too complicated because of image
+recognition.&lt;/p&gt;</summary><category term="Python"></category><category term="QA"></category></entry><entry><title>How to Deploy Python Hotfix on RedHat OpenShift Cloud</title><link href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="alternate"></link><updated>2013-04-24T11:58:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-24:blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/</id><summary type="html">&lt;p&gt;In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; PaaS cloud.&lt;/p&gt;
+&lt;h2&gt;Background&lt;/h2&gt;
+&lt;p&gt;You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+&lt;a href="https://github.com/ahupp/python-magic/pull/31"&gt;pull request&lt;/a&gt;.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.&lt;/p&gt;
+&lt;h2&gt;Solution&lt;/h2&gt;
+&lt;p&gt;There are two basic approaches to solving this problem: &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Include the hotfix package source code in your application, i.e.
+add it to your git tree or;&lt;/li&gt;
+&lt;li&gt;Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version. &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.&lt;/p&gt;
+&lt;p&gt;Python applications hosted at &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; don't support
+&lt;code&gt;requirements.txt&lt;/code&gt; which can point to various package sources and even install
+packages directly from GitHub. They support &lt;code&gt;setup.py&lt;/code&gt; which fetches packages
+from &lt;a href="http://pypi.python.org"&gt;http://pypi.python.org&lt;/a&gt; but it is flexible enough to support other locations.&lt;/p&gt;
+&lt;h2&gt;Building the hotfix&lt;/h2&gt;
+&lt;p&gt;First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+&lt;span class="nv"&gt;$ &lt;/span&gt;tar -xzvf python-magic-0.4.3.tar.gz 
+&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;python-magic-0.4.3
+&lt;span class="nv"&gt;$ &lt;/span&gt;curl https://github.com/ahupp/python-magic/pull/31.patch &lt;span class="p"&gt;|&lt;/span&gt; patch
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Verify the patch has been applied correctly and then modify &lt;code&gt;setup.py&lt;/code&gt; to
+increase the version string. In this case I will set it to &lt;code&gt;version='0.4.3.1'&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Then build the new package using &lt;code&gt;python setup.py sdist&lt;/code&gt; and upload it to a web server.&lt;/p&gt;
+&lt;h2&gt;Deploying to OpenShift&lt;/h2&gt;
+&lt;p&gt;Modify &lt;code&gt;setup.py&lt;/code&gt; and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parameter to &lt;code&gt;setup()&lt;/code&gt;. Here's how it looks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/setup.py b/setup.py&lt;/span&gt;
+&lt;span class="gh"&gt;index c6e837c..2daa2a9 100644&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/setup.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/setup.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -6,5 +6,6 @@ setup(name=&amp;#39;YourAppName&amp;#39;,&lt;/span&gt;
+       author=&amp;#39;Your Name&amp;#39;,
+       author_email=&amp;#39;example@example.com&amp;#39;,
+       url=&amp;#39;http://www.python.org/sigs/distutils-sig/&amp;#39;,
+&lt;span class="gd"&gt;-      install_requires=[&amp;#39;python-magic==0.4.3&amp;#39;],&lt;/span&gt;
+&lt;span class="gi"&gt;+      dependency_links=[&amp;#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&amp;#39;],&lt;/span&gt;
+&lt;span class="gi"&gt;+      install_requires=[&amp;#39;python-magic==0.4.3.1&amp;#39;],&lt;/span&gt;
+      )
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now just git push to OpenShift and observe the console output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;dependencies&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;YourAppName&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Searching&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Best&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Downloading&lt;/span&gt; &lt;span class="n"&gt;https&lt;/span&gt;&lt;span class="o"&gt;://&lt;/span&gt;&lt;span class="n"&gt;s3&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;amazonaws&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;com&lt;/span&gt;&lt;span class="sr"&gt;/atodorov/blog/&lt;/span&gt;&lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Running&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="sr"&gt;/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/&lt;/span&gt;&lt;span class="n"&gt;egg&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dist&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;tmp&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;R_Nxie&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;zip_safe&lt;/span&gt; &lt;span class="n"&gt;flag&lt;/span&gt; &lt;span class="n"&gt;not&lt;/span&gt; &lt;span class="kd"&gt;set&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt; &lt;span class="n"&gt;analyzing&lt;/span&gt; &lt;span class="n"&gt;archive&lt;/span&gt; &lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Removing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;from&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Adding&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Congratulations! Your hotfix package has just been deployed.&lt;/p&gt;
+&lt;p&gt;This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.&lt;/p&gt;</summary><category term="tips"></category><category term="Python"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Using Django built-in template tags and filters in code</title><link href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="alternate"></link><updated>2013-04-06T22:26:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-06:blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/</id><summary type="html">&lt;p&gt;In case you are wondering how to use Django's
+&lt;a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/"&gt;built-in template tags and filters&lt;/a&gt;
+in your source code, not inside a template here is how:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.template.defaultfilters&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1024&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="s"&gt;u&amp;#39;1.0 KB&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1020&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="s"&gt;u&amp;#39;1020 bytes&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;102412354&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="s"&gt;u&amp;#39;97.7 MB&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;All built-ins live in &lt;code&gt;pythonX.Y/site-packages/django/template/defaultfilters.py&lt;/code&gt;.&lt;/p&gt;</summary><category term="tips"></category><category term="Django"></category><category term="Python"></category></entry><entry><title>Performance test of MD5, SHA1, SHA256 and SHA512</title><link href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/" rel="alternate"></link><updated>2013-02-05T10:33:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-02-05:blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/</id><summary type="html">&lt;p&gt;A few months ago I wrote
+&lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt;.
+This is Amazon Simple Storage Service (S3) cache backend for Django
+which uses hashed file names.
+django-s3-cache uses &lt;code&gt;sha1&lt;/code&gt; instead of &lt;code&gt;md5&lt;/code&gt; which appeared to be
+faster at the time. I recall that my testing wasn't very robust so I did another
+round.&lt;/p&gt;
+&lt;h2&gt;Test Data&lt;/h2&gt;
+&lt;p&gt;The file &lt;a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz"&gt;urls.txt&lt;/a&gt;
+contains 10000 unique paths from the &lt;a href="http://www.dif.io"&gt;dif.io&lt;/a&gt;
+website and looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;/updates/Django-1.3.1/Django-1.3.4/7858/
+/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
+/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
+/updates/Data::Compare-1.22/Data::Compare-Type/8313/
+/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Test Automation&lt;/h2&gt;
+&lt;p&gt;I used the standard &lt;a href="http://docs.python.org/2/library/timeit.html"&gt;timeit&lt;/a&gt;
+module in Python.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/python&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
+
+&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;import hashlib&lt;/span&gt;
+&lt;span class="sd"&gt;for line in url_paths:&lt;/span&gt;
+&lt;span class="sd"&gt;    h = hashlib.md5(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha1(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha256(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha512(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;url_paths = []&lt;/span&gt;
+&lt;span class="sd"&gt;f = open(&amp;#39;urls.txt&amp;#39;, &amp;#39;r&amp;#39;)&lt;/span&gt;
+&lt;span class="sd"&gt;for l in f.readlines():&lt;/span&gt;
+&lt;span class="sd"&gt;    url_paths.append(l)&lt;/span&gt;
+&lt;span class="sd"&gt;f.close()&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Test Results&lt;/h2&gt;
+&lt;p&gt;The main statement hashes all 10000 entries one by one. This statement is
+executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
+on my system. After every test run the system was rebooted.
+Execution time in seconds is available below.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
+SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
+SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
+SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Looks like I was wrong the first time! MD5 is still faster but not that much.
+I will stick with SHA1 for the time being.&lt;/p&gt;
+&lt;p&gt;As always I’d love to hear your thoughts and feedback. Please use the comment form below.&lt;/p&gt;</summary><category term="Python"></category><category term="performance testing"></category><category term="QA"></category></entry></feed>

@@ -1,210 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-
-  <title><![CDATA[Category: Twitter | atodorov.org - you can logoff, but you can never leave]]></title>
-  <link href="http://atodorov.org/blog/categories/twitter/atom.xml" rel="self"/>
-  <link href="http://atodorov.org/"/>
-  <updated>2015-11-24T22:05:37+02:00</updated>
-  <id>http://atodorov.org/</id>
-  <author>
-    <name><![CDATA[Alexander Todorov]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
-
-  
-  <entry>
-    <title type="html"><![CDATA[Python Twitter + django-social-auth == Hello New User]]></title>
-    <link href="http://atodorov.org/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/"/>
-    <updated>2013-03-07T21:47:00+02:00</updated>
-    <id>http://atodorov.org/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user</id>
-    <content type="html"><![CDATA[<p>I have been experimenting with the <a href="https://pypi.python.org/pypi/twitter">twitter</a>
-module for Python and decided to combine it with
-<a href="https://github.com/omab/django-social-auth">django-social-auth</a> to welcome new
-users who join <a href="http://www.dif.io">Difio</a>. In this post I will show you how to
-tweet on behalf of the user when they join your site and send them a welcome email.</p>
-
-<h2>Configuration</h2>
-
-<p>In django-social-auth the authentication workflow is handled by an operations
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/twitter/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2013-03-07T21:47:00+02:00</updated><entry><title>Python Twitter + django-social-auth == Hello New User</title><link href="http://atodorov.org/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/" rel="alternate"></link><updated>2013-03-07T21:47:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-03-07:blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/</id><summary type="html">&lt;p&gt;I have been experimenting with the &lt;a href="https://pypi.python.org/pypi/twitter"&gt;twitter&lt;/a&gt;
+module for Python and decided to combine it with 
+&lt;a href="https://github.com/omab/django-social-auth"&gt;django-social-auth&lt;/a&gt; to welcome new
+users who join &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;. In this post I will show you how to
+tweet on behalf of the user when they join your site and send them a welcome email.&lt;/p&gt;
+&lt;h2&gt;Configuration&lt;/h2&gt;
+&lt;p&gt;In django-social-auth the authentication workflow is handled by an operations
 pipeline where custom functions can be added or default items can be removed to
-provide custom behavior. This is how our pipeline looks:</p>
+provide custom behavior. This is how our pipeline looks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;SOCIAL_AUTH_PIPELINE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.social.social_auth_user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c"&gt;#&amp;#39;social_auth.backends.pipeline.associate.associate_by_email&amp;#39;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.user.get_username&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.user.create_user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.social.associate_user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.social.load_extra_data&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.user.update_user_details&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;myproject.tasks.welcome_new_user&amp;#39;&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>settings.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">SOCIAL_AUTH_PIPELINE</span> <span class="o">=</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="s">&#39;social_auth.backends.pipeline.social.social_auth_user&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="c">#&#39;social_auth.backends.pipeline.associate.associate_by_email&#39;,</span>
-</span><span class='line'><span class="s">&#39;social_auth.backends.pipeline.user.get_username&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;social_auth.backends.pipeline.user.create_user&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;social_auth.backends.pipeline.social.associate_user&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;social_auth.backends.pipeline.social.load_extra_data&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;social_auth.backends.pipeline.user.update_user_details&#39;</span><span class="p">,</span>
-</span><span class='line'><span class="s">&#39;myproject.tasks.welcome_new_user&#39;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<p>This is the default plus an additional method at the end to welcome new users.</p>
-
-<p>You also have to create and configure a Twitter application so that users
+&lt;p&gt;This is the default plus an additional method at the end to welcome new users.&lt;/p&gt;
+&lt;p&gt;You also have to create and configure a Twitter application so that users
 can login with Twitter OAuth to your site.
-<a href="http://django-social-auth.readthedocs.org/en/latest/backends/index.html">RTFM</a>
-for more information on how to do this.</p>
+&lt;a href="http://django-social-auth.readthedocs.org/en/latest/backends/index.html"&gt;RTFM&lt;/a&gt;
+for more information on how to do this.&lt;/p&gt;
+&lt;h2&gt;Custom pipeline actions&lt;/h2&gt;
+&lt;p&gt;This is how the custom pipeline action should look:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlparse&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parse_qs&lt;/span&gt;
 
-<h2>Custom pipeline actions</h2>
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;welcome_new_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;backend&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;social_user&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;is_new&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;new_association&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer&lt;/span&gt;
+&lt;span class="sd"&gt;        @backend - social_auth.backends.twitter.TwitterBackend (or other) object&lt;/span&gt;
+&lt;span class="sd"&gt;        @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)&lt;/span&gt;
+&lt;span class="sd"&gt;        @social_user - UserSocialAuth object&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;is_new&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;send_welcome_email&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delay&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;email&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;first_name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
-<p>This is how the custom pipeline action should look:</p>
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;backend&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;twitter&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;is_new&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;new_association&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;access_token&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;social_user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;extra_data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;access_token&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+            &lt;span class="n"&gt;parsed_tokens&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parse_qs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;access_token&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;oauth_token&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parsed_tokens&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;oauth_token&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+            &lt;span class="n"&gt;oauth_secret&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parsed_tokens&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;oauth_token_secret&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+            &lt;span class="n"&gt;tweet_on_join&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delay&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;oauth_token&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;oauth_secret&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qs</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">welcome_new_user</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">social_user</span><span class="p">,</span> <span class="n">is_new</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">new_association</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="s">    Part of SOCIAL_AUTH_PIPELINE. Works with django-social-auth==0.7.21 or newer</span>
-</span><span class='line'><span class="s">    @backend - social_auth.backends.twitter.TwitterBackend (or other) object</span>
-</span><span class='line'><span class="s">    @user - User (if is_new) or django.utils.functional.SimpleLazyObject (if new_association)</span>
-</span><span class='line'><span class="s">    @social_user - UserSocialAuth object</span>
-</span><span class='line'><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="k">if</span> <span class="n">is_new</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">send_welcome_email</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">first_name</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="n">backend</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;twitter&#39;</span><span class="p">:</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">is_new</span> <span class="ow">or</span> <span class="n">new_association</span><span class="p">:</span>
-</span><span class='line'>        <span class="n">access_token</span> <span class="o">=</span> <span class="n">social_user</span><span class="o">.</span><span class="n">extra_data</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">parsed_tokens</span> <span class="o">=</span> <span class="n">parse_qs</span><span class="p">(</span><span class="n">access_token</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">oauth_token</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">oauth_secret</span> <span class="o">=</span> <span class="n">parsed_tokens</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span class='line'>        <span class="n">tweet_on_join</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="bp">None</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
-<p>This code works with django-social-auth==0.7.21 or newer. In older versions the
-<code>new_association</code> parameter is missing as
-<a href="https://groups.google.com/forum/?fromgroups=#!topic/django-social-auth/Nxf-0iRD27Y">I discovered</a>.
+
+&lt;p&gt;This code works with django-social-auth==0.7.21 or newer. In older versions the
+&lt;code&gt;new_association&lt;/code&gt; parameter is missing as 
+&lt;a href="https://groups.google.com/forum/?fromgroups=#!topic/django-social-auth/Nxf-0iRD27Y"&gt;I discovered&lt;/a&gt;.
 If you use an older version you won't be able to distinguish between newly created
-accounts and ones which have associated another OAuth backend. You are warned!</p>
+accounts and ones which have associated another OAuth backend. You are warned!&lt;/p&gt;
+&lt;h2&gt;Tweet &amp;amp; email&lt;/h2&gt;
+&lt;p&gt;Sending the welcome email is out of the scope of this post. I am using
+&lt;a href="https://github.com/bradwhittington/django-templated-email"&gt;django-templated-email&lt;/a&gt;
+to define how emails look and sending them via Amazon SES. See 
+&lt;a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/"&gt;Email Logging for Django on RedHat OpenShift With Amazon SES&lt;/a&gt;
+for more information on how to configure emailing with SES.&lt;/p&gt;
+&lt;p&gt;Here is how the Twitter code looks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;twitter&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;celery.task&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;settings&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;TWITTER_CONSUMER_KEY&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;TWITTER_CONSUMER_SECRET&lt;/span&gt;
 
-<h2>Tweet &amp; email</h2>
+&lt;span class="nd"&gt;@task&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;tweet_on_join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;oauth_token&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;oauth_secret&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Tweet when the user is logged in for the first time or&lt;/span&gt;
+&lt;span class="sd"&gt;        when new Twitter account is associated.&lt;/span&gt;
 
-<p>Sending the welcome email is out of the scope of this post. I am using
-<a href="https://github.com/bradwhittington/django-templated-email">django-templated-email</a>
-to define how emails look and sending them via Amazon SES. See
-<a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/">Email Logging for Django on RedHat OpenShift With Amazon SES</a>
-for more information on how to configure emailing with SES.</p>
+&lt;span class="sd"&gt;        @oauth_token - string&lt;/span&gt;
+&lt;span class="sd"&gt;        @oauth_secret - string&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;twitter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Twitter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+            &lt;span class="n"&gt;auth&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;twitter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;OAuth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="n"&gt;oauth_token&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;oauth_secret&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="n"&gt;TWITTER_CONSUMER_KEY&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;TWITTER_CONSUMER_SECRET&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;statuses&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;update&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;status&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Started following open source changes at http://www.dif.io!&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
 
-<p>Here is how the Twitter code looks:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>myproject/tasks.py  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">twitter</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="nd">@task</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">tweet_on_join</span><span class="p">(</span><span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="s">    Tweet when the user is logged in for the first time or</span>
-</span><span class='line'><span class="s">    when new Twitter account is associated.</span>
-</span><span class='line'>
-</span><span class='line'><span class="s">    @oauth_token - string</span>
-</span><span class='line'><span class="s">    @oauth_secret - string</span>
-</span><span class='line'><span class="s">&quot;&quot;&quot;</span>
-</span><span class='line'><span class="n">t</span> <span class="o">=</span> <span class="n">twitter</span><span class="o">.</span><span class="n">Twitter</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">auth</span><span class="o">=</span><span class="n">twitter</span><span class="o">.</span><span class="n">OAuth</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">oauth_token</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="p">,</span>
-</span><span class='line'>            <span class="n">TWITTER_CONSUMER_KEY</span><span class="p">,</span> <span class="n">TWITTER_CONSUMER_SECRET</span>
-</span><span class='line'>        <span class="p">)</span>
-</span><span class='line'>    <span class="p">)</span>
-</span><span class='line'><span class="n">t</span><span class="o">.</span><span class="n">statuses</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">&#39;Started following open source changes at http://www.dif.io!&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>This will post a new tweet on behalf of the user, telling everyone they joined
-your website!</p>
-
-<p><strong>NOTE:</strong>
-<code>tweet_on_join</code> and <code>send_welcome_email</code> are Celery tasks, not ordinary Python
+&lt;p&gt;This will post a new tweet on behalf of the user, telling everyone they joined
+your website!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt;
+&lt;code&gt;tweet_on_join&lt;/code&gt; and &lt;code&gt;send_welcome_email&lt;/code&gt; are Celery tasks, not ordinary Python
 functions. This has the advantage of being able to execute these actions async
-and not slow down the user interface.</p>
-
-<p>Are you doing something special when a user joins your website? Please share
-your comments below. Thanks!</p>
-]]></content>
-  </entry>
-  
-</feed>
+and not slow down the user interface.&lt;/p&gt;
+&lt;p&gt;Are you doing something special when a user joins your website? Please share
+your comments below. Thanks!&lt;/p&gt;</summary><category term="Django"></category><category term="django-social-auth"></category><category term="Twitter"></category><category term="tips"></category></entry></feed>

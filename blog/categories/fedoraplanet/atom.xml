@@ -1,0 +1,1932 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-11-24T21:44:00+02:00</updated><entry><title>python-libs in RHEL 7.2 broke SSL verification in s3cmd</title><link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="alternate"></link><updated>2015-11-24T21:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-24:blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/</id><summary type="html">&lt;p&gt;Today started with &lt;a href="http://planet.sofiavalley.com"&gt;Planet Sofia Valley&lt;/a&gt; being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+&lt;a href="https://github.com/s3tools/s3cmd/issues/647"&gt;Issue #647&lt;/a&gt;. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.&lt;/p&gt;
+&lt;p&gt;After series of reported bugs,
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916"&gt;rhbz#1284916&lt;/a&gt;,
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930"&gt;rhbz#1284930&lt;/a&gt;,
+&lt;a href="http://bugs.python.org/issue25722"&gt;Python#25722&lt;/a&gt;, it was clear that
+&lt;code&gt;ssl.py&lt;/code&gt; was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at &lt;code&gt;httplib.py&lt;/code&gt; and &lt;code&gt;s3cmd&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Indeed there was a change in &lt;code&gt;httplib.py&lt;/code&gt; which introduced two parameters,
+&lt;em&gt;context&lt;/em&gt; and &lt;em&gt;check_hostname&lt;/em&gt;, to &lt;code&gt;HTTPSConnection.__init__&lt;/code&gt;. The change
+also supplied the logic which performs SSL hostname validation.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This looks a bit doggy as I don't quite understand the intention behind
+&lt;em&gt;not PREDICATE and PREDICATE&lt;/em&gt;. Anyway to disable the validation you need
+both parameters set to False, which is
+&lt;a href="https://github.com/s3tools/s3cmd/pull/668"&gt;PR #668&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the &lt;em&gt;inspect.getmembers&lt;/em&gt; function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="RHEL"></category><category term="Python"></category></entry><entry><title>GitHub Bugzilla Hook</title><link href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/" rel="alternate"></link><updated>2015-11-24T13:32:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-24:blog/2015/11/24/github-bugzilla-hook/</id><summary type="html">&lt;p&gt;Last month I've created a tool which adds comments to Bugzilla when a commit
+message references a bug number. It was done as a proof of concept and didn't
+receive much attention at the time. Today I'm happy to announce the existence
+of &lt;a href="https://github.com/atodorov/github-bugzilla-hook"&gt;GitHub Bugzilla Hook&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I've used David Shea's
+&lt;a href="https://github.com/rhinstaller/github-email-hook/"&gt;GitHub Email Hook&lt;/a&gt; as my
+starting template and only modified it where needed. GitHub Bugzilla Hook will
+examine push data and post comments for every unique bug+branch combination.
+Once a comment for that particular bug+branch combination is made, new ones
+will not be posted, even if later commits reference the same bug.
+My main assumption is commits which are related to a bug will be pushed together
+most of the times so there shouldn't be lots of noise in Bugzilla.&lt;/p&gt;
+&lt;p&gt;See &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1274703"&gt;rhbz#1274703&lt;/a&gt; for
+example of how the comments look. The parser behavior is taken from anaconda
+and conforms to the style the Red Hat Installer Engineering Team uses.
+Hopefully you find it useful as well.&lt;/p&gt;
+&lt;p&gt;My next step is to find a hosting place for this script and hook it up
+with the rhinstaller GitHub repos!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Bad Stub Design in DNF, Pt.2</title><link href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/" rel="alternate"></link><updated>2015-11-23T15:55:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-23:blog/2015/11/23/bad-stub-design-in-dnf/</id><summary type="html">&lt;p&gt;Do you remember my example of a
+&lt;a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/"&gt;bad stub design in DNF&lt;/a&gt; ?
+At that time I didn't have a good example of why this is a bad design and what are the
+consequences of it. Today I have!&lt;/p&gt;
+&lt;p&gt;From my comment on
+&lt;a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118"&gt;PR #118&lt;/a&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Note: the benefit of this patch are quite subtle.
+I've played around with creating a few more tests and the benefit I see affect
+only a few lines of code.&lt;/p&gt;
+&lt;p&gt;For #114 there doesn't seem to be any need to test _get_query directly,
+although we call&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;   q = self.base.sack.query()
+   q = q.available()
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;which will benefit from this PR b/c we're stubbing out the entire Sack object.
+I will work on a test later today/tomorrow to see how it looks.&lt;/p&gt;
+&lt;p&gt;OTOH for #113 where we modify _get_query the test can look something like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;def test_get_query_with_local_rpm(self):
+    try:
+        (fs, rpm_path) = tempfile.mkstemp(&amp;#39;foobar-99.99-1.x86_64.rpm&amp;#39;)
+        # b/c self.cmd.cli.base is a mock object add_remote_rpm
+        # will not update the available packages while testing.
+        # it is expected to hit an exception
+        with self.assertRaises(dnf.exceptions.PackageNotFoundError):
+            self.cmd._get_query(rpm_path)
+        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)
+    finally:
+        os.remove(rpm_path)
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note the comment above the with block. If we leave out &lt;code&gt;_get_query&lt;/code&gt; as before
+(a simple stub function) we're not going to be able to use &lt;code&gt;assert_called_with&lt;/code&gt;
+later.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Now a more practical example. See 
+&lt;a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d"&gt;commit fe13066&lt;/a&gt;
+- in case the package is not found we log the error. In case configuration is
+&lt;code&gt;strict=True&lt;/code&gt; then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.&lt;/p&gt;
+&lt;p&gt;What happens is that &lt;code&gt;test_get_packages()&lt;/code&gt; calls &lt;code&gt;_get_packages(['notfound'])&lt;/code&gt;,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!&lt;/p&gt;
+&lt;p&gt;With my new stub design the test will execute the actual &lt;code&gt;_get_packages()&lt;/code&gt;
+method from &lt;code&gt;download.py&lt;/code&gt; and choke on the exception. The test itself needs
+to be modified, which is done in
+&lt;a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7"&gt;commit 2c2b34&lt;/a&gt;
+and no further errors were found.&lt;/p&gt;
+&lt;p&gt;So let me summarize:
+&lt;strong&gt;
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+&lt;/strong&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Tip: Running DNF Plugins from git</title><link href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/" rel="alternate"></link><updated>2015-11-23T15:50:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-23:blog/2015/11/23/tip-running-dnf-plugins-from-git/</id><summary type="html">&lt;p&gt;This is mostly for self reference because it is not currently documented
+in the code. To use dnf plugins from a local git checkout modify your
+&lt;code&gt;/etc/dnf/dnf.conf&lt;/code&gt; and add the following line under the &lt;code&gt;[main]&lt;/code&gt; section:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;pluginpath=/path/to/dnf-plugins-core/plugins
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="tips"></category></entry><entry><title>Updated MacBook Air Drivers for RHEL 7.2</title><link href="http://atodorov.org/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/" rel="alternate"></link><updated>2015-11-21T11:27:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-21:blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/</id><summary type="html">&lt;p&gt;Yesterday I've upgraded to
+&lt;a href="https://access.redhat.com/announcements/2058583"&gt;Red Hat Enterprise Linux 7.2&lt;/a&gt;
+on my MacBook Air and I decided to rebuild the wifi and backlight drivers.
+Wifi broke immediately but I was able to fix the build with a
+&lt;a href="https://github.com/atodorov/wl-kmod-for-rhel7/commit/88d678a25eb702ce36f7c39471edefb65de57ad5"&gt;simple patch&lt;/a&gt;.
+I'm now using the newly built &lt;em&gt;kmod-wl-3.10.0-327.el7.x86_64-6.30.223.248-7.el7.x86_64&lt;/em&gt;
+and it appears to work as expected.&lt;/p&gt;
+&lt;p&gt;The &lt;em&gt;mba6x_bl&lt;/em&gt; driver built without problems however I'm having problems when
+closing the laptop lid. The screen stays on and (I think) the computer doesn't
+suspend. My battery was drained as I left the computer as-is overnight. Suspending
+from the Desktop menu however appears to work. See
+&lt;a href="https://github.com/patjak/mba6x_bl/issues/41"&gt;Issue #41&lt;/a&gt;. I'd love to get some
+help in debugging what's going wrong and trying to fix it. At this point I have
+no idea where to look and if it's the driver to blame or something else on the system.&lt;/p&gt;</summary><category term="Mac"></category><category term="RHEL"></category><category term="fedora.planet"></category></entry><entry><title>Revamping Anaconda's Dogtail Tests</title><link href="http://atodorov.org/blog/2015/11/20/revamping-anaconda-dogtail-tests/" rel="alternate"></link><updated>2015-11-20T15:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-20:blog/2015/11/20/revamping-anaconda-dogtail-tests/</id><summary type="html">&lt;p&gt;In my &lt;a href="/blog/2015/11/13/running-anaconda-from-git/"&gt;previous post&lt;/a&gt; I briefly talked
+about running anaconda from a git checkout. My goal was to rewrite &lt;code&gt;tests/gui/&lt;/code&gt; so
+that they don't use a LiveCD and virtual machines anymore. I'm pleased to announce
+that this is already done (still not merged), see 
+&lt;a href="https://github.com/rhinstaller/anaconda/pull/457"&gt;PR#457&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The majority of the changes are just shuffling bits around and deleting
+unused code. The existing UI tests were mostly working and only needed minor
+changes. There are two things which didn't work and are temporarily disabled:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Clicking the Help button results in 
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1282432"&gt;rhbz#1282432&lt;/a&gt;,
+which in turn may be hiding another bug behind it;&lt;/li&gt;
+&lt;li&gt;Looping over the available languages resulted in AT-SPI NonImplementedError
+which I'm going to debug next.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;To play around with this make sure you have accessibility enabled and:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# cd anaconda/
+# export top_srcdir=`pwd`
+# setenforce 0
+# cd tests/gui/
+# ./run_gui_tests.sh
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; you also need Dogtail for Python3 which isn't officially available
+yet. I'm building from
+&lt;a href="https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm"&gt;https://vhumpa.fedorapeople.org/dogtail/beta/dogtail3-0.9.1-0.3.beta3.src.rpm&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;My future plans are to figure out how to re-enable what is temporarily
+disabled, update &lt;code&gt;run_gui_tests.sh&lt;/code&gt; to properly start gnome-session and
+enable accessibility, do a better job cleaning up after a failure,
+enable coverage and hook everything into &lt;code&gt;make ci&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Running Anaconda from git</title><link href="http://atodorov.org/blog/2015/11/13/running-anaconda-from-git/" rel="alternate"></link><updated>2015-11-13T10:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-13:blog/2015/11/13/running-anaconda-from-git/</id><summary type="html">&lt;p&gt;It is now possible to execute anaconda directly from a git checkout.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disclaimer:&lt;/strong&gt; this is only for testing purposes, you are not supposed to
+execute anaconda from git and install a running system! My intention is
+to use this feature and rewrite the Dogtail tests inside &lt;code&gt;tests/gui/&lt;/code&gt; which
+rely on having a LiveCD.iso and running VMs to execute. For me this has proven
+very slow and difficult to debug problems in the past hence the change.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Note:&lt;/em&gt; you will need to have an active DISPLAY in your environment and
+also set SELinux to permissive, see 
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1276376"&gt;rhbz#1276376&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Please see &lt;a href="https://github.com/rhinstaller/anaconda/pull/438"&gt;PR 438&lt;/a&gt; for
+more details.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>How Krasi Tsonev Broke Planet.SofiaValley.com</title><link href="http://atodorov.org/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/" rel="alternate"></link><updated>2015-11-13T10:09:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-13:blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/</id><summary type="html">&lt;p&gt;Yesterday I've added &lt;a href="http://krasimirtsonev.com/blog/"&gt;Krasimir Tsonev's blog&lt;/a&gt; to
+&lt;a href="http://planet.sofiavalley.com"&gt;http://planet.sofiavalley.com&lt;/a&gt; and the planet broke. Suddenly it started showing
+only Krasi's articles and all of them with the same date. The problem was the RSS
+feed didn't have any timestamps. The fix is trivial:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- rss.xml.orig    2015-11-13 10:12:35.348625718 +0200&lt;/span&gt;
+&lt;span class="gi"&gt;+++ rss.xml 2015-11-13 10:12:45.157932304 +0200&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -9,120 +9,160 @@&lt;/span&gt;
+                             &amp;lt;title&amp;gt;&amp;lt;![CDATA[A modern React starter pack based on webpack]]&amp;gt;&amp;lt;/title&amp;gt;
+                             &amp;lt;link&amp;gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&amp;lt;/link&amp;gt;
+                             &amp;lt;description&amp;gt;&amp;lt;![CDATA[&amp;lt;p&amp;gt;&amp;lt;i&amp;gt;Checkout React webpack starter in &amp;lt;a href=\&amp;quot;https://github.com/krasimir/react-web&amp;lt;br /&amp;gt;&amp;lt;p&amp;gt;You know how crazy is the JavaScript world nowadays. There are new frameworks, libraries and tools coming every day. Frequently I’m exploring some of these goodies. I got a week long holiday. I promised to myself that I’ll not code, read or watch about code. Well, it’s stronger than me. &amp;lt;a href=\&amp;quot;https://github.com/krasimir/react-webpack-starter\&amp;quot;&amp;gt;React werbpack starter&amp;lt;/a&amp;gt; is the result of my no-programming week.&amp;lt;/p&amp;gt;]]&amp;gt;&amp;lt;/description&amp;gt;
+&lt;span class="gi"&gt;+                            &amp;lt;pubDate&amp;gt;Thu, 01 Oct 2015 00:00:00 +0300&amp;lt;/pubDate&amp;gt;&lt;/span&gt;
+&lt;span class="gi"&gt;+                            &amp;lt;guid&amp;gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&amp;lt;/guid&amp;gt;&lt;/span&gt;
+                         &amp;lt;/item&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Thanks to Krasi for fixing this quickly and happy reading!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Building Docker Images with Anaconda</title><link href="http://atodorov.org/blog/2015/10/28/building-docker-images-with-anaconda/" rel="alternate"></link><updated>2015-10-28T16:10:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-10-28:blog/2015/10/28/building-docker-images-with-anaconda/</id><summary type="html">&lt;p&gt;Anaconda, the Fedora and Red Hat Enterprise Linux installer, has gained some
+features to facilitate building Docker images. These are only available
+in kickstart. To build a Docker image for HTTPD, using packages provided in the
+distro use the following ks.cfg file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;install&lt;/span&gt;
+&lt;span class="n"&gt;lang&lt;/span&gt; &lt;span class="n"&gt;en_US&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;UTF&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt;
+&lt;span class="n"&gt;keyboard&lt;/span&gt; &lt;span class="n"&gt;us&lt;/span&gt;
+&lt;span class="n"&gt;network&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;onboot&lt;/span&gt; &lt;span class="n"&gt;yes&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;eth0&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;bootproto&lt;/span&gt; &lt;span class="n"&gt;dhcp&lt;/span&gt;
+
+&lt;span class="n"&gt;rootpw&lt;/span&gt;  &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;lock&lt;/span&gt;
+&lt;span class="n"&gt;firewall&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;disabled&lt;/span&gt;
+&lt;span class="n"&gt;timezone&lt;/span&gt; &lt;span class="n"&gt;Europe&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;Sofia&lt;/span&gt;
+
+&lt;span class="n"&gt;clearpart&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;all&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;initlabel&lt;/span&gt;
+&lt;span class="n"&gt;part&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;fstype&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;ext4&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;grow&lt;/span&gt;
+
+&lt;span class="n"&gt;bootloader&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;disabled&lt;/span&gt;
+
+&lt;span class="nf"&gt;%packages&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;nocore&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;instLangs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;en_US&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;excludedocs&lt;/span&gt;
+&lt;span class="n"&gt;httpd&lt;/span&gt;
+&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;kernel&lt;/span&gt;
+&lt;span class="n"&gt;yum&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;langpacks&lt;/span&gt; &lt;span class="err"&gt;#&lt;/span&gt; &lt;span class="n"&gt;workaround&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;rhbz&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="mi"&gt;1271766&lt;/span&gt;
+&lt;span class="nf"&gt;%end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The above kickstart file will:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;install HTTPD and its dependencies&lt;/li&gt;
+&lt;li&gt;disable kernel installation by excluding it from the package list&lt;/li&gt;
+&lt;li&gt;disable installation of the boot loader using &lt;code&gt;--disabled&lt;/code&gt;. The resulting image
+will not be bootable&lt;/li&gt;
+&lt;li&gt;disable firewall&lt;/li&gt;
+&lt;li&gt;locks the root account so it can't login from the console&lt;/li&gt;
+&lt;li&gt;prevent installing @core using &lt;code&gt;--nocore&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;limit the installation of localization files using &lt;code&gt;--instLangs&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;limit the installation of documentation using &lt;code&gt;--excludedocs&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; the previous &lt;code&gt;--nobase&lt;/code&gt; option is deprected and doesn't have any effect.&lt;/p&gt;
+&lt;p&gt;After the VM installation is complete grab the contents of the root directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# virt-tar-out -a /var/lib/libvirt/images/disk.qcow2 / myimage.tar
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Import the tarball into Docker and inspect the result:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# docker import myimage.tar local_images:ver1.0&lt;/span&gt;
+&lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="n"&gt;a2324e6d0e940a998b990262335894a17d261450c33f57dc153d3d1987e4fc1&lt;/span&gt;
+
+&lt;span class="c"&gt;# docker images&lt;/span&gt;
+&lt;span class="n"&gt;REPOSITORY&lt;/span&gt;                                             &lt;span class="n"&gt;TAG&lt;/span&gt;                 &lt;span class="n"&gt;IMAGE&lt;/span&gt; &lt;span class="n"&gt;ID&lt;/span&gt;            &lt;span class="n"&gt;CREATED&lt;/span&gt;             &lt;span class="n"&gt;VIRTUAL&lt;/span&gt; &lt;span class="n"&gt;SIZE&lt;/span&gt;
+&lt;span class="n"&gt;local_images&lt;/span&gt;                                           &lt;span class="n"&gt;ver1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;              &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="n"&gt;a2324e6d0e9&lt;/span&gt;        &lt;span class="mi"&gt;13&lt;/span&gt; &lt;span class="n"&gt;seconds&lt;/span&gt; &lt;span class="n"&gt;ago&lt;/span&gt;      &lt;span class="mf"&gt;320.6&lt;/span&gt; &lt;span class="n"&gt;MB&lt;/span&gt;
+&lt;span class="n"&gt;registry&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;access&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;redhat&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;com&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;rhel&lt;/span&gt;                        &lt;span class="n"&gt;latest&lt;/span&gt;              &lt;span class="mi"&gt;82&lt;/span&gt;&lt;span class="n"&gt;ad5fa11820&lt;/span&gt;        &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;weeks&lt;/span&gt; &lt;span class="n"&gt;ago&lt;/span&gt;         &lt;span class="mf"&gt;158.3&lt;/span&gt; &lt;span class="n"&gt;MB&lt;/span&gt;
+&lt;span class="n"&gt;registry&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;access&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;redhat&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;com&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;rhscl_beta&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;httpd&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;rhel7&lt;/span&gt;   &lt;span class="n"&gt;latest&lt;/span&gt;              &lt;span class="mi"&gt;55&lt;/span&gt;&lt;span class="n"&gt;a8a150cf2d&lt;/span&gt;        &lt;span class="mi"&gt;9&lt;/span&gt; &lt;span class="n"&gt;weeks&lt;/span&gt; &lt;span class="n"&gt;ago&lt;/span&gt;         &lt;span class="mf"&gt;201.1&lt;/span&gt; &lt;span class="n"&gt;MB&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Run commands into a new container: &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# docker run --name=bash_myimage -it 8a2324e6d0e9 /bin/bash
+bash-4.2# cat /etc/redhat-release 
+Red Hat Enterprise Linux Server release 7.2 Beta (Maipo)
+bash-4.2# rpm -q httpd
+httpd-2.4.6-40.el7.x86_64
+bash-4.2# exit
+
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+64f7ca6d5844        8a2324e6d0e9        &amp;quot;/bin/bash&amp;quot;         24 seconds ago      Exited (0) 19 seconds ago                       bash_myimage
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As you can see the resulting image is bigger than stock images provided by Red Hat.
+At this moment I don't know if this is the minimum package set which satisfies
+dependencies or anaconda adds a bit more on its own. The full package list is
+given below. There are some packages like  device-mapper, dracut, e2fsprogs,
+iptables, kexec-tools, SELinux related, systemd and tzdata which look out
+of place. My guess is some of them are pulled in from the various kickstart
+commands and not really necessary. I will follow up with devel and see if
+the content can be stripped down even more.&lt;/p&gt;
+&lt;p&gt;For more information check out these docs:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://access.redhat.com/articles/881893"&gt;Get Started with Docker Formatted Container Images on Red Hat Systems&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://access.redhat.com/documentation/en/red-hat-enterprise-linux-atomic-host/version-7/red-hat-enterprise-linux-atomic-host-7-getting-started-with-containers/chapter-7-get-started-with-docker-formatted-container-images"&gt;Chapter 7. Get Started with Docker Formatted Container Images&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Full package list:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;acl-2.2.51-12.el7.x86_64
+apr-1.4.8-3.el7.x86_64
+apr-util-1.5.2-6.el7.x86_64
+audit-libs-2.4.1-5.el7.x86_64
+basesystem-10.0-7.el7.noarch
+bash-4.2.46-19.el7.x86_64
+bind-libs-lite-9.9.4-29.el7.x86_64
+bind-license-9.9.4-29.el7.noarch
+binutils-2.23.52.0.1-54.el7.x86_64
+bzip2-libs-1.0.6-13.el7.x86_64
+ca-certificates-2015.2.4-71.el7.noarch
+chkconfig-1.3.61-5.el7.x86_64
+chrony-2.1.1-1.el7.x86_64
+coreutils-8.22-15.el7.x86_64
+cpio-2.11-24.el7.x86_64
+cracklib-2.9.0-11.el7.x86_64
+cracklib-dicts-2.9.0-11.el7.x86_64
+cryptsetup-libs-1.6.7-1.el7.x86_64
+curl-7.29.0-25.el7.x86_64
+cyrus-sasl-lib-2.1.26-19.2.el7.x86_64
+dbus-1.6.12-13.el7.x86_64
+dbus-glib-0.100-7.el7.x86_64
+dbus-libs-1.6.12-13.el7.x86_64
+dbus-python-1.1.1-9.el7.x86_64
+device-mapper-1.02.107-5.el7.x86_64
+device-mapper-libs-1.02.107-5.el7.x86_64
+dhclient-4.2.5-42.el7.x86_64
+dhcp-common-4.2.5-42.el7.x86_64
+dhcp-libs-4.2.5-42.el7.x86_64
+diffutils-3.3-4.el7.x86_64
+dracut-033-358.el7.x86_64
+dracut-network-033-358.el7.x86_64
+e2fsprogs-1.42.9-7.el7.x86_64
+e2fsprogs-libs-1.42.9-7.el7.x86_64
+ebtables-2.0.10-13.el7.x86_64
+elfutils-libelf-0.163-3.el7.x86_64
+elfutils-libs-0.163-3.el7.x86_64
+ethtool-3.15-2.el7.x86_64
+expat-2.1.0-8.el7.x86_64
+file-libs-5.11-31.el7.x86_64
+filesystem-3.2-20.el7.x86_64
+findutils-4.5.11-5.el7.x86_64
+firewalld-0.3.9-14.el7.noarch
+gawk-4.0.2-4.el7.x86_64
+gdbm-1.10-8.el7.x86_64
+glib2-2.42.2-5.el7.x86_64
+glibc-2.17-105.el7.x86_64
+glibc-common-2.17-105.el7.x86_64
+gmp-6.0.0-11.el7.x86_64
+gnupg2-2.0.22-3.el7.x86_64
+gobject-introspection-1.42.0-1.el7.x86_64
+gpgme-1.3.2-5.el7.x86_64
+grep-2.20-2.el7.x86_64
+gzip-1.5-8.el7.x86_64
+hardlink-1.0-19.el7.x86_64
+hostname-3.13-3.el7.x86_64
+httpd-2.4.6-40.el7.x86_64
+httpd-tools-2.4.6-40.el7.x86_64
+info-5.1-4.el7.x86_64
+initscripts-9.49.30-1.el7.x86_64
+iproute-3.10.0-54.el7.x86_64
+iptables-1.4.21-16.el7.x86_64
+iputils-20121221-7.el7.x86_64
+kexec-tools-2.0.7-37.el7.x86_64
+keyutils-libs-1.5.8-3.el7.x86_64
+kmod-20-5.el7.x86_64
+kmod-libs-20-5.el7.x86_64
+kpartx-0.4.9-85.el7.x86_64
+krb5-libs-1.13.2-10.el7.x86_64
+langtable-0.0.31-3.el7.noarch
+langtable-data-0.0.31-3.el7.noarch
+langtable-python-0.0.31-3.el7.noarch
+libacl-2.2.51-12.el7.x86_64
+libassuan-2.1.0-3.el7.x86_64
+libattr-2.4.46-12.el7.x86_64
+libblkid-2.23.2-26.el7.x86_64
+libcap-2.22-8.el7.x86_64
+libcap-ng-0.7.5-4.el7.x86_64
+libcom_err-1.42.9-7.el7.x86_64
+libcurl-7.29.0-25.el7.x86_64
+libdb-5.3.21-19.el7.x86_64
+libdb-utils-5.3.21-19.el7.x86_64
+libedit-3.0-12.20121213cvs.el7.x86_64
+libffi-3.0.13-16.el7.x86_64
+libgcc-4.8.5-4.el7.x86_64
+libgcrypt-1.5.3-12.el7_1.1.x86_64
+libgpg-error-1.12-3.el7.x86_64
+libidn-1.28-4.el7.x86_64
+libmnl-1.0.3-7.el7.x86_64
+libmount-2.23.2-26.el7.x86_64
+libnetfilter_conntrack-1.0.4-2.el7.x86_64
+libnfnetlink-1.0.1-4.el7.x86_64
+libpwquality-1.2.3-4.el7.x86_64
+libselinux-2.2.2-6.el7.x86_64
+libselinux-python-2.2.2-6.el7.x86_64
+libsemanage-2.1.10-18.el7.x86_64
+libsepol-2.1.9-3.el7.x86_64
+libss-1.42.9-7.el7.x86_64
+libssh2-1.4.3-10.el7.x86_64
+libstdc++-4.8.5-4.el7.x86_64
+libtasn1-3.8-2.el7.x86_64
+libuser-0.60-7.el7_1.x86_64
+libutempter-1.1.6-4.el7.x86_64
+libuuid-2.23.2-26.el7.x86_64
+libverto-0.2.5-4.el7.x86_64
+libxml2-2.9.1-5.el7_1.2.x86_64
+lua-5.1.4-14.el7.x86_64
+lzo-2.06-8.el7.x86_64
+mailcap-2.1.41-2.el7.noarch
+ncurses-5.9-13.20130511.el7.x86_64
+ncurses-base-5.9-13.20130511.el7.noarch
+ncurses-libs-5.9-13.20130511.el7.x86_64
+nspr-4.10.8-1.el7_1.x86_64
+nss-3.19.1-17.el7.x86_64
+nss-softokn-3.16.2.3-13.el7_1.x86_64
+nss-softokn-freebl-3.16.2.3-13.el7_1.x86_64
+nss-sysinit-3.19.1-17.el7.x86_64
+nss-tools-3.19.1-17.el7.x86_64
+nss-util-3.19.1-3.el7_1.x86_64
+openldap-2.4.40-8.el7.x86_64
+openssl-libs-1.0.1e-42.el7_1.9.x86_64
+p11-kit-0.20.7-3.el7.x86_64
+p11-kit-trust-0.20.7-3.el7.x86_64
+pam-1.1.8-12.el7_1.1.x86_64
+pcre-8.32-15.el7.x86_64
+pinentry-0.8.1-14.el7.x86_64
+pkgconfig-0.27.1-4.el7.x86_64
+popt-1.13-16.el7.x86_64
+procps-ng-3.3.10-3.el7.x86_64
+pth-2.0.7-23.el7.x86_64
+pygobject3-base-3.14.0-3.el7.x86_64
+pygpgme-0.3-9.el7.x86_64
+pyliblzma-0.5.3-11.el7.x86_64
+python-2.7.5-34.el7.x86_64
+python-decorator-3.4.0-3.el7.noarch
+python-iniparse-0.4-9.el7.noarch
+python-libs-2.7.5-34.el7.x86_64
+python-pycurl-7.19.0-17.el7.x86_64
+python-slip-0.4.0-2.el7.noarch
+python-slip-dbus-0.4.0-2.el7.noarch
+python-urlgrabber-3.10-7.el7.noarch
+pyxattr-0.5.1-5.el7.x86_64
+qrencode-libs-3.4.1-3.el7.x86_64
+readline-6.2-9.el7.x86_64
+redhat-logos-70.0.3-4.el7.noarch
+redhat-release-server-7.2-7.el7.x86_64
+rpm-4.11.3-17.el7.x86_64
+rpm-build-libs-4.11.3-17.el7.x86_64
+rpm-libs-4.11.3-17.el7.x86_64
+rpm-python-4.11.3-17.el7.x86_64
+sed-4.2.2-5.el7.x86_64
+setup-2.8.71-6.el7.noarch
+shadow-utils-4.1.5.1-18.el7.x86_64
+shared-mime-info-1.1-9.el7.x86_64
+snappy-1.1.0-3.el7.x86_64
+sqlite-3.7.17-8.el7.x86_64
+systemd-219-19.el7.x86_64
+systemd-libs-219-19.el7.x86_64
+sysvinit-tools-2.88-14.dsf.el7.x86_64
+tzdata-2015g-1.el7.noarch
+ustr-1.0.4-16.el7.x86_64
+util-linux-2.23.2-26.el7.x86_64
+xz-5.1.2-12alpha.el7.x86_64
+xz-libs-5.1.2-12alpha.el7.x86_64
+yum-3.4.3-132.el7.noarch
+yum-langpacks-0.4.2-4.el7.noarch
+yum-metadata-parser-1.1.4-10.el7.x86_64
+zlib-1.2.7-15.el7.x86_64
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category></entry><entry><title>Anaconda &amp; coverage.py - Pt.3 - coverage-diff</title><link href="http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff/" rel="alternate"></link><updated>2015-10-27T11:12:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-10-27:blog/2015/10/27/anaconda-coverage.py-coverage-diff/</id><summary type="html">&lt;p&gt;In my &lt;a href="/blog/2015/10/15/anaconda-coverage.py-details/"&gt;previous post&lt;/a&gt;
+I've talked about testing anaconda and friends and raised some questions.
+Today I'm going to give an example of how to answer one of them:
+"How different is the code execution path between different tests?"&lt;/p&gt;
+&lt;h2&gt;coverate-tools&lt;/h2&gt;
+&lt;p&gt;I'm going to use &lt;a href="https://github.com/atodorov/coverage-tools"&gt;coverage-tools&lt;/a&gt;
+in my explanations below so a little introduction is required. All the tools
+are executable Python scripts which build on top of existing coverage.py API.
+The difference is mainly in flexibility of parameters and output formatting.
+I've tried to keep as close as possible to the existing behavior of coverage.py.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;coverage-annotate&lt;/em&gt; - when given a .coverage data file prints the source code
+annotated with line numbers and execution markers.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;!!!&lt;/span&gt; &lt;span class="n"&gt;missing&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib64&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;python2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;pyanaconda&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;anaconda_argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;covered&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib64&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;python2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;pyanaconda&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;anaconda_argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;skip&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
+    &lt;span class="mi"&gt;37&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;logging&lt;/span&gt;
+    &lt;span class="mi"&gt;38&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;log&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;logging&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getLogger&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;anaconda&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;39&lt;/span&gt;   
+    &lt;span class="mi"&gt;40&lt;/span&gt;   &lt;span class="c"&gt;# Help text formatting constants&lt;/span&gt;
+    &lt;span class="mi"&gt;41&lt;/span&gt;   
+    &lt;span class="mi"&gt;42&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;LEFT_PADDING&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;  &lt;span class="c"&gt;# the help text will start after 8 spaces&lt;/span&gt;
+    &lt;span class="mi"&gt;43&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;RIGHT_PADDING&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;  &lt;span class="c"&gt;# there will be 8 spaces left on the right&lt;/span&gt;
+    &lt;span class="mi"&gt;44&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;DEFAULT_HELP_WIDTH&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;
+    &lt;span class="mi"&gt;45&lt;/span&gt;   
+    &lt;span class="mi"&gt;46&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_help_width&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="mi"&gt;47&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="s"&gt;    48 &amp;gt;     Try to detect the terminal window width size and use it to&lt;/span&gt;
+&lt;span class="s"&gt;    49 &amp;gt;     compute optimal help text width. If it can&amp;#39;t be detected&lt;/span&gt;
+&lt;span class="s"&gt;    50 &amp;gt;     a default values is returned.&lt;/span&gt;
+&lt;span class="s"&gt;    51   &lt;/span&gt;
+&lt;span class="s"&gt;    52 &amp;gt;     :returns: optimal help text width in number of characters&lt;/span&gt;
+&lt;span class="s"&gt;    53 &amp;gt;     :rtype: int&lt;/span&gt;
+&lt;span class="s"&gt;    54 &amp;gt;     &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="mi"&gt;55&lt;/span&gt;       &lt;span class="c"&gt;# don&amp;#39;t do terminal size detection on s390, it is not supported&lt;/span&gt;
+    &lt;span class="mi"&gt;56&lt;/span&gt;       &lt;span class="c"&gt;# by its arcane TTY system and only results in cryptic error messages&lt;/span&gt;
+    &lt;span class="mi"&gt;57&lt;/span&gt;       &lt;span class="c"&gt;# ending on the standard output&lt;/span&gt;
+    &lt;span class="mi"&gt;58&lt;/span&gt;       &lt;span class="c"&gt;# (we do the s390 detection here directly to avoid&lt;/span&gt;
+    &lt;span class="mi"&gt;59&lt;/span&gt;       &lt;span class="c"&gt;#  the delay caused by importing the Blivet module&lt;/span&gt;
+    &lt;span class="mi"&gt;60&lt;/span&gt;       &lt;span class="c"&gt;#  just for this single call)&lt;/span&gt;
+    &lt;span class="mi"&gt;61&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;is_s390&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;uname&lt;/span&gt;&lt;span class="p"&gt;()[&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;startswith&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;s390&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;62&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;is_s390&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="mi"&gt;63&lt;/span&gt; &lt;span class="err"&gt;!&lt;/span&gt;         &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;DEFAULT_HELP_WIDTH&lt;/span&gt;
+    &lt;span class="mi"&gt;64&lt;/span&gt;   
+&lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;skip&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In the example above all lines starting with &lt;strong&gt;&amp;gt;&lt;/strong&gt; were executed by the interpreter.
+All top-level import statements were executed as you would expect. Then the method
+&lt;em&gt;get_help_width()&lt;/em&gt; was executed (called from somewhere). Because this was on x86_64
+machine line 63 was not executed. It is marked with &lt;strong&gt;!&lt;/strong&gt;. The comments and empty
+lines are of no interest.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;coverage-diff&lt;/em&gt; - produces git like diff reports on the text output of annotate.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -634,7 +634,7 @@&lt;/span&gt;
+    634           # Wait to make sure the other threads are done before sending ready, otherwise
+    635           # the spoke may not get be sensitive by _handleCompleteness in the hub.
+    636 &amp;gt;         while not self.ready:
+&lt;span class="gd"&gt;-   637 !             time.sleep(1)&lt;/span&gt;
+&lt;span class="gi"&gt;+   637 &amp;gt;             time.sleep(1)&lt;/span&gt;
+    638 &amp;gt;         hubQ.send_ready(self.__class__.__name__, False)
+    639   
+    640 &amp;gt;     def refresh(self):\
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In this example line 637 was not executed in the first test run, while it was executed
+in the second test run. Reading the comments above it is clear the difference between
+the two test runs is just timing and synchronization.&lt;/p&gt;
+&lt;h2&gt;Kickstart vs. Kickstart&lt;/h2&gt;
+&lt;p&gt;How different is the code execution path between different tests? Looking at
+&lt;a href="https://fedoraproject.org/wiki/Test_Results:Fedora_23_Final_RC3_Installation"&gt;Fedora 23 test results&lt;/a&gt;
+we see several tests which differ only slightly in their setup - installation
+via HTTP, FTP or NFS; installation to SATA, SCSI, SAS drives; installation using
+RAID for the root file system; These are good candidates for further analysis.&lt;/p&gt;
+&lt;p&gt;Note: my results below are not from Fedora 23 but the conclusions still apply!
+The tests were executed on bare metal and virtual machines, trying to use the
+same hardware or same systems configurations where possible!&lt;/p&gt;
+&lt;p&gt;Example: HTTP vs. FTP&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -891,7 +891,7 @@&lt;/span&gt;
+    891   
+    892               # Run any listeners for the new state
+    893 &amp;gt;             for func in self._event_listeners[event_id]:
+&lt;span class="gd"&gt;-   894 !                 func()&lt;/span&gt;
+&lt;span class="gi"&gt;+   894 &amp;gt;                 func()&lt;/span&gt;
+    895   
+    896 &amp;gt;     def _runThread(self, storage, ksdata, payload, fallback, checkmount):
+    897           # This is the thread entry
+&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/lib/resize.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -102,10 +102,10 @@&lt;/span&gt;
+    102           # Otherwise, fall back on increasingly vague information.
+    103 &amp;gt;         if not part.isleaf:
+    104 &amp;gt;             return self.storage.devicetree.getChildren(part)[0].name
+&lt;span class="gd"&gt;-   105 &amp;gt;         if getattr(part.format, &amp;quot;label&amp;quot;, None):&lt;/span&gt;
+&lt;span class="gi"&gt;+   105 !         if getattr(part.format, &amp;quot;label&amp;quot;, None):&lt;/span&gt;
+    106 !             return part.format.label
+&lt;span class="gd"&gt;-   107 &amp;gt;         elif getattr(part.format, &amp;quot;name&amp;quot;, None):&lt;/span&gt;
+&lt;span class="gd"&gt;-   108 &amp;gt;             return part.format.name&lt;/span&gt;
+&lt;span class="gi"&gt;+   107 !         elif getattr(part.format, &amp;quot;name&amp;quot;, None):&lt;/span&gt;
+&lt;span class="gi"&gt;+   108 !             return part.format.name&lt;/span&gt;
+    109 !         else:
+    110 !             return &amp;quot;&amp;quot;
+    111   
+&lt;span class="gu"&gt;@@ -315,10 +315,10 @@&lt;/span&gt;
+    315 &amp;gt;     def on_key_pressed(self, window, event, *args):
+    316           # Handle any keyboard events.  Right now this is just delete for
+    317           # removing a partition, but it could include more later.
+&lt;span class="gd"&gt;-   318 &amp;gt;         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:&lt;/span&gt;
+&lt;span class="gi"&gt;+   318 !         if not event or event and event.type != Gdk.EventType.KEY_RELEASE:&lt;/span&gt;
+    319 !             return
+    320   
+&lt;span class="gd"&gt;-   321 &amp;gt;         if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():&lt;/span&gt;
+&lt;span class="gi"&gt;+   321 !         if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():&lt;/span&gt;
+    322 !             self._deleteButton.emit(&amp;quot;clicked&amp;quot;)
+    323   
+    324 &amp;gt;     def _sumReclaimableSpace(self, model, path, itr, *args):
+&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -634,7 +634,7 @@&lt;/span&gt;
+    634           # Wait to make sure the other threads are done before sending ready, otherwise
+    635           # the spoke may not get be sensitive by _handleCompleteness in the hub.
+    636 &amp;gt;         while not self.ready:
+&lt;span class="gd"&gt;-   637 !             time.sleep(1)&lt;/span&gt;
+&lt;span class="gi"&gt;+   637 &amp;gt;             time.sleep(1)&lt;/span&gt;
+    638 &amp;gt;         hubQ.send_ready(self.__class__.__name__, False)
+    639   
+    640 &amp;gt;     def refresh(self):
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The difference in &lt;code&gt;source.py&lt;/code&gt; is from timing/synchronization and can safely be ignored.
+I'm not exactly sure about &lt;code&gt;__init__.py&lt;/code&gt; but doesn't look much of a big deal.
+We're left with &lt;code&gt;resize.py&lt;/code&gt;. The differences in &lt;em&gt;on_key_pressed()&lt;/em&gt; are because
+I've probably used the keyboard instead the mouse (these are indeed manual installs).
+The other difference is in how the partition labels are displayed. One of the installs
+was probably using fresh disks while the other not.&lt;/p&gt;
+&lt;p&gt;Example: SATA vs. SCSI - no difference&lt;/p&gt;
+&lt;p&gt;Example: SATA vs. SAS (mpt2sas driver)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -109,10 +109,10 @@&lt;/span&gt;
+    109 &amp;gt;     try:
+    110 &amp;gt;         opts.parity = arg[idx+0]
+    111 &amp;gt;         opts.word   = arg[idx+1]
+&lt;span class="gd"&gt;-   112 !         opts.flow   = arg[idx+2]&lt;/span&gt;
+&lt;span class="gd"&gt;-   113 !     except IndexError:&lt;/span&gt;
+&lt;span class="gd"&gt;-   114 &amp;gt;         pass&lt;/span&gt;
+&lt;span class="gd"&gt;-   115 &amp;gt;     return opts&lt;/span&gt;
+&lt;span class="gi"&gt;+   112 &amp;gt;         opts.flow   = arg[idx+2]&lt;/span&gt;
+&lt;span class="gi"&gt;+   113 &amp;gt;     except IndexError:&lt;/span&gt;
+&lt;span class="gi"&gt;+   114 !         pass&lt;/span&gt;
+&lt;span class="gi"&gt;+   115 !     return opts&lt;/span&gt;
+    116   
+    117 ! def _is_on_iscsi(device):
+    118 !     &amp;quot;&amp;quot;&amp;quot;Tells whether a given device is on an iSCSI disk or not.&amp;quot;&amp;quot;&amp;quot;
+&lt;span class="gu"&gt;@@ -1075,13 +1075,13 @@&lt;/span&gt;
+   1075 &amp;gt;             command = [&amp;quot;serial&amp;quot;]
+   1076 &amp;gt;             s = parse_serial_opt(self.console_options)
+   1077 &amp;gt;             if unit and unit != &amp;#39;0&amp;#39;:
+&lt;span class="gd"&gt;-  1078 !                 command.append(&amp;quot;--unit=%s&amp;quot; % unit)&lt;/span&gt;
+&lt;span class="gi"&gt;+  1078 &amp;gt;                 command.append(&amp;quot;--unit=%s&amp;quot; % unit)&lt;/span&gt;
+   1079 &amp;gt;             if s.speed and s.speed != &amp;#39;9600&amp;#39;:
+   1080 &amp;gt;                 command.append(&amp;quot;--speed=%s&amp;quot; % s.speed)
+   1081 &amp;gt;             if s.parity:
+&lt;span class="gd"&gt;-  1082 !                 if s.parity == &amp;#39;o&amp;#39;:&lt;/span&gt;
+&lt;span class="gi"&gt;+  1082 &amp;gt;                 if s.parity == &amp;#39;o&amp;#39;:&lt;/span&gt;
+   1083 !                     command.append(&amp;quot;--parity=odd&amp;quot;)
+&lt;span class="gd"&gt;-  1084 !                 elif s.parity == &amp;#39;e&amp;#39;:&lt;/span&gt;
+&lt;span class="gi"&gt;+  1084 &amp;gt;                 elif s.parity == &amp;#39;e&amp;#39;:&lt;/span&gt;
+   1085 !                     command.append(&amp;quot;--parity=even&amp;quot;)
+   1086 &amp;gt;             if s.word and s.word != &amp;#39;8&amp;#39;:
+   1087 !                 command.append(&amp;quot;--word=%s&amp;quot; % s.word)
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As you can see the difference is minimal, mostly related to the underlying
+hardware. As far as I can tell this has to do with how the bootloader is
+installed on disk but I'm no expert on this particular piece of code.
+I've seen the same difference in other comparisons so it probably has to do
+more with hardware than with what kind of disk/driver is used.&lt;/p&gt;
+&lt;p&gt;Example: RAID 0 vs. RAID 1 - manual install&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -490,9 +490,9 @@&lt;/span&gt;
+    490   
+    491 &amp;gt;         time_init_thread = threadMgr.get(constants.THREAD_TIME_INIT)
+    492 &amp;gt;         if time_init_thread is not None:
+&lt;span class="gd"&gt;-   493 &amp;gt;             hubQ.send_message(self.__class__.__name__,&lt;/span&gt;
+&lt;span class="gd"&gt;-   494 &amp;gt;                              _(&amp;quot;Restoring hardware time...&amp;quot;))&lt;/span&gt;
+&lt;span class="gd"&gt;-   495 &amp;gt;             threadMgr.wait(constants.THREAD_TIME_INIT)&lt;/span&gt;
+&lt;span class="gi"&gt;+   493 !             hubQ.send_message(self.__class__.__name__,&lt;/span&gt;
+&lt;span class="gi"&gt;+   494 !                              _(&amp;quot;Restoring hardware time...&amp;quot;))&lt;/span&gt;
+&lt;span class="gi"&gt;+   495 !             threadMgr.wait(constants.THREAD_TIME_INIT)&lt;/span&gt;
+    496   
+    497 &amp;gt;         hubQ.send_ready(self.__class__.__name__, False)
+    498
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As far as I can tell the difference is related to hardware clock settings,
+probably due to different defaults in BIOS on the various hardware.
+Additional tests with RAID 5 and RAID 6 reveals the same exact difference.
+RAID 0 vs. RAID 10 shows no difference at all. Indeed as far as I know anaconda
+delegates the creation of RAID arrays to mdadm once the desired configuration
+is known so these results are to be expected.&lt;/p&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;As you can see sometimes there are tests which appear to be very important
+but in reality they cover a corner case of the base test. For example if any
+of the RAID levels works we can be pretty confident 
+&lt;strike&gt;all of them work&lt;/strike&gt; &lt;em&gt;they won't break in anaconda&lt;/em&gt;
+(thanks Adam Williamson)!&lt;/p&gt;
+&lt;p&gt;What you do with this information is up to you. Sometimes QA is able to
+execute all the tests and life is good. Sometimes we have to compromise,
+skip some testing and accept the risks of doing so. Sometimes you can
+execute all tests for every build, sometimes only once per milestone.
+Whatever the case having the information to back up your decision is vital!&lt;/p&gt;
+&lt;p&gt;In my next post on this topic I'm going to talk more about functional tests
+vs. unit tests. Both anaconda and blivet have both kinds of tests and I'm
+interested to know if tests from the two categories focus on the same
+functionality how are they different. If we have a unit test for feature X,
+does it warrant to spend the resources doing functional testing for X as well?&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Anaconda &amp; coverage.py - Pt.2 - Details</title><link href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/" rel="alternate"></link><updated>2015-10-15T14:15:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-10-15:blog/2015/10/15/anaconda-coverage.py-details/</id><summary type="html">&lt;p&gt;My &lt;a href="/blog/2015/10/14/anaconda-coverage.py-introduction/"&gt;previous post&lt;/a&gt;
+was an introduction to testing installation related components. Now I'm going to
+talk more about anaconda and how it is tested.&lt;/p&gt;
+&lt;p&gt;There are two primary ways to test anaconda. You can execute &lt;code&gt;make check&lt;/code&gt; in the
+source directory which will trigger the package test suite. The other possibility
+is to perform an actual installation, on bare meta or virtual machine, using the
+&lt;a href="https://kojipkgs.fedoraproject.org/mash/"&gt;latest Rawhide snapshots&lt;/a&gt; which also
+include the latest anaconda. For both of these methods we can collect code
+coverage information. In live installation mode coverage is enabled via the
+&lt;code&gt;inst.debug&lt;/code&gt; boot argument. Fedora 23 and earlier use &lt;code&gt;debug=1&lt;/code&gt; but that
+can lead to &lt;a href="https://github.com/rhinstaller/anaconda/pull/291"&gt;problems&lt;/a&gt;
+sometimes.&lt;/p&gt;
+&lt;h2&gt;Kickstart Testing&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://github.com/rhinstaller/pykickstart/blob/master/docs/kickstart-docs.rst"&gt;Kickstart&lt;/a&gt;
+is a method of automating the installation of Fedora by supplying the necessary
+configuration into a text file and pointing the installer at this file. There is
+the directory &lt;code&gt;tests/kickstart_tests&lt;/code&gt;, inside the anaconda source, where each
+test is a kickstart file and a shell script. The test runner provisions a virtual
+machine using boot.iso and the kickstart file. A shell script then verifies
+installation was as expected and copies files of interest to the host system.
+Kickstart files are also the basis for testing Fedora installations in
+&lt;a href="https://beaker.fedoraproject.org/bkr/jobs/"&gt;Beaker&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Naturally some of these in-package kickstart tests are the same as
+&lt;a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests/"&gt;out-of-band kickstart tests&lt;/a&gt;.
+Hint: there are more available but not yet public.&lt;/p&gt;
+&lt;p&gt;The question which I don't have an answer for right now is
+"Can we remove some of the duplicates and how this affects devel and QE teams" ?
+The pros of in-package testing are that it is faster compared to Beaker. The cons
+are that you're not testing the real distro (every snapshot is a possible final
+release to the users).&lt;/p&gt;
+&lt;h2&gt;Dogtail&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://fedorahosted.org/dogtail/"&gt;Dogtail&lt;/a&gt; uses accessibility technologies to
+communicate with desktop applications. It is written in Python and can be used
+as GUI test automation framework. Long time ago I've proposed support for Dogtail
+in anaconda which was rejected, then couple of years later it was accepted and
+later removed from the code again.&lt;/p&gt;
+&lt;p&gt;Anaconda has in-package Dogtail tests (&lt;code&gt;tests/gui/&lt;/code&gt;). They work by attaching
+a second disk image with the test suite to a VM running a LiveCD. Anaconda is
+started on the LiveCD and an attempt to install Fedora on disk 1 is made.
+Everything is driven by the Dogtail scripts. There are only a few of these
+tests available and they are currently disabled.
+Red Hat QE has also created another method for running Dogtail tests in anaconda
+using an updates.img with the previous functionality.&lt;/p&gt;
+&lt;p&gt;Even if there are some duplicate tests I'm not convinced we have to drop the
+&lt;code&gt;tests/gui/&lt;/code&gt; directory from the code because
+the framework used to drive the graphical interface of anaconda appears to be very
+well written. The code is clean and easy to follow.
+Also I don't have metrics of how much these two methods differ or how much they cover
+in their testing. IMO they are pretty close and before we can find a way to
+reliably execute them on a regular basis there isn't much to be done here.
+One idea is to use the &lt;code&gt;--dirinstall&lt;/code&gt; or &lt;code&gt;--image&lt;/code&gt; options and skip the
+LiveCD part entirely.&lt;/p&gt;
+&lt;h2&gt;How Much is Tested&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;make ci&lt;/code&gt; covers 10% of the entire code base for anaconda. Mind you that
+&lt;code&gt;tests/storage&lt;/code&gt; and &lt;code&gt;tests/gui&lt;/code&gt; are currently disabled.
+See &lt;a href="https://github.com/rhinstaller/anaconda/pull/346"&gt;PR #346&lt;/a&gt;,
+&lt;a href="https://github.com/rhinstaller/anaconda/pull/327"&gt;PR #327&lt;/a&gt; and
+&lt;a href="https://github.com/rhinstaller/anaconda/pull/319"&gt;PR #319&lt;/a&gt;!
+There is definitely room for improvement.&lt;/p&gt;
+&lt;p&gt;On the other hand live installation testing is much
+better. Text mode covers around 25% while graphical installations around 40%.
+Text and graphical combined cover 50% though. These numbers will drop quite a bit
+once anaconda learns to
+&lt;a href="https://github.com/rhinstaller/anaconda/pull/397"&gt;include all possible files&lt;/a&gt;
+in its report but it is a good estimate.&lt;/p&gt;
+&lt;p&gt;The important questions to ask here are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;How much can PyUnit tests cover in anaconda?&lt;/li&gt;
+&lt;li&gt;How much can kickstart tests cover ?&lt;/li&gt;
+&lt;li&gt;Have we reached a threshold in any of the two primary methods for testing ?&lt;/li&gt;
+&lt;li&gt;Does UI automation (with Dogtail) improve anything ?&lt;/li&gt;
+&lt;li&gt;When testing a particular feature (say user creation) how different is the
+code execution path between manual (GUI) testing, kickstart and unit testing ?
+If not so different can we invest in unit tests instead of higher level tests then ?&lt;/li&gt;
+&lt;li&gt;How different is the code execution path between different tests (manual or kickstart) ?
+In other words how much value are we getting from testing for the resources we're putting in ?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In my next post I will talk more about these questions and some rudimentary
+analysis against coverage data from the various test methods and test cases!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Anaconda &amp; coverage.py - Pt.1 - Introduction</title><link href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/" rel="alternate"></link><updated>2015-10-14T13:44:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-10-14:blog/2015/10/14/anaconda-coverage.py-introduction/</id><summary type="html">&lt;p&gt;Since early 2015 I've been working on testing installation related
+components in Rawhide. I'm interested in the code produced by the
+&lt;a href="https://github.com/rhinstaller/"&gt;Red Hat Installer Engineering Team&lt;/a&gt; and in
+particular in &lt;em&gt;anaconda&lt;/em&gt;, &lt;em&gt;blivet&lt;/em&gt;, &lt;em&gt;pyparted&lt;/em&gt; and &lt;em&gt;pykickstart&lt;/em&gt;. The goal of
+this effort is to improve the overall testing of these components and also
+have Red Hat QE contribute some of our knowledge back to the community. The benefit
+of course will be better software for everyone. In the next
+several posts I'll summarize what has been done so far and what's to be expected
+in the future.&lt;/p&gt;
+&lt;h2&gt;Test Documentation Matters&lt;/h2&gt;
+&lt;p&gt;Do you want others to contribute tests? I certainly do! When I started looking
+at the code it was obviously clear there was no documentation related to testing.
+Everyone needs to know how to write and execute these tests! Currently we have
+basic README files describing how to install necessary dependencies for development
+and test execution, how to execute the tests (and what can be tested) and most
+importantly what is the test architecture. There is description of how the file
+structure is organized and which are the base classes to inherit from when adding
+new tests. Most of the times each component goes through a &lt;em&gt;pylint&lt;/em&gt; check and
+a standard PyUnit test suite.&lt;/p&gt;
+&lt;p&gt;Test documentation is usually in a &lt;code&gt;tests/README&lt;/code&gt; file. For example:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/rhinstaller/anaconda/blob/master/tests/README.rst"&gt;anaconda&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/rhinstaller/blivet/blob/master/tests/README.rst"&gt;blivet&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/rhinstaller/pykickstart/blob/master/tests/README.rst"&gt;pykickstart&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/rhinstaller/pyparted/blob/master/tests/README.rst"&gt;pyparted&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I've tried to explain as much as possible without bloating the files and going into
+unnecessary details. If you spot something missing please send a pull request.&lt;/p&gt;
+&lt;h2&gt;Continuous Integration&lt;/h2&gt;
+&lt;p&gt;This has been largely an effort driven by Chris Lumens from the devel team.
+All the components I'm interested in are tested regularly in a CI environment.
+There is a &lt;code&gt;make ci&lt;/code&gt; Makefile target for those of you interested in what exactly
+gets executed.&lt;/p&gt;
+&lt;h2&gt;Test Coverage&lt;/h2&gt;
+&lt;p&gt;In order to &lt;strong&gt;improve&lt;/strong&gt; something you need to know where you stand. We'll I didn't.
+That's why the first step was to integrate the
+&lt;a href="https://bitbucket.org/ned/coveragepy"&gt;coverage.py&lt;/a&gt; tool with all of these components.&lt;/p&gt;
+&lt;p&gt;With the exception of blivet (written in C) all of the other
+components integrate well with coverage.py and produce good statistics. pykickstart is
+the champ here with 90% coverage, while anaconda is somewhere between 10% and 50%.
+Full test coverage measurement for anaconda isn't straight forward and will be the
+subject of my next post. For the C based code we have to hook up with
+&lt;a href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html"&gt;Gcov&lt;/a&gt; which shouldn't be too difficult.&lt;/p&gt;
+&lt;p&gt;At the moment there are several open pull requests to integrate the coverage test
+targets with &lt;code&gt;make ci&lt;/code&gt; and also report the results in human readable form. I will be
+collecting these for historical references.&lt;/p&gt;
+&lt;h2&gt;Tools&lt;/h2&gt;
+&lt;p&gt;I've created some basic text-mode
+&lt;a href="https://github.com/atodorov/coverage-tools"&gt;coverage-tools&lt;/a&gt; to help me combine and
+compare data from different executions. These are only the start of it and I'm expanding
+them as my needs for reporting and analytics evolve. I'm also looking into
+&lt;a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/"&gt;more detailed coverage reports&lt;/a&gt;
+but I don't have enough data and use cases to work on this front at the moment.&lt;/p&gt;
+&lt;p&gt;Some ideas currently in mind:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;map code changes (git commits) to existing test coverage to get a feeling where to
+invest in more testing;&lt;/li&gt;
+&lt;li&gt;map bugs to code areas and to existing test coverage to see if we aren't
+missing tests in areas where the bugs are happening;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Bugs&lt;/h2&gt;
+&lt;p&gt;coverage.py is a very nice tool indeed but I guess most people use it in a very
+limited way. Shortly after I started working with it I've found several places which
+need improvements. These have to do with combining and reporting on multiple files.&lt;/p&gt;
+&lt;p&gt;Some of the interesting issues I've found and still open are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://bitbucket.org/ned/coveragepy/pull-requests/63/"&gt;PR #63 - New option --dont-remove when combining coverage data&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://bitbucket.org/ned/coveragepy/issues/425"&gt;#425 - source parameter not including files which are explicitly specified&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://bitbucket.org/ned/coveragepy/issues/426"&gt;#426 - Difference between coverage results with source specifies full dir instead of module name&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In my next post I will talk about anaconda code coverage and what I want to do with it.
+In the mean time please use the comments to share your feedback.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Thunderbolt to VGA adapter on Linux</title><link href="http://atodorov.org/blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux/" rel="alternate"></link><updated>2015-09-30T11:59:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-09-30:blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux/</id><summary type="html">&lt;p&gt;I've previously written about my
+&lt;a href="blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"&gt;Thunderbolt to Ethernet adapter working on Linux&lt;/a&gt;
+despite claims that it should not. Recently I've used my MacBook to do a presentation
+and the Thunderbolt to VGA adapter worked well enough.&lt;/p&gt;
+&lt;p&gt;It was an Acer adapter but I have no more details b/c it wasn't mine.&lt;/p&gt;
+&lt;p&gt;Before the event I've tested it and it worked so on the day of the event I've
+freshly rebooted my laptop to be sure no crashed processes or anything like that
+was running and gave it a go.&lt;/p&gt;
+&lt;p&gt;First time I plugged in the MacBook everything worked like a charm. Then my computer was
+unplugged and the lid closed, causing it to suspend. The second time I've plugged it in
+I was told there was nothing showing on the projector so I quickly plugged the adapter out
+and then back in. It worked more or less.&lt;/p&gt;
+&lt;p&gt;At the time I had LibreOffice Impress in presentation
+mode but I did see ABRT detecting a kernel problem. When my slides popped up the text
+on the first one was mostly missing but the rest were ok!&lt;/p&gt;
+&lt;p&gt;Mind you I'm still running &lt;a href="/blog/categories/mac/"&gt;RHEL 7 on my MacBook Air&lt;/a&gt;. The above is
+with kernel-3.10.0-229.14.1.el7.x86_64.&lt;/p&gt;</summary><category term="Mac"></category><category term="RHEL"></category><category term="fedora.planet"></category></entry><entry><title>Unit Testing Example - Bad Stub Design in DNF</title><link href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/" rel="alternate"></link><updated>2015-09-25T11:20:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-09-25:blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/</id><summary type="html">&lt;p&gt;In software testing, usually unit testing, test stubs are programs that simulate
+the behaviors of external dependencies that a module undergoing the test depends
+on. Test stubs provide canned answers to calls made during the test.&lt;/p&gt;
+&lt;p&gt;I've discovered an improperly written stub method in one of
+&lt;a href="http://dnf.baseurl.org/"&gt;DNF&lt;/a&gt;'s tests:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;DownloadCommandTest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unittest&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;stub_fn&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.src.rpm&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;Query&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sourcerpm&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Query&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;latest&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;pkg&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;pkg&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;pkg&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+        &lt;span class="n"&gt;cli&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;mock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;MagicMock&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cmd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;download&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;DownloadCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cli&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cmd&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cli&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repos&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dnf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repodict&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RepoDict&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cmd&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_get_query&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;stub_fn&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cmd&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_get_query_source&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;stub_fn&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The replaced methods look like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Return a query to match a pkg_spec.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;subj&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dnf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;subject&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Subject&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;subj&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_best_query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sack&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;available&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;latest&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;run&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;No package &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; available.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="n"&gt;dnf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exceptions&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PackageNotFoundError&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;msg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_query_source&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&amp;quot;Return a query to match a source rpm file name.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;pkg_spec&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;[:&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;  &lt;span class="c"&gt;# skip the .rpm&lt;/span&gt;
+        &lt;span class="n"&gt;nevra&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;hawkey&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split_nevra&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sack&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;query&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;available&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;latest&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;nevra&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;version&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;nevra&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;version&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                     &lt;span class="n"&gt;release&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;nevra&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;release&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;arch&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;nevra&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;arch&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;run&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;No package &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; available.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="n"&gt;dnf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exceptions&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PackageNotFoundError&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;msg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;q&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As seen here &lt;em&gt;stub_fn&lt;/em&gt; replaces the &lt;em&gt;_get_query&lt;/em&gt; methods from the class under
+test. At the time of writing this has probably seemed like a good idea to
+speed up writing the tests.&lt;/p&gt;
+&lt;p&gt;The trouble is we should be replacing the external dependencies of &lt;em&gt;_get_query&lt;/em&gt;
+(other parts of DNF essentially) and not methods from &lt;em&gt;DownloadCommand&lt;/em&gt;. To
+understand why this is a bad idea check
+&lt;a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/113"&gt;PR #113&lt;/a&gt;,
+which directly modifies &lt;em&gt;_get_query&lt;/em&gt;. There's no way to test this patch
+with the current state of the test.&lt;/p&gt;
+&lt;p&gt;So I took a few days to experiment and update the current test stubs. The
+result is 
+&lt;a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118"&gt;PR #118&lt;/a&gt;.
+The important bits are the &lt;em&gt;SackStub&lt;/em&gt; and &lt;em&gt;SubjectStub&lt;/em&gt; classes which hold
+information about the available RPM packages on the system. The rest are cosmetics
+to fit around the way the query objects are used (q.available(), q.latest(), q.filter()).
+The proposed design correctly overrides the external dependencies on
+&lt;em&gt;dnf.subject.Subject&lt;/em&gt; and &lt;em&gt;self.base.sack&lt;/em&gt; which are initialized before our
+plugin is loaded by DNF.&lt;/p&gt;
+&lt;p&gt;I must say this is the first error of this kind I've seen in my QA practice so far.
+I have no idea if this was a minor oversight or something which happens more frequently
+in open source projects but it's a great example nevertheless.&lt;/p&gt;
+&lt;p&gt;For those of you who'd like to get started on unit testing I can recommend the book
+&lt;a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=1933988274&amp;linkCode=as2&amp;tag=atodorovorg-20"&gt;The Art of Unit Testing: With Examples in .Net&lt;/a&gt;&lt;img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=1933988274" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+by Roy Osherove!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE&lt;/strong&gt;: Part 2 with more practical examples can be found
+&lt;a href="/blog/2015/11/23/bad-stub-design-in-dnf/"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>4000+ bugs in Fedora - checksec failures</title><link href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="alternate"></link><updated>2015-09-16T17:03:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-09-16:blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/</id><summary type="html">&lt;p&gt;In the last week I've been trying to figure out how many packages
+conform to the new
+&lt;a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages"&gt;Harden All Packages&lt;/a&gt;
+policy in Fedora!&lt;/p&gt;
+&lt;p&gt;From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
+From them 4489 are reported as failed &lt;code&gt;checksec&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;What you should see as the output from &lt;code&gt;checksec is&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
+Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The first line is for binaries, the second one for libraries b/c
+DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
+e.g. &lt;code&gt;%{_libdir}/foo/&lt;/code&gt; and I've tried to exclude them unless
+other offenses are found. The script which does this is
+&lt;a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect"&gt;checksec-collect&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Most often I'm seeing &lt;em&gt;Partial RELRO&lt;/em&gt;, &lt;em&gt;No canary found&lt;/em&gt; and &lt;em&gt;No PIE&lt;/em&gt; errors.
+Since all packages potentially process untrusted input, it makes sense for all of them
+to be hardened and enhance the security of Fedora. That's why all of these errors
+should be considered valid bugs.&lt;/p&gt;
+&lt;h2&gt;Attn package maintainers&lt;/h2&gt;
+&lt;p&gt;Please see if your package is in the list and try to fix it or let me know
+why it should be excluded, for example it's a boot loader and doesn't function
+properly with hardening enabled. The full list is available at
+&lt;a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log"&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;For more information about the different protection mechanisms see the following
+links:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html"&gt;Partial vs Full RELRO&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries"&gt;Stack canaries&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://en.wikipedia.org/wiki/NX_bit#Linux"&gt;NX memory protection&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/"&gt;Position Independent Executables&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath"&gt;RPATH&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://blog.tremily.us/posts/rpath/"&gt;RUNPATH&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-09-17&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;I've posted my findings on 
+&lt;a href="https://lists.fedoraproject.org/pipermail/devel/2015-September/thread.html"&gt;fedora-devel&lt;/a&gt;
+and the comments are more than interesting even revealing an old bug in libtool.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Tip: Try F10 When Editing grub2 Menu in EFI Mode</title><link href="http://atodorov.org/blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/" rel="alternate"></link><updated>2015-08-14T14:06:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-08-14:blog/2015/08/14/tip-try-f10-when-editing-grub2-menu-in-efi-mode/</id><summary type="html">&lt;p&gt;When editing the grub2 menu (especially in EFI mode) it tells you to
+press Ctrl-x to save your changes and continue the boot process.
+However this doesn't work on Apple hardware
+(&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1253637"&gt;rhbz#1253637&lt;/a&gt;)
+and maybe some other platforms. If this is the case try pressing &lt;strong&gt;F10&lt;/strong&gt; 
+instead. It works for me!&lt;/p&gt;</summary><category term="Fedora"></category><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category><category term="tips"></category></entry><entry><title>Call for Ideas: Graphical Test Coverage Reports</title><link href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/" rel="alternate"></link><updated>2015-07-27T13:04:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-07-27:blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/</id><summary type="html">&lt;p&gt;If you are working with Python and writing unit tests chances are you are
+familiar with the &lt;a href="http://nedbatchelder.com/code/coverage/"&gt;coverage&lt;/a&gt; reporting
+tool. However there are testing scenarios in which we either don't use unit tests
+or maybe execute different code paths(test cases) independent of each other.&lt;/p&gt;
+&lt;p&gt;For example, this is the case with installation testing in Fedora. Because anaconda
+- the installer is very complex the easiest way is to test it live, not with unit tests.
+Even though we can get a coverage report (anaconda is written in Python) it reflects
+only the test case it was collected from.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;coverage combine&lt;/code&gt; can be used to combine several data files and produce an aggregate
+report. This can tell you how much test coverage you have across all your tests.&lt;/p&gt;
+&lt;p&gt;As far as I can tell Python's coverage doesn't tell you how many times a particular
+line of code has been executed. It also doesn't tell you which test cases executed
+a particular line
+(see &lt;a href="https://bitbucket.org/ned/coveragepy/pull-request/59"&gt;PR #59&lt;/a&gt;).
+In the Fedora example, I have the feeling many of our tests are touching the same
+code base and not contributing that much to the overall test coverage.
+So I started working on these items.&lt;/p&gt;
+&lt;p&gt;I imagine a script which will read coverage data from several test executions
+(preferably in JSON format, 
+&lt;a href="https://bitbucket.org/ned/coveragepy/pull-request/60"&gt;PR #60&lt;/a&gt;) and produce a 
+graphical report similar to what GitHub does for your commit activity.&lt;/p&gt;
+&lt;p&gt;See an example &lt;a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html"&gt;here&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;The example uses darker colors to indicate more line executions, lighter for less
+executions. Check the HTML for the actual numbers b/c there are no hints yet.
+The input JSON files are
+&lt;a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz"&gt;here&lt;/a&gt; and
+the script to generate the above HTML is at 
+&lt;a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool"&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Now I need your ideas and comments!&lt;/p&gt;
+&lt;p&gt;What kinds of coverage reports are you using in your job ? How do you generate them ?
+How do they look like ?&lt;/p&gt;</summary><category term="Fedora"></category><category term="QA"></category><category term="Django"></category><category term="fedora.planet"></category></entry><entry><title>DEVit Conf 2015 Impressions</title><link href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/" rel="alternate"></link><updated>2015-05-22T12:01:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-22:blog/2015/05/22/devit-conf-2015-impressions/</id><summary type="html">&lt;p&gt;It's been a busy week after &lt;a href="http://devitconf.org/"&gt;DEVit conf&lt;/a&gt; took place in
+Thessaloniki. Here are my impressions.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Crack, Train, Fix, Release" src="/images/devit2015.jpg" title="Crack, Train, Fix, Release" /&gt;&lt;/p&gt;
+&lt;h2&gt;Sessions&lt;/h2&gt;
+&lt;p&gt;I've started the day with the session called "Crack, Train, Fix, Release" by 
+Chris Heilmann. While it was very interesting for some unknown reason I
+was expecting a talk more closely related to software testing. Unfortunately at the
+same time in the other room was a talk called "Integration Testing from the Trenches"
+by Nicolas Frankel which I missed.&lt;/p&gt;
+&lt;p&gt;At the end Chris answered the question "What to do about old versions of IE ?".
+And the answer pretty much was "Don't try to support everything, leave them with
+basic functionality so that users can achieve what they came for on your website.
+Don't put nice buttons b/c IE 6 users are not used to nice things and they get confused."&lt;/p&gt;
+&lt;p&gt;If you remember I had a similar question to Jeremy Keith at 
+&lt;a href="/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/"&gt;Bulgaria Web Summit&lt;/a&gt; last month
+and the answer was similar:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Q: Which one is Jeremy's favorite device/browser to develop for.&lt;/p&gt;
+&lt;p&gt;A: Your approach is wrong and instead we should be thinking in terms of what features are 
+essential or non-essential for our websites and develop around features
+(if supported, if not supported) not around browsers!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Btw I did ask Chris if he knows Jeremy and he does.&lt;/p&gt;
+&lt;p&gt;After the coffee break there was "JavaScript ♥ Unicode" by Mathias Bynens which
+I saw last year at &lt;a href="http://how.camp/"&gt;How Camp&lt;/a&gt; in Veliko Tarnovo so I just stopped by
+to say hi and went to listen to 
+"The future of responsive web design: web component queries" by Nikos Zinas.
+As far as I understood Nikos is a local rock-star developer. I'm not much into web
+development but the opportunity to create your own HTML components (tags) looks
+very promising. I guess there will be more business coming for
+&lt;a href="http://telerik.com"&gt;Telerik&lt;/a&gt; :).&lt;/p&gt;
+&lt;p&gt;I wanted to listen to "Live Productive Coder" by Heinz Kabutz but that one started
+in Greek so I switched the room for 
+"iOS real time content modifications using websockets" by  Benny Weingarten-Gabbay.&lt;/p&gt;
+&lt;p&gt;After lunch I went straight for
+"Introduction to Docker: What is it and why should I care?" by Ian Miell
+which IMO was the most interesting talk of the day. It wasn't very technical but
+managed to clear some of the mysticism around Docker and what it actually is.
+I tried to grab a few minutes of Ian's time and we found topics of common interest
+to talk about (&lt;a href="http://www.projectatomic.io/"&gt;Project Atomic&lt;/a&gt; anyone?) but later
+failed to find him and continue the talk. I guess I'll have to follow online.&lt;/p&gt;
+&lt;p&gt;Tim Perry with "Your Web Stack Would Betray You In An Instant" made a great show.
+The room was packed, I myself was actually standing the whole time. He described a series
+of failures across the entire web development stack which gave developers hard times
+patching and upgrading their services. The lesson: everything fails, be prepared!&lt;/p&gt;
+&lt;p&gt;The last talk I visited was "GitHub Automation" by Forbes Lindesay. It was more of an
+inspirational talk, rather than technical one. GitHub provides cool API so why not use it?&lt;/p&gt;
+&lt;h2&gt;Organization&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="DEVit team" src="/images/devit2015team.jpg" title="DEVit team" /&gt;&lt;/p&gt;
+&lt;p&gt;From what I know this is the first year of DEVit. For a first timer the team did great!
+I particularly liked the two coffee breaks before lunch and in the early afternoon and the
+sponsors pitches in between the main talks.&lt;/p&gt;
+&lt;p&gt;All talks were recorded but I have no idea what's happening with the videos!&lt;/p&gt;
+&lt;p&gt;I will definitely make a point of visiting Thessaloniki more often and follow the local
+IT and start-up scenes there. And tonight is Silicon Drinkabout which will be the official
+after party of &lt;a href="http://digitalk.bg/"&gt;DigitalK&lt;/a&gt; in Sofia.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Django"></category><category term="events"></category></entry><entry><title>Free Software Testing Books</title><link href="http://atodorov.org/blog/2015/05/20/free-software-testing-books/" rel="alternate"></link><updated>2015-05-20T11:35:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-20:blog/2015/05/20/free-software-testing-books/</id><summary type="html">&lt;p&gt;There's a huge list of 
+&lt;a href="https://github.com/ligurio/free-software-testing-books/blob/master/free-software-testing-books.md"&gt;free books&lt;/a&gt;
+on the topic of software testing. This will definitely be my summer reading list.
+I hope you find it helpful.&lt;/p&gt;
+&lt;h2&gt;200 Graduation Theses About Software Testing&lt;/h2&gt;
+&lt;p&gt;The guys from &lt;a href="http://qahelp.net"&gt;QAHelp&lt;/a&gt; have compiled a list of 200
+graduation theses from various universities which are freely accessible
+online. The list can be found
+&lt;a href="http://qahelp.net/200-dissertatsij-po-testirovaniyu-v-svobodnoj-dostupe/"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Django"></category><category term="books"></category></entry><entry><title>Why does sysctl not write under /sys</title><link href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/" rel="alternate"></link><updated>2015-05-13T12:34:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-13:blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/</id><summary type="html">&lt;p&gt;Recently I've been looking into 
+&lt;a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/"&gt;fixing tilde and Fn keys mapping for MacBook Air&lt;/a&gt;
+and thought I could use &lt;code&gt;sysctl&lt;/code&gt; to permanently set the desired values. Unfortunately this is not
+possible. &lt;code&gt;sysctl&lt;/code&gt; can only write under &lt;code&gt;/proc/sys&lt;/code&gt; and this is 
+&lt;a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54"&gt;hard-coded in the source&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;static const char PROC_PATH[] = &amp;quot;/proc/sys/&amp;quot;;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;IMO this is relatively easy to patch and allow sysctl to read/write values under /sys.
+The only open question I see is backward compatibility - maybe adding new parameter (e.g. --sysfs)
+or adding extended sytax e.g. if variable name starts with / then treat it as absolute path.&lt;/p&gt;
+&lt;p&gt;I've asked sysctl maintainers on the 
+&lt;a href="http://www.freelists.org/post/procps/Can-we-make-sysctl-readwrite-sys-values-along-with-procsys"&gt;procps mailing list&lt;/a&gt;
+but so far got no answer. &lt;/p&gt;
+&lt;p&gt;Is anyone else interested in this? How do you set parameter values under /sys then ?&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; for my particular purposes I could have used config files under
+&lt;em&gt;/etc/modprobe.d/&lt;/em&gt; or a startup script (I used that) instead.&lt;/p&gt;</summary><category term="fedora.planet"></category></entry><entry><title>Using USB to VGA Adapter on MacBook Air with Linux</title><link href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/" rel="alternate"></link><updated>2015-05-05T14:02:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-05:blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/</id><summary type="html">&lt;p&gt;A quick solution for MacBook Air users running Linux who want to
+use external projector is to use a USB to VGA adapter. Mine is
+&lt;a href="http://www.amazon.com/gp/product/B004AIJE9G/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B004AIJE9G&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=74W7KWXBGC7SZ5QH"&gt;Plugable UGA-165&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B004AIJE9G" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+and it works great with Red Hat Enterprise Linux 7.1.&lt;/p&gt;
+&lt;p&gt;After the device is plugged in the &lt;em&gt;udl&lt;/em&gt; kernel module is loaded
+and a new framebuffer device is created (/dev/fb1 in my case). Using
+&lt;em&gt;mate-display-properties&lt;/em&gt; I'm able to configure the 2nd monitor attached
+to the USB video card. I was able to succeffully display an OpenOffice
+presentation on the 2nd monitor and play YouTube video.&lt;/p&gt;
+&lt;p&gt;All USB 2.0 devices from Plugable should be well supported on Linux.
+For USB 3.0 David Airlie from Red Hat is doing some reverse engineering
+but I have no idea what the status is. For more info see:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0"&gt;http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://airlied.livejournal.com/80307.html"&gt;http://airlied.livejournal.com/80307.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://airlied.livejournal.com/80516.html"&gt;http://airlied.livejournal.com/80516.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://airlied.livejournal.com/80797.html"&gt;http://airlied.livejournal.com/80797.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>Thunderbolt to Ethernet Adapter on Linux</title><link href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/" rel="alternate"></link><updated>2015-05-04T22:27:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-04:blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/</id><summary type="html">&lt;p&gt;As it seems my
+&lt;a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B008ALA6DW&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=T2J6D7GIDMKNWLYV"&gt;Thunderbolt to gigabit Ethernet adapter&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B008ALA6DW" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+works with 
+&lt;a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/"&gt;RHEL 7 on a MacBook Air&lt;/a&gt;
+despite some reports it may not.&lt;/p&gt;
+&lt;p&gt;After plugging the device is automatically recognized and the &lt;em&gt;tg3&lt;/em&gt; driver is loaded.
+Detailed &lt;em&gt;lspci&lt;/em&gt; below:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;00.0&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;NetXtreme&lt;/span&gt; &lt;span class="n"&gt;BCM57762&lt;/span&gt; &lt;span class="n"&gt;Gigabit&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;PCIe&lt;/span&gt;
+    &lt;span class="n"&gt;Subsystem&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Apple&lt;/span&gt; &lt;span class="n"&gt;Inc&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Device&lt;/span&gt; &lt;span class="mi"&gt;00&lt;/span&gt;&lt;span class="n"&gt;f6&lt;/span&gt;
+    &lt;span class="n"&gt;Physical&lt;/span&gt; &lt;span class="n"&gt;Slot&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;
+    &lt;span class="n"&gt;Flags&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;bus&lt;/span&gt; &lt;span class="n"&gt;master&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fast&lt;/span&gt; &lt;span class="n"&gt;devsel&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;latency&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;IRQ&lt;/span&gt; &lt;span class="mi"&gt;19&lt;/span&gt;
+    &lt;span class="n"&gt;Memory&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="n"&gt;cd800000&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;bit&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;prefetchable&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="n"&gt;K&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    &lt;span class="n"&gt;Memory&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="n"&gt;cd810000&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;bit&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;prefetchable&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="n"&gt;K&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;virtual&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Expansion&lt;/span&gt; &lt;span class="n"&gt;ROM&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="n"&gt;cd820000&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;disabled&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="n"&gt;K&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;48&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Power&lt;/span&gt; &lt;span class="n"&gt;Management&lt;/span&gt; &lt;span class="n"&gt;version&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Vital&lt;/span&gt; &lt;span class="n"&gt;Product&lt;/span&gt; &lt;span class="n"&gt;Data&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;58&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;MSI&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Enable&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;Count&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="n"&gt;Maskable&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;64&lt;/span&gt;&lt;span class="n"&gt;bit&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;a0&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;MSI&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;X&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Enable&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;Count&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;Masked&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="n"&gt;ac&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Express&lt;/span&gt; &lt;span class="n"&gt;Endpoint&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;MSI&lt;/span&gt; &lt;span class="mi"&gt;00&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Advanced&lt;/span&gt; &lt;span class="n"&gt;Error&lt;/span&gt; &lt;span class="n"&gt;Reporting&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Device&lt;/span&gt; &lt;span class="n"&gt;Serial&lt;/span&gt; &lt;span class="n"&gt;Number&lt;/span&gt; &lt;span class="mi"&gt;00&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;00&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;ac&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;87&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;a3&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;25&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;33&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;150&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Power&lt;/span&gt; &lt;span class="n"&gt;Budgeting&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;?&amp;gt;&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;160&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Virtual&lt;/span&gt; &lt;span class="n"&gt;Channel&lt;/span&gt;
+    &lt;span class="n"&gt;Capabilities&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="n"&gt;b0&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Latency&lt;/span&gt; &lt;span class="n"&gt;Tolerance&lt;/span&gt; &lt;span class="n"&gt;Reporting&lt;/span&gt;
+    &lt;span class="n"&gt;Kernel&lt;/span&gt; &lt;span class="n"&gt;driver&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;use&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;tg3&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Unplugging and pluggin back in the network cable works as expected.
+I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
+adapter but couldn't reproduce it repliably or grab more info. &lt;/p&gt;
+&lt;p&gt;For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
+this
+&lt;a href="https://git.kernel.org/cgit/linux/kernel/git/gregkh/char-misc.git/commit/?h=char-misc-next&amp;amp;id=16603153666d22df544ae9f9b3764fd18da28eeb"&gt;upstream commit&lt;/a&gt;.
+I'm not sure why it works though.&lt;/p&gt;
+&lt;p&gt;If I remember correctly &lt;em&gt;tg3&lt;/em&gt; is available during installation so you should
+be able to use the Thunderbolt adapter instead of WiFi as well.&lt;/p&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>Compiling Twinkle SIP Phone on RHEL 7</title><link href="http://atodorov.org/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/" rel="alternate"></link><updated>2015-05-01T15:04:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-05-01:blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/</id><summary type="html">&lt;p&gt;One of the best SIP clients for Linux is &lt;a href="http://twinklephone.com/"&gt;Twinkle&lt;/a&gt;.
+However upstream is not active (or even maybe dead) and the package is missing from
+latest Fedora releases and fails to build on RHEL 7.&lt;/p&gt;
+&lt;p&gt;First you need to build and install a few dependencies in the following order:
+&lt;a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=8437"&gt;ucommon&lt;/a&gt;,
+&lt;a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=1443"&gt;ccrtp&lt;/a&gt;,
+&lt;a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=6408"&gt;libzrtpcpp&lt;/a&gt;.
+You will also need &lt;a href="https://fedoraproject.org/wiki/EPEL"&gt;EPEL 7&lt;/a&gt; enabled
+to satisfy build dependencies.&lt;/p&gt;
+&lt;p&gt;Then apply the following patch to the original 
+&lt;a href="http://koji.fedoraproject.org/koji/buildinfo?buildID=397914"&gt;twinkle.spec&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;---&lt;/span&gt; &lt;span class="n"&gt;twinkle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;spec&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;orig&lt;/span&gt;   &lt;span class="mi"&gt;2015&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;05&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;01.870710147&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mo"&gt;0300&lt;/span&gt;
+&lt;span class="o"&gt;+++&lt;/span&gt; &lt;span class="n"&gt;twinkle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;spec&lt;/span&gt;    &lt;span class="mi"&gt;2015&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;05&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;28.734734573&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mo"&gt;0300&lt;/span&gt;
+&lt;span class="err"&gt;@@&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;47&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;47&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="err"&gt;@@&lt;/span&gt;
+
+ &lt;span class="nf"&gt;%build&lt;/span&gt;
+ &lt;span class="k"&gt;export&lt;/span&gt; &lt;span class="n"&gt;LDFLAGS&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="n"&gt;lkio&lt;/span&gt; 
+&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="k"&gt;export&lt;/span&gt; &lt;span class="n"&gt;CPPFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;$CPPFLAGS -I/usr/include/libzrtpcpp/&amp;quot;&lt;/span&gt; 
+&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="nf"&gt;%__autoconf&lt;/span&gt;
+ &lt;span class="nf"&gt;%configure&lt;/span&gt;
+ &lt;span class="n"&gt;make&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="o"&gt;?&lt;/span&gt;&lt;span class="n"&gt;_smp_mflags&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The package now builds, installs and runs successfully on RHEL 7.
+The compiled packages and dependencies are available in my
+&lt;a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/"&gt;Macbook Air RHEL 7 repository&lt;/a&gt;.&lt;/p&gt;</summary><category term="RHEL"></category><category term="fedora.planet"></category></entry><entry><title>Fixing Tilde and Function Keys Mapping for MacBook Air on Linux</title><link href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/" rel="alternate"></link><updated>2015-04-30T11:33:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-30:blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/</id><summary type="html">&lt;p&gt;Thera are two problems with the MacBook Air keyboard on Linux:&lt;/p&gt;
+&lt;p&gt;Function keys and media keys are switched and by default you have to
+press Fn+F5 in order to refresh a browser page. The 
+&lt;a href="https://chaidarun.com/fedora-mbp"&gt;solution&lt;/a&gt; is&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;echo 2 &amp;gt; /sys/module/hid_apple/parameters/fnmode
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The tilde key is mapped improperly, see 
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025041#c2"&gt;RHBZ #1025041&lt;/a&gt;.
+To fix it&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;echo 0 &amp;gt; /sys/module/hid_apple/parameters/iso_layout
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Permanent fix&lt;/h2&gt;
+&lt;p&gt;Either you have to add the above commands in a boot script or you can
+&lt;code&gt;yum install mba-kbd-fix&lt;/code&gt; from my
+&lt;a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/"&gt;Macbook Air RHEL 7 repository&lt;/a&gt;.
+The RPM source can be found &lt;a href="https://github.com/atodorov/mba-kbd-fix"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>RHEL 7 Repository for MacBook Air</title><link href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/" rel="alternate"></link><updated>2015-04-29T13:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-29:blog/2015/04/29/rhel-7-repository-for-macbook-air/</id><summary type="html">&lt;p&gt;I've made a repository with binary (x86_64 only) and source RPM packages which
+are missing from Red Hat Enterprise Linux 7 and necessary when using a 
+MacBook Air. To install execute the commands below:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cd /etc/yum.repos.d/
+wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Wireless driver&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install kmod-wl
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Display backlight driver&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install kmod-mba6x_bl
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And uncomment &lt;code&gt;/etc/X11/xorg.conf.d/98-mba_bl.conf&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Note:&lt;/em&gt; the .spec file is available from 
+&lt;a href="https://github.com/patjak/mba6x_bl/pull/26"&gt;RP #26&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Fixing keyboard mapping&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install mba-kbd-fix
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>Fixing Display Brightness on MacBook Air with RHEL 7</title><link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/" rel="alternate"></link><updated>2015-04-29T12:14:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-29:blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/</id><summary type="html">&lt;p&gt;One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
+and backlight behavior after suspend/resume. I've found the solution 
+&lt;a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/"&gt;here&lt;/a&gt;
+and only tweaked it slightly for my use case.&lt;/p&gt;
+&lt;h2&gt;mba6x_bl doesn't load automatically&lt;/h2&gt;
+&lt;p&gt;The reason being the driver matches older hardware:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;modinfo mba6x_bl
+filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
+&lt;span class="nb"&gt;alias&lt;/span&gt;:          dmi:*:pnMacBookAir6*
+license:        GPL
+description:    MacBook Air 6,1 and 6,2 backlight driver
+author:         Patrik Jakobsson &amp;lt;patrik.r.jakobsson@gmail.com&amp;gt;
+rhelversion:    7.1
+srcversion:     4D069C8EB0E470AF27E7F8D
+depends:        video
+vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;My system is &lt;strong&gt;MacBookAir7,2&lt;/strong&gt; and doesn't match the module alias. So a 
+&lt;a href="https://github.com/patjak/mba6x_bl/pull/25"&gt;quick fix&lt;/a&gt; was needed.
+For more info about &lt;code&gt;MODULE_ALIAS&lt;/code&gt; see
+&lt;a href="https://wiki.archlinux.org/index.php/Modalias"&gt;ArchWiki&lt;/a&gt;.
+Alternatively on Red Hat based systems you can place a config file
+under &lt;code&gt;/etc/sysconfig/modules&lt;/code&gt;, see 
+&lt;a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html"&gt;the docs&lt;/a&gt;
+for more details.&lt;/p&gt;
+&lt;h2&gt;intel_backlight driver is in the way&lt;/h2&gt;
+&lt;p&gt;On older systems mba6x_bl doesn't get used automatically. The problem is the offending
+intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+Section &lt;span class="s2"&gt;&amp;quot;Device&amp;quot;&lt;/span&gt;
+    Identifier      &lt;span class="s2"&gt;&amp;quot;Intel Graphics&amp;quot;&lt;/span&gt;
+    Driver          &lt;span class="s2"&gt;&amp;quot;intel&amp;quot;&lt;/span&gt;
+    Option          &lt;span class="s2"&gt;&amp;quot;Backlight&amp;quot;&lt;/span&gt;     &lt;span class="s2"&gt;&amp;quot;mba6x_backlight&amp;quot;&lt;/span&gt;
+EndSection
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;For more info see &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19"&gt;RHBZ 989555&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Everything in one go&lt;/h2&gt;
+&lt;p&gt;If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
+a look at my &lt;a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/"&gt;Macbook Air RHEL 7 repository&lt;/a&gt;.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Mac"></category><category term="RHEL"></category></entry><entry><title>Disabling MacBook Startup Sound in Linux</title><link href="http://atodorov.org/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/" rel="alternate"></link><updated>2015-04-27T23:23:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-27:blog/2015/04/27/disabling-macbook-startup-sound-in-linux/</id><summary type="html">&lt;p&gt;There is an easy way to disable the MacBook startup sound
+(boot chime) even after wiping out OS X and installing Linux.&lt;/p&gt;
+&lt;p&gt;This sound can be easily disabled if you mute the volume in OS X
+and shutdown the computer. The value is stored in NVRAM.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Reboot the computer and hold Cmd+Alt(Option)+R. This will start
+OS X Internet recovery mode;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Open the terminal and issue the following command&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;nvram SystemAudioVolume=%00
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Reboot.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Voila. In Linux try this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# efivar -l | grep SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
+ 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: &amp;quot;SystemAudioVolume&amp;quot;
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00                                                |.               |
+
+# efivar -n 7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB -p
+GUID: 7c436110-ab2a-4bbb-a880-fe41995c9f82
+Name: &amp;quot;SystemAudioVolumeDB&amp;quot;
+Attributes:
+    Non-Volatile
+    Boot Service Access
+    Runtime Service Access
+Value:
+00000000  00 
+#
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;Note 1&lt;/strong&gt;: Before disabling both variables had non zero values. Also &lt;em&gt;SystemAudioVolumeDB&lt;/em&gt;
+doesn't seem to have any effect.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note 2:&lt;/strong&gt; RHEL or CentOS users need to rebuild &lt;em&gt;efivar&lt;/em&gt; from the 
+&lt;a href="https://kojipkgs.fedoraproject.org//packages/efivar/0.14/1.fc22/src/efivar-0.14-1.fc22.src.rpm"&gt;Fedora src.rpm&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note 3:&lt;/strong&gt; several Internet sources suggest that writing EFI variables from Linux
+may sometimes corrupt your Apple firmware. I didn't research this any further. If you
+happen to figure out how to successfully write to these variables under Linux please let
+everyone know in the comments (in case OS X recovery mode goes missing, you know).&lt;/p&gt;
+&lt;p&gt;Thanks to my reader Alexander, who
+&lt;a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread"&gt;gave me the hint&lt;/a&gt;
+in a previous blog post.&lt;/p&gt;</summary><category term="Mac"></category><category term="fedora.planet"></category><category term="RHEL"></category></entry><entry><title>Compiling Broadcom wl-kmod WiFi Driver for RHEL 7</title><link href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/" rel="alternate"></link><updated>2015-04-27T12:17:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-27:blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/</id><summary type="html">&lt;p&gt;After I got my 
+&lt;a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/"&gt;MacBook Air installed with RHEL 7.1&lt;/a&gt;
+the first priority was getting wireless working. 
+First check if your device isn't already supported
+&lt;a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices"&gt;upstream&lt;/a&gt;. Mine isn't&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="n"&gt;e4&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt;&lt;span class="n"&gt;a0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;BCM4360&lt;/span&gt; &lt;span class="mf"&gt;802.11&lt;/span&gt;&lt;span class="n"&gt;ac&lt;/span&gt; &lt;span class="n"&gt;Wireless&lt;/span&gt; &lt;span class="n"&gt;Network&lt;/span&gt; &lt;span class="n"&gt;Adapter&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rev&lt;/span&gt; &lt;span class="mi"&gt;03&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Next grab the src.rpm files necessary to build the &lt;em&gt;wl&lt;/em&gt; driver from RPM Fusion.
+For &lt;code&gt;akmods-0.5.2-1.fc21.src.rpm&lt;/code&gt;, &lt;code&gt;broadcom-wl-6.30.223.248-2.fc21.src.rpm&lt;/code&gt;,
+&lt;code&gt;kmodtool-1-23.fc20.src.rpm&lt;/code&gt; just execute &lt;em&gt;rpmbuild --rebuild&lt;/em&gt; against each file
+and install &lt;code&gt;kmodtool&lt;/code&gt; and &lt;code&gt;akmods&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Then you need two more files &lt;code&gt;buildsys-build-rpmfusion&lt;/code&gt; and &lt;code&gt;wl-kmod&lt;/code&gt;.
+The first one is a helper tool containing list of recent kernels to build against,
+the later one is the driver source itself. Both needed minor modifications before
+building on RHEL 7.&lt;/p&gt;
+&lt;p&gt;I've created my own 
+&lt;a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7"&gt;buildsys-build-rpmfusion&lt;/a&gt; package listing the current kernels
+for RHEL 7.1. For &lt;a href="https://github.com/atodorov/wl-kmod-for-rhel7"&gt;wl-kmod&lt;/a&gt; I've introduced a 
+&lt;a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch"&gt;patch&lt;/a&gt;
+which modifies the other patches in the package so it builds correctly on 7.1.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; I don't know if there's a define which can be used to detect if we're building
+on RHEL (maybe I can define my own) but direct kernel version number comparison doesn't
+work here because Red Hat backports chosen functionality from more recent kernels without
+changing the version number. This approach may not be the best one but I've tried to keep it clean
+for easier maintenance in the future and it got me started very quickly.&lt;/p&gt;
+&lt;p&gt;Build the modified buildsys-build-rpmfusion and:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Build the wl-kmod package and:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If necessary re-create your initramfs image to include &lt;em&gt;wl.ko&lt;/em&gt;.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="RHEL"></category><category term="Mac"></category></entry><entry><title>Installing Red Hat Enterprise Linux 7 on MacBook Air 2015</title><link href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/" rel="alternate"></link><updated>2015-04-26T20:33:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-26:blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/</id><summary type="html">&lt;p&gt;Recently I've upgraded to a new 
+&lt;a href="http://www.amazon.com/gp/product/B00UGECEUY/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B00UGECEUY&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=3YENGI5TIYKEC5GM"&gt;MacBook Air&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B00UGECEUY" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+(13 inch, early 2015) laptop and luckily enough I'm running
+Red Hat Enterprise Linux 7.1 on it. Here is how to install it.&lt;/p&gt;
+&lt;h2&gt;Prepare boot media&lt;/h2&gt;
+&lt;p&gt;The easiest method is to boot from a USB stick which holds
+either the entire DVD or just boot.iso. Since I happened to find a 1GB only USB stick I
+went for the boot.iso. &lt;code&gt;dd if=boot.iso of=/dev/sdb&lt;/code&gt; is the only thing you need to prepare
+the boot media.&lt;/p&gt;
+&lt;h2&gt;Initial boot&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="Mac boot menu" src="/images/mac/boot_menu.jpg" title="Mac boot menu" /&gt;&lt;/p&gt;
+&lt;p&gt;While computer is booting hold the (left) Alt (Option) key to enter &lt;em&gt;Startup Manager&lt;/em&gt;.
+Wait a second or two before it displays your local hard drive and the USB boot media.
+Select the option &lt;em&gt;EFI boot&lt;/em&gt; to boot the anaconda installer.&lt;/p&gt;
+&lt;h2&gt;Installation&lt;/h2&gt;
+&lt;p&gt;Booting from a boot.iso means I need to use the network to grab the rest of the installation.
+Because the wireless card needs proprietary drivers
+I've tried both USB to Ethernet adapter and USB tethering with my phone.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; initially I have forgotten to plug in my USB networking card which resulted in 
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1191286"&gt;bug #1191286&lt;/a&gt;. After cold-plugging and
+rebooting the system everything was fine. Subsequently I don't see any problems with the
+USB networking card. The bug should be fixed in RHEL 7.2 btw.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; I've been using a
+&lt;a href="http://www.amazon.com/gp/product/B002PONXAI/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B002PONXAI&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=N4KGQKYSBSDWMMM6"&gt;USB docking station from Plugable&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B002PONXAI" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+for years because their products are Linux friendly. In particular the networking chip is ASIX and
+there is no problems with drivers for Linux.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-05-04:&lt;/strong&gt;
+You should also be able to use a Thunderbolt to Ethernet adapter which is more
+common for Apple users. &lt;a href="/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"&gt;See here for more info&lt;/a&gt;;&lt;/p&gt;
+&lt;p&gt;In my case I've wiped out the entire SSD disk b/c I don't care about dual boot.
+Previously I've heard about anaconda crashing while it tries to detect the Mac OS file system.
+I've played around with Rawhide before going for RHEL 7.1 and didn't see any problems related to
+foreign filesystems.&lt;/p&gt;
+&lt;p&gt;I've gone with the default partitioning scheme while slightly modifing the partition sizes, etc.&lt;/p&gt;
+&lt;h2&gt;Post install&lt;/h2&gt;
+&lt;p&gt;There are several issues which still need attention. I didn't have enough time in the last few
+days to check these out:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Things which work&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;GNOME 3 sucks big time. Fortunately I was able to install MATE Desktop from EPEL;&lt;/li&gt;
+&lt;li&gt;Wireless card needs drivers; I've managed to compile them myself, 
+&lt;a href="/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/"&gt;see here&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;Display brightness doesn't seem to work at all. On top of that the display goes full black
+after suspend-resume. I could barely see anything on it. 
+&lt;a href="http://localhost:4000/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/"&gt;Fixed here&lt;/a&gt;!&lt;/li&gt;
+&lt;li&gt;There is a very annoying boot chime &lt;strike&gt;which I have no idea how to disable&lt;/strike&gt;
+&lt;a href="/blog/2015/04/27/disabling-macbook-startup-sound-in-linux/"&gt;Fixed here&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;The onboard keyboard is quite annoying for previous ThinkPad user like myself. Most
+importantly I need to press Fn to activate the F1, F2, etc keys which I use a lot in mcedit.
+&lt;a href="/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/"&gt;Fixed here&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;Output sound works - both speakers and headphones;&lt;/li&gt;
+&lt;li&gt;Microphone works (tested with a hands free device);&lt;/li&gt;
+&lt;li&gt;Power manager was reporting my battery life totally wrong but after a full discharge/recharge
+it seems to have calibrated itself;&lt;/li&gt;
+&lt;li&gt;ATrpms and EPEL are still missing some codecs for RHEL 7 which means no movies;
+ codecs seem to work now with the &lt;a href="http://li.nux.ro/repos.html"&gt;NUX Desktop&lt;/a&gt;
+repos. Not sure what I was missing when testing it initially;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;UPDATE 2015-05-04:&lt;/em&gt; I do have a Thunderbolt to Ethernet adapter and hot-plug seems to work
+despite claims that this is not supported in Linux.
+&lt;a href="/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/"&gt;See here for more info&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;UPDATE 2015-05-05:&lt;/em&gt; Presenting via external projector works with a USB to VGA adapter.
+&lt;a href="/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/"&gt;See here&lt;/a&gt;;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Things that don't work yet&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;UPDATE 2015-04-30:&lt;/em&gt; I'd like to remap the Cmd key to the Menu key found in PC keyboards;&lt;/li&gt;
+&lt;li&gt;Camera doesn't work, reverse engineering a &lt;a href="https://github.com/patjak/bcwc_pcie"&gt;driver&lt;/a&gt;
+ is in progress;&lt;/li&gt;
+&lt;li&gt;I'm missing the &lt;a href="http://www.thinkwiki.org/wiki/ThinkLight"&gt;ThinkLight&lt;/a&gt; from my X220,
+however the integrated Broadcom FaceTime HD camera doesn't seem to have a LED flash
+which can be repurposed for this task;&lt;/li&gt;
+&lt;li&gt;I need a CPU temperature monitor and maybe CPU fan speed needs adjustments;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-04-28:&lt;/strong&gt;
+Check the list above for links to wifi and backlight drivers and how to disable the boot chime.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-04-29:&lt;/strong&gt;
+You can find precompiled RPMS in my
+&lt;a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/"&gt;Macbook Air RHEL 7 repository&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-04-30:&lt;/strong&gt;
+Added more links and split the list into stuff which already works and stuff that doesn't.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-05-04:&lt;/strong&gt;
+Added info about Thunderbolt to Ethernet adapter.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2015-05-05:&lt;/strong&gt;
+Added info about USB to VGA adapter.&lt;/p&gt;
+&lt;h2&gt;Fedora 22 on MacBook Air&lt;/h2&gt;
+&lt;p&gt;I did try Fedora 22 Beta and experienced 
+&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1215458"&gt;bug #1215458&lt;/a&gt;.
+Also for some reason the installation hit an error downloading a package and didn't let me retry
+but forced me to exit the process.&lt;/p&gt;
+&lt;p&gt;I'll continue posting my updates until the system runs smoothly like it is supposed to.&lt;/p&gt;
+&lt;h2&gt;Hardware info&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;ADDED ON 2015-05-02&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# dmidecode 
+# dmidecode 2.12
+# SMBIOS entry point at 0x8afae000
+SMBIOS 2.7 present.
+32 structures occupying 1663 bytes.
+Table at 0x8AFAD000.
+
+Handle 0x0000, DMI type 7, 19 bytes
+Cache Information
+    Socket Designation: L1 Cache
+    Configuration: Enabled, Not Socketed, Level 1
+    Operational Mode: Write Back
+    Location: Internal
+    Installed Size: 32 kB
+    Maximum Size: 32 kB
+    Supported SRAM Types:
+            Synchronous
+    Installed SRAM Type: Synchronous
+    Speed: Unknown
+    Error Correction Type: Parity
+    System Type: Data
+    Associativity: 8-way Set-associative
+
+Handle 0x0001, DMI type 7, 19 bytes
+Cache Information
+    Socket Designation: L1 Cache
+    Configuration: Enabled, Not Socketed, Level 1
+    Operational Mode: Write Back
+    Location: Internal
+    Installed Size: 32 kB
+    Maximum Size: 32 kB
+    Supported SRAM Types:
+            Synchronous
+    Installed SRAM Type: Synchronous
+    Speed: Unknown
+    Error Correction Type: Parity
+    System Type: Instruction
+    Associativity: 8-way Set-associative
+
+Handle 0x0002, DMI type 7, 19 bytes
+Cache Information
+    Socket Designation: L2 Cache
+    Configuration: Enabled, Not Socketed, Level 2
+    Operational Mode: Write Back
+    Location: Internal
+    Installed Size: 256 kB
+    Maximum Size: 256 kB
+    Supported SRAM Types:
+        Synchronous
+    Installed SRAM Type: Synchronous
+    Speed: Unknown
+    Error Correction Type: Single-bit ECC
+    System Type: Unified
+    Associativity: 8-way Set-associative
+
+Handle 0x0003, DMI type 7, 19 bytes
+Cache Information
+    Socket Designation: L3 Cache
+    Configuration: Enabled, Not Socketed, Level 3
+    Operational Mode: Write Back
+    Location: Internal
+    Installed Size: 4096 kB
+    Maximum Size: 4096 kB
+    Supported SRAM Types:
+        Synchronous
+    Installed SRAM Type: Synchronous
+    Speed: Unknown
+    Error Correction Type: Multi-bit ECC
+    System Type: Unified
+    Associativity: 16-way Set-associative
+
+Handle 0x0004, DMI type 4, 42 bytes
+Processor Information
+    Socket Designation: U3E1
+    Type: Central Processor
+    Family: Core i7
+    Manufacturer: Intel(R) Corporation
+    ID: D4 06 03 00 FF FB EB BF
+    Signature: Type 0, Family 6, Model 61, Stepping 4
+    Flags:
+        FPU (Floating-point unit on-chip)
+        VME (Virtual mode extension)
+        DE (Debugging extension)
+        PSE (Page size extension)
+        TSC (Time stamp counter)
+        MSR (Model specific registers)
+        PAE (Physical address extension)
+        MCE (Machine check exception)
+        CX8 (CMPXCHG8 instruction supported)
+        APIC (On-chip APIC hardware supported)
+        SEP (Fast system call)
+        MTRR (Memory type range registers)
+        PGE (Page global enable)
+        MCA (Machine check architecture)
+        CMOV (Conditional move instruction supported)
+        PAT (Page attribute table)
+        PSE-36 (36-bit page size extension)
+        CLFSH (CLFLUSH instruction supported)
+        DS (Debug store)
+        ACPI (ACPI supported)
+        MMX (MMX technology supported)
+        FXSR (FXSAVE and FXSTOR instructions supported)
+        SSE (Streaming SIMD extensions)
+        SSE2 (Streaming SIMD extensions 2)
+        SS (Self-snoop)
+        HTT (Multi-threading)
+        TM (Thermal monitor supported)
+        PBE (Pending break enabled)
+    Version: Intel(R) Core(TM) i7-5650U CPU @ 2.20GHz
+    Voltage: 1.0 V
+    External Clock: 25 MHz
+    Max Speed: 2200 MHz
+    Current Speed: 3100 MHz
+    Status: Populated, Enabled
+    Upgrade: &amp;lt;OUT OF SPEC&amp;gt;
+    L1 Cache Handle: 0x0001
+    L2 Cache Handle: 0x0002
+    L3 Cache Handle: 0x0003
+    Serial Number:  
+    Asset Tag:  
+    Part Number:  
+    Core Count: 2
+    Core Enabled: 2
+    Thread Count: 4
+    Characteristics:
+        64-bit capable
+        Multi-Core
+        Hardware Thread
+        Execute Protection
+        Enhanced Virtualization
+        Power/Performance Control
+
+Handle 0x0005, DMI type 0, 24 bytes
+BIOS Information
+    Vendor: Apple Inc.
+    Version: MBA71.88Z.0166.B00.1502131457
+    Release Date: 02/13/2015
+    ROM Size: 8192 kB
+    Characteristics:
+        PCI is supported
+        BIOS is upgradeable
+        BIOS shadowing is allowed
+        Boot from CD is supported
+        Selectable boot is supported
+        ACPI is supported
+        Smart battery is supported
+        Function key-initiated network boot is supported
+        UEFI is supported
+    BIOS Revision: 0.1
+
+Handle 0x0006, DMI type 1, 27 bytes
+System Information
+    Manufacturer: Apple Inc.
+    Product Name: MacBookAir7,2
+    Version: 1.0
+    Serial Number: C1MPF52YG944
+    UUID: 25EF0280-EC82-42B0-8FB6-10ADCCC67C02
+    Wake-up Type: Power Switch
+    SKU Number: System SKU#
+    Family: Mac
+
+Handle 0x0007, DMI type 2, 17 bytes
+Base Board Information
+    Manufacturer: Apple Inc.
+    Product Name: Mac-937CB26E2E02BB01
+    Version: MacBookAir7,2
+    Serial Number: C07511704VSG92GA1
+    Asset Tag: Base Board Asset Tag#
+    Features:
+        Board is a hosting board
+    Location In Chassis: Part Component
+    Chassis Handle: 0x0008
+    Type: Motherboard
+    Contained Object Handles: 0
+
+Handle 0x0008, DMI type 3, 24 bytes
+Chassis Information
+    Manufacturer: Apple Inc.
+    Type: Laptop
+    Lock: Not Present
+    Version: Mac-937CB26E2E02BB01
+    Serial Number: C1MPF52YG944
+    Asset Tag: Chassis Board Asset Tag#
+    Boot-up State: Safe
+    Power Supply State: Safe
+    Thermal State: Safe
+    Security Status: None
+    OEM Information: 0x00000000
+    Height: Unspecified
+    Number Of Power Cords: Unspecified
+    Contained Elements: 0
+    SKU Number: Not Specified
+
+Handle 0x0009, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Not Specified
+    Internal Connector Type: None
+    External Reference Designator: USB0
+    External Connector Type: Access Bus (USB)
+    Port Type: USB
+
+Handle 0x000A, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Not Specified
+    Internal Connector Type: None
+    External Reference Designator: USB1
+    External Connector Type: Access Bus (USB)
+    Port Type: USB
+
+Handle 0x000B, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Not Specified
+    Internal Connector Type: None
+    External Reference Designator: Audio Line In
+    External Connector Type: Mini Jack (headphones)
+    Port Type: Audio Port
+
+Handle 0x000C, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Not Specified
+    Internal Connector Type: None
+    External Reference Designator: Thunderbolt
+    External Connector Type: None
+    Port Type: Other
+
+Handle 0x000D, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Microphone
+    Internal Connector Type: Other
+    External Reference Designator: Not Specified
+    External Connector Type: None
+    Port Type: None
+
+Handle 0x000E, DMI type 8, 9 bytes
+Port Connector Information
+    Internal Reference Designator: Speaker
+    Internal Connector Type: Other
+    External Reference Designator: Not Specified
+    External Connector Type: None
+    Port Type: None
+
+Handle 0x000F, DMI type 41, 11 bytes
+Onboard Device
+    Reference Designation: Integrated Video Controller
+    Type: Video
+    Status: Enabled
+    Type Instance: 1
+    Bus Address: 0000:00:00.0
+
+Handle 0x0010, DMI type 41, 11 bytes
+Onboard Device
+    Reference Designation: Azalia Audio Codec
+    Type: Sound
+    Status: Enabled
+    Type Instance: 1
+    Bus Address: 0000:00:00.0
+
+Handle 0x0011, DMI type 41, 11 bytes
+Onboard Device
+    Reference Designation: SATA
+    Type: SATA Controller
+    Status: Enabled
+    Type Instance: 1
+    Bus Address: 0000:00:00.0
+
+Handle 0x0012, DMI type 13, 22 bytes
+BIOS Language Information
+    Language Description Format: Abbreviated
+    Installable Languages: 1
+        en
+    Currently Installed Language: en
+
+Handle 0x0013, DMI type 22, 26 bytes
+Portable Battery
+    Location: Not Specified
+    Manufacturer: Not Specified
+    Name: Not Specified
+    Design Capacity: Unknown
+    Design Voltage: Unknown
+    SBDS Version: Not Specified
+    Maximum Error: 0%
+    SBDS Serial Number: 0000
+    SBDS Manufacture Date: 1980-00-00
+    SBDS Chemistry: Not Specified
+    OEM-specific Information: 0x00000000
+
+Handle 0x0014, DMI type 32, 11 bytes
+System Boot Information
+    Status: No errors detected
+
+Handle 0x0015, DMI type 131, 6 bytes
+OEM-specific Type
+    Header and Data:
+        83 06 15 00 06 07
+
+Handle 0x0016, DMI type 133, 12 bytes
+OEM-specific Type
+    Header and Data:
+        85 0C 16 00 02 00 00 00 00 00 00 00
+
+Handle 0x0017, DMI type 128, 88 bytes
+OEM-specific Type
+    Header and Data:
+        80 58 17 00 03 00 00 00 36 F5 03 FC 3F FF 03 FC
+        02 00 03 00 00 00 00 00 00 00 99 FF FF FF AF FF
+        00 00 B0 FF FF FF D4 FF 00 00 D7 FF FF FF D9 FF
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00
+
+Handle 0x0018, DMI type 134, 20 bytes
+OEM-specific Type
+    Header and Data:
+        86 14 18 00 32 2E 32 37 46 30 31 00 00 00 00 00
+        00 00 00 00
+
+Handle 0x0019, DMI type 16, 23 bytes
+Physical Memory Array
+    Location: System Board Or Motherboard
+    Use: System Memory
+    Error Correction Type: None
+    Maximum Capacity: 8 GB
+    Error Information Handle: Not Provided
+    Number Of Devices: 2
+
+Handle 0x001A, DMI type 17, 34 bytes
+Memory Device
+    Array Handle: 0x0019
+    Error Information Handle: Not Provided
+    Total Width: 64 bits
+    Data Width: 64 bits
+    Size: 4096 MB
+    Form Factor: SODIMM
+    Set: None
+    Locator: DIMM0
+    Bank Locator: BANK 0
+    Type: DDR3
+    Type Detail: Synchronous
+    Speed: 1600 MHz
+    Manufacturer: 0x80AD
+    Serial Number: 0x00000000
+    Asset Tag: Not Specified
+    Part Number: 0x483943434E4E4E384A544D4C41522D4E544D
+    Rank: Unknown
+    Configured Clock Speed: 1600 MHz
+
+Handle 0x001B, DMI type 130, 186 bytes
+OEM-specific Type
+    Header and Data:
+        82 BA 1B 00 1A 00 00 00 B0 00 91 20 F1 03 04 12
+        05 0A 03 11 01 08 0A 00 00 01 78 78 90 50 90 11
+        50 E0 10 04 3C 3C 01 90 00 00 00 00 00 00 00 00
+        00 A8 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80
+        AD 01 00 00 00 00 00 00 57 FB 48 39 43 43 4E 4E
+        4E 38 4A 54 4D 4C 41 52 2D 4E 54 4D 00 00 80 AD
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00
+
+Handle 0x001C, DMI type 17, 34 bytes
+Memory Device
+    Array Handle: 0x0019
+    Error Information Handle: Not Provided
+    Total Width: 64 bits
+    Data Width: 64 bits
+    Size: 4096 MB
+    Form Factor: SODIMM
+    Set: None
+    Locator: DIMM0
+    Bank Locator: BANK 1
+    Type: DDR3
+    Type Detail: Synchronous
+    Speed: 1600 MHz
+    Manufacturer: 0x80AD
+    Serial Number: 0x00000000
+    Asset Tag: Not Specified
+    Part Number: 0x483943434E4E4E384A544D4C41522D4E544D
+    Rank: Unknown
+    Configured Clock Speed: 1600 MHz
+
+Handle 0x001D, DMI type 130, 186 bytes
+OEM-specific Type
+    Header and Data:
+        82 BA 1D 00 1C 00 00 00 B0 00 91 20 F1 03 04 12
+        05 0A 03 11 01 08 0A 00 00 01 78 78 90 50 90 11
+        50 E0 10 04 3C 3C 01 90 00 00 00 00 00 00 00 00
+        00 A8 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80
+        AD 01 00 00 00 00 00 00 57 FB 48 39 43 43 4E 4E
+        4E 38 4A 54 4D 4C 41 52 2D 4E 54 4D 00 00 80 AD
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00
+
+Handle 0x001E, DMI type 19, 31 bytes
+Memory Array Mapped Address
+    Starting Address: 0x0000000000000000k
+    Ending Address: 0x00000001FFFFFFFFk
+    Range Size: 8 GB
+    Physical Array Handle: 0x0019
+    Partition Width: 0
+
+Handle 0xFEFF, DMI type 127, 4 bytes
+End Of Table
+
+# uname -a
+Linux aero 3.10.0-229.1.2.el7.x86_64 #1 SMP Fri Mar 6 17:12:08 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+# lsusb
+Bus 001 Device 002: ID 0a5c:4500 Broadcom Corp. BCM2046B1 USB 2.0 Hub (part of BCM2046 Bluetooth)
+Bus 001 Device 003: ID 05ac:0291 Apple, Inc. 
+Bus 002 Device 002: ID 05ac:8406 Apple, Inc. 
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 001 Device 006: ID 05ac:828f Apple, Inc.
+
+# lspci
+00:00.0 Host bridge: Intel Corporation Broadwell-U Host Bridge -OPI (rev 09)
+00:02.0 VGA compatible controller: Intel Corporation Broadwell-U Integrated Graphics (rev 09)
+00:03.0 Audio device: Intel Corporation Broadwell-U Audio Controller (rev 09)
+00:14.0 USB controller: Intel Corporation Wildcat Point-LP USB xHCI Controller (rev 03)
+00:16.0 Communication controller: Intel Corporation Wildcat Point-LP MEI Controller #1 (rev 03)
+00:1b.0 Audio device: Intel Corporation Wildcat Point-LP High Definition Audio Controller (rev 03)
+00:1c.0 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port #1 (rev e3)
+00:1c.1 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port #2 (rev e3)
+00:1c.2 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port #3 (rev e3)
+00:1c.4 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port #5 (rev e3)
+00:1c.5 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port #6 (rev e3)
+00:1f.0 ISA bridge: Intel Corporation Wildcat Point-LP LPC Controller (rev 03)
+00:1f.3 SMBus: Intel Corporation Wildcat Point-LP SMBus Controller (rev 03)
+00:1f.6 Signal processing controller: Intel Corporation Wildcat Point-LP Thermal Management Controller (rev 03)
+02:00.0 Multimedia controller: Broadcom Corporation 720p FaceTime HD Camera
+03:00.0 Network controller: Broadcom Corporation BCM4360 802.11ac Wireless Network Adapter (rev 03)
+04:00.0 SATA controller: Samsung Electronics Co Ltd Device a801 (rev 01)
+
+# efivar --list
+605dab50-e046-4300-abb6-3dd810dd8b23-MokListRT
+8be4df61-93ca-11d2-aa0d-00e098032b8c-BootCurrent
+8be4df61-93ca-11d2-aa0d-00e098032b8c-ErrOutDev
+8be4df61-93ca-11d2-aa0d-00e098032b8c-ConOutDev
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-gfx-saved-config-restore-status
+8be4df61-93ca-11d2-aa0d-00e098032b8c-LangCodes
+7c436110-ab2a-4bbb-a880-fe41995c9f82-BootCampProcessorPstates
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-SSN
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-GR_CAUSE
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-FirmwareFeatures
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-FirmwareFeaturesMask
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-HW_ICT
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-HW_MLB
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-MLB
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-HW_ROM
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-ROM
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-HW_BID
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-HardwareBootMode
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-BBIF
+8be4df61-93ca-11d2-aa0d-00e098032b8c-ConOut
+eb704011-1402-11d3-8e77-00a0c969723b-MTC
+7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
+36c28ab5-6566-4c50-9ebd-cbb920f83843-current-network
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-current-network
+7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
+7c436110-ab2a-4bbb-a880-fe41995c9f82-boot-gamma
+7c436110-ab2a-4bbb-a880-fe41995c9f82-backlight-level
+8be4df61-93ca-11d2-aa0d-00e098032b8c-BootOrder
+8be4df61-93ca-11d2-aa0d-00e098032b8c-Boot0001
+8be4df61-93ca-11d2-aa0d-00e098032b8c-Boot0000
+4d1ede05-38c7-4a6a-9cc6-4bcca8b38c14-AAPL,PathProperties0000
+8d63d4fe-bd3c-4aad-881d-86fd974bc1df-last-oslogin-ident
+36c28ab5-6566-4c50-9ebd-cbb920f83843-preferred-count
+36c28ab5-6566-4c50-9ebd-cbb920f83843-preferred-networks
+7c436110-ab2a-4bbb-a880-fe41995c9f82-fmm-computer-name
+7c436110-ab2a-4bbb-a880-fe41995c9f82-LocationServicesEnabled
+7c436110-ab2a-4bbb-a880-fe41995c9f82-efi-boot-device
+7c436110-ab2a-4bbb-a880-fe41995c9f82-efi-boot-device-data
+8be4df61-93ca-11d2-aa0d-00e098032b8c-Boot0080
+af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
+7c436110-ab2a-4bbb-a880-fe41995c9f82-bluetoothActiveControllerInfo
+7c436110-ab2a-4bbb-a880-fe41995c9f82-bluetoothInternalControllerInfo
+8be4df61-93ca-11d2-aa0d-00e098032b8c-fpf_provisioned
+8be4df61-93ca-11d2-aa0d-00e098032b8c-epid_provisioned
+8be4df61-93ca-11d2-aa0d-00e098032b8c-BootFFFF
+8be4df61-93ca-11d2-aa0d-00e098032b8c-Lang
+7c436110-ab2a-4bbb-a880-fe41995c9f82-ALS_Data
+8be4df61-93ca-11d2-aa0d-00e098032b8c-MemoryConfih
+8be4df61-93ca-11d2-aa0d-00e098032b8c-MemoryConfig
+8be4df61-93ca-11d2-aa0d-00e098032b8c-Timeout
+05299c28-3953-4a5f-b7d8-f6c6a7150b2a-SetupDefaults
+4dfbbaab-1392-4fde-abb8-c41cc5ad7d5d-Setup
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category><category term="RHEL"></category><category term="Mac"></category></entry><entry><title>How to Configure targetcli to Listen on IPv4 and IPv6</title><link href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="alternate"></link><updated>2015-04-08T11:46:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-08:blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/</id><summary type="html">&lt;p&gt;In order to configure &lt;em&gt;targetcli&lt;/em&gt; to listen on both IPv4 and IPv6 one has to
+delete the default IPv4 portal configuration and replace it with IPv6 instead.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# targetcli 
+/&amp;gt;
+/&amp;gt; cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
+/iscsi/iqn.20.../tpg1/portals&amp;gt; ls
+o- portals ............................................................................................................ [Portals: 1]
+  o- 0.0.0.0:3260 ............................................................................................................. [OK]
+/iscsi/iqn.20.../tpg1/portals&amp;gt; delete 0.0.0.0 3260
+Deleted network portal 0.0.0.0:3260
+/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
+Using default IP port 3260
+Created network portal ::0:3260.
+/iscsi/iqn.20.../tpg1/portals&amp;gt; ls
+o- portals ............................................................................................................ [Portals: 1]
+  o- [::0]:3260 ............................................................................................................... [OK]
+/iscsi/iqn.20.../tpg1/portals&amp;gt; exit
+
+# netstat -antp | grep 3260
+tcp6       0      0 :::3260                 :::*                    LISTEN
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It appears the target is listening only on IPv6 but in fact it will
+also accept connections over IPv4. I've tried it. &lt;/p&gt;
+&lt;p&gt;This is a bit counter intuitive, however if you try adding the IPv6 address
+without removing the default IPv4 one &lt;em&gt;targetcli&lt;/em&gt; will throw an error:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
+Using default IP port 3260
+Could not create NetworkPortal in configFS.
+/&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;For more information about &lt;em&gt;targetcli&lt;/em&gt; usage see my previous post
+&lt;a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/"&gt;How to Configure iSCSI Target on Red Hat Enterprise Linux 7&lt;/a&gt;.&lt;/p&gt;</summary><category term="RHEL"></category><category term="Fedora"></category><category term="fedora.planet"></category></entry></feed>
