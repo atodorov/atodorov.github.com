@@ -159,7 +159,7 @@ Now let's explore what happens inside and see if we can't speed things up.&lt;/p
 call graph visualizations of my application. It has the nice feature to also show
 execution time and use different colors for fast and slow operations.&lt;/p&gt;
 &lt;p&gt;Full command line is:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+&lt;div class="codehilite"&gt;&lt;pre&gt;pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -177,7 +177,7 @@ rewrites the code.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2&gt;More findings&lt;/h2&gt;
 &lt;p&gt;In &lt;code&gt;celery.app.base.Celery.send_task&lt;/code&gt; there is this block of code:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;349         with self.producer_or_acquire(producer) as P:
+&lt;div class="codehilite"&gt;&lt;pre&gt;349         with self.producer_or_acquire(producer) as P:
 350             self.backend.on_task_call(P, task_id)
 351             task_id = P.publish_task(
 352                 name, args, kwargs, countdown=countdown, eta=eta,
@@ -190,7 +190,7 @@ rewrites the code.&lt;/li&gt;
 
 &lt;p&gt;&lt;code&gt;producer&lt;/code&gt; is always None because delay() doesn't pass it as argument.
 I've tried passing it explicitly to apply_async() as so:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;djapp.celery&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;djapp.celery&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
 
 &lt;span class="c"&gt;# app = debug_task._get_app() # if not defined in djapp.celery&lt;/span&gt;
 &lt;span class="n"&gt;producer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;app&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;amqp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;producer_pool&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;acquire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;block&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -199,7 +199,7 @@ I've tried passing it explicitly to apply_async() as so:&lt;/p&gt;
 
 
 &lt;p&gt;However this doesn't speedup anything. If we replace the above code block like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;349         with producer as P:
+&lt;div class="codehilite"&gt;&lt;pre&gt;349         with producer as P:
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -256,7 +256,7 @@ execution.&lt;/p&gt;
 loop 1 000 000 times I got 1908.0 tasks created per sec.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Another interesting this worth outlining - in the kombu test there are these lines:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;with producers[connection].acquire(block=True) as producer:
+&lt;div class="codehilite"&gt;&lt;pre&gt;with producers[connection].acquire(block=True) as producer:
     for j in range(1000000):
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -285,7 +285,7 @@ was able to pin-point some problematic areas:&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;kombu/transports/virtual/__init__.py&lt;/code&gt;: class Channel.basic_publish() - does
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
 I called fastmemory which redefines the body_encoding property:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@cached_property&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@cached_property&lt;/span&gt;
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;body_encoding&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
@@ -297,7 +297,7 @@ I called fastmemory which redefines the body_encoding property:&lt;/p&gt;
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
 the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;kombu.serialization&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;register&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;kombu.serialization&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;register&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;loads&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;
@@ -337,7 +337,7 @@ from the comments of a WordPress.com blog and the UserVoice feedback/ticketing s
 Settings -&amp;gt; Webhooks and add a new webhook with action &lt;code&gt;comment_post&lt;/code&gt;
 and fields &lt;code&gt;comment_author&lt;/code&gt;, &lt;code&gt;comment_author_email&lt;/code&gt;. A simple
 Django view that handles the input is shown below.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@csrf_exempt&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@csrf_exempt&lt;/span&gt;
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hook_wp_comment_post&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;POST&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
         &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;HttpResponse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Not a POST&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;content_type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;text/plain&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;status&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;403&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -367,7 +367,7 @@ Django view that handles the input is shown below.&lt;/p&gt;
 &lt;p&gt;For UserVoice navigate to Admin Dashboard -&amp;gt; Settings -&amp;gt; Integrations -&amp;gt; 
 Service Hooks and add a custom web hook for the New Ticket notification.
 Then use a sample code like that:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@csrf_exempt&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@csrf_exempt&lt;/span&gt;
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hook_uservoice_new_ticket&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;POST&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
         &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;HttpResponse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Not a POST&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;content_type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;text/plain&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;status&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;403&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -406,7 +406,7 @@ the core of their Kendo UI framework on the
 which presented multiple choice selection for filtering, where the filter keys
 are read from the database. They've solved the problem by simply building up the
 HTML required inside the view. I was wondering if this can be done with forms.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;forms&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;forms&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyForm&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;forms&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Form&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
 &lt;span class="o"&gt;...&lt;/span&gt;     &lt;span class="k"&gt;pass&lt;/span&gt;
@@ -438,7 +438,7 @@ HTML required inside the view. I was wondering if this can be done with forms.&l
 
 &lt;p&gt;So if we were to query all names from the database then we could build up the
 class by adding a BooleanField using the object primary key as the name.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;MyForm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__dict__&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;base_fields&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;123&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;forms&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BooleanField&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;MyForm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__dict__&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;base_fields&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;123&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;forms&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BooleanField&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;MyForm&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
 &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;tr&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;th&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;label&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;id_123&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;123&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;/&lt;/span&gt;&lt;span class="n"&gt;label&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span class="n"&gt;th&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;td&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class="nb"&gt;input&lt;/span&gt; &lt;span class="nb"&gt;id&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;id_123&amp;quot;&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;123&amp;quot;&lt;/span&gt; &lt;span class="nb"&gt;type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;checkbox&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;/&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span class="n"&gt;td&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span class="n"&gt;tr&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;MyForm&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;123&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;})&lt;/span&gt;
@@ -466,7 +466,7 @@ were:&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;Do you want to know more? Use the comments and tell me what exactly!
 I'm writing a longer version of this article so stay tuned!&lt;/p&gt;</summary><category term="Fedora"></category><category term="Django"></category></entry><entry><title>Beware of Django default Model Field Option When Using datetime.now()</title><link href="http://atodorov.org/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/" rel="alternate"></link><updated>2014-04-15T15:54:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-04-15:blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/</id><summary type="html">&lt;p&gt;Beware if you are using code like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;models.DateTimeField(default=datetime.now())
+&lt;div class="codehilite"&gt;&lt;pre&gt;models.DateTimeField(default=datetime.now())
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -474,14 +474,14 @@ I'm writing a longer version of this article so stay tuned!&lt;/p&gt;</summary><
 In some cases the value will be calculated once when the application starts or
 the module is imported and will not be updated later. The most common scenario
 is DateTime fields which default to now(). The correct way is to use a callable:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;models.DateTimeField(default=datetime.now)
+&lt;div class="codehilite"&gt;&lt;pre&gt;models.DateTimeField(default=datetime.now)
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;I've hit this issue on a low volume application which uses cron to collect its own
 metrics by calling an internal URL. The app was running as WSGI app and I wondered
 why I got records with duplicate dates in the DB. A more detailed (correct) example follows:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_strftime&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_strftime&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;datetime&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;now&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strftime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;%Y-%m-&lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
 &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Metrics&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Model&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
@@ -500,13 +500,13 @@ which get updated and restarted very often.&lt;/p&gt;
 Django which I did for a small site recently.&lt;/p&gt;
 &lt;p&gt;&lt;img alt="SMS PIN form" src="/images/sms_pin.png" title="SMS PIN form" /&gt;&lt;/p&gt;
 &lt;p&gt;The page template contains the following HTML snippet&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;input&lt;/span&gt; &lt;span class="na"&gt;type=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;text&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;id=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;mobile_number&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;mobile_number&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;placeholder=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;111-111-1111&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;required&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;input&lt;/span&gt; &lt;span class="na"&gt;type=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;text&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;id=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;mobile_number&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;mobile_number&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;placeholder=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;111-111-1111&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;required&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
 &lt;span class="nt"&gt;&amp;lt;button&lt;/span&gt; &lt;span class="na"&gt;class=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;btn&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;type=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;button&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;onClick=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;send_pin()&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;i&lt;/span&gt; &lt;span class="na"&gt;class=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;icon-share&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/i&amp;gt;&lt;/span&gt; Get PIN&lt;span class="nt"&gt;&amp;lt;/button&amp;gt;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;and a JavaScript function utilizing jQuery:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;send_pin&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;send_pin&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
     &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;ajax&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
                 &lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;{% url &amp;#39;ajax_send_pin&amp;#39; %}&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
                 &lt;span class="nx"&gt;type&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;POST&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
@@ -523,7 +523,7 @@ Django which I did for a small site recently.&lt;/p&gt;
 
 
 &lt;p&gt;Then create the following views in Django:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_pin&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;length&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_pin&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;length&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Return a numeric PIN with length digits &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sample&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;range&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;length&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;length&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
 
@@ -589,7 +589,7 @@ override it as needed.
 &lt;strong&gt;How do you do that without creating useless table and records in the database
 but still have the profiles created automatically for every user?&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;It turns out the solution is quite simple. See my comments inside the code below.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;AbstractMockProfile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Model&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;AbstractMockProfile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Model&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 &lt;span class="sd"&gt;        Any AUTH_PROFILE_MODULE model should inherit this&lt;/span&gt;
 &lt;span class="sd"&gt;        and override the default methods.&lt;/span&gt;
@@ -646,14 +646,14 @@ but still have the profiles created automatically for every user?&lt;/strong&gt;
 
 
 &lt;p&gt;In Difio core the user profile is always used like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;profile = request.user.get_profile()
+&lt;div class="codehilite"&gt;&lt;pre&gt;profile = request.user.get_profile()
 if profile.is_subscribed():
     pass
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;and by default&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;AUTH_PROFILE_MODULE = &amp;quot;difio.MockProfile&amp;quot;
+&lt;div class="codehilite"&gt;&lt;pre&gt;AUTH_PROFILE_MODULE = &amp;quot;difio.MockProfile&amp;quot;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -662,7 +662,7 @@ or only render specific blocks from Jinja2 templates so here's my solution.
 Hopefully you find it useful too.&lt;/p&gt;
 &lt;p&gt;With below template I want to be able to render &lt;strong&gt;only&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt; block
 as a single line and then render the rest of the template &lt;strong&gt;excluding&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;console=tty0&lt;/span&gt;
 &lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;debug&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;        debug=1&lt;/span&gt;
@@ -691,7 +691,7 @@ exactly this.&lt;/p&gt;
 caching in the &lt;em&gt;Environment&lt;/em&gt; (so you get a fresh template every time), render
 your blocks first, configure &lt;em&gt;env.skip_blocks&lt;/em&gt; and render the entire template
 without the specified blocks.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
 
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
@@ -762,7 +762,7 @@ without the specified blocks.&lt;/p&gt;
 
 
 &lt;p&gt;The above code results in the following output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
 &lt;span class="n"&gt;Boot&lt;/span&gt; &lt;span class="nl"&gt;Args&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tty0&lt;/span&gt; &lt;span class="n"&gt;debug&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; 
 &lt;span class="o"&gt;---------------------------&lt;/span&gt;
 
@@ -799,7 +799,7 @@ the existing &lt;code&gt;url()&lt;/code&gt; method to do all background processi
 object to the new class. &lt;/p&gt;
 &lt;p&gt;All code is available at &lt;a href="https://djangosnippets.org/snippets/3013/"&gt;https://djangosnippets.org/snippets/3013/&lt;/a&gt;. &lt;/p&gt;
 &lt;p&gt;To use in your templates simply add&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;{% load fqdn_url from fqdn_url %}
+&lt;div class="codehilite"&gt;&lt;pre&gt;{% load fqdn_url from fqdn_url %}
 &lt;span class="nt"&gt;&amp;lt;a&lt;/span&gt; &lt;span class="na"&gt;href=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;{% fqdn_url &amp;#39;dashboard&amp;#39; %}&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;Dashboard&lt;span class="nt"&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="Django"></category></entry><entry><title>Idempotent Django Email Sender with Amazon SQS and Memcache</title><link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/" rel="alternate"></link><updated>2013-12-11T23:29:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-11:blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/</id><summary type="html">&lt;p&gt;Recently I wrote about my problem with
 &lt;a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/"&gt;duplicate Amazon SQS messages causing multiple emails&lt;/a&gt;
@@ -825,7 +825,7 @@ will make multiple choices using the phone keyboard. All of this needs to be
 put together and sent back to another server for processing. In my views
 I've added a simple cache get/set lines to preserve the selection.&lt;/p&gt;
 &lt;p&gt;Here's how it looks with actual application logic omitted&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;incoming_call&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;incoming_call&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="n"&gt;call_sid&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GET&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;CallSid&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
     &lt;span class="n"&gt;caller_id&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GET&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;From&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 
@@ -866,7 +866,7 @@ which properly works with directories. When going to production that will likely
 Amazon ElastiCache.&lt;/p&gt;</summary><category term="Django"></category><category term="tips"></category><category term="Twilio"></category><category term="cloud"></category></entry><entry><title>Using Django built-in template tags and filters in code</title><link href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="alternate"></link><updated>2013-04-06T22:26:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-06:blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/</id><summary type="html">&lt;p&gt;In case you are wondering how to use Django's
 &lt;a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/"&gt;built-in template tags and filters&lt;/a&gt;
 in your source code, not inside a template here is how:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.template.defaultfilters&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.template.defaultfilters&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1024&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="s"&gt;u&amp;#39;1.0 KB&amp;#39;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1020&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -904,7 +904,7 @@ Mind my wording here :);&lt;/li&gt;
 &lt;h2&gt;How I did it&lt;/h2&gt;
 &lt;p&gt;I decided to go for option 4 above: 
 change the field name to &lt;code&gt;size&lt;/code&gt; but continue to use the &lt;code&gt;lines&lt;/code&gt; DB column.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/models.py b/models.py&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/models.py b/models.py&lt;/span&gt;
 &lt;span class="gh"&gt;index e06d2b2..18cad6f 100644&lt;/span&gt;
 &lt;span class="gd"&gt;--- a/models.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/models.py&lt;/span&gt;
@@ -928,7 +928,7 @@ exact match if using &lt;code&gt;contains&lt;/code&gt; or &lt;code&gt;icontains&
 &lt;a href="https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion"&gt;django-users&lt;/a&gt;
 mailing list.&lt;/p&gt;
 &lt;p&gt;Solution by Tom Evans, example is mine:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.db.models&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Q&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.db.models&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Q&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;Package&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
         &lt;span class="n"&gt;Q&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;Django&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;Q&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name__icontains&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;Django&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
     &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;extra&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
@@ -953,7 +953,7 @@ mailing list.&lt;/p&gt;
 only icontains and sort by the length of 'name'&lt;/p&gt;
 &lt;p&gt;Gabriel https://groups.google.com/d/topic/django-users/OCNmIXrRgag/discussion&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;packages&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;p&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;Package&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name__icontains&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Dancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;packages&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;p&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;Package&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name__icontains&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Dancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;sorted&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;key&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;u&amp;#39;Dancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Dancer2&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;breakdancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Task::Dancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;App::Dancer2&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Dancer::Routes&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
 &lt;span class="s"&gt;u&amp;#39;DancerX::Routes&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;DancerX::Config&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Task::DWIM::Dancer&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Dancer::Plugin::CDN&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
@@ -971,7 +971,7 @@ Your website needs a reminder. This is how to implement one if using
 django-social-auth.&lt;/p&gt;
 &lt;h2&gt;Back-end&lt;/h2&gt;
 &lt;p&gt;Create a similar view on your Django back-end&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;ajax_social_auth_provider_reminder&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;ajax_social_auth_provider_reminder&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 &lt;span class="sd"&gt;        Remind the user which social auth provider they used to login.&lt;/span&gt;
 &lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
@@ -1013,7 +1013,7 @@ associated with the user account.&lt;/p&gt;
 &lt;p&gt;On the browser side I like to use &lt;a href="http://dojotoolkit.org"&gt;Dojo&lt;/a&gt;.
 Here is a simple script which connects to a form and POSTs the data
 back to the server.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;dojo&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;dojo&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
 &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;dijit&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
 
 &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;sendReminderForm&lt;/span&gt;&lt;span class="p"&gt;(){&lt;/span&gt;
@@ -1044,7 +1044,7 @@ tweet on behalf of the user when they join your site and send them a welcome ema
 &lt;p&gt;In django-social-auth the authentication workflow is handled by an operations
 pipeline where custom functions can be added or default items can be removed to
 provide custom behavior. This is how our pipeline looks:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;SOCIAL_AUTH_PIPELINE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;SOCIAL_AUTH_PIPELINE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
     &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.social.social_auth_user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
     &lt;span class="c"&gt;#&amp;#39;social_auth.backends.pipeline.associate.associate_by_email&amp;#39;,&lt;/span&gt;
     &lt;span class="s"&gt;&amp;#39;social_auth.backends.pipeline.user.get_username&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
@@ -1064,7 +1064,7 @@ can login with Twitter OAuth to your site.
 for more information on how to do this.&lt;/p&gt;
 &lt;h2&gt;Custom pipeline actions&lt;/h2&gt;
 &lt;p&gt;This is how the custom pipeline action should look:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlparse&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parse_qs&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlparse&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parse_qs&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;welcome_new_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;backend&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;social_user&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;is_new&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;new_association&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
@@ -1100,7 +1100,7 @@ to define how emails look and sending them via Amazon SES. See
 &lt;a href="/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/"&gt;Email Logging for Django on RedHat OpenShift With Amazon SES&lt;/a&gt;
 for more information on how to configure emailing with SES.&lt;/p&gt;
 &lt;p&gt;Here is how the Twitter code looks:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;twitter&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;twitter&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;celery.task&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;settings&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;TWITTER_CONSUMER_KEY&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;TWITTER_CONSUMER_SECRET&lt;/span&gt;
 
@@ -1133,7 +1133,7 @@ and not slow down the user interface.&lt;/p&gt;
 your comments below. Thanks!&lt;/p&gt;</summary><category term="Django"></category><category term="django-social-auth"></category><category term="Twitter"></category><category term="tips"></category></entry><entry><title>Tip: Delete User Profiles with django-social-auth</title><link href="http://atodorov.org/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/" rel="alternate"></link><updated>2013-03-06T21:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-03-06:blog/2013/03/06/tip-delete-user-profiles-django-social-auth/</id><summary type="html">&lt;p&gt;Common functionality for websites is the 'DELETE ACCOUNT' or 'DISABLE ACCOUNT'
 button. This is how to implement it if using 
 &lt;a href="https://github.com/omab/django-social-auth"&gt;django-social-auth&lt;/a&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;delete_objects_for_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pk&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c"&gt;# optional&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;delete_objects_for_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pk&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c"&gt;# optional&lt;/span&gt;
 &lt;span class="n"&gt;UserSocialAuth&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delete&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
 &lt;span class="n"&gt;User&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pk&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pk&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;update&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;is_active&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;email&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;HttpResponseRedirect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;reverse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;django.contrib.auth.views.logout&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
@@ -1154,7 +1154,7 @@ because of frequent abuse. For that reason I use
 &lt;a href="http://aws.amazon.com/ses/"&gt;Amazon SES&lt;/a&gt; as my email backend. Here is how to
 configure &lt;a href="https://www.djangoproject.com/"&gt;Django&lt;/a&gt; to send emails to site admins
 when something goes wrong.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Valid addresses only.&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Valid addresses only.&lt;/span&gt;
 &lt;span class="n"&gt;ADMINS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
     &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Alexander Todorov&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;atodorov@example.com&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
 &lt;span class="p"&gt;)&lt;/span&gt;

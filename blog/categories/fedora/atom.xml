@@ -69,7 +69,7 @@ thin  (V)olume,  (t)hin pool, (T)hin pool data, raid or pool m(e)tadata or
 pool metadata spare.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;This is how &lt;code&gt;lvs&lt;/code&gt; looks like when you have a regular LVM setup:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# lvs
+&lt;div class="codehilite"&gt;&lt;pre&gt;# lvs
   LV   VG              Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
   root rhel_dhcp70-183 -wi-ao---- 17,47g                                                    
   swap rhel_dhcp70-183 -wi-ao----  2,00g
@@ -78,14 +78,14 @@ pool metadata spare.&lt;/p&gt;
 
 &lt;p&gt;When using LVM thin provisioning you're looking for the left-most attribute bit
 to be V, t or T. Here's an example:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# lvs
+&lt;div class="codehilite"&gt;&lt;pre&gt;# lvs
   LV     VG              Attr       LSize  Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert
   pool00 rhel_dhcp71-101 twi-aotz-- 14,55g               7,52   3,86                            
   root   rhel_dhcp71-101 Vwi-aotz-- 14,54g pool00        7,53                                   
   swap   rhel_dhcp71-101 -wi-ao----  2,00g
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="RHEL"></category><category term="Fedora"></category></entry><entry><title>Tip: Linux-IO default LUN is 0 instead of 1</title><link href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/" rel="alternate"></link><updated>2015-04-08T15:09:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-08:blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/</id><summary type="html">&lt;p&gt;I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
 and failed miserably when I switched to RHEL 7 iSCSI target.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;iPXE&amp;gt; dhcp net0
+&lt;div class="codehilite"&gt;&lt;pre&gt;iPXE&amp;gt; dhcp net0
 DHCP (net0 52:54:00:12:34:56)... ok
 iPXE&amp;gt; set keep-san 1
 iPXE&amp;gt; sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
@@ -99,7 +99,7 @@ iPXE&amp;gt;
 &lt;p&gt;Note that the default configuration when Linux is the target is for the disk to be LUN 1.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;Well this is not true for Linux-IO (targetcli). &lt;strong&gt;The default LUN is 0!&lt;/strong&gt;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;iPXE&amp;gt; sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
+&lt;div class="codehilite"&gt;&lt;pre&gt;iPXE&amp;gt; sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
 Registered SAN device 0x80
 Booting from SAN device 0x80
 &lt;/pre&gt;&lt;/div&gt;
@@ -107,7 +107,7 @@ Booting from SAN device 0x80
 
 &lt;p&gt;Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!&lt;/p&gt;</summary><category term="RHEL"></category><category term="Fedora"></category><category term="tips"></category></entry><entry><title>How to Configure targetcli to Listen on IPv4 and IPv6</title><link href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="alternate"></link><updated>2015-04-08T11:46:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-08:blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/</id><summary type="html">&lt;p&gt;In order to configure &lt;em&gt;targetcli&lt;/em&gt; to listen on both IPv4 and IPv6 one has to
 delete the default IPv4 portal configuration and replace it with IPv6 instead.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# targetcli 
+&lt;div class="codehilite"&gt;&lt;pre&gt;# targetcli 
 /&amp;gt;
 /&amp;gt; cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
 /iscsi/iqn.20.../tpg1/portals&amp;gt; ls
@@ -132,7 +132,7 @@ tcp6       0      0 :::3260                 :::*                    LISTEN
 also accept connections over IPv4. I've tried it. &lt;/p&gt;
 &lt;p&gt;This is a bit counter intuitive, however if you try adding the IPv6 address
 without removing the default IPv4 one &lt;em&gt;targetcli&lt;/em&gt; will throw an error:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
+&lt;div class="codehilite"&gt;&lt;pre&gt;/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
 Using default IP port 3260
 Could not create NetworkPortal in configFS.
 /&amp;gt;
@@ -147,7 +147,7 @@ by the newer &lt;em&gt;targetcli&lt;/em&gt; which makes configuring a software i
 different.&lt;/p&gt;
 &lt;p&gt;In earlier versions one had to edit the &lt;code&gt;/etc/tgtd/targets.conf&lt;/code&gt; file and
 &lt;code&gt;service tgtd restart&lt;/code&gt;. Here is an example configuration:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;target&lt;/span&gt; &lt;span class="err"&gt;iqn.2008-09.com.example:server.target1&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;target&lt;/span&gt; &lt;span class="err"&gt;iqn.2008-09.com.example:server.target1&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
     backing-store /dev/vg_iscsi/lv_lun1
     backing-store /dev/vg_iscsi/lv_lun2
 
@@ -160,7 +160,7 @@ different.&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;targetcli&lt;/em&gt; can be used either as an interactive shell or as stand alone commands.
 Here is an example shell session which creates a file-based disk image. Comments are
 provided inline:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# yum install -y targetcli&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# yum install -y targetcli&lt;/span&gt;
 &lt;span class="cp"&gt;# systemctl enable target&lt;/span&gt;
 
 &lt;span class="cp"&gt;# targetcli&lt;/span&gt;
@@ -339,14 +339,14 @@ can be used by the general public though. I will be writing another post about t
 so stay tuned.&lt;/p&gt;</summary><category term="Fedora"></category><category term="QA"></category></entry><entry><title>Book Review - Last 3 Months</title><link href="http://atodorov.org/blog/2014/05/13/book-review-last-3-months/" rel="alternate"></link><updated>2014-05-13T23:57:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-05-13:blog/2014/05/13/book-review-last-3-months/</id><summary type="html">&lt;p&gt;Hello folks, this is my book list for the past 3 months. It ranges from
 tech and start-up related to Japanese and kid stories. Here's my quick review.&lt;/p&gt;
 &lt;h2&gt;Lean UX&lt;/h2&gt;
-&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/1449311652/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=1449311652&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=JNQIKHJJXU3KJ33H"&gt;Lean UX: Applying Lean Principles to Improve User Experience&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=1449311652" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/1449311652/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=1449311652&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=JNQIKHJJXU3KJ33H"&gt;Lean UX: Applying Lean Principles to Improve User Experience&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=1449311652" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 is the second book I read on the subject after first reading
 &lt;a href="/blog/2013/12/09/book-review-ux-for-lean-startups/"&gt;UX for Lean Startups&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;It is published before &lt;em&gt;UX for Lean Startups&lt;/em&gt; and is much more about principles than
 any practical methods. Honestly I'm not sure if I took any real value out of it.
 Maybe if I had read these two books in reverse order it would have been better.&lt;/p&gt;
 &lt;h2&gt;The Hacienda - How Not to Run a Club&lt;/h2&gt;
-&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/B00DEKLESK/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B00DEKLESK&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=FOMGYFQW4BHGPPOL"&gt;The Hacienda: How Not to Run a Club&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B00DEKLESK" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/B00DEKLESK/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B00DEKLESK&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=FOMGYFQW4BHGPPOL"&gt;The Hacienda: How Not to Run a Club&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B00DEKLESK" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 by Peter Hook is one of my favorites. It covers a great deal of music and clubland history,
 depicts crazy parties and describes the adventure of owning one of the most
 popular nightclubs in the world. All of that while struggling to make a buck and
@@ -362,7 +362,7 @@ or wants to read a piece of history. My favorite quote of the book:&lt;/p&gt;
 &lt;p&gt;‘She gave me an ice-cold stare and said, “My memory seems to have wiped that.”’&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2&gt;Simple Science Experiments&lt;/h2&gt;
-&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/0713428945/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0713428945&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=HU6TVCNR6DG67EFG"&gt;Simple Science Experiments&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0713428945" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;p&gt;&lt;a href="http://www.amazon.com/gp/product/0713428945/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0713428945&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=HU6TVCNR6DG67EFG"&gt;Simple Science Experiments&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0713428945" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 by Hans Jürgen Press is a very old book listing 200 experiments which you can
 do at home using household materials. It is great for teaching basic science
 to children. The book is very popular and is available in many languages
@@ -371,7 +371,7 @@ and editions - just search for it.&lt;/p&gt;
 at an antique bookstore in Varna two months ago.&lt;/p&gt;
 &lt;h2&gt;Ronia, the Robber's Daughter&lt;/h2&gt;
 &lt;p&gt;Decided to experiment a little bit and found
-&lt;a href="http://www.amazon.com/gp/product/0140317201/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0140317201&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=FDHOPXQCZPMYCAA2"&gt;Ronia, the Robber's Daughter&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0140317201" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;.
+&lt;a href="http://www.amazon.com/gp/product/0140317201/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0140317201&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=FDHOPXQCZPMYCAA2"&gt;Ronia, the Robber's Daughter&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0140317201" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;.
 It's a child's book telling the story of two kids whose fathers are rival
 robbers. The book is an easy read (2-3 hrs before bed time) with stories
 of magic woods, dwarfs and scary creatures mixed with human emotions
@@ -386,7 +386,7 @@ What impresses me most is the detailed description of nature and
 surrounding details in all of the stories.&lt;/p&gt;
 &lt;h2&gt;The Singularity Is Near&lt;/h2&gt;
 &lt;p&gt;I've also started 
-&lt;a href="http://www.amazon.com/gp/product/0143037889/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0143037889&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=BKMQ47NQEXNTDDRR"&gt;The Singularity Is Near: When Humans Transcend Biology&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0143037889" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;a href="http://www.amazon.com/gp/product/0143037889/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0143037889&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=BKMQ47NQEXNTDDRR"&gt;The Singularity Is Near: When Humans Transcend Biology&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=0143037889" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 by Ray Kurzweil.&lt;/p&gt;
 &lt;p&gt;It's a bit hard to read because the book is full of so many technical details
 about genetics, nanotechnology, robotics and AI.&lt;/p&gt;
@@ -408,14 +408,14 @@ the core of their Kendo UI framework on the
 &lt;a href="/blog/2013/08/01/laptop-vs-smartphone-part-one/"&gt;replace my laptop for a smartphone&lt;/a&gt;.
 There's the issue with a desk working environment and one solution is to buy an external
 display. The other one is to use a 
-&lt;a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&amp;camp=1789&amp;creative=390957&amp;field-keywords=screen%20magnifier&amp;linkCode=ur2&amp;rh=i%3Aaps%2Ck%3Ascreen%20magnifier&amp;sprefix=screen%20magnifie%2Ccomputers%2C277&amp;tag=atodorovorg-20&amp;url=search-alias%3Daps&amp;linkId=KGF6F22QDNBRWAMP"&gt;screen magnifier&lt;/a&gt;&lt;img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=ur2&amp;o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&amp;camp=1789&amp;creative=390957&amp;field-keywords=screen%20magnifier&amp;linkCode=ur2&amp;rh=i%3Aaps%2Ck%3Ascreen%20magnifier&amp;sprefix=screen%20magnifie%2Ccomputers%2C277&amp;tag=atodorovorg-20&amp;url=search-alias%3Daps&amp;linkId=KGF6F22QDNBRWAMP"&gt;screen magnifier&lt;/a&gt;&lt;img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=ur2&amp;o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 as shown on the picture
 (source &lt;a href="http://www.ebay.co.uk/itm/2PC-Enlarger-Magnifier-for-Mobile-Screen-3-Times-for-All-Mobiles-Senior-2014-New-/181398272903?pt=UK_Holders_Mounts&amp;amp;hash=item2a3c2dfb87"&gt;eBay&lt;/a&gt;).&lt;/p&gt;
 &lt;p&gt;&lt;img alt="Mobile Screen Magnifier" src="/images/mobile_screen_magnifier.jpg" title="Mobile Screen Magnifier" /&gt;&lt;/p&gt;
 &lt;p&gt;Does anyone have experience with these? Ultimately it should be possible to use
 any 3x Fresnel lens magnifier and make your 5" phone display into a 15" laptop size one.
 The magnifiers used for reading,
-&lt;a href="http://www.amazon.com/gp/product/B001TLJXJ8/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B001TLJXJ8&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=HS6EY4BELCHBZ6HC"&gt;this one&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B001TLJXJ8" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /&gt;
+&lt;a href="http://www.amazon.com/gp/product/B001TLJXJ8/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=B001TLJXJ8&amp;linkCode=as2&amp;tag=atodorovorg-20&amp;linkId=HS6EY4BELCHBZ6HC"&gt;this one&lt;/a&gt;&lt;img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=as2&amp;o=1&amp;a=B001TLJXJ8" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" /&gt;
 are cheap and portable but don't look very well around the edges.&lt;/p&gt;
 &lt;p&gt;If anyone has such a device at hand I'd love to see if this works for you or not.
 Thanks!&lt;/p&gt;</summary><category term="Fedora"></category></entry><entry><title>Spoiler: How to Open Source Existing Proprietary Code in 10 Steps</title><link href="http://atodorov.org/blog/2014/04/23/how-to-open-source-existing-proprietary-code-in-10-steps/" rel="alternate"></link><updated>2014-04-23T22:47:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-04-23:blog/2014/04/23/how-to-open-source-existing-proprietary-code-in-10-steps/</id><summary type="html">&lt;p&gt;We've heard about companies opening up their proprietary software products,
@@ -565,12 +565,12 @@ they are not installed when building HarfBuzz, yet[1]).&lt;/p&gt;
 sanitizes the fonts successfully as this is important for using them on
 the web, and a test for a common mistakes I made in my feature files
 that result in unexpected blank glyphs in the fonts.&lt;/p&gt;
-&lt;p&gt;Khaled Hosny, Amiri Font&lt;/p&gt;
-&lt;/blockquote&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;a href="https://github.com/behdad/harfbuzz/pull/12"&gt;https://github.com/behdad/harfbuzz/pull/12&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href="https://github.com/khaledhosny/ots"&gt;https://github.com/khaledhosny/ots&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;Khaled Hosny, Amiri Font&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;blockquote&gt;
 &lt;p&gt;The answer is complicated.  I'll do what I can to answer.&lt;/p&gt;
 &lt;p&gt;First, the FontForge application has a "verification" function which
@@ -612,9 +612,9 @@ couple of years, I just haven't been able to justify the time
 expenditure.  (Besides this, there are still a few serious problems
 with the fonts--once again, a matter of time.)&lt;/p&gt;
 &lt;p&gt;Have a look at the bugs pages, to get an idea of work being done.&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://savannah.gnu.org/bugs/?group=freefont"&gt;http://savannah.gnu.org/bugs/?group=freefont&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Steve White, GNU FreeFont&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;&lt;a href="http://savannah.gnu.org/bugs/?group=freefont"&gt;http://savannah.gnu.org/bugs/?group=freefont&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;I'm not sure if ImageMagic or PIL can help solve the rendering and compare
 problem Steve is talking about. They can definitely be used for
 &lt;a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/"&gt;image comparison&lt;/a&gt;
@@ -699,7 +699,7 @@ or only render specific blocks from Jinja2 templates so here's my solution.
 Hopefully you find it useful too.&lt;/p&gt;
 &lt;p&gt;With below template I want to be able to render &lt;strong&gt;only&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt; block
 as a single line and then render the rest of the template &lt;strong&gt;excluding&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;console=tty0&lt;/span&gt;
 &lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;debug&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;        debug=1&lt;/span&gt;
@@ -728,7 +728,7 @@ exactly this.&lt;/p&gt;
 caching in the &lt;em&gt;Environment&lt;/em&gt; (so you get a fresh template every time), render
 your blocks first, configure &lt;em&gt;env.skip_blocks&lt;/em&gt; and render the entire template
 without the specified blocks.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
 
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
@@ -799,7 +799,7 @@ without the specified blocks.&lt;/p&gt;
 
 
 &lt;p&gt;The above code results in the following output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
 &lt;span class="n"&gt;Boot&lt;/span&gt; &lt;span class="nl"&gt;Args&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tty0&lt;/span&gt; &lt;span class="n"&gt;debug&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; 
 &lt;span class="o"&gt;---------------------------&lt;/span&gt;
 
@@ -997,7 +997,7 @@ at liberty to share although they've all been fixed since then.&lt;/p&gt;
 me and devel banging our heads against the wall until we figured out that on this
 particular system the NUMA configuration was not suitable for running Xen virtualization.&lt;/p&gt;
 &lt;p&gt;Can you spot the problem here ?&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
     &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;kickstartGui&lt;/span&gt;
 &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
     &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Could not open display because no X server is running.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
@@ -1110,7 +1110,7 @@ which is shown at the bottom of this article. &lt;/p&gt;
 &lt;li&gt;
 &lt;p&gt;Download the source RPM for anaconda from the tree and extract the sources to a working
 directory. Then;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;anaconda-20.25.16-1
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;anaconda-20.25.16-1
 git init
 git add .
 git commit -m &lt;span class="s2"&gt;&amp;quot;initial import&amp;quot;&lt;/span&gt;
@@ -1125,14 +1125,14 @@ modification. The tag is required later by the script which creates the updates 
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;After making your changes commit them and from the top anaconda directory execute:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;./scripts/makeupdates -t anaconda-20.25.16-1
+&lt;div class="codehilite"&gt;&lt;pre&gt;./scripts/makeupdates -t anaconda-20.25.16-1
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;You can also add RPM contents to the updates.img but you need to download the packages first:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;yumdownloader python-coverage python-setuptools
+&lt;div class="codehilite"&gt;&lt;pre&gt;yumdownloader python-coverage python-setuptools
 
 ./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
 BUILDDIR /home/atodorov/anaconda-20.25.16-1
@@ -1156,7 +1156,7 @@ inside the installation environment) experimenting with
 &lt;p&gt;You are done! Make the &lt;code&gt;updates.img&lt;/code&gt; available to Anaconda and start using it!&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;UPDATE 2014-02-08:&lt;/strong&gt; If you prefer working with the anaconda source tree here's
 how to do it:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;git clone git://git.fedorahosted.org/git/anaconda.git
+&lt;div class="codehilite"&gt;&lt;pre&gt;git clone git://git.fedorahosted.org/git/anaconda.git
 &lt;span class="nb"&gt;cd &lt;/span&gt;anaconda/
 git checkout anaconda-20.25.16-1 -b my_feature-branch
 
@@ -1311,7 +1311,7 @@ time in the %check section and less than &lt;strong&gt;35%&lt;/strong&gt; have t
 There's definitely room for improvement and I plan to focus on this during 2014!&lt;/p&gt;</summary><category term="Fedora"></category><category term="QA"></category></entry><entry><title>Can I Use Android Phone as Smart Card Reader</title><link href="http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/" rel="alternate"></link><updated>2013-12-18T23:09:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-18:blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/</id><summary type="html">&lt;p&gt;Today I had troubles with my Omnikey CardMan 6121 smart card reader.
 For some reason it will not detect the card inside and was unusable.
 &lt;code&gt;/var/log/messages&lt;/code&gt; was filled with  &lt;em&gt;Card Not Powered&lt;/em&gt; messages:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
+&lt;div class="codehilite"&gt;&lt;pre&gt;Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
 Dec 18 11:18:01 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
 Dec 18 11:18:02 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
 &lt;/pre&gt;&lt;/div&gt;
@@ -1338,7 +1338,7 @@ project already (e.g. OpenSC + drivers for Android). If not, why not? &lt;/p&gt;
 &lt;p&gt;If you happen to have information on the subject please share it in the comments.
 Thanks!&lt;/p&gt;</summary><category term="RHEL"></category><category term="Fedora"></category><category term="QA"></category></entry><entry><title>Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</title><link href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/" rel="alternate"></link><updated>2013-11-29T14:05:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-11-29:blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/</id><summary type="html">&lt;p&gt;Accidentally I have discovered a bug for Python's
 URLGrabber module which has to do with change in behavior in libcurl.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlgrabber.grabber&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlgrabber.grabber&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;reget&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlgrab&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;/tmp/columnize.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
@@ -1391,7 +1391,7 @@ because of more urgent bug fixes which need to released first.&lt;/p&gt;
 to support Anaconda installations. It supports plain text ks.cfg files, IIRC those
 were static templates, no variable substitution.&lt;/p&gt;
 &lt;p&gt;The other possibility is Python templates based on Pykickstart:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pykickstart.constants&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;KS_SCRIPT_POST&lt;/span&gt;
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pykickstart.constants&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;KS_SCRIPT_POST&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pykickstart.parser&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Script&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;installdefaults&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;InstallKs&lt;/span&gt;
 
@@ -1454,7 +1454,7 @@ fields but the last as separate variables.&lt;/p&gt;
 &lt;p&gt;The proposed solutions I've found suggested using &lt;code&gt;awk&lt;/code&gt; but I don't like it.
 Here's a simple solution using &lt;code&gt;cut&lt;/code&gt; and &lt;code&gt;rev&lt;/code&gt; which can extract arbitrary
 field counts from the end of the string. &lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;buildvm-08.phx2.fedoraproject.org&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; rev &lt;span class="p"&gt;|&lt;/span&gt; cut -f1 -d. &lt;span class="p"&gt;|&lt;/span&gt; rev
+&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;buildvm-08.phx2.fedoraproject.org&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; rev &lt;span class="p"&gt;|&lt;/span&gt; cut -f1 -d. &lt;span class="p"&gt;|&lt;/span&gt; rev
 org
 &lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;buildvm-08.phx2.fedoraproject.org&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; rev &lt;span class="p"&gt;|&lt;/span&gt; cut -f-2 -d. &lt;span class="p"&gt;|&lt;/span&gt; rev
 fedoraproject.org
@@ -1511,7 +1511,7 @@ space run out. The system was configured to use Btrfs filesystem and this is how
 to extend it.&lt;/p&gt;
 &lt;p&gt;First you have to extend the underlying guest storage. On the host I'm using LVM
 so this is a no brainer:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# pvs
+&lt;div class="codehilite"&gt;&lt;pre&gt;# pvs
   PV                                                    VG              Fmt  Attr PSize   PFree  
   /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 134,11g
 
@@ -1534,7 +1534,7 @@ so this is a no brainer:&lt;/p&gt;
 
 
 &lt;p&gt;On the VM we have a default Btrfs layout:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# blkid
+&lt;div class="codehilite"&gt;&lt;pre&gt;# blkid
 /dev/vda1: UUID=&amp;quot;410ee563-e701-42ff-9d5f-5805dd103e35&amp;quot; TYPE=&amp;quot;ext4&amp;quot; PARTUUID=&amp;quot;0000330f-01&amp;quot; 
 /dev/vda2: UUID=&amp;quot;f4addad4-a0fc-482e-ad5a-240864b76f09&amp;quot; TYPE=&amp;quot;swap&amp;quot; PARTUUID=&amp;quot;0000330f-02&amp;quot; 
 /dev/vda3: LABEL=&amp;quot;fedora&amp;quot; UUID=&amp;quot;f0b589ce-061c-4ac3-826e-7f3f8c8a6d30&amp;quot; UUID_SUB=&amp;quot;11aa8414-3ce1-4fe7-a506-9a4f91ba5c30&amp;quot; TYPE=&amp;quot;btrfs&amp;quot; PARTUUID=&amp;quot;0000330f-03&amp;quot;
@@ -1557,7 +1557,7 @@ of the underlying storage. See the fdisk header (line 9 below), vda is now 20GiB
 &lt;p&gt;Before extending the filesystem you have to extend the underlying disk partition! This is the
 trickiest part. Using fdisk or parted you have to delete the partition and add it again.
 Make sure to use the &lt;strong&gt;SAME&lt;/strong&gt; starting sector for the new partition (line 33)!&lt;/p&gt;
-&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt; 1
+&lt;table class="codehilitetable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt; 1
  2
  3
  4
@@ -1618,7 +1618,7 @@ Make sure to use the &lt;strong&gt;SAME&lt;/strong&gt; starting sector for the n
 59
 60
 61
-62&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# fdisk /dev/vda&lt;/span&gt;
+62&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="c"&gt;# fdisk /dev/vda&lt;/span&gt;
 
 Welcome to fdisk &lt;span class="o"&gt;(&lt;/span&gt;util-linux 2.24-rc1&lt;span class="o"&gt;)&lt;/span&gt;.
 Changes will remain in memory only, &lt;span class="k"&gt;until&lt;/span&gt; you decide to write them.
@@ -1685,7 +1685,7 @@ Error: Partition&lt;span class="o"&gt;(&lt;/span&gt;s&lt;span class="o"&gt;)&lt;
 
 &lt;p&gt;See lines 36 and 49 above. The new partition has a greater size.
 After reboot just resize the filesystem and verify the new space has been added&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# btrfs filesystem resize max /
+&lt;div class="codehilite"&gt;&lt;pre&gt;# btrfs filesystem resize max /
 Resize &amp;#39;/&amp;#39; of &amp;#39;max&amp;#39;
 
 # df -h
@@ -1709,7 +1709,7 @@ symbols and the most likely reason for that is debuginfo packages are missing.&l
 &lt;p&gt;To install them first locate the directory containing the files for that particular
 crash. Use the &lt;code&gt;executable&lt;/code&gt; file to find out if you are looking into the correct
 directory. Then use this one liner to install the missing debuginfo packages.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# pwd
+&lt;div class="codehilite"&gt;&lt;pre&gt;# pwd
 /var/tmp/abrt/ccpp-2013-10-10-15:55:18-15533
 # cat backtrace | grep lib | tr -s &amp;#39; &amp;#39; | cut -f4 -d&amp;#39; &amp;#39; | sort | uniq | grep &amp;quot;/&amp;quot; | xargs rpm -qf --qf &amp;quot;%{name}\n&amp;quot; | xargs debuginfo-install -y
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="tips"></category><category term="Fedora"></category></entry><entry><title>Fedora 20 GNOME 3.10 Test Day Post-mortem</title><link href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/" rel="alternate"></link><updated>2013-10-11T12:25:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-10-11:blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/</id><summary type="html">&lt;p&gt;&lt;img alt="&amp;quot;Fedora sausage banner&amp;quot;" src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" /&gt;&lt;/p&gt;
@@ -1736,7 +1736,7 @@ to the Fedora QA mailing list about that as we speak.&lt;/li&gt;
 should be the default in GNOME simply because of
 &lt;a href="https://bugzilla.gnome.org/show_bug.cgi?id=709799"&gt;GNOME #709799&lt;/a&gt;. The default
 keyboard layout will be Bulgarian (traditional phonetic) aka bg+phonetic.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
+&lt;div class="codehilite"&gt;&lt;pre&gt;(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
 (16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default
 (16,16,34) atodorov: rtcm: I&amp;#39;m a Bulgarian, however I can&amp;#39;t tell which one. Both Phonetic and standard (BDS) are common
 (16,16,54) atodorov: a safe bet is to go with phonetic I guess. 

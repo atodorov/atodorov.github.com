@@ -313,7 +313,7 @@ Now let's explore what happens inside and see if we can't speed things up.</p>
 call graph visualizations of my application. It has the nice feature to also show
 execution time and use different colors for fast and slow operations.</p>
 <p>Full command line is:</p>
-<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+<div class="codehilite"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
 </pre></div>
 
 
@@ -331,7 +331,7 @@ rewrites the code.</li>
 </ul>
 <h2>More findings</h2>
 <p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
+<div class="codehilite"><pre>349         with self.producer_or_acquire(producer) as P:
 350             self.backend.on_task_call(P, task_id)
 351             task_id = P.publish_task(
 352                 name, args, kwargs, countdown=countdown, eta=eta,
@@ -344,7 +344,7 @@ rewrites the code.</li>
 
 <p><code>producer</code> is always None because delay() doesn't pass it as argument.
 I've tried passing it explicitly to apply_async() as so:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="codehilite"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
 <span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -353,7 +353,7 @@ I've tried passing it explicitly to apply_async() as so:</p>
 
 
 <p>However this doesn't speedup anything. If we replace the above code block like this:</p>
-<div class="highlight"><pre>349         with producer as P:
+<div class="codehilite"><pre>349         with producer as P:
 </pre></div>
 
 
@@ -423,7 +423,7 @@ execution.</p>
 loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
 </ul>
 <p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
-<div class="highlight"><pre>with producers[connection].acquire(block=True) as producer:
+<div class="codehilite"><pre>with producers[connection].acquire(block=True) as producer:
     for j in range(1000000):
 </pre></div>
 
@@ -465,7 +465,7 @@ was able to pin-point some problematic areas:</p>
 <p><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
 I called fastmemory which redefines the body_encoding property:</p>
-<div class="highlight"><pre><span class="nd">@cached_property</span>
+<div class="codehilite"><pre><span class="nd">@cached_property</span>
 <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">None</span>
 </pre></div>
@@ -477,7 +477,7 @@ I called fastmemory which redefines the body_encoding property:</p>
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
 the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+<div class="codehilite"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
 
 <span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">s</span>
@@ -530,7 +530,7 @@ from the comments of a WordPress.com blog and the UserVoice feedback/ticketing s
 Settings -&gt; Webhooks and add a new webhook with action <code>comment_post</code>
 and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
 Django view that handles the input is shown below.</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="codehilite"><pre><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
@@ -560,7 +560,7 @@ Django view that handles the input is shown below.</p>
 <p>For UserVoice navigate to Admin Dashboard -&gt; Settings -&gt; Integrations -&gt; 
 Service Hooks and add a custom web hook for the New Ticket notification.
 Then use a sample code like that:</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="codehilite"><pre><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
@@ -625,7 +625,7 @@ the core of their Kendo UI framework on the
 which presented multiple choice selection for filtering, where the filter keys
 are read from the database. They've solved the problem by simply building up the
 HTML required inside the view. I was wondering if this can be done with forms.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<div class="codehilite"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
 <span class="o">...</span>     <span class="k">pass</span>
@@ -657,7 +657,7 @@ HTML required inside the view. I was wondering if this can be done with forms.</
 
 <p>So if we were to query all names from the database then we could build up the
 class by adding a BooleanField using the object primary key as the name.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+<div class="codehilite"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
 <span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s">&#39;123&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
@@ -711,7 +711,7 @@ I'm writing a longer version of this article so stay tuned!</p>
                 </h2>
             </a>
             <p>Beware if you are using code like this:</p>
-<div class="highlight"><pre>models.DateTimeField(default=datetime.now())
+<div class="codehilite"><pre>models.DateTimeField(default=datetime.now())
 </pre></div>
 
 
@@ -719,14 +719,14 @@ I'm writing a longer version of this article so stay tuned!</p>
 In some cases the value will be calculated once when the application starts or
 the module is imported and will not be updated later. The most common scenario
 is DateTime fields which default to now(). The correct way is to use a callable:</p>
-<div class="highlight"><pre>models.DateTimeField(default=datetime.now)
+<div class="codehilite"><pre>models.DateTimeField(default=datetime.now)
 </pre></div>
 
 
 <p>I've hit this issue on a low volume application which uses cron to collect its own
 metrics by calling an internal URL. The app was running as WSGI app and I wondered
 why I got records with duplicate dates in the DB. A more detailed (correct) example follows:</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
+<div class="codehilite"><pre><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Metrics</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
@@ -758,13 +758,13 @@ which get updated and restarted very often.</p>
 Django which I did for a small site recently.</p>
 <p><img alt="SMS PIN form" src="/images/sms_pin.png" title="SMS PIN form" /></p>
 <p>The page template contains the following HTML snippet</p>
-<div class="highlight"><pre><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">name=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">placeholder=</span><span class="s">&quot;111-111-1111&quot;</span> <span class="na">required</span><span class="nt">&gt;</span>
+<div class="codehilite"><pre><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">name=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">placeholder=</span><span class="s">&quot;111-111-1111&quot;</span> <span class="na">required</span><span class="nt">&gt;</span>
 <span class="nt">&lt;button</span> <span class="na">class=</span><span class="s">&quot;btn&quot;</span> <span class="na">type=</span><span class="s">&quot;button&quot;</span> <span class="na">onClick=</span><span class="s">&quot;send_pin()&quot;</span><span class="nt">&gt;&lt;i</span> <span class="na">class=</span><span class="s">&quot;icon-share&quot;</span><span class="nt">&gt;&lt;/i&gt;</span> Get PIN<span class="nt">&lt;/button&gt;</span>
 </pre></div>
 
 
 <p>and a JavaScript function utilizing jQuery:</p>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">send_pin</span><span class="p">()</span> <span class="p">{</span>
+<div class="codehilite"><pre><span class="kd">function</span> <span class="nx">send_pin</span><span class="p">()</span> <span class="p">{</span>
     <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
                 <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;{% url &#39;ajax_send_pin&#39; %}&quot;</span><span class="p">,</span>
                 <span class="nx">type</span><span class="o">:</span> <span class="s2">&quot;POST&quot;</span><span class="p">,</span>
@@ -781,7 +781,7 @@ Django which I did for a small site recently.</p>
 
 
 <p>Then create the following views in Django:</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">_get_pin</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<div class="codehilite"><pre><span class="k">def</span> <span class="nf">_get_pin</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Return a numeric PIN with length digits &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">10</span><span class="o">**</span><span class="n">length</span><span class="p">),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -860,7 +860,7 @@ override it as needed.
 <strong>How do you do that without creating useless table and records in the database
 but still have the profiles created automatically for every user?</strong></p>
 <p>It turns out the solution is quite simple. See my comments inside the code below.</p>
-<div class="highlight"><pre><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="codehilite"><pre><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Any AUTH_PROFILE_MODULE model should inherit this</span>
 <span class="sd">        and override the default methods.</span>
@@ -917,14 +917,14 @@ but still have the profiles created automatically for every user?</strong></p>
 
 
 <p>In Difio core the user profile is always used like this</p>
-<div class="highlight"><pre>profile = request.user.get_profile()
+<div class="codehilite"><pre>profile = request.user.get_profile()
 if profile.is_subscribed():
     pass
 </pre></div>
 
 
 <p>and by default</p>
-<div class="highlight"><pre>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
+<div class="codehilite"><pre>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
 </pre></div>
 
 
@@ -946,7 +946,7 @@ or only render specific blocks from Jinja2 templates so here's my solution.
 Hopefully you find it useful too.</p>
 <p>With below template I want to be able to render <strong>only</strong> <em>kernel_options</em> block
 as a single line and then render the rest of the template <strong>excluding</strong> <em>kernel_options</em>.</p>
-<div class="highlight"><pre><span class="cp">{%</span> <span class="k">block</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
+<div class="codehilite"><pre><span class="cp">{%</span> <span class="k">block</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
 <span class="x">console=tty0</span>
 <span class="x">    </span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">debug</span> <span class="cp">%}</span><span class="x"></span>
 <span class="x">        debug=1</span>
@@ -975,7 +975,7 @@ exactly this.</p>
 caching in the <em>Environment</em> (so you get a fresh template every time), render
 your blocks first, configure <em>env.skip_blocks</em> and render the entire template
 without the specified blocks.</p>
-<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<div class="codehilite"><pre><span class="c">#!/usr/bin/env python</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -1046,7 +1046,7 @@ without the specified blocks.</p>
 
 
 <p>The above code results in the following output:</p>
-<div class="highlight"><pre><span class="err">$</span> <span class="p">.</span><span class="o">/</span><span class="n">jinja2</span><span class="o">-</span><span class="n">render</span> <span class="p">.</span><span class="o">/</span><span class="n">base</span><span class="p">.</span><span class="n">j2</span> 
+<div class="codehilite"><pre><span class="err">$</span> <span class="p">.</span><span class="o">/</span><span class="n">jinja2</span><span class="o">-</span><span class="n">render</span> <span class="p">.</span><span class="o">/</span><span class="n">base</span><span class="p">.</span><span class="n">j2</span> 
 <span class="n">Boot</span> <span class="nl">Args</span><span class="p">:</span> <span class="n">console</span><span class="o">=</span><span class="n">tty0</span> <span class="n">debug</span><span class="o">=</span><span class="mi">1</span> 
 <span class="o">---------------------------</span>
 
@@ -1096,7 +1096,7 @@ the existing <code>url()</code> method to do all background processing and simpl
 object to the new class. </p>
 <p>All code is available at <a href="https://djangosnippets.org/snippets/3013/">https://djangosnippets.org/snippets/3013/</a>. </p>
 <p>To use in your templates simply add</p>
-<div class="highlight"><pre>{% load fqdn_url from fqdn_url %}
+<div class="codehilite"><pre>{% load fqdn_url from fqdn_url %}
 <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;{% fqdn_url &#39;dashboard&#39; %}&quot;</span><span class="nt">&gt;</span>Dashboard<span class="nt">&lt;/a&gt;</span>
 </pre></div>
             <p class="post-meta">Posted by
@@ -1148,7 +1148,7 @@ will make multiple choices using the phone keyboard. All of this needs to be
 put together and sent back to another server for processing. In my views
 I've added a simple cache get/set lines to preserve the selection.</p>
 <p>Here's how it looks with actual application logic omitted</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<div class="codehilite"><pre><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
     <span class="n">caller_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;From&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
 
@@ -1202,7 +1202,7 @@ Amazon ElastiCache.</p>
             <p>In case you are wondering how to use Django's
 <a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
 in your source code, not inside a template here is how:</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="codehilite"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
 <span class="s">u&#39;1.0 KB&#39;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
