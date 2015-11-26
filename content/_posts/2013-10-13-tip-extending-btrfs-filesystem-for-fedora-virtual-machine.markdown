@@ -16,19 +16,19 @@ so this is a no brainer:
     # pvs
       PV                                                    VG              Fmt  Attr PSize   PFree  
       /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 134,11g
-
+    
     # lvs
       LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
       vm_fedora     vg_redbull_mini -wi-ao---  15,00g                                             
-
+    
     # lvextend -L +5G /dev/mapper/vg_redbull_mini-vm_fedora 
       Extending logical volume vm_fedora to 20,00 GiB
       Logical volume vm_fedora successfully resized
-
+    
     # lvs
       LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
       vm_fedora     vg_redbull_mini -wi-ao---  20,00g                                             
-
+    
     # pvs
       PV                                                    VG              Fmt  Attr PSize   PFree  
       /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 129,11g
@@ -40,7 +40,7 @@ On the VM we have a default Btrfs layout:
     /dev/vda1: UUID="410ee563-e701-42ff-9d5f-5805dd103e35" TYPE="ext4" PARTUUID="0000330f-01" 
     /dev/vda2: UUID="f4addad4-a0fc-482e-ad5a-240864b76f09" TYPE="swap" PARTUUID="0000330f-02" 
     /dev/vda3: LABEL="fedora" UUID="f0b589ce-061c-4ac3-826e-7f3f8c8a6d30" UUID_SUB="11aa8414-3ce1-4fe7-a506-9a4f91ba5c30" TYPE="btrfs" PARTUUID="0000330f-03" 
-
+    
     # df -h
     Filesystem      Size  Used Avail Use% Mounted on
     /dev/vda3        13G   11G  1.4G  89% /

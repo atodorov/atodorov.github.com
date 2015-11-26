@@ -15,16 +15,16 @@ distro use the following ks.cfg file:
     lang en_US.UTF-8
     keyboard us
     network --onboot yes --device eth0 --bootproto dhcp
-
+    
     rootpw  --lock
     firewall --disabled
     timezone Europe/Sofia
-
+    
     clearpart --all --initlabel
     part / --fstype=ext4 --size=1 --grow
-
+    
     bootloader --disabled
-
+    
     %packages --nocore --instLangs=en_US --excludedocs
     httpd
     -kernel
@@ -70,7 +70,7 @@ Run commands into a new container:
     bash-4.2# rpm -q httpd
     httpd-2.4.6-40.el7.x86_64
     bash-4.2# exit
-
+    
     # docker ps -a
     CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
     64f7ca6d5844        8a2324e6d0e9        "/bin/bash"         24 seconds ago      Exited (0) 19 seconds ago                       bash_myimage

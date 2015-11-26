@@ -25,7 +25,7 @@ If necessary plug out and back in the Z10.
 
         $ lsusb
         Bus 001 Device 007: ID 0fca:8013 Research In Motion, Ltd.
-
+    
         $ ifconfig
         usb0      Link encap:Ethernet  HWaddr 1E:69:A5:D0:11:0A  
                   inet addr:169.254.0.2  Bcast:169.254.0.3  Mask:255.255.255.252

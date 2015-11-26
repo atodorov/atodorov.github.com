@@ -27,7 +27,7 @@ For a quick test I used `hdparm`. The manual says:
         This displays the speed of reading directly from the Linux buffer cache
         without disk access. This measurement is essentially an indication of
         the throughput of the processor, cache, and memory of the system under test.
-
+    
     -t  Perform timings of device reads for benchmark and comparison purposes.
         This displays the speed of reading through the buffer cache to the disk
         without any prior caching of data. This measurement is an indication of how
@@ -45,8 +45,8 @@ The results of 3 runs of hdparm are shown below:
     /dev/xvdc:
      Timing cached reads:   11988 MB in  1.98 seconds = 6040.01 MB/sec
      Timing buffered disk reads:  1810 MB in  3.00 seconds = 603.12 MB/sec
-
-
+    
+    
     # hdparm -tT /dev/xvdb /dev/xvdc
     
     /dev/xvdb:
@@ -56,8 +56,8 @@ The results of 3 runs of hdparm are shown below:
     /dev/xvdc:
      Timing cached reads:   12056 MB in  1.98 seconds = 6075.29 MB/sec
      Timing buffered disk reads:  1972 MB in  3.00 seconds = 657.11 MB/sec
-
-
+    
+    
     # hdparm -tT /dev/xvdb /dev/xvdc
     
     /dev/xvdb:

@@ -92,18 +92,18 @@ Luckily I was able to use symlinks to point to the content. Here's how it looks:
 
         $ pwd
         /home/atodorov/difio/wsgi/static
-
+        
         $ cat .htaccess
         ExpiresActive On
         ExpiresDefault "access plus 1 year"
-
+        
         $ ls -l
         drwxrwxr-x. 6 atodorov atodorov 4096 16 Apr 21,31 o
         lrwxrwxrwx. 1 atodorov atodorov    1 16 Apr 21,47 v1 -> o
-
+        
         settings.py:
         STATIC_URL = '//d71ktrt2emu2j.cloudfront.net/static/v1/'
-
+        
         HTML template:
         <link type="text/css" rel="stylesheet" media="screen" href="{{ STATIC_URL }}css/style.css" />
 

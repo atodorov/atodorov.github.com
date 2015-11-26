@@ -18,7 +18,7 @@ In earlier versions one had to edit the `/etc/tgtd/targets.conf` file and
     <target iqn.2008-09.com.example:server.target1>
         backing-store /dev/vg_iscsi/lv_lun1
         backing-store /dev/vg_iscsi/lv_lun2
-
+    
         incominguser user2 secretpass23
         outgoinguser userA secretpassA
     </target>

@@ -35,7 +35,7 @@ Luckily wrk supports the execution of Lua scripts so we can make a
     init = function(args)
         target_url = args[1] -- proxy needs absolute URL
     end
-
+    
     request = function()
         return wrk.format("GET", target_url)
     end
@@ -47,4 +47,3 @@ Then update your command line to something like this:
 This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
 Depending on how your proxy works you may need to add the `Host: example.com` header as well.
 Now let's do some testing.
-

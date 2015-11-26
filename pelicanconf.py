@@ -13,7 +13,7 @@ ARTICLE_SAVE_AS = ARTICLE_URL + 'index.html'
 TAG_URL = 'blog/categories/{slug}/'
 TAG_SAVE_AS = TAG_URL + 'index.html'
 
-MD_EXTENSIONS = ['codehilite','extra', 'nlbqx.nlbqx']
+MD_EXTENSIONS = ['codehilite', 'extra', 'nlbqx.nlbqx', 'nlcx.nlcx']
 
 # static paths will be copied under the same name
 STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']

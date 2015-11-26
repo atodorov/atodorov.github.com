@@ -53,7 +53,7 @@ In `celery.app.base.Celery.send_task` there is this block of code:
 I've tried passing it explicitly to apply_async() as so:
 
     from djapp.celery import *
-
+    
     # app = debug_task._get_app() # if not defined in djapp.celery
     producer = app.amqp.producer_pool.acquire(block=True)
     debug_task.apply_async(producer=producer)
