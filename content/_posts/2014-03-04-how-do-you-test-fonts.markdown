@@ -36,10 +36,10 @@ Here's what they say:
 > the web, and a test for a common mistakes I made in my feature files
 > that result in unexpected blank glyphs in the fonts.
 > 
+> 1. <https://github.com/behdad/harfbuzz/pull/12>
+> 2. <https://github.com/khaledhosny/ots>
+> 
 > Khaled Hosny, Amiri Font
-
-1. <https://github.com/behdad/harfbuzz/pull/12>
-2. <https://github.com/khaledhosny/ots>
 
 
 > The answer is complicated.  I'll do what I can to answer.
@@ -95,10 +95,10 @@ Here's what they say:
 > with the fonts--once again, a matter of time.)
 > 
 > Have a look at the bugs pages, to get an idea of work being done.
+>
+> <http://savannah.gnu.org/bugs/?group=freefont>
 > 
 > Steve White, GNU FreeFont
-
-<http://savannah.gnu.org/bugs/?group=freefont>
 
 I'm not sure if ImageMagic or PIL can help solve the rendering and compare
 problem Steve is talking about. They can definitely be used for
