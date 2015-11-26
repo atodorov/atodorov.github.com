@@ -83,6 +83,87 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/" rel="bookmark" title="Permalink to Linux and Python Tools To Compare Images">
+                <h2 class="post-title">
+                    Linux and Python Tools To Compare Images
+                </h2>
+            </a>
+            <p>How to compare two images in Python? A tricky question with quite a few answers.
+Since my needs are simple, my solution is simpler!</p>
+<p><img src="/images/difio_compare.png" alt="Difio Google +1 changes" style="clear:both;display:block"/>
+<a href="http://www.dif.io">dif.io</a> homepage before and after it got a G+1.</p>
+<h2>ImageMagic is magic</h2>
+<p>If you haven't heard of <a href="http://www.imagemagick.org/">ImageMagic</a> then you've been
+living in a cave on a deserted island! The suite contains the <code>compare</code> command
+which mathematically and visually annotates the difference between two images.</p>
+<p>The third image above was produced with:</p>
+<div class="codehilite"><pre><span class="nv">$ </span>compare difio_10.png difio_11.png difio_diff.png
+</pre></div>
+
+
+<p>Differences are displayed in red (default) and the original image is seen in the
+background. As shown, the Google +1 button and count has changed between the two
+images. <code>compare</code> is a nice tool for manual inspection and debugging.
+It works well in this case because the images are lossless PNGs and are regions of
+screen shots where most objects are the same.</p>
+<p><img src="/images/chestnut_compare.jpg" alt="JPEG quality reduction" style="clear:both;display:block"/>
+Chestnuts I had in Rome. 100% to 99% quality reduction.</p>
+<p>As seen on the second image set only 1% of JPEG quality change leads to many small
+differences in the image, which are invisible to the naked eye.</p>
+<h2>Python Imaging Library aka PIL</h2>
+<p><a href="http://www.pythonware.com/products/pil/">PIL</a> is another powerful tool for
+image manipulation. I googled around and found some answers to my original
+questions
+<a href="http://stackoverflow.com/questions/1927660/compare-two-images-the-python-linux-way">here</a>.
+The proposed solution is to calculate
+<a href="https://en.wikipedia.org/wiki/Root_mean_square">RMS</a> of the two images
+and compare that with some threshold to establish the level of certainty that
+two images are identical.</p>
+<h2>Simple solution</h2>
+<p>I've been working on a script lately which needs to know what is displayed on
+the screen and recognize some of the objects. Calculating image similarity is
+quite complex but comparing if two images are <strong>exactly</strong> identical is not.
+Given my environment and the fact
+that I'm comparing screen shots where only few areas changed
+(see first image above for example) led to the following solution: </p>
+<ul>
+<li>Take a screen shot;</li>
+<li>Crop a particular area of the image which needs to be examined;</li>
+<li>Compare to a baseline image of the same area created manually;</li>
+<li>Don't use RMS, use the image histogram only to speed up calculation.</li>
+</ul>
+<p>I've prepared the baseline images with GIMP and tested couple of scenarios
+using <code>compare</code>. Here's how it looks in code:</p>
+<div class="codehilite"><pre><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">dogtail.utils</span> <span class="kn">import</span> <span class="n">screenshot</span>
+
+<span class="n">baseline_histogram</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;/home/atodorov/baseline.png&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">screenshot</span><span class="p">())</span>
+<span class="n">region</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">crop</span><span class="p">((</span><span class="mi">860</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">320</span><span class="p">))</span>
+<span class="k">print</span> <span class="n">region</span><span class="o">.</span><span class="n">histogram</span><span class="p">()</span> <span class="o">==</span> <span class="n">baseline_histogram</span>
+</pre></div>
+
+
+<h2>Results</h2>
+<p>The presented solution was easy to program, works fast and reliably for my use case.
+In fact after several iterations I've added a second baseline image to account for some
+unidentified noise which appears randomly in the first region. As far as I can tell
+the two checks combined are 100% accurate. </p>
+<h2>Field of application</h2>
+<p>I'm working on QA automation where this comes handy. However you may try some
+lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me know
+if you come up with a cool idea or actually used this in code. </p>
+<p>I'd love to hear
+about interesting projects which didn't get too complicated because of image
+recognition.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 17 May 2013
+<p>There are <a href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/" rel="bookmark" title="Permalink to Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6">
                 <h2 class="post-title">
                     Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6
@@ -1285,52 +1366,6 @@ interface, it turned to be the right decision.</p>
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Tue 26 March 2013
 <p>There are <a href="http://atodorov.org/blog/2013/03/26/to-fork-or-not-to-fork-the-mate-story/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/03/25/the-silicon-prairie-movie/" rel="bookmark" title="Permalink to The Silicon Prairie Movie">
-                <h2 class="post-title">
-                    The Silicon Prairie Movie
-                </h2>
-            </a>
-            <blockquote>
-<p>Not all innovation needs to come out of Silicon Valley!</p>
-</blockquote>
-<p>I've just watched <a href="http://www.siliconprairiefilm.com/">Silicon Prairie</a>
-(download for free or as much as you can afford).
-Last fall, a team of journalists and activists joined reddit's Internet 2012 Bus Tour
-and traveled from Denver, CO to Danville, KY to capture the Internet’s role in the 
-US Midwest's growing Silicon Prairie. Nimblebot, a digital agency, shot and produced a
-mini-documentary showcasing the journey. I particularly liked several companies listed
-below.</p>
-<h2>AgLocal</h2>
-<p><a href="https://www.aglocal.com/">AgLocal</a> connects quality meat producers with high-margin
-buyers. This can work very well in Bulgaria. Most food and agriculture producers in 
-the country are small and mid-sized farms who struggle to sell their produce or work with
-middlemen for a low margin. On the other hand there are more and more people, especially in
-big cities who would like to pay for locally produced food but don't know where to buy it from
-or don't have the time to visit a farm to buy it (like myself). Last but not least what big supermarket
-chains sell is simply too expensive and crappy.</p>
-<p>As far as I know there are several attempts at such kind of companies/organizations here
-but they are small and not widely popular.</p>
-<h2>Homes For Hackers</h2>
-<p><a href="http://www.homesforhackers.com/">Homes For Hackers</a> in Kansas City is offering 3 months
-of rent-free, Google Fiber-connected start-up space to entrepreneurs. I have already heard
-several people discussing similar ideas in Bulgaria, mostly because cost of living here,
-hence cost of failure is very low. I wish them good luck.</p>
-<h2>SparkFun Electronics</h2>
-<p><a href="https://www.sparkfun.com/">SparkFun</a> is an online retail store that sells the bits and
-pieces to make your electronics projects possible. According to the movie they create
-open source hardware and even shipped to Antarctica which is cool.</p>
-<p>Once again this business model can work in Bulgaria. We had lots of electronics produce back in the
-past and still have. There is still talented people in this area
-who will be looking for a job if their companies close shop due to Chinese competition.</p>
-<p>Watch the movie and tell me which ones you like ? Do you think Bulgaria can have its
-Silicon areas outside <a href="http://sofiavalley.com">Sofia Valley</a> ?</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 25 March 2013
-<p>There are <a href="http://atodorov.org/blog/2013/03/25/the-silicon-prairie-movie/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 

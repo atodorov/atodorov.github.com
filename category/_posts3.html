@@ -83,6 +83,41 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/" rel="bookmark" title="Permalink to Tip: Linux-IO default LUN is 0 instead of 1">
+                <h2 class="post-title">
+                    Tip: Linux-IO default LUN is 0 instead of 1
+                </h2>
+            </a>
+            <p>I've been testing iBFT in KVM which worked quite well with a RHEL 6 iSCSI target
+and failed miserably when I switched to RHEL 7 iSCSI target.</p>
+<div class="codehilite"><pre>iPXE&gt; dhcp net0
+DHCP (net0 52:54:00:12:34:56)... ok
+iPXE&gt; set keep-san 1
+iPXE&gt; sanboot iscsi:10.0.0.1:::1:iqn.2015-05.com.example:target1
+Could not open SAN device: Input/output error (http://ipxe.org/1d704539)
+iPXE&gt;
+</pre></div>
+
+
+<p>The <a href="http://ipxe.org/err/1d7045">error page</a> says</p>
+<blockquote>
+<p>Note that the default configuration when Linux is the target is for the disk to be LUN 1.</p>
+</blockquote>
+<p>Well this is not true for Linux-IO (targetcli). <strong>The default LUN is 0!</strong></p>
+<div class="codehilite"><pre>iPXE&gt; sanboot iscsi:10.0.0.1:::0:iqn.2015-05.com.example:target1
+Registered SAN device 0x80
+Booting from SAN device 0x80
+</pre></div>
+
+
+<p>Kudos to Bruno Goncalves from Red Hat in helping me debug this issue!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 08 April 2015
+<p>There are <a href="http://atodorov.org/blog/2015/04/08/tip-linux-io-default-lun-is-0-instead-of-1/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="bookmark" title="Permalink to How to Configure targetcli to Listen on IPv4 and IPv6">
                 <h2 class="post-title">
                     How to Configure targetcli to Listen on IPv4 and IPv6
@@ -1398,50 +1433,6 @@ praise every improvement. Be 'hearty in your approbation and lavish in your prai
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Sat 19 July 2014
 <p>There are <a href="http://atodorov.org/blog/2014/07/19/book-review-how-to-win-friends/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/" rel="bookmark" title="Permalink to SNAKE is no Longer Needed to Run Installation Tests in Beaker">
-                <h2 class="post-title">
-                    SNAKE is no Longer Needed to Run Installation Tests in Beaker
-                </h2>
-            </a>
-            <p>This is a quick status update for one of the pieces of
-<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
-and mostly a self-note.</p>
-<p>Previously to control the kickstart configuration used during installation in Beaker one
-had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
-a kickstart configuration from a Python template.</p>
-<p>SNAKE presented challenges when deploying and using
-<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
-virtually unmaintained.</p>
-<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
-generate a kickstart configuration when provisioning the system. This is already
-available in beaker-client-0.17.1.</p>
-<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
-very complex ones. You can even include snippets from one template into another if required.
-The standard context that is passed to the template is:</p>
-<ul>
-<li><strong>DISTRO</strong> - if specified, the distro name</li>
-<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
-<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
-<li><strong>VARIANT</strong> - if specified</li>
-<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
-<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
-</ul>
-<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
-have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
-<p>This workflow also has the ability to return boot arguments for the installer if needed. 
-If any, they should be defined in a <code>{% block kernel_options %}{% endblock %}</code>
-block inside the template. A simpler variant is to define a comment line that stars with
-<em>## kernel_options:</em></p>
-<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
-can be used by the general public though. I will be writing another post about that
-so stay tuned.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 18 July 2014
-<p>There are <a href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 
