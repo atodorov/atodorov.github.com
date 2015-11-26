@@ -17,8 +17,7 @@ The majority of the changes are just shuffling bits around and deleting
 unused code. The existing UI tests were mostly working and only needed minor
 changes. There are two things which didn't work and are temporarily disabled:
 
-* Clicking the Help button results in 
-[rhbz#1282432](https://bugzilla.redhat.com/show_bug.cgi?id=1282432),
+* Clicking the Help button results in [rhbz#1282432],
 which in turn may be hiding another bug behind it;
 * Looping over the available languages resulted in AT-SPI NonImplementedError
 which I'm going to debug next.

@@ -25,5 +25,5 @@ no idea where to look and if it's the driver to blame or something else on the s
 
 **UPDATE 2015-11-25:**
 After the upgrade to RHEL 7.2 I also started seeing
-[rhbz#1284851](https://bugzilla.redhat.com/show_bug.cgi?id=1284851)
+[rhbz#1284851]
 - Mate power manager doesn't detect AC/DC changes on MacBook Air with RHEL 7.2

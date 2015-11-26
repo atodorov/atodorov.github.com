@@ -20,7 +20,7 @@ will not be posted, even if later commits reference the same bug.
 My main assumption is commits which are related to a bug will be pushed together
 most of the times so there shouldn't be lots of noise in Bugzilla.
 
-See [rhbz#1274703](https://bugzilla.redhat.com/show_bug.cgi?id=1274703) for
+See [rhbz#1274703] for
 example of how the comments look. The parser behavior is taken from anaconda
 and conforms to the style the Red Hat Installer Engineering Team uses.
 Hopefully you find it useful as well.
