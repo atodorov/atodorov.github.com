@@ -34,17 +34,26 @@ I make use of this only in one place which was manually updated!
 
 I've also found a few bugs and missing functionality:
 
-* There's no `rake new_post` counterpart in Pelican;
-* As far as I can tell the preview server doesn't regenerate files automatically;
-* Pelican will merge code blocks and quotes which follow one after another
+* There's no `rake new_post` counterpart in Pelican. See
+[Issue 1410](https://github.com/getpelican/pelican/issues/1410) and 
+[commit 6552f6f](https://github.com/Kdecherf/blog.kdecherf.com/commit/6552f6f02e6c501a6cc13816cd9bb2cd6c601f9c).
+Thanks Kevin Decherf;
+* <strike>As far as I can tell the preview server doesn't regenerate files automatically.</strike>
+Do `make regenerate` and `make serve` in two separate shells. Thanks Kevin Decherf;
+* <strike>Pelican will merge code blocks and quotes which follow one after another
 but are separated with a newline in Markdown. This makes it visually impossible
 to distinguish code from two files, or quotes from two people, which are published
-without any other comments in between;
-* The syntax doesn't allow to specify filename or a quote title when publishing
+without any other comments in between.</strike> See
+[Markdown-No-Lazy-BlockQuote-Extension](https://github.com/atodorov/Markdown-No-Lazy-BlockQuote-Extension)
+and [Markdown-No-Lazy-Code-Extension](https://github.com/atodorov/Markdown-No-Lazy-Code-Extension);
+* <strike>The syntax doesn't allow to specify filename or a quote title when publishing
 code blocks and quotes. Octopress did that easily. I will be happy with something
-like `:::python settings.py`.
+like `:::python settings.py`.</strike>
+See [PR #445](https://github.com/waylan/Python-Markdown/pull/445);
 * There's no way to specify slugs for tag URLs in order to keep compatibility
-with existing URLs.
+with existing URLs, see [Issue 1873](https://github.com/getpelican/pelican/issues/1873).
 
 I will be filling Issues and pull requests for both Pelican and the clear-blog theme
 in the next few days so stay tuned!
+
+**UPDATED 2015-11-26:** added links to issues, pull requests and custom extensions.
