@@ -6,7 +6,7 @@ comments: true
 Tags: Mac, fedora.planet, RHEL
 ---
 
-There is an easy way to disable the MacBook startup sound
+There is an easy way to disable the [[MacBook]] startup sound
 (boot chime) even after wiping out OS X and installing Linux.
 
 This sound can be easily disabled if you mute the volume in OS X

@@ -2,6 +2,20 @@
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
+def build_url(label, base, end):
+    from markdown.extensions import wikilinks
+
+    u = {
+        'MacBook'     : 'http://amzn.to/1RdviyD',
+        'MacBook Air' : 'http://amzn.to/1RdviyD',
+    }
+
+    if u.has_key(label):
+        return u[label]
+    else:
+        return wikilinks.build_url(label, base, end)
+
+
 AUTHOR = u'Alexander Todorov'
 SITENAME = 'atodorov.org'
 SITESUBTITLE = u'you can logoff, but you can never leave'
@@ -13,7 +27,14 @@ ARTICLE_SAVE_AS = ARTICLE_URL + 'index.html'
 TAG_URL = 'blog/categories/{slug}/'
 TAG_SAVE_AS = TAG_URL + 'index.html'
 
-MD_EXTENSIONS = ['codehilite', 'extra', 'nlbqx.nlbqx', 'nlcx.nlcx', 'mdbz.rhbz']
+MD_EXTENSIONS = ['codehilite', 'extra', 'wikilinks',
+                'nlbqx.nlbqx', 'nlcx.nlcx', 'mdbz.rhbz'
+                ]
+MD_EXTENSION_CONFIGS = {
+    'wikilinks' : {
+        'build_url' : build_url,
+    }
+}
 
 # static paths will be copied under the same name
 STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']

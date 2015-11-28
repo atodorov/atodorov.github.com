@@ -7,7 +7,7 @@ Tags: fedora.planet, RHEL, Mac
 ---
 
 After I got my 
-[MacBook Air installed with RHEL 7.1](/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/)
+[[MacBook Air]] [installed with RHEL 7.1](/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/)
 the first priority was getting wireless working. 
 First check if your device isn't already supported
 [upstream](http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices). Mine isn't

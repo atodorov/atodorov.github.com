@@ -7,9 +7,10 @@ Tags: Mac, RHEL, fedora.planet
 ---
 
 I've previously written about my
-[Thunderbolt to Ethernet adapter working on Linux](blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/)
-despite claims that it should not. Recently I've used my MacBook to do a presentation
-and the Thunderbolt to VGA adapter worked well enough.
+[Thunderbolt to Ethernet](http://amzn.to/1Iqhl9e)
+adapter [working on Linux](/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/)
+despite claims that it should not. Recently I've used my [[MacBook Air]] to do a presentation
+and the [Thunderbolt to VGA adapter](http://amzn.to/1Iqh0nd) worked well enough.
 
 It was an Acer adapter but I have no more details b/c it wasn't mine.
 
@@ -17,7 +18,7 @@ Before the event I've tested it and it worked so on the day of the event I've
 freshly rebooted my laptop to be sure no crashed processes or anything like that
 was running and gave it a go.
 
-First time I plugged in the MacBook everything worked like a charm. Then my computer was
+First time I plugged in the [[MacBook]] everything worked like a charm. Then my computer was
 unplugged and the lid closed, causing it to suspend. The second time I've plugged it in
 I was told there was nothing showing on the projector so I quickly plugged the adapter out
 and then back in. It worked more or less.

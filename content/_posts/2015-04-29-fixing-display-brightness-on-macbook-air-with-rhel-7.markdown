@@ -6,7 +6,7 @@ comments: true
 Tags: fedora.planet, Mac, RHEL
 ---
 
-One issue with RHEL/CentOS/Fedora on MacBook Air laptops is brightness control
+One issue with RHEL/CentOS/Fedora on [[MacBook Air]] laptops is brightness control
 and backlight behavior after suspend/resume. I've found the solution 
 [here](http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/)
 and only tweaked it slightly for my use case.

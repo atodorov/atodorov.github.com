@@ -9,7 +9,7 @@ Slug: updated-macbook-air-drivers-for-rhel-7.2
 
 Yesterday I've upgraded to
 [Red Hat Enterprise Linux 7.2](https://access.redhat.com/announcements/2058583)
-on my MacBook Air and I decided to rebuild the wifi and backlight drivers.
+on my [[MacBook Air]] and I decided to rebuild the wifi and backlight drivers.
 Wifi broke immediately but I was able to fix the build with a
 [simple patch](https://github.com/atodorov/wl-kmod-for-rhel7/commit/88d678a25eb702ce36f7c39471edefb65de57ad5).
 I'm now using the newly built *kmod-wl-3.10.0-327.el7.x86_64-6.30.223.248-7.el7.x86_64*
@@ -26,4 +26,4 @@ no idea where to look and if it's the driver to blame or something else on the s
 **UPDATE 2015-11-25:**
 After the upgrade to RHEL 7.2 I also started seeing
 [rhbz#1284851]
-- Mate power manager doesn't detect AC/DC changes on MacBook Air with RHEL 7.2
+- Mate power manager doesn't detect AC/DC changes on [[MacBook Air]] with RHEL 7.2

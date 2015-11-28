@@ -9,8 +9,8 @@ Tags: RHEL, Mac, fedora.planet
 As it seems my
 <a href="http://www.amazon.com/gp/product/B008ALA6DW/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B008ALA6DW&linkCode=as2&tag=atodorovorg-20&linkId=T2J6D7GIDMKNWLYV">Thunderbolt to gigabit Ethernet adapter</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B008ALA6DW" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 works with 
-[RHEL 7 on a MacBook Air](/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/)
-despite some reports it may not.
+[RHEL 7.1](/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/)
+on a [[MacBook Air]] despite some reports it may not.
 
 After plugging the device is automatically recognized and the *tg3* driver is loaded.
 Detailed *lspci* below:
@@ -35,8 +35,9 @@ Detailed *lspci* below:
         Kernel driver in use: tg3
 
 Unplugging and pluggin back in the network cable works as expected.
-I did see my computer freeze 2 out of 10 times when I've unplugged the Thunderbolt
-adapter but couldn't reproduce it repliably or grab more info. 
+I did see my computer freeze 2 out of 10 times when I've unplugged the
+[Thunderbolt adapter](http://amzn.to/1Iqi22v) but couldn't reproduce it repliably
+or grab more info. 
 
 For the record this is with kernel 3.10.0-229.1.2.el7.x86_64 which is missing
 this
@@ -44,4 +45,4 @@ this
 I'm not sure why it works though.
 
 If I remember correctly *tg3* is available during installation so you should
-be able to use the Thunderbolt adapter instead of WiFi as well.
+be able to use the [Thunderbolt adapter](http://amzn.to/1Iqi22v) instead of WiFi as well.

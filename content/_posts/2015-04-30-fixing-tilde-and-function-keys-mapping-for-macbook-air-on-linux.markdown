@@ -6,7 +6,7 @@ comments: true
 Tags: RHEL, Mac, fedora.planet
 ---
 
-Thera are two problems with the MacBook Air keyboard on Linux:
+Thera are two problems with the [[MacBook Air]] keyboard on Linux:
 
 Function keys and media keys are switched and by default you have to
 press Fn+F5 in order to refresh a browser page. The 
