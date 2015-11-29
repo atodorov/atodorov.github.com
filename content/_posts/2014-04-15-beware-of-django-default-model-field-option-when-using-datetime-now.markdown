@@ -42,3 +42,5 @@ which get updated and restarted very often.
 
 For more info read this
 [blog](http://david.feinzeig.com/blog/2011/12/06/how-to-properly-set-a-default-value-for-a-datetimefield-in-django/).
+For general info on Django, please check out
+<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Django&linkCode=ur2&rh=n%3A283155%2Ck%3ADjango&tag=atodorovorg-20&url=search-alias%3Dstripbooks&linkId=M56M35GO5XWGIBJE">Django books on Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />.

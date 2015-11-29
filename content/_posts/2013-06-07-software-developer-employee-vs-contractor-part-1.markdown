@@ -39,7 +39,7 @@ How I became a contractor
 5+ years ago I was an employee for Red Hat in Czech Republic, but didn't want to
 permanently live there for many reasons. During my time abroad I was a frequent
 traveler. I became comfortable working on the go and quite often my bosses didn't
-know where I was and that didn't matter. 
+know where I was. Most importantly I made sure that location didn't matter!
 
 After 1.5 years I left the company with an option to continue working for
 Red Hat Switzerland as a contractor. This is how I started working from home.
@@ -78,8 +78,15 @@ if your income depends on a single long-term project.
 You either get paid by the hour or a lump sum on predefined milestone (e.g. half before, half after delivery).
 Either way you trade time for money which isn't optimal (same thing do employees btw).
 The best thing you can do is become an expert in your field and begin consulting.
-This is trading less time plus expertise for money - much better. 
+This is trading less time plus expertise for more money - much better.
 
+I've been doing QA consulting for other smaller clients as odd jobs since forever.
+Some of the companies include [Obecto](http://obecto.com) and
+[Opencode Systems](http://opencode.com). I also consult start-ups in the
+field of software testing and quality assurance.
+
+**UPDATE:** at the end of 2015 I've been engaged more frequently with the
+engineering team at [Tradeo](http://tradeo.com), bringing them my QA expertise.
 
 Employee benefits
 ------------------
@@ -104,7 +111,12 @@ The bigger and more people oriented the company the more the benefits.
 * If you are sick - you don't get paid!
 * If you need equipment - you have to buy it!
 
-Get used to it and plan accordingly.
+Get used to it and plan accordingly! That said I do use company sponsored
+[[MacBook Air]] and have a small budget for visiting some conferences
+abroad. In addition I attend lot more [events](/blog/category/events/)
+on my own either by helping as volunteer or being a speaker at the event.
+I also have a personal unemployment and extra health care insurance, in fact
+several of them, just in case!
 
 
 Taxes
@@ -113,6 +125,9 @@ Taxes
 In every country dealing with tax authorities is a hell. If you are a sole proprietor in
 Bulgaria chances are you will pay more taxes and social securities compared to being a
 company for the same revenue. If you can, always incorporate a company and contract through it.
+As of late **all** of my income goes through the company entity, I don't receive
+a single cent on my personal account. At the end of the year I pay myself a divident
+and use the money during the next year.
 
 Find a good accountant (as much as you can afford though) and make sure they know everything
 about your income and activities. It's always better to hire an accounting company which
@@ -179,9 +194,15 @@ Pascal - its an old language but there are lots of legacy software which still n
 maintained. Did you know you can even run COBOL in the cloud these days? 
 
 
-
 Diversify and be flexible - you have the opportunity to generate income from
 various sources - use it. I will tell you about mine in the next part of this article.
+
+**UPDATE:**
+I also strongly recommend the
+<a rel="nofollow" href="http://www.amazon.com/gp/product/0307465357/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0307465357&linkCode=as2&tag=atodorovorg-20&linkId=KOFI4CUL5C4ZM5Y2">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0307465357" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+book by Tim Ferris. It is one of my all time favorite books and I try
+to live by its rules as much as I can. I've also done a
+[book review here](/blog/2014/08/03/book-review-4-hour-workweek/).
 
 
 **TO BE CONTINUED ...** meanwhile use the comments below to ask me things you are curious about.

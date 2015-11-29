@@ -49,8 +49,11 @@ This code will clean the URL in the browser address bar without reloading the pa
 It works for HTML5 enabled browsers.
 
 This works for me with 
-Firefox 10.0.12, Opera 12.02.1578 and Chrome 24.0.1312.56 under Linux. In fact I'm
-using this snippet on this very own blog as well.
+Firefox 10.0.12, Opera 12.02.1578 and Chrome 24.0.1312.56 under Linux.
+<strike>In fact I'm using this snippet on this very own blog as well.</strike>
+**UPDATE:** I've
+[migrated to Pelican](/blog/2015/11/25/blog-migration-from-octopress-to-pelican/)
+and haven't enabled this script on the blog!
 
 
 **Updated on 2013-01-30**
@@ -78,7 +81,13 @@ to where I wanted but your experience may vary. I didn't try hard enough to
 verify the results.
 
 One question still remains though: Why would someone point the users to an URL which contains
-named anchors and then remove them? I don't see a valid use case for this scenario. Do you?
+named anchors and then remove them? I don't see a valid use case for this scenario.
 
-
-
+You may want to take a look at the many
+<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=HTML5%20and%20JavaScript&linkCode=ur2&rh=i%3Aaps%2Ck%3AHTML5%20and%20JavaScript&tag=atodorovorg-20&url=search-alias%3Daps&linkId=5JHZNZC3Q5R3RB3L">HTML5 and JavaScript books</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+if you don't have enough experience with the subject. For those of you who
+are looking into Node.js I can recommend two book by my friend Krasi Tsonev:
+<a rel="nofollow" href="http://www.amazon.com/gp/product/1783287330/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1783287330&linkCode=as2&tag=atodorovorg-20&linkId=ZBA3EYC4PZGKASAF">Node.js Blueprints - Practical Projects to Help You Unlock the Full Potential of Node.js</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1783287330" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+and
+<a rel="nofollow" href="http://www.amazon.com/gp/product/B00XJRN9S6/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00XJRN9S6&linkCode=as2&tag=atodorovorg-20&linkId=OLBCPLXOAILZTJR5">Node.js By Example</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00XJRN9S6" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+.
