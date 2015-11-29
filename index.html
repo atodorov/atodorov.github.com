@@ -88,6 +88,130 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="bookmark" title="Permalink to Inspecting Method Arguments in Python">
+                <h2 class="post-title">
+                    Inspecting Method Arguments in Python
+                </h2>
+            </a>
+            <p>How do you execute methods from 3rd party classes in a backward compatible
+manner when these methods change their arguments ?</p>
+<p>s3cmd's <a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a> is an example
+of this behavior, where python-libs's <code>httplib.py</code> added a new parameter
+to disable hostname checks. As a result of this
+<a href="/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">s3cmd broke</a>.</p>
+<p>One solution is to use try-except and nest as much blocks as you need to cover
+all of the argument variations. In s3cmd's case we needed two nested try-except
+blocks.</p>
+<p>Another possibility is to use the
+<a href="https://docs.python.org/3/library/inspect.html">inspect</a> module and create the argument
+list passed to the method dynamically, based on what parameters are supported.
+Depending on the number of parameters this may or may not be more elegant than
+using try-except blocks although it looks to me a bit more human readable.</p>
+<p>The argument list is a member named <em>co_varnames</em> of the code object. If you
+want to get the members for a function then</p>
+<div class="codehilite"><pre><span class="nx">inspect</span><span class="p">.</span><span class="nx">getmembers</span><span class="p">(</span><span class="nx">my_function</span><span class="p">.</span><span class="nx">__code__</span><span class="p">)</span>
+</pre></div>
+
+
+<p>if you want to get the members for a class method then</p>
+<div class="codehilite"><pre><span class="nx">inspect</span><span class="p">.</span><span class="nx">getmembers</span><span class="p">(</span><span class="nx">MyClass</span><span class="p">.</span><span class="nx">my_method</span><span class="p">.</span><span class="nx">__function__</span><span class="p">.</span><span class="nx">__code__</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Consider the following example</p>
+<div class="codehilite"><span class="filename">test.py</span><pre><span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">):</span>
+    <span class="k">print</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+
+<span class="k">class</span> <span class="nc">V1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Hello World&quot;</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+
+<span class="k">class</span> <span class="nc">V2</span><span class="p">(</span><span class="n">V1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Hello&quot;</span><span class="p">):</span>
+        <span class="n">V1</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;Hello&#39;</span><span class="p">,</span> <span class="n">greeting</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">V3</span><span class="p">(</span><span class="n">V2</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;World&quot;</span><span class="p">):</span>
+        <span class="n">V2</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;=== Example: call the class directly ===&quot;</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">V1</span><span class="p">()</span>
+    <span class="n">v1</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">V2</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good day&quot;</span><span class="p">)</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">v3</span> <span class="o">=</span> <span class="n">V3</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;everyone&quot;</span><span class="p">)</span>
+    <span class="n">v3</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+
+    <span class="c"># uncomment to see the error raised</span>
+    <span class="c">#v4 = V1(greeting=&quot;Good evening&quot;, who=&quot;everyone&quot;)</span>
+    <span class="c">#v4.do_print()</span>
+
+    <span class="k">print</span> <span class="s">&quot;=== Example: use try-except ===&quot;</span>
+    <span class="k">for</span> <span class="n">C</span> <span class="ow">in</span> <span class="p">[</span><span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">V3</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;everyone&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;    error: nested-try-except-1&quot;</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;    error: nested-try-except-2&quot;</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">()</span>
+
+        <span class="n">c</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+
+
+    <span class="k">print</span> <span class="s">&quot;=== Example: using inspect ===&quot;</span>
+    <span class="k">for</span> <span class="n">C</span> <span class="ow">in</span> <span class="p">[</span><span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">V3</span><span class="p">]:</span>
+        <span class="n">members</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">__func__</span><span class="o">.</span><span class="n">__code__</span><span class="p">))</span>
+        <span class="n">var_names</span> <span class="o">=</span> <span class="n">members</span><span class="p">[</span><span class="s">&#39;co_varnames&#39;</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s">&#39;greeting&#39;</span> <span class="ow">in</span> <span class="n">var_names</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s">&#39;greeting&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Good morning&#39;</span>
+
+        <span class="k">if</span> <span class="s">&#39;who&#39;</span> <span class="ow">in</span> <span class="n">var_names</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s">&#39;who&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;children&#39;</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+</pre></div>
+
+
+<p>The output of the example above is as follows</p>
+<div class="codehilite"><pre>=== Example: call the class directly ===
+Hello World
+Good day World
+Good evening everyone
+=== Example: use try-except ===
+    error: nested-try-except-1
+    error: nested-try-except-2
+Hello World
+    error: nested-try-except-1
+Good evening World
+Good evening everyone
+=== Example: using inspect ===
+Hello World
+Good morning World
+Good morning children
+</pre></div>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 29 November 2015
+<p>There are <a href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/" rel="bookmark" title="Permalink to 3 New Python Markdown extensions">
                 <h2 class="post-title">
                     3 New Python Markdown extensions
@@ -1422,24 +1546,6 @@ and the comments are more than interesting even revealing an old bug in libtool.
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Wed 16 September 2015
 <p>There are <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/08/20/minor-typo-bug-in-messenger/" rel="bookmark" title="Permalink to Minor Typo Bug in Messenger for bg_BG.UTF-8">
-                <h2 class="post-title">
-                    Minor Typo Bug in Messenger for bg_BG.UTF-8
-                </h2>
-            </a>
-            <p><img alt="Messenger typo" src="/images/messenger_typo.png" title="Messenger typo" /></p>
-<p>There's a typo in the Bulgarian translation of Messenger.com.
-It is highlighted by the red dot on the picture.</p>
-<p><em>hunspell</em> easily catches it so either Facebook doesn't run their
-translations through a spell checker or their spell checker is
-borked.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 20 August 2015
-<p>There are <a href="http://atodorov.org/blog/2015/08/20/minor-typo-bug-in-messenger/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 
