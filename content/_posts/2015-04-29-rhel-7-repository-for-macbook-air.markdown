@@ -4,6 +4,7 @@ Title: Red Hat Enterprise Linux 7 Repository for MacBook Air
 date: 2015-04-29 13:00
 comments: true
 Tags: RHEL, Mac, fedora.planet
+Slug: rhel-7-repository-for-macbook-air
 ---
 
 I've made a repository with binary (x86_64 only) and source RPM packages which
