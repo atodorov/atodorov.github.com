@@ -10,7 +10,7 @@ Slug: screen-magnifier-and-smart-phone-has-anyone-used-it
 Hey guys, I want to
 [replace my laptop for a smartphone](/blog/2013/08/01/laptop-vs-smartphone-part-one/).
 There's the issue with a desk working environment and one solution is to
-<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=computer%20display&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=HB2I5AOCIBVSZOTG">buy an external display</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=computer%20display&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=HB2I5AOCIBVSZOTG">buy an external display</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />
 The other one is to use a
 <a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=screen%20magnifier&linkCode=ur2&rh=i%3Aaps%2Ck%3Ascreen%20magnifier&sprefix=screen%20magnifie%2Ccomputers%2C277&tag=atodorovorg-20&url=search-alias%3Daps&linkId=KGF6F22QDNBRWAMP">screen magnifier</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
 as shown on the picture.
@@ -25,7 +25,7 @@ The magnifiers used for reading, like
 are cheap and portable but don't look very well around the edges.
 
 None of the
-<a rel="nofollow" href="http://www.amazon.com/gp/product/B0173AZL62/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B0173AZL62&linkCode=as2&tag=atodorovorg-20&linkId=RWCHMP2LMA6OLMKO">phone screen magnifiers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B0173AZL62" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+<a rel="nofollow" href="http://www.amazon.com/gp/product/B0173AZL62/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B0173AZL62&linkCode=as2&tag=atodorovorg-20&linkId=RWCHMP2LMA6OLMKO">phone screen magnifiers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B0173AZL62" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />
 on Amazon ships to my country so I don't have any experience with them,
 although they appear to be exactly what I need. If anyone has such a device
 at hand I'd love to hear how well this works for you. Please comment below.
