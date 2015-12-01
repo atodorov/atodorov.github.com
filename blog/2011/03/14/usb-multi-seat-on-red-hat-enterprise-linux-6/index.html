@@ -171,7 +171,7 @@ We've decided to use <em>GDM 2.16</em> from RHEL5 due to the above factors. In p
 <p><em>GDM</em>, <em>udlfb</em> and <em>xorg-x11-drv-fbdev-displaylink</em> need to be compiled and installed on the system. </p>
 <p>To build an older <em>GDM</em> on RHEL6 you will need to adjust some of the patches in the src.rpm package to apply cleanly and tweak the .spec file to your needs. This also includes using the appropriate version of <em>ltmain.sh</em> from the distro.</p>
 <p>The udev rules and scripts are slightly different due to the different device paths in RHEL6:</p>
-<div class="codehilite"><pre>SYSFS<span class="o">{</span>idVendor<span class="o">}==</span><span class="s2">&quot;17e9&quot;</span>, SYSFS<span class="o">{</span>bConfigurationValue<span class="o">}==</span><span class="s2">&quot;2&quot;</span>, <span class="nv">RUN</span><span class="o">=</span><span class="s2">&quot;/bin/echo 1 &gt; /sys%p/bConfigurationValue&quot;</span>
+<div class="highlight"><pre>SYSFS<span class="o">{</span>idVendor<span class="o">}==</span><span class="s2">&quot;17e9&quot;</span>, SYSFS<span class="o">{</span>bConfigurationValue<span class="o">}==</span><span class="s2">&quot;2&quot;</span>, <span class="nv">RUN</span><span class="o">=</span><span class="s2">&quot;/bin/echo 1 &gt; /sys%p/bConfigurationValue&quot;</span>
 
 <span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;add&quot;</span>,    <span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>, <span class="nv">SUBSYSTEMS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>, <span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../&quot;</span>, SYMLINK+<span class="o">=</span><span class="s2">&quot;usbseat/%c/display&quot;</span>,  RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
 <span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;remove&quot;</span>, <span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>, RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/stop-seat %k&quot;</span>
@@ -184,7 +184,7 @@ We've decided to use <em>GDM 2.16</em> from RHEL5 due to the above factors. In p
 
 <p>We also use only <em>/dev/event*</em> devices for both mouse and keyboard.</p>
 <p>The <em>sumu-hub-id</em> script returns the string busX-devY indicating the location of the device:</p>
-<div class="codehilite"><pre><span class="c">#!/bin/bash</span>
+<div class="highlight"><pre><span class="c">#!/bin/bash</span>
 <span class="k">if</span> <span class="o">[</span> -d <span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
     <span class="nb">echo</span> <span class="s2">&quot;bus</span><span class="k">$(</span>cat <span class="nv">$1</span>/busnum<span class="k">)</span><span class="s2">-dev</span><span class="k">$(</span>cat <span class="nv">$1</span>/devnum<span class="k">)</span><span class="s2">&quot;</span>
     <span class="nb">exit </span>0
@@ -197,7 +197,7 @@ We've decided to use <em>GDM 2.16</em> from RHEL5 due to the above factors. In p
 <p>USB device numbering is unique per bus and there isn't a global device identifier as far as I know. On systems with 2 or more USB buses this can lead to mismatch between devices/seats.</p>
 <p>For seat/display numbering we use the number of the framebuffer device associated with the seat. This is unique, numbers start from 1 (<em>fb0</em> is the text console) and are sequential unlike USB device numbers. This also ensures easy match between <em>$DISPLAY</em> and <em>/dev/fbX</em> for debugging purposes.</p>
 <p>Our <em>xorg.conf.sed</em> template uses evdev as the input driver. This driver is the default in RHEL6:</p>
-<div class="codehilite"><pre>Section &quot;InputDevice&quot;
+<div class="highlight"><pre>Section &quot;InputDevice&quot;
     Identifier &quot;keyboard&quot;
     Driver      &quot;evdev&quot;
     Option      &quot;CoreKeyboard&quot;
@@ -218,7 +218,7 @@ EndSection
 
 
 <p>We also use a custom <em>gdm.conf</em> file to avoid conflicts with stock packages. Only the important settings are shown:</p>
-<div class="codehilite"><pre><span class="k">[daemon]</span>
+<div class="highlight"><pre><span class="k">[daemon]</span>
 <span class="na">AlwaysRestartServer</span><span class="o">=</span><span class="s">false</span>
 <span class="na">DynamicXServers</span><span class="o">=</span><span class="s">true</span>
 <span class="na">FlexibleXServers</span><span class="o">=</span><span class="s">0</span>

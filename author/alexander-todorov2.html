@@ -85,6 +85,58 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="bookmark" title="Permalink to 4000+ bugs in Fedora - checksec failures">
+                <h2 class="post-title">
+                    4000+ bugs in Fedora - checksec failures
+                </h2>
+            </a>
+            <p>In the last week I've been trying to figure out how many packages
+conform to the new
+<a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages">Harden All Packages</a>
+policy in Fedora!</p>
+<p>From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
+From them 4489 are reported as failed <code>checksec</code>.</p>
+<p>What you should see as the output from <code>checksec is</code></p>
+<div class="highlight"><pre>Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
+Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
+</pre></div>
+
+
+<p>The first line is for binaries, the second one for libraries b/c
+DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
+e.g. <code>%{_libdir}/foo/</code> and I've tried to exclude them unless
+other offenses are found. The script which does this is
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect">checksec-collect</a>.</p>
+<p>Most often I'm seeing <em>Partial RELRO</em>, <em>No canary found</em> and <em>No PIE</em> errors.
+Since all packages potentially process untrusted input, it makes sense for all of them
+to be hardened and enhance the security of Fedora. That's why all of these errors
+should be considered valid bugs.</p>
+<h2>Attn package maintainers</h2>
+<p>Please see if your package is in the list and try to fix it or let me know
+why it should be excluded, for example it's a boot loader and doesn't function
+properly with hardening enabled. The full list is available at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log">GitHub</a>.</p>
+<p>For more information about the different protection mechanisms see the following
+links:</p>
+<ul>
+<li><a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html">Partial vs Full RELRO</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries">Stack canaries</a></li>
+<li><a href="https://en.wikipedia.org/wiki/NX_bit#Linux">NX memory protection</a></li>
+<li><a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/">Position Independent Executables</a></li>
+<li><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath">RPATH</a></li>
+<li><a href="http://blog.tremily.us/posts/rpath/">RUNPATH</a></li>
+</ul>
+<p><strong>UPDATE 2015-09-17</strong></p>
+<p>I've posted my findings on 
+<a href="https://lists.fedoraproject.org/pipermail/devel/2015-September/thread.html">fedora-devel</a>
+and the comments are more than interesting even revealing an old bug in libtool.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 16 September 2015
+<p>There are <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/08/20/minor-typo-bug-in-messenger/" rel="bookmark" title="Permalink to Minor Typo Bug in Messenger for bg_BG.UTF-8">
                 <h2 class="post-title">
                     Minor Typo Bug in Messenger for bg_BG.UTF-8
@@ -342,7 +394,7 @@ online. The list can be found
 and thought I could use <code>sysctl</code> to permanently set the desired values. Unfortunately this is not
 possible. <code>sysctl</code> can only write under <code>/proc/sys</code> and this is 
 <a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54">hard-coded in the source</a>:</p>
-<div class="codehilite"><pre>static const char PROC_PATH[] = &quot;/proc/sys/&quot;;
+<div class="highlight"><pre>static const char PROC_PATH[] = &quot;/proc/sys/&quot;;
 </pre></div>
 
 
@@ -404,7 +456,7 @@ works with
 on a <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> despite some reports it may not.</p>
 <p>After plugging the device is automatically recognized and the <em>tg3</em> driver is loaded.
 Detailed <em>lspci</em> below:</p>
-<div class="codehilite"><pre><span class="mi">0</span><span class="n">a</span><span class="o">:</span><span class="mf">00.0</span> <span class="n">Ethernet</span> <span class="n">controller</span><span class="o">:</span> <span class="n">Broadcom</span> <span class="n">Corporation</span> <span class="n">NetXtreme</span> <span class="n">BCM57762</span> <span class="n">Gigabit</span> <span class="n">Ethernet</span> <span class="n">PCIe</span>
+<div class="highlight"><pre><span class="mi">0</span><span class="n">a</span><span class="o">:</span><span class="mf">00.0</span> <span class="n">Ethernet</span> <span class="n">controller</span><span class="o">:</span> <span class="n">Broadcom</span> <span class="n">Corporation</span> <span class="n">NetXtreme</span> <span class="n">BCM57762</span> <span class="n">Gigabit</span> <span class="n">Ethernet</span> <span class="n">PCIe</span>
     <span class="n">Subsystem</span><span class="o">:</span> <span class="n">Apple</span> <span class="n">Inc</span><span class="o">.</span> <span class="n">Device</span> <span class="mi">00</span><span class="n">f6</span>
     <span class="n">Physical</span> <span class="n">Slot</span><span class="o">:</span> <span class="mi">9</span>
     <span class="n">Flags</span><span class="o">:</span> <span class="n">bus</span> <span class="n">master</span><span class="o">,</span> <span class="n">fast</span> <span class="n">devsel</span><span class="o">,</span> <span class="n">latency</span> <span class="mi">0</span><span class="o">,</span> <span class="n">IRQ</span> <span class="mi">19</span>
@@ -458,7 +510,7 @@ You will also need <a href="https://fedoraproject.org/wiki/EPEL">EPEL 7</a> enab
 to satisfy build dependencies.</p>
 <p>Then apply the following patch to the original 
 <a href="http://koji.fedoraproject.org/koji/buildinfo?buildID=397914">twinkle.spec</a></p>
-<div class="codehilite"><pre><span class="o">---</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span><span class="p">.</span><span class="n">orig</span>   <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">14</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">01.870710147</span> <span class="o">+</span><span class="mo">0300</span>
+<div class="highlight"><pre><span class="o">---</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span><span class="p">.</span><span class="n">orig</span>   <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">14</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">01.870710147</span> <span class="o">+</span><span class="mo">0300</span>
 <span class="o">+++</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span>    <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">15</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">28.734734573</span> <span class="o">+</span><span class="mo">0300</span>
 <span class="err">@@</span> <span class="o">-</span><span class="mi">47</span><span class="p">,</span><span class="mi">6</span> <span class="o">+</span><span class="mi">47</span><span class="p">,</span><span class="mi">8</span> <span class="err">@@</span>
  
@@ -490,14 +542,14 @@ The compiled packages and dependencies are available in my
 <p>Function keys and media keys are switched and by default you have to
 press Fn+F5 in order to refresh a browser page. The 
 <a href="https://chaidarun.com/fedora-mbp">solution</a> is</p>
-<div class="codehilite"><pre>echo 2 &gt; /sys/module/hid_apple/parameters/fnmode
+<div class="highlight"><pre>echo 2 &gt; /sys/module/hid_apple/parameters/fnmode
 </pre></div>
 
 
 <p>The tilde key is mapped improperly, see 
 <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025041#c2">RHBZ #1025041</a>.
 To fix it</p>
-<div class="codehilite"><pre>echo 0 &gt; /sys/module/hid_apple/parameters/iso_layout
+<div class="highlight"><pre>echo 0 &gt; /sys/module/hid_apple/parameters/iso_layout
 </pre></div>
 
 
@@ -521,18 +573,18 @@ The RPM source can be found <a href="https://github.com/atodorov/mba-kbd-fix">he
             <p>I've made a repository with binary (x86_64 only) and source RPM packages which
 are missing from Red Hat Enterprise Linux 7 and necessary when using a 
 <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a>. To install execute the commands below:</p>
-<div class="codehilite"><pre>cd /etc/yum.repos.d/
+<div class="highlight"><pre>cd /etc/yum.repos.d/
 wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 </pre></div>
 
 
 <h2>Wireless driver</h2>
-<div class="codehilite"><pre>yum install kmod-wl
+<div class="highlight"><pre>yum install kmod-wl
 </pre></div>
 
 
 <h2>Display backlight driver</h2>
-<div class="codehilite"><pre>yum install kmod-mba6x_bl
+<div class="highlight"><pre>yum install kmod-mba6x_bl
 </pre></div>
 
 
@@ -540,7 +592,7 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 <p><em>Note:</em> the .spec file is available from 
 <a href="https://github.com/patjak/mba6x_bl/pull/26">RP #26</a>.</p>
 <h2>Fixing keyboard mapping</h2>
-<div class="codehilite"><pre>yum install mba-kbd-fix
+<div class="highlight"><pre>yum install mba-kbd-fix
 </pre></div>
             <p class="post-meta">Posted by
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
@@ -560,7 +612,7 @@ and backlight behavior after suspend/resume. I've found the solution
 and only tweaked it slightly for my use case.</p>
 <h2>mba6x_bl doesn't load automatically</h2>
 <p>The reason being the driver matches older hardware:</p>
-<div class="codehilite"><pre><span class="nv">$ </span>modinfo mba6x_bl
+<div class="highlight"><pre><span class="nv">$ </span>modinfo mba6x_bl
 filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
 <span class="nb">alias</span>:          dmi:*:pnMacBookAir6*
 license:        GPL
@@ -584,7 +636,7 @@ for more details.</p>
 <h2>intel_backlight driver is in the way</h2>
 <p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
 intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
-<div class="codehilite"><pre><span class="nv">$ </span>cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+<div class="highlight"><pre><span class="nv">$ </span>cat /etc/X11/xorg.conf.d/98-mba_bl.conf
 Section <span class="s2">&quot;Device&quot;</span>
     Identifier      <span class="s2">&quot;Intel Graphics&quot;</span>
     Driver          <span class="s2">&quot;intel&quot;</span>
@@ -632,7 +684,7 @@ and shutdown the computer. The value is stored in NVRAM.</p>
 OS X Internet recovery mode;</li>
 <li>
 <p>Open the terminal and issue the following command</p>
-<div class="codehilite"><pre>nvram SystemAudioVolume=%00
+<div class="highlight"><pre>nvram SystemAudioVolume=%00
 </pre></div>
 
 
@@ -642,7 +694,7 @@ OS X Internet recovery mode;</li>
 </li>
 </ol>
 <p>Voila. In Linux try this:</p>
-<div class="codehilite"><pre># efivar -l | grep SystemAudioVolume
+<div class="highlight"><pre># efivar -l | grep SystemAudioVolume
  7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
  7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
 
@@ -697,7 +749,7 @@ in a previous blog post.</p>
 the first priority was getting wireless working. 
 First check if your device isn't already supported
 <a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn't</p>
-<div class="codehilite"><pre><span class="mi">14</span><span class="n">e4</span><span class="o">:</span><span class="mi">43</span><span class="n">a0</span><span class="o">:</span> <span class="n">Broadcom</span> <span class="n">Corporation</span> <span class="n">BCM4360</span> <span class="mf">802.11</span><span class="n">ac</span> <span class="n">Wireless</span> <span class="n">Network</span> <span class="n">Adapter</span> <span class="o">(</span><span class="n">rev</span> <span class="mi">03</span><span class="o">)</span>
+<div class="highlight"><pre><span class="mi">14</span><span class="n">e4</span><span class="o">:</span><span class="mi">43</span><span class="n">a0</span><span class="o">:</span> <span class="n">Broadcom</span> <span class="n">Corporation</span> <span class="n">BCM4360</span> <span class="mf">802.11</span><span class="n">ac</span> <span class="n">Wireless</span> <span class="n">Network</span> <span class="n">Adapter</span> <span class="o">(</span><span class="n">rev</span> <span class="mi">03</span><span class="o">)</span>
 </pre></div>
 
 
@@ -720,12 +772,12 @@ work here because Red Hat backports chosen functionality from more recent kernel
 changing the version number. This approach may not be the best one but I've tried to keep it clean
 for easier maintenance in the future and it got me started very quickly.</p>
 <p>Build the modified buildsys-build-rpmfusion and:</p>
-<div class="codehilite"><pre>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+<div class="highlight"><pre>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
 </pre></div>
 
 
 <p>Build the wl-kmod package and:</p>
-<div class="codehilite"><pre>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+<div class="highlight"><pre>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
 </pre></div>
 
 
@@ -834,7 +886,7 @@ but forced me to exit the process.</p>
 <p>I'll continue posting my updates until the system runs smoothly like it is supposed to.</p>
 <h2>Hardware info</h2>
 <p><strong>ADDED ON 2015-05-02</strong></p>
-<div class="codehilite"><pre># dmidecode 
+<div class="highlight"><pre># dmidecode 
 # dmidecode 2.12
 # SMBIOS entry point at 0x8afae000
 SMBIOS 2.7 present.
@@ -1331,7 +1383,7 @@ af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
 
 
 <p><strong>lshw added on 2015-12-01</strong></p>
-<div class="codehilite"><pre><span class="cp"># lshw</span>
+<div class="highlight"><pre><span class="cp"># lshw</span>
 
 <span class="n">aero</span>
     <span class="nl">description</span><span class="p">:</span> <span class="n">Laptop</span>
@@ -1793,39 +1845,6 @@ af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Sun 26 April 2015
 <p>There are <a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/" rel="bookmark" title="Permalink to Videos from Bulgaria Web Summit 2015">
-                <h2 class="post-title">
-                    Videos from Bulgaria Web Summit 2015
-                </h2>
-            </a>
-            <p><img alt="We're full" src="/images/bgws2015.jpg" title="We're full" /></p>
-<p><a href="http://bulgariawebsummit.com">Bulgaria Web Summit</a> 2015 is over. The event was
-incredible and I had a lot of fun moderating the main room. We had many people
-coming from other countries and I've made lots of new friends.
-Thank you to everyone who attended!</p>
-<p>You can find video recordings of all talks in the main room (in order of appearance) below:</p>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/3THnzZCI4sw?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/LtgPnYkEj3E?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/4IFyMSvoy-c?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/ZGLKZSnCIUU?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/GBv4QWFDETY?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/DhnsmsvSG7w?rel=0" frameborder="0" allowfullscreen></iframe>
-
-<p>Hope to see you next time in Sofia! </p>
-<p>Mean while I learned about <a href="http://devitconf.org/">DEVit</a> in Thessaloniki in May and another one in Zagreb in October.
-See you there :)</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 20 April 2015
-<p>There are <a href="http://atodorov.org/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 

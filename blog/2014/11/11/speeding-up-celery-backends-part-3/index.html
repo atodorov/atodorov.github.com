@@ -114,7 +114,7 @@ Now let's explore what happens inside and see if we can't speed things up.</p>
 call graph visualizations of my application. It has the nice feature to also show
 execution time and use different colors for fast and slow operations.</p>
 <p>Full command line is:</p>
-<div class="codehilite"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
 </pre></div>
 
 
@@ -132,7 +132,7 @@ rewrites the code.</li>
 </ul>
 <h2>More findings</h2>
 <p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-<div class="codehilite"><pre>349         with self.producer_or_acquire(producer) as P:
+<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
 350             self.backend.on_task_call(P, task_id)
 351             task_id = P.publish_task(
 352                 name, args, kwargs, countdown=countdown, eta=eta,
@@ -145,7 +145,7 @@ rewrites the code.</li>
 
 <p><code>producer</code> is always None because delay() doesn't pass it as argument.
 I've tried passing it explicitly to apply_async() as so:</p>
-<div class="codehilite"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
 <span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -154,7 +154,7 @@ I've tried passing it explicitly to apply_async() as so:</p>
 
 
 <p>However this doesn't speedup anything. If we replace the above code block like this:</p>
-<div class="codehilite"><pre>349         with producer as P:
+<div class="highlight"><pre>349         with producer as P:
 </pre></div>
 
 

@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-11-29T16:04:00+02:00</updated><entry><title>Inspecting Method Arguments in Python</title><link href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="alternate"></link><updated>2015-11-29T16:04:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-29:blog/2015/11/29/inspecting-method-arguments-in-python/</id><summary type="html">&lt;p&gt;How do you execute methods from 3rd party classes in a backward compatible
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-01T12:44:00+02:00</updated><entry><title>Commit a file with the GitHub API and Python</title><link href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="alternate"></link><updated>2015-12-01T12:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/commit-a-file-with-the-github-api-and-python/</id><summary type="html">&lt;p&gt;How do you commit changes to a file using the GitHub API ?
+I've found
+&lt;a href="http://www.levibotelho.com/development/commit-a-file-with-the-github-api/"&gt;this post&lt;/a&gt;
+by Levi Botelho which explains the necessary steps but without any code.
+So I've used it and created a
+&lt;a href="https://github.com/atodorov/api-commit-test"&gt;Python example&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I've rearranged the steps so that all write operations follow after a certain
+section in the code and also added an intermediate section which creates the
+updated content based on what is available in the repository.&lt;/p&gt;
+&lt;p&gt;I'm just appending
+versions of Markdown to the &lt;code&gt;.travis.yml&lt;/code&gt; (I will explain why in my next post)
+and this is hard-coded for the sake of example. All content related operations
+are also based on the GitHub API because I want to be independent of the source
+code being around when I push this script to a hosting provider.&lt;/p&gt;
+&lt;p&gt;I've tested this script against itself. In the
+&lt;a href="https://github.com/atodorov/api-commit-test/commits/master"&gt;commits log&lt;/a&gt;
+you can find the &lt;em&gt;Automatic update to Markdown-X.Y&lt;/em&gt; messages. These are
+from the script. Also notice the &lt;em&gt;Merge remote-tracking branch 'origin/master'&lt;/em&gt;
+messages, these appeared when I pulled to my local copy. I believe the
+reason for this is that I have some dangling trees and/or commits from
+the time I was still experimenting with a broken script. I've tested on another
+clean repository and &lt;a href="https://github.com/atodorov/bztest/commits/master"&gt;there are&lt;/a&gt;
+no such merges.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;IMPORTANT&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;For this to work you need to properly authenticate with GitHub. I've crated
+a new token at &lt;a href="https://github.com/settings/tokens"&gt;https://github.com/settings/tokens&lt;/a&gt; with the &lt;em&gt;public_repo&lt;/em&gt;
+permission and that works for me.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="Django"></category></entry><entry><title>Inspecting Method Arguments in Python</title><link href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="alternate"></link><updated>2015-11-29T16:04:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-29:blog/2015/11/29/inspecting-method-arguments-in-python/</id><summary type="html">&lt;p&gt;How do you execute methods from 3rd party classes in a backward compatible
 manner when these methods change their arguments ?&lt;/p&gt;
 &lt;p&gt;s3cmd's &lt;a href="https://github.com/s3tools/s3cmd/pull/668"&gt;PR #668&lt;/a&gt; is an example
 of this behavior, where python-libs's &lt;code&gt;httplib.py&lt;/code&gt; added a new parameter
@@ -15,17 +41,17 @@ Depending on the number of parameters this may or may not be more elegant than
 using try-except blocks although it looks to me a bit more human readable.&lt;/p&gt;
 &lt;p&gt;The argument list is a member named &lt;em&gt;co_varnames&lt;/em&gt; of the code object. If you
 want to get the members for a function then&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;my_function&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;my_function&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;if you want to get the members for a class method then&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;MyClass&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;my_method&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__function__&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;MyClass&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;my_method&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__function__&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Consider the following example&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;inspect&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;inspect&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello_world&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
@@ -95,7 +121,7 @@ want to get the members for a function then&lt;/p&gt;
 
 
 &lt;p&gt;The output of the example above is as follows&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;=== Example: call the class directly ===
+&lt;div class="highlight"&gt;&lt;pre&gt;=== Example: call the class directly ===
 Hello World
 Good day World
 Good evening everyone
@@ -211,7 +237,7 @@ This immediately had me looking upper in the stack at &lt;code&gt;httplib.py&lt;
 &lt;p&gt;Indeed there was a change in &lt;code&gt;httplib.py&lt;/code&gt; which introduced two parameters,
 &lt;em&gt;context&lt;/em&gt; and &lt;em&gt;check_hostname&lt;/em&gt;, to &lt;code&gt;HTTPSConnection.__init__&lt;/code&gt;. The change
 also supplied the logic which performs SSL hostname validation.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
+&lt;div class="highlight"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
     try:
         ssl.match_hostname(self.sock.getpeercert(), server_hostname)
     except Exception:
@@ -259,7 +285,7 @@ I've played around with creating a few more tests and the benefit I see affect
 only a few lines of code.&lt;/p&gt;
 &lt;p&gt;For #114 there doesn't seem to be any need to test _get_query directly,
 although we call&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;   q = self.base.sack.query()
+&lt;div class="highlight"&gt;&lt;pre&gt;   q = self.base.sack.query()
    q = q.available()
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -267,7 +293,7 @@ although we call&lt;/p&gt;
 &lt;p&gt;which will benefit from this PR b/c we're stubbing out the entire Sack object.
 I will work on a test later today/tomorrow to see how it looks.&lt;/p&gt;
 &lt;p&gt;OTOH for #113 where we modify _get_query the test can look something like this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;def test_get_query_with_local_rpm(self):
+&lt;div class="highlight"&gt;&lt;pre&gt;def test_get_query_with_local_rpm(self):
     try:
         (fs, rpm_path) = tempfile.mkstemp(&amp;#39;foobar-99.99-1.x86_64.rpm&amp;#39;)
         # b/c self.cmd.cli.base is a mock object add_remote_rpm
@@ -307,7 +333,7 @@ dependencies of the software under test, not internal methods from the SUT!
 &lt;/strong&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Tip: Running DNF Plugins from git</title><link href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/" rel="alternate"></link><updated>2015-11-23T15:50:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-23:blog/2015/11/23/tip-running-dnf-plugins-from-git/</id><summary type="html">&lt;p&gt;This is mostly for self reference because it is not currently documented
 in the code. To use dnf plugins from a local git checkout modify your
 &lt;code&gt;/etc/dnf/dnf.conf&lt;/code&gt; and add the following line under the &lt;code&gt;[main]&lt;/code&gt; section:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;pluginpath=/path/to/dnf-plugins-core/plugins
+&lt;div class="highlight"&gt;&lt;pre&gt;pluginpath=/path/to/dnf-plugins-core/plugins
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="tips"></category></entry><entry><title>Updated MacBook Air Drivers for RHEL 7.2</title><link href="http://atodorov.org/blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/" rel="alternate"></link><updated>2015-11-21T11:27:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-21:blog/2015/11/21/updated-macbook-air-drivers-for-rhel-7.2/</id><summary type="html">&lt;p&gt;Yesterday I've upgraded to
 &lt;a href="https://access.redhat.com/announcements/2058583"&gt;Red Hat Enterprise Linux 7.2&lt;/a&gt;
 on my &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt; and I decided to rebuild the wifi and backlight drivers.
@@ -340,7 +366,7 @@ which in turn may be hiding another bug behind it;&lt;/li&gt;
 which I'm going to debug next.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;To play around with this make sure you have accessibility enabled and:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# cd anaconda/
+&lt;div class="highlight"&gt;&lt;pre&gt;# cd anaconda/
 # export top_srcdir=`pwd`
 # setenforce 0
 # cd tests/gui/
@@ -368,7 +394,7 @@ more details.&lt;/p&gt;</summary><category term="QA"></category><category term="
 &lt;a href="http://planet.sofiavalley.com"&gt;http://planet.sofiavalley.com&lt;/a&gt; and the planet broke. Suddenly it started showing
 only Krasi's articles and all of them with the same date. The problem was the RSS
 feed didn't have any timestamps. The fix is trivial:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- rss.xml.orig    2015-11-13 10:12:35.348625718 +0200&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- rss.xml.orig    2015-11-13 10:12:35.348625718 +0200&lt;/span&gt;
 &lt;span class="gi"&gt;+++ rss.xml 2015-11-13 10:12:45.157932304 +0200&lt;/span&gt;
 &lt;span class="gu"&gt;@@ -9,120 +9,160 @@&lt;/span&gt;
                              &amp;lt;title&amp;gt;&amp;lt;![CDATA[A modern React starter pack based on webpack]]&amp;gt;&amp;lt;/title&amp;gt;
@@ -384,7 +410,7 @@ feed didn't have any timestamps. The fix is trivial:&lt;/p&gt;
 features to facilitate building Docker images. These are only available
 in kickstart. To build a Docker image for HTTPD, using packages provided in the
 distro use the following ks.cfg file:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;install&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;install&lt;/span&gt;
 &lt;span class="n"&gt;lang&lt;/span&gt; &lt;span class="n"&gt;en_US&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;UTF&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt;
 &lt;span class="n"&gt;keyboard&lt;/span&gt; &lt;span class="n"&gt;us&lt;/span&gt;
 &lt;span class="n"&gt;network&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;onboot&lt;/span&gt; &lt;span class="n"&gt;yes&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;device&lt;/span&gt; &lt;span class="n"&gt;eth0&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;bootproto&lt;/span&gt; &lt;span class="n"&gt;dhcp&lt;/span&gt;
@@ -420,12 +446,12 @@ will not be bootable&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; the previous &lt;code&gt;--nobase&lt;/code&gt; option is deprected and doesn't have any effect.&lt;/p&gt;
 &lt;p&gt;After the VM installation is complete grab the contents of the root directory:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# virt-tar-out -a /var/lib/libvirt/images/disk.qcow2 / myimage.tar
+&lt;div class="highlight"&gt;&lt;pre&gt;# virt-tar-out -a /var/lib/libvirt/images/disk.qcow2 / myimage.tar
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Import the tarball into Docker and inspect the result:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="c"&gt;# docker import myimage.tar local_images:ver1.0&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# docker import myimage.tar local_images:ver1.0&lt;/span&gt;
 &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="n"&gt;a2324e6d0e940a998b990262335894a17d261450c33f57dc153d3d1987e4fc1&lt;/span&gt;
 
 &lt;span class="c"&gt;# docker images&lt;/span&gt;
@@ -437,7 +463,7 @@ will not be bootable&lt;/li&gt;
 
 
 &lt;p&gt;Run commands into a new container: &lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# docker run --name=bash_myimage -it 8a2324e6d0e9 /bin/bash
+&lt;div class="highlight"&gt;&lt;pre&gt;# docker run --name=bash_myimage -it 8a2324e6d0e9 /bin/bash
 bash-4.2# cat /etc/redhat-release 
 Red Hat Enterprise Linux Server release 7.2 Beta (Maipo)
 bash-4.2# rpm -q httpd
@@ -464,7 +490,7 @@ the content can be stripped down even more.&lt;/p&gt;
 &lt;li&gt;&lt;a href="https://access.redhat.com/documentation/en/red-hat-enterprise-linux-atomic-host/version-7/red-hat-enterprise-linux-atomic-host-7-getting-started-with-containers/chapter-7-get-started-with-docker-formatted-container-images"&gt;Chapter 7. Get Started with Docker Formatted Container Images&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Full package list:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;acl-2.2.51-12.el7.x86_64
+&lt;div class="highlight"&gt;&lt;pre&gt;acl-2.2.51-12.el7.x86_64
 apr-1.4.8-3.el7.x86_64
 apr-util-1.5.2-6.el7.x86_64
 audit-libs-2.4.1-5.el7.x86_64
@@ -644,7 +670,7 @@ The difference is mainly in flexibility of parameters and output formatting.
 I've tried to keep as close as possible to the existing behavior of coverage.py.&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;coverage-annotate&lt;/em&gt; - when given a .coverage data file prints the source code
 annotated with line numbers and execution markers.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;!!!&lt;/span&gt; &lt;span class="n"&gt;missing&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib64&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;python2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;pyanaconda&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;anaconda_argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;!!!&lt;/span&gt; &lt;span class="n"&gt;missing&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib64&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;python2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;pyanaconda&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;anaconda_argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;covered&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;usr&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;lib64&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;python2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;packages&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;pyanaconda&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;anaconda_argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;py&lt;/span&gt;
 &lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;skip&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
     &lt;span class="mi"&gt;37&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;logging&lt;/span&gt;
@@ -685,7 +711,7 @@ All top-level import statements were executed as you would expect. Then the meth
 machine line 63 was not executed. It is marked with &lt;strong&gt;!&lt;/strong&gt;. The comments and empty
 lines are of no interest.&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;coverage-diff&lt;/em&gt; - produces git like diff reports on the text output of annotate.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/source.py&lt;/span&gt;
 &lt;span class="gu"&gt;@@ -634,7 +634,7 @@&lt;/span&gt;
     634           # Wait to make sure the other threads are done before sending ready, otherwise
@@ -712,7 +738,7 @@ RAID for the root file system; These are good candidates for further analysis.&l
 The tests were executed on bare metal and virtual machines, trying to use the
 same hardware or same systems configurations where possible!&lt;/p&gt;
 &lt;p&gt;Example: HTTP vs. FTP&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/packaging/__init__.py&lt;/span&gt;
 &lt;span class="gu"&gt;@@ -891,7 +891,7 @@&lt;/span&gt;
     891   
@@ -774,7 +800,7 @@ The other difference is in how the partition labels are displayed. One of the in
 was probably using fresh disks while the other not.&lt;/p&gt;
 &lt;p&gt;Example: SATA vs. SCSI - no difference&lt;/p&gt;
 &lt;p&gt;Example: SATA vs. SAS (mpt2sas driver)&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/bootloader.py&lt;/span&gt;
 &lt;span class="gu"&gt;@@ -109,10 +109,10 @@&lt;/span&gt;
     109 &amp;gt;     try:
@@ -817,7 +843,7 @@ installed on disk but I'm no expert on this particular piece of code.
 I've seen the same difference in other comparisons so it probably has to do
 more with hardware than with what kind of disk/driver is used.&lt;/p&gt;
 &lt;p&gt;Example: RAID 0 vs. RAID 1 - manual install&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- a/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/usr/lib64/python2.7/site-packages/pyanaconda/ui/gui/spokes/datetime_spoke.py&lt;/span&gt;
 &lt;span class="gu"&gt;@@ -490,9 +490,9 @@&lt;/span&gt;
     490   
@@ -1027,7 +1053,7 @@ the behaviors of external dependencies that a module undergoing the test depends
 on. Test stubs provide canned answers to calls made during the test.&lt;/p&gt;
 &lt;p&gt;I've discovered an improperly written stub method in one of
 &lt;a href="http://dnf.baseurl.org/"&gt;DNF&lt;/a&gt;'s tests:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;tests/test_download.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;DownloadCommandTest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unittest&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;tests/test_download.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;DownloadCommandTest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unittest&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
         &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;stub_fn&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
             &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.src.rpm&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
@@ -1046,7 +1072,7 @@ on. Test stubs provide canned answers to calls made during the test.&lt;/p&gt;
 
 
 &lt;p&gt;The replaced methods look like this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;plugins/download.py&lt;/span&gt;&lt;pre&gt;    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;plugins/download.py&lt;/span&gt;&lt;pre&gt;    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_get_query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
         &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Return a query to match a pkg_spec.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
         &lt;span class="n"&gt;subj&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dnf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;subject&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Subject&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pkg_spec&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
         &lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;subj&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_best_query&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sack&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -1105,7 +1131,7 @@ policy in Fedora!&lt;/p&gt;
 &lt;p&gt;From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
 From them 4489 are reported as failed &lt;code&gt;checksec&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;What you should see as the output from &lt;code&gt;checksec is&lt;/code&gt;&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
+&lt;div class="highlight"&gt;&lt;pre&gt;Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
 Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -1239,7 +1265,7 @@ online. The list can be found
 and thought I could use &lt;code&gt;sysctl&lt;/code&gt; to permanently set the desired values. Unfortunately this is not
 possible. &lt;code&gt;sysctl&lt;/code&gt; can only write under &lt;code&gt;/proc/sys&lt;/code&gt; and this is 
 &lt;a href="https://gitlab.com/procps-ng/procps/blob/master/sysctl.c#L54"&gt;hard-coded in the source&lt;/a&gt;:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;static const char PROC_PATH[] = &amp;quot;/proc/sys/&amp;quot;;
+&lt;div class="highlight"&gt;&lt;pre&gt;static const char PROC_PATH[] = &amp;quot;/proc/sys/&amp;quot;;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1275,7 +1301,7 @@ works with
 on a &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt; despite some reports it may not.&lt;/p&gt;
 &lt;p&gt;After plugging the device is automatically recognized and the &lt;em&gt;tg3&lt;/em&gt; driver is loaded.
 Detailed &lt;em&gt;lspci&lt;/em&gt; below:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;00.0&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;NetXtreme&lt;/span&gt; &lt;span class="n"&gt;BCM57762&lt;/span&gt; &lt;span class="n"&gt;Gigabit&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;PCIe&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;00.0&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;NetXtreme&lt;/span&gt; &lt;span class="n"&gt;BCM57762&lt;/span&gt; &lt;span class="n"&gt;Gigabit&lt;/span&gt; &lt;span class="n"&gt;Ethernet&lt;/span&gt; &lt;span class="n"&gt;PCIe&lt;/span&gt;
     &lt;span class="n"&gt;Subsystem&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Apple&lt;/span&gt; &lt;span class="n"&gt;Inc&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Device&lt;/span&gt; &lt;span class="mi"&gt;00&lt;/span&gt;&lt;span class="n"&gt;f6&lt;/span&gt;
     &lt;span class="n"&gt;Physical&lt;/span&gt; &lt;span class="n"&gt;Slot&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;
     &lt;span class="n"&gt;Flags&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;bus&lt;/span&gt; &lt;span class="n"&gt;master&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fast&lt;/span&gt; &lt;span class="n"&gt;devsel&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;latency&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;IRQ&lt;/span&gt; &lt;span class="mi"&gt;19&lt;/span&gt;
@@ -1316,7 +1342,7 @@ You will also need &lt;a href="https://fedoraproject.org/wiki/EPEL"&gt;EPEL 7&lt
 to satisfy build dependencies.&lt;/p&gt;
 &lt;p&gt;Then apply the following patch to the original 
 &lt;a href="http://koji.fedoraproject.org/koji/buildinfo?buildID=397914"&gt;twinkle.spec&lt;/a&gt;&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;---&lt;/span&gt; &lt;span class="n"&gt;twinkle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;spec&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;orig&lt;/span&gt;   &lt;span class="mi"&gt;2015&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;05&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;01.870710147&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mo"&gt;0300&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;---&lt;/span&gt; &lt;span class="n"&gt;twinkle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;spec&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;orig&lt;/span&gt;   &lt;span class="mi"&gt;2015&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;05&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;01.870710147&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mo"&gt;0300&lt;/span&gt;
 &lt;span class="o"&gt;+++&lt;/span&gt; &lt;span class="n"&gt;twinkle&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;spec&lt;/span&gt;    &lt;span class="mi"&gt;2015&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;05&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mo"&gt;01&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;07&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mf"&gt;28.734734573&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mo"&gt;0300&lt;/span&gt;
 &lt;span class="err"&gt;@@&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;47&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;47&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="err"&gt;@@&lt;/span&gt;
  
@@ -1335,14 +1361,14 @@ The compiled packages and dependencies are available in my
 &lt;p&gt;Function keys and media keys are switched and by default you have to
 press Fn+F5 in order to refresh a browser page. The 
 &lt;a href="https://chaidarun.com/fedora-mbp"&gt;solution&lt;/a&gt; is&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;echo 2 &amp;gt; /sys/module/hid_apple/parameters/fnmode
+&lt;div class="highlight"&gt;&lt;pre&gt;echo 2 &amp;gt; /sys/module/hid_apple/parameters/fnmode
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;The tilde key is mapped improperly, see 
 &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025041#c2"&gt;RHBZ #1025041&lt;/a&gt;.
 To fix it&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;echo 0 &amp;gt; /sys/module/hid_apple/parameters/iso_layout
+&lt;div class="highlight"&gt;&lt;pre&gt;echo 0 &amp;gt; /sys/module/hid_apple/parameters/iso_layout
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1353,18 +1379,18 @@ To fix it&lt;/p&gt;
 The RPM source can be found &lt;a href="https://github.com/atodorov/mba-kbd-fix"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>Red Hat Enterprise Linux 7 Repository for MacBook Air</title><link href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/" rel="alternate"></link><updated>2015-04-29T13:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-29:blog/2015/04/29/rhel-7-repository-for-macbook-air/</id><summary type="html">&lt;p&gt;I've made a repository with binary (x86_64 only) and source RPM packages which
 are missing from Red Hat Enterprise Linux 7 and necessary when using a 
 &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt;. To install execute the commands below:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;cd /etc/yum.repos.d/
+&lt;div class="highlight"&gt;&lt;pre&gt;cd /etc/yum.repos.d/
 wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Wireless driver&lt;/h2&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;yum install kmod-wl
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install kmod-wl
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;h2&gt;Display backlight driver&lt;/h2&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;yum install kmod-mba6x_bl
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install kmod-mba6x_bl
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1372,14 +1398,14 @@ wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/rhel7-macbook.repo
 &lt;p&gt;&lt;em&gt;Note:&lt;/em&gt; the .spec file is available from 
 &lt;a href="https://github.com/patjak/mba6x_bl/pull/26"&gt;RP #26&lt;/a&gt;.&lt;/p&gt;
 &lt;h2&gt;Fixing keyboard mapping&lt;/h2&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;yum install mba-kbd-fix
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install mba-kbd-fix
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="RHEL"></category><category term="Mac"></category><category term="fedora.planet"></category></entry><entry><title>Fixing Display Brightness on MacBook Air with RHEL 7</title><link href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/" rel="alternate"></link><updated>2015-04-29T12:14:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-29:blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/</id><summary type="html">&lt;p&gt;One issue with RHEL/CentOS/Fedora on &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt; laptops is brightness control
 and backlight behavior after suspend/resume. I've found the solution 
 &lt;a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/"&gt;here&lt;/a&gt;
 and only tweaked it slightly for my use case.&lt;/p&gt;
 &lt;h2&gt;mba6x_bl doesn't load automatically&lt;/h2&gt;
 &lt;p&gt;The reason being the driver matches older hardware:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;modinfo mba6x_bl
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;modinfo mba6x_bl
 filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
 &lt;span class="nb"&gt;alias&lt;/span&gt;:          dmi:*:pnMacBookAir6*
 license:        GPL
@@ -1403,7 +1429,7 @@ for more details.&lt;/p&gt;
 &lt;h2&gt;intel_backlight driver is in the way&lt;/h2&gt;
 &lt;p&gt;On older systems mba6x_bl doesn't get used automatically. The problem is the offending
 intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;cat /etc/X11/xorg.conf.d/98-mba_bl.conf
 Section &lt;span class="s2"&gt;&amp;quot;Device&amp;quot;&lt;/span&gt;
     Identifier      &lt;span class="s2"&gt;&amp;quot;Intel Graphics&amp;quot;&lt;/span&gt;
     Driver          &lt;span class="s2"&gt;&amp;quot;intel&amp;quot;&lt;/span&gt;
@@ -1424,7 +1450,7 @@ and shutdown the computer. The value is stored in NVRAM.&lt;/p&gt;
 OS X Internet recovery mode;&lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Open the terminal and issue the following command&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;nvram SystemAudioVolume=%00
+&lt;div class="highlight"&gt;&lt;pre&gt;nvram SystemAudioVolume=%00
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1434,7 +1460,7 @@ OS X Internet recovery mode;&lt;/li&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;Voila. In Linux try this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# efivar -l | grep SystemAudioVolume
+&lt;div class="highlight"&gt;&lt;pre&gt;# efivar -l | grep SystemAudioVolume
  7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolume
  7c436110-ab2a-4bbb-a880-fe41995c9f82-SystemAudioVolumeDB
 
@@ -1476,7 +1502,7 @@ in a previous blog post.&lt;/p&gt;</summary><category term="Mac"></category><cat
 the first priority was getting wireless working. 
 First check if your device isn't already supported
 &lt;a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices"&gt;upstream&lt;/a&gt;. Mine isn't&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="n"&gt;e4&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt;&lt;span class="n"&gt;a0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;BCM4360&lt;/span&gt; &lt;span class="mf"&gt;802.11&lt;/span&gt;&lt;span class="n"&gt;ac&lt;/span&gt; &lt;span class="n"&gt;Wireless&lt;/span&gt; &lt;span class="n"&gt;Network&lt;/span&gt; &lt;span class="n"&gt;Adapter&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rev&lt;/span&gt; &lt;span class="mi"&gt;03&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="n"&gt;e4&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt;&lt;span class="n"&gt;a0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Broadcom&lt;/span&gt; &lt;span class="n"&gt;Corporation&lt;/span&gt; &lt;span class="n"&gt;BCM4360&lt;/span&gt; &lt;span class="mf"&gt;802.11&lt;/span&gt;&lt;span class="n"&gt;ac&lt;/span&gt; &lt;span class="n"&gt;Wireless&lt;/span&gt; &lt;span class="n"&gt;Network&lt;/span&gt; &lt;span class="n"&gt;Adapter&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rev&lt;/span&gt; &lt;span class="mi"&gt;03&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1499,12 +1525,12 @@ work here because Red Hat backports chosen functionality from more recent kernel
 changing the version number. This approach may not be the best one but I've tried to keep it clean
 for easier maintenance in the future and it got me started very quickly.&lt;/p&gt;
 &lt;p&gt;Build the modified buildsys-build-rpmfusion and:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Build the wl-kmod package and:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+&lt;div class="highlight"&gt;&lt;pre&gt;yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -1600,7 +1626,7 @@ but forced me to exit the process.&lt;/p&gt;
 &lt;p&gt;I'll continue posting my updates until the system runs smoothly like it is supposed to.&lt;/p&gt;
 &lt;h2&gt;Hardware info&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;ADDED ON 2015-05-02&lt;/strong&gt;&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# dmidecode 
+&lt;div class="highlight"&gt;&lt;pre&gt;# dmidecode 
 # dmidecode 2.12
 # SMBIOS entry point at 0x8afae000
 SMBIOS 2.7 present.
@@ -2097,7 +2123,7 @@ af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
 
 
 &lt;p&gt;&lt;strong&gt;lshw added on 2015-12-01&lt;/strong&gt;&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# lshw&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;# lshw&lt;/span&gt;
 
 &lt;span class="n"&gt;aero&lt;/span&gt;
     &lt;span class="nl"&gt;description&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Laptop&lt;/span&gt;
@@ -2556,7 +2582,7 @@ af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
        &lt;span class="nl"&gt;configuration&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;autonegotiation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;off&lt;/span&gt; &lt;span class="n"&gt;broadcast&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;yes&lt;/span&gt; &lt;span class="n"&gt;driver&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tun&lt;/span&gt; &lt;span class="n"&gt;driverversion&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mf"&gt;1.6&lt;/span&gt; &lt;span class="n"&gt;duplex&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;full&lt;/span&gt; &lt;span class="n"&gt;link&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;no&lt;/span&gt; &lt;span class="n"&gt;multicast&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;yes&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;twisted&lt;/span&gt; &lt;span class="n"&gt;pair&lt;/span&gt; &lt;span class="n"&gt;speed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="n"&gt;Mbit&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category><category term="RHEL"></category><category term="Mac"></category></entry><entry><title>How to Configure targetcli to Listen on IPv4 and IPv6</title><link href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="alternate"></link><updated>2015-04-08T11:46:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-04-08:blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/</id><summary type="html">&lt;p&gt;In order to configure &lt;em&gt;targetcli&lt;/em&gt; to listen on both IPv4 and IPv6 one has to
 delete the default IPv4 portal configuration and replace it with IPv6 instead.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;# targetcli 
+&lt;div class="highlight"&gt;&lt;pre&gt;# targetcli 
 /&amp;gt;
 /&amp;gt; cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
 /iscsi/iqn.20.../tpg1/portals&amp;gt; ls
@@ -2581,7 +2607,7 @@ tcp6       0      0 :::3260                 :::*                    LISTEN
 also accept connections over IPv4. I've tried it. &lt;/p&gt;
 &lt;p&gt;This is a bit counter intuitive, however if you try adding the IPv6 address
 without removing the default IPv4 one &lt;em&gt;targetcli&lt;/em&gt; will throw an error:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
+&lt;div class="highlight"&gt;&lt;pre&gt;/iscsi/iqn.20.../tpg1/portals&amp;gt; create ::0
 Using default IP port 3260
 Could not create NetworkPortal in configFS.
 /&amp;gt;

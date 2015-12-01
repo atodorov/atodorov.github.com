@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-11-29T16:04:00+02:00</updated><entry><title>Inspecting Method Arguments in Python</title><link href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="alternate"></link><updated>2015-11-29T16:04:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-29:blog/2015/11/29/inspecting-method-arguments-in-python/</id><summary type="html">&lt;p&gt;How do you execute methods from 3rd party classes in a backward compatible
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-01T12:44:00+02:00</updated><entry><title>Commit a file with the GitHub API and Python</title><link href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="alternate"></link><updated>2015-12-01T12:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/commit-a-file-with-the-github-api-and-python/</id><summary type="html">&lt;p&gt;How do you commit changes to a file using the GitHub API ?
+I've found
+&lt;a href="http://www.levibotelho.com/development/commit-a-file-with-the-github-api/"&gt;this post&lt;/a&gt;
+by Levi Botelho which explains the necessary steps but without any code.
+So I've used it and created a
+&lt;a href="https://github.com/atodorov/api-commit-test"&gt;Python example&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I've rearranged the steps so that all write operations follow after a certain
+section in the code and also added an intermediate section which creates the
+updated content based on what is available in the repository.&lt;/p&gt;
+&lt;p&gt;I'm just appending
+versions of Markdown to the &lt;code&gt;.travis.yml&lt;/code&gt; (I will explain why in my next post)
+and this is hard-coded for the sake of example. All content related operations
+are also based on the GitHub API because I want to be independent of the source
+code being around when I push this script to a hosting provider.&lt;/p&gt;
+&lt;p&gt;I've tested this script against itself. In the
+&lt;a href="https://github.com/atodorov/api-commit-test/commits/master"&gt;commits log&lt;/a&gt;
+you can find the &lt;em&gt;Automatic update to Markdown-X.Y&lt;/em&gt; messages. These are
+from the script. Also notice the &lt;em&gt;Merge remote-tracking branch 'origin/master'&lt;/em&gt;
+messages, these appeared when I pulled to my local copy. I believe the
+reason for this is that I have some dangling trees and/or commits from
+the time I was still experimenting with a broken script. I've tested on another
+clean repository and &lt;a href="https://github.com/atodorov/bztest/commits/master"&gt;there are&lt;/a&gt;
+no such merges.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;IMPORTANT&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;For this to work you need to properly authenticate with GitHub. I've crated
+a new token at &lt;a href="https://github.com/settings/tokens"&gt;https://github.com/settings/tokens&lt;/a&gt; with the &lt;em&gt;public_repo&lt;/em&gt;
+permission and that works for me.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="Django"></category></entry><entry><title>Inspecting Method Arguments in Python</title><link href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="alternate"></link><updated>2015-11-29T16:04:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-29:blog/2015/11/29/inspecting-method-arguments-in-python/</id><summary type="html">&lt;p&gt;How do you execute methods from 3rd party classes in a backward compatible
 manner when these methods change their arguments ?&lt;/p&gt;
 &lt;p&gt;s3cmd's &lt;a href="https://github.com/s3tools/s3cmd/pull/668"&gt;PR #668&lt;/a&gt; is an example
 of this behavior, where python-libs's &lt;code&gt;httplib.py&lt;/code&gt; added a new parameter
@@ -15,17 +41,17 @@ Depending on the number of parameters this may or may not be more elegant than
 using try-except blocks although it looks to me a bit more human readable.&lt;/p&gt;
 &lt;p&gt;The argument list is a member named &lt;em&gt;co_varnames&lt;/em&gt; of the code object. If you
 want to get the members for a function then&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;my_function&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;my_function&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;if you want to get the members for a class method then&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;MyClass&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;my_method&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__function__&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;inspect&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;getmembers&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;MyClass&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;my_method&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__function__&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__code__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Consider the following example&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;inspect&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;inspect&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello_world&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
@@ -95,7 +121,7 @@ want to get the members for a function then&lt;/p&gt;
 
 
 &lt;p&gt;The output of the example above is as follows&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;=== Example: call the class directly ===
+&lt;div class="highlight"&gt;&lt;pre&gt;=== Example: call the class directly ===
 Hello World
 Good day World
 Good evening everyone
@@ -163,7 +189,7 @@ This immediately had me looking upper in the stack at &lt;code&gt;httplib.py&lt;
 &lt;p&gt;Indeed there was a change in &lt;code&gt;httplib.py&lt;/code&gt; which introduced two parameters,
 &lt;em&gt;context&lt;/em&gt; and &lt;em&gt;check_hostname&lt;/em&gt;, to &lt;code&gt;HTTPSConnection.__init__&lt;/code&gt;. The change
 also supplied the logic which performs SSL hostname validation.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
+&lt;div class="highlight"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
     try:
         ssl.match_hostname(self.sock.getpeercert(), server_hostname)
     except Exception:
@@ -189,7 +215,7 @@ Now let's explore what happens inside and see if we can't speed things up.&lt;/p
 call graph visualizations of my application. It has the nice feature to also show
 execution time and use different colors for fast and slow operations.&lt;/p&gt;
 &lt;p&gt;Full command line is:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+&lt;div class="highlight"&gt;&lt;pre&gt;pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -207,7 +233,7 @@ rewrites the code.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2&gt;More findings&lt;/h2&gt;
 &lt;p&gt;In &lt;code&gt;celery.app.base.Celery.send_task&lt;/code&gt; there is this block of code:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;349         with self.producer_or_acquire(producer) as P:
+&lt;div class="highlight"&gt;&lt;pre&gt;349         with self.producer_or_acquire(producer) as P:
 350             self.backend.on_task_call(P, task_id)
 351             task_id = P.publish_task(
 352                 name, args, kwargs, countdown=countdown, eta=eta,
@@ -220,7 +246,7 @@ rewrites the code.&lt;/li&gt;
 
 &lt;p&gt;&lt;code&gt;producer&lt;/code&gt; is always None because delay() doesn't pass it as argument.
 I've tried passing it explicitly to apply_async() as so:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;djapp.celery&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;djapp.celery&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
 
 &lt;span class="c"&gt;# app = debug_task._get_app() # if not defined in djapp.celery&lt;/span&gt;
 &lt;span class="n"&gt;producer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;app&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;amqp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;producer_pool&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;acquire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;block&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -229,7 +255,7 @@ I've tried passing it explicitly to apply_async() as so:&lt;/p&gt;
 
 
 &lt;p&gt;However this doesn't speedup anything. If we replace the above code block like this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;349         with producer as P:
+&lt;div class="highlight"&gt;&lt;pre&gt;349         with producer as P:
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -286,7 +312,7 @@ execution.&lt;/p&gt;
 loop 1 000 000 times I got 1908.0 tasks created per sec.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Another interesting this worth outlining - in the kombu test there are these lines:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;with producers[connection].acquire(block=True) as producer:
+&lt;div class="highlight"&gt;&lt;pre&gt;with producers[connection].acquire(block=True) as producer:
     for j in range(1000000):
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -315,7 +341,7 @@ was able to pin-point some problematic areas:&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;kombu/transports/virtual/__init__.py&lt;/code&gt;: class Channel.basic_publish() - does
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
 I called fastmemory which redefines the body_encoding property:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@cached_property&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@cached_property&lt;/span&gt;
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;body_encoding&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
@@ -327,7 +353,7 @@ I called fastmemory which redefines the body_encoding property:&lt;/p&gt;
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
 the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;kombu.serialization&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;register&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;kombu.serialization&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;register&lt;/span&gt;
 
 &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;loads&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;
@@ -360,12 +386,12 @@ of these IDs in Celery and hope to be able to produce a faster uuid() function. 
 exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
 If you have any suggestions or pointers please share them in the comments.&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>Performance Profiling in Python with cProfile</title><link href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/" rel="alternate"></link><updated>2014-11-05T14:40:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-11-05:blog/2014/11/05/performance-profiling-in-python-with-cprofile/</id><summary type="html">&lt;p&gt;This is a quick reference on profiling Python applications with
 &lt;a href="https://docs.python.org/2/library/profile.html#module-cProfile"&gt;cProfile&lt;/a&gt;:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;python -m cProfile -s &lt;span class="nb"&gt;time &lt;/span&gt;application.py
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;python -m cProfile -s &lt;span class="nb"&gt;time &lt;/span&gt;application.py
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;The output is sorted by execution time &lt;code&gt;-s time&lt;/code&gt;&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;     &lt;span class="mi"&gt;9072842&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;8882140&lt;/span&gt; &lt;span class="nx"&gt;primitive&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="mf"&gt;9.830&lt;/span&gt; &lt;span class="nx"&gt;CPU&lt;/span&gt; &lt;span class="nx"&gt;seconds&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;     &lt;span class="mi"&gt;9072842&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;8882140&lt;/span&gt; &lt;span class="nx"&gt;primitive&lt;/span&gt; &lt;span class="nx"&gt;calls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="mf"&gt;9.830&lt;/span&gt; &lt;span class="nx"&gt;CPU&lt;/span&gt; &lt;span class="nx"&gt;seconds&lt;/span&gt;
 
    &lt;span class="nx"&gt;Ordered&lt;/span&gt; &lt;span class="nx"&gt;by&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;internal&lt;/span&gt; &lt;span class="nx"&gt;time&lt;/span&gt;
 
@@ -394,7 +420,7 @@ or only render specific blocks from Jinja2 templates so here's my solution.
 Hopefully you find it useful too.&lt;/p&gt;
 &lt;p&gt;With below template I want to be able to render &lt;strong&gt;only&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt; block
 as a single line and then render the rest of the template &lt;strong&gt;excluding&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt;.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;base.j2&lt;/span&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;base.j2&lt;/span&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;console=tty0&lt;/span&gt;
 &lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;debug&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
 &lt;span class="x"&gt;        debug=1&lt;/span&gt;
@@ -423,7 +449,7 @@ exactly this.&lt;/p&gt;
 caching in the &lt;em&gt;Environment&lt;/em&gt; (so you get a fresh template every time), render
 your blocks first, configure &lt;em&gt;env.skip_blocks&lt;/em&gt; and render the entire template
 without the specified blocks.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;jinja2-render&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;jinja2-render&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
 
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
@@ -494,7 +520,7 @@ without the specified blocks.&lt;/p&gt;
 
 
 &lt;p&gt;The above code results in the following output:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
 &lt;span class="n"&gt;Boot&lt;/span&gt; &lt;span class="nl"&gt;Args&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tty0&lt;/span&gt; &lt;span class="n"&gt;debug&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; 
 &lt;span class="o"&gt;---------------------------&lt;/span&gt;
 
@@ -571,7 +597,7 @@ cache infrastructure so it doesn't cost anything more!&lt;/p&gt;
 and the second check but nevertheless this should minimize the possibility of
 receiving duplicate emails to an accepted level. Only time will tell though!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="Django"></category><category term="Python"></category></entry><entry><title>Bug in Python URLGrabber/cURL on Fedora and Amazon Linux</title><link href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/" rel="alternate"></link><updated>2013-11-29T14:05:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-11-29:blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/</id><summary type="html">&lt;p&gt;Accidentally I have discovered a bug for Python's
 URLGrabber module which has to do with change in behavior in libcurl.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlgrabber.grabber&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urlgrabber.grabber&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;URLGrabber&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;reget&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlgrab&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;/tmp/columnize.gem&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
@@ -627,7 +653,7 @@ producing quality software. Boy is it hard on newcomers though...&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2&gt;OpenShift Finally Introduces Environment Variables&lt;/h2&gt;
 &lt;p&gt;Yes! Finally! &lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;    rhc set-env VARIABLE1=VALUE1 -a myapp
+&lt;div class="highlight"&gt;&lt;pre&gt;    rhc set-env VARIABLE1=VALUE1 -a myapp
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -645,7 +671,7 @@ Since my needs are simple, my solution is simpler!&lt;/p&gt;
 living in a cave on a deserted island! The suite contains the &lt;code&gt;compare&lt;/code&gt; command
 which mathematically and visually annotates the difference between two images.&lt;/p&gt;
 &lt;p&gt;The third image above was produced with:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;compare difio_10.png difio_11.png difio_diff.png
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;compare difio_10.png difio_11.png difio_diff.png
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -682,7 +708,7 @@ that I'm comparing screen shots where only few areas changed
 &lt;/ul&gt;
 &lt;p&gt;I've prepared the baseline images with GIMP and tested couple of scenarios
 using &lt;code&gt;compare&lt;/code&gt;. Here's how it looks in code:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;PIL&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;PIL&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;
 &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;dogtail.utils&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;screenshot&lt;/span&gt;
 
 &lt;span class="n"&gt;baseline_histogram&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Image&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;/home/atodorov/baseline.png&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;histogram&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
@@ -731,7 +757,7 @@ from &lt;a href="http://pypi.python.org"&gt;http://pypi.python.org&lt;/a&gt; but
 &lt;h2&gt;Building the hotfix&lt;/h2&gt;
 &lt;p&gt;First of all we'd like to build a hotfix package. This will be the upstream
 version that we are currently using plus the patch for our critical issue:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
 &lt;span class="nv"&gt;$ &lt;/span&gt;tar -xzvf python-magic-0.4.3.tar.gz 
 &lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;python-magic-0.4.3
 &lt;span class="nv"&gt;$ &lt;/span&gt;curl https://github.com/ahupp/python-magic/pull/31.patch &lt;span class="p"&gt;|&lt;/span&gt; patch
@@ -745,7 +771,7 @@ increase the version string. In this case I will set it to &lt;code&gt;version='
 &lt;p&gt;Modify &lt;code&gt;setup.py&lt;/code&gt; and specify the hotfix version. Because this version is not on PyPI
 and will not be on OpenShift's local mirror you need to provide the location where it can
 be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parameter to &lt;code&gt;setup()&lt;/code&gt;. Here's how it looks:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/setup.py b/setup.py&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/setup.py b/setup.py&lt;/span&gt;
 &lt;span class="gh"&gt;index c6e837c..2daa2a9 100644&lt;/span&gt;
 &lt;span class="gd"&gt;--- a/setup.py&lt;/span&gt;
 &lt;span class="gi"&gt;+++ b/setup.py&lt;/span&gt;
@@ -761,7 +787,7 @@ be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parame
 
 
 &lt;p&gt;Now just git push to OpenShift and observe the console output:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;dependencies&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;YourAppName&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;dependencies&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;YourAppName&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;
 &lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Searching&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
 &lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Best&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
 &lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Downloading&lt;/span&gt; &lt;span class="n"&gt;https&lt;/span&gt;&lt;span class="o"&gt;://&lt;/span&gt;&lt;span class="n"&gt;s3&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;amazonaws&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;com&lt;/span&gt;&lt;span class="sr"&gt;/atodorov/blog/&lt;/span&gt;&lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
@@ -778,7 +804,7 @@ be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parame
 as well. Let me know if you have any experience with that.&lt;/p&gt;</summary><category term="tips"></category><category term="Python"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Using Django built-in template tags and filters in code</title><link href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="alternate"></link><updated>2013-04-06T22:26:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-06:blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/</id><summary type="html">&lt;p&gt;In case you are wondering how to use Django's
 &lt;a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/"&gt;built-in template tags and filters&lt;/a&gt;
 in your source code, not inside a template here is how:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.template.defaultfilters&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.template.defaultfilters&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1024&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="s"&gt;u&amp;#39;1.0 KB&amp;#39;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;filesizeformat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1020&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -800,7 +826,7 @@ round.&lt;/p&gt;
 &lt;p&gt;The file &lt;a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz"&gt;urls.txt&lt;/a&gt;
 contains 10000 unique paths from the &lt;a href="http://www.dif.io"&gt;dif.io&lt;/a&gt;
 website and looks like this:&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;/updates/Django-1.3.1/Django-1.3.4/7858/
+&lt;div class="highlight"&gt;&lt;pre&gt;/updates/Django-1.3.1/Django-1.3.4/7858/
 /updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
 /updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
 /updates/Data::Compare-1.22/Data::Compare-Type/8313/
@@ -811,7 +837,7 @@ website and looks like this:&lt;/p&gt;
 &lt;h2&gt;Test Automation&lt;/h2&gt;
 &lt;p&gt;I used the standard &lt;a href="http://docs.python.org/2/library/timeit.html"&gt;timeit&lt;/a&gt;
 module in Python.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/python&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/python&lt;/span&gt;
 
 &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
 
@@ -843,7 +869,7 @@ module in Python.&lt;/p&gt;
 executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
 on my system. After every test run the system was rebooted.
 Execution time in seconds is available below.&lt;/p&gt;
-&lt;div class="codehilite"&gt;&lt;pre&gt;MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
+&lt;div class="highlight"&gt;&lt;pre&gt;MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
 SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
 SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
 SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
