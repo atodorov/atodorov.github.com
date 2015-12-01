@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
+from pelican.settings import DEFAULT_CONFIG
+
 def build_url(label, base, end):
     from markdown.extensions import wikilinks
 
@@ -27,14 +29,29 @@ ARTICLE_SAVE_AS = ARTICLE_URL + 'index.html'
 TAG_URL = 'blog/categories/{slug}/'
 TAG_SAVE_AS = TAG_URL + 'index.html'
 
-MD_EXTENSIONS = ['codehilite', 'extra', 'wikilinks',
-                'nlbqx.nlbqx', 'nlcx.nlcx', 'mdbz.rhbz'
-                ]
-MD_EXTENSION_CONFIGS = {
-    'wikilinks' : {
-        'build_url' : build_url,
+# prepare for the change in
+# https://github.com/getpelican/pelican/pull/1638
+# expected in Pelican 3.7
+if type(DEFAULT_CONFIG['MD_EXTENSIONS']) == dict:
+    MD_EXTENSIONS = {}
+    MD_EXTENSIONS.update(DEFAULT_CONFIG['MD_EXTENSIONS'])
+    MD_EXTENSIONS.update({
+            'markdown.extensions.wikilinks' : {
+                'build_url' : build_url,
+            },
+            'nlbqx.nlbqx': {},
+            'nlcx.nlcx' : {},
+            'mdbz.rhbz' : {},
+        })
+else:
+    MD_EXTENSIONS = []
+    MD_EXTENSIONS += DEFAULT_CONFIG['MD_EXTENSIONS']
+    MD_EXTENSIONS += ['wikilinks', 'nlbqx.nlbqx', 'nlcx.nlcx', 'mdbz.rhbz']
+    MD_EXTENSION_CONFIGS = {
+        'wikilinks' : {
+            'build_url' : build_url,
+        }
     }
-}
 
 # static paths will be copied under the same name
 STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']
