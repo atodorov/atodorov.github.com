@@ -631,7 +631,7 @@ Hardware info
 **lshw added on 2015-12-01**
 
     # lshw
-
+    
     aero
         description: Laptop
         product: MacBookAir7,2 (System SKU#)
