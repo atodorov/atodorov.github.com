@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-01T12:44:00+02:00</updated><entry><title>Commit a file with the GitHub API and Python</title><link href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="alternate"></link><updated>2015-12-01T12:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/commit-a-file-with-the-github-api-and-python/</id><summary type="html">&lt;p&gt;How do you commit changes to a file using the GitHub API ?
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-01T13:34:00+02:00</updated><entry><title>Hosting Multiple Python WSGI Scripts on OpenShift</title><link href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="alternate"></link><updated>2015-12-01T13:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/</id><summary type="html">&lt;p&gt;With &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; you can host WSGI Python
+applications. By default the Python cartridge comes with a simple WSGI app
+and the following directory layout&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;./
+./.openshift/
+./requirements.txt
+./setup.py
+./wsgi.py
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I wanted to add my
+&lt;a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/"&gt;GitHub Bugzilla Hook&lt;/a&gt;
+in a subdirectory (git submodule actually) and simply reserve a URL which will
+be served by this app. My intention is also to add other small scripts to the
+same cartridge in order to better utilize the available resources.&lt;/p&gt;
+&lt;p&gt;Using &lt;code&gt;WSGIScriptAlias&lt;/code&gt; inside &lt;code&gt;.htaccess&lt;/code&gt; &lt;strong&gt;DOESN'T WORK&lt;/strong&gt;! OpenShift errors
+out when &lt;code&gt;WSGIScriptAlias&lt;/code&gt; is present. I suspect this to be a known limitation
+and I have an open support case with Red Hat to confirm this.&lt;/p&gt;
+&lt;p&gt;My workaround is to configure the URL paths from the &lt;code&gt;wsgi.py&lt;/code&gt; file in the root
+directory. For example&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/wsgi.py b/wsgi.py&lt;/span&gt;
+&lt;span class="gh"&gt;index c443581..20e2bf5 100644&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/wsgi.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/wsgi.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -12,7 +12,12 @@ except IOError:&lt;/span&gt;
+ # line, it&amp;#39;s possible required libraries won&amp;#39;t be in your searchable path
+ #
+ 
+&lt;span class="gi"&gt;+from github_bugzilla_hook import wsgi as ghbzh&lt;/span&gt;
+&lt;span class="gi"&gt;+&lt;/span&gt;
+ def application(environ, start_response):
+&lt;span class="gi"&gt;+    # custom paths&lt;/span&gt;
+&lt;span class="gi"&gt;+    if environ[&amp;#39;PATH_INFO&amp;#39;] == &amp;#39;/github-bugzilla-hook/&amp;#39;:&lt;/span&gt;
+&lt;span class="gi"&gt;+        return ghbzh.application(environ, start_response)&lt;/span&gt;
+ 
+     ctype = &amp;#39;text/plain&amp;#39;
+     if environ[&amp;#39;PATH_INFO&amp;#39;] == &amp;#39;/health&amp;#39;:
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This does the job and is almost the same as configuring the path in &lt;code&gt;.htaccess&lt;/code&gt;.
+I hope it helps you!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="OpenShift"></category></entry><entry><title>Commit a file with the GitHub API and Python</title><link href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="alternate"></link><updated>2015-12-01T12:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/commit-a-file-with-the-github-api-and-python/</id><summary type="html">&lt;p&gt;How do you commit changes to a file using the GitHub API ?
 I've found
 &lt;a href="http://www.levibotelho.com/development/commit-a-file-with-the-github-api/"&gt;this post&lt;/a&gt;
 by Levi Botelho which explains the necessary steps but without any code.

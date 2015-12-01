@@ -85,6 +85,61 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="bookmark" title="Permalink to Hosting Multiple Python WSGI Scripts on OpenShift">
+                <h2 class="post-title">
+                    Hosting Multiple Python WSGI Scripts on OpenShift
+                </h2>
+            </a>
+            <p>With <a href="http://openshift.com">OpenShift</a> you can host WSGI Python
+applications. By default the Python cartridge comes with a simple WSGI app
+and the following directory layout</p>
+<div class="highlight"><pre>./
+./.openshift/
+./requirements.txt
+./setup.py
+./wsgi.py
+</pre></div>
+
+
+<p>I wanted to add my
+<a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/">GitHub Bugzilla Hook</a>
+in a subdirectory (git submodule actually) and simply reserve a URL which will
+be served by this app. My intention is also to add other small scripts to the
+same cartridge in order to better utilize the available resources.</p>
+<p>Using <code>WSGIScriptAlias</code> inside <code>.htaccess</code> <strong>DOESN'T WORK</strong>! OpenShift errors
+out when <code>WSGIScriptAlias</code> is present. I suspect this to be a known limitation
+and I have an open support case with Red Hat to confirm this.</p>
+<p>My workaround is to configure the URL paths from the <code>wsgi.py</code> file in the root
+directory. For example</p>
+<div class="highlight"><pre><span class="gh">diff --git a/wsgi.py b/wsgi.py</span>
+<span class="gh">index c443581..20e2bf5 100644</span>
+<span class="gd">--- a/wsgi.py</span>
+<span class="gi">+++ b/wsgi.py</span>
+<span class="gu">@@ -12,7 +12,12 @@ except IOError:</span>
+ # line, it&#39;s possible required libraries won&#39;t be in your searchable path
+ #
+ 
+<span class="gi">+from github_bugzilla_hook import wsgi as ghbzh</span>
+<span class="gi">+</span>
+ def application(environ, start_response):
+<span class="gi">+    # custom paths</span>
+<span class="gi">+    if environ[&#39;PATH_INFO&#39;] == &#39;/github-bugzilla-hook/&#39;:</span>
+<span class="gi">+        return ghbzh.application(environ, start_response)</span>
+ 
+     ctype = &#39;text/plain&#39;
+     if environ[&#39;PATH_INFO&#39;] == &#39;/health&#39;:
+</pre></div>
+
+
+<p>This does the job and is almost the same as configuring the path in <code>.htaccess</code>.
+I hope it helps you!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 01 December 2015
+<p>There are <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="bookmark" title="Permalink to Commit a file with the GitHub API and Python">
                 <h2 class="post-title">
                     Commit a file with the GitHub API and Python
@@ -1441,95 +1496,6 @@ with kernel-3.10.0-229.14.1.el7.x86_64.</p>
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Wed 30 September 2015
 <p>There are <a href="http://atodorov.org/blog/2015/09/30/thunderbolt-to-vga-adapter-on-linux/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/" rel="bookmark" title="Permalink to Unit Testing Example - Bad Stub Design in DNF">
-                <h2 class="post-title">
-                    Unit Testing Example - Bad Stub Design in DNF
-                </h2>
-            </a>
-            <p>In software testing, usually unit testing, test stubs are programs that simulate
-the behaviors of external dependencies that a module undergoing the test depends
-on. Test stubs provide canned answers to calls made during the test.</p>
-<p>I've discovered an improperly written stub method in one of
-<a href="http://dnf.baseurl.org/">DNF</a>'s tests:</p>
-<div class="highlight"><span class="filename">tests/test_download.py</span><pre><span class="k">class</span> <span class="nc">DownloadCommandTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">stub_fn</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">):</span>
-            <span class="k">if</span> <span class="s">&#39;.src.rpm&#39;</span> <span class="ow">in</span> <span class="n">pkg_spec</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">Query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">sourcerpm</span><span class="o">=</span><span class="n">pkg_spec</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">q</span> <span class="o">=</span> <span class="n">Query</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">pkg</span> <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="n">q</span> <span class="k">if</span> <span class="n">pkg_spec</span> <span class="o">==</span> <span class="n">pkg</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-
-        <span class="n">cli</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">MagicMock</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">download</span><span class="o">.</span><span class="n">DownloadCommand</span><span class="p">(</span><span class="n">cli</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">cli</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">repos</span> <span class="o">=</span> <span class="n">dnf</span><span class="o">.</span><span class="n">repodict</span><span class="o">.</span><span class="n">RepoDict</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">_get_query</span> <span class="o">=</span> <span class="n">stub_fn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">_get_query_source</span> <span class="o">=</span> <span class="n">stub_fn</span>
-</pre></div>
-
-
-<p>The replaced methods look like this:</p>
-<div class="highlight"><span class="filename">plugins/download.py</span><pre>    <span class="k">def</span> <span class="nf">_get_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pkg_spec</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return a query to match a pkg_spec.&quot;&quot;&quot;</span>
-        <span class="n">subj</span> <span class="o">=</span> <span class="n">dnf</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">Subject</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">)</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">subj</span><span class="o">.</span><span class="n">get_best_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">sack</span><span class="p">)</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">available</span><span class="p">()</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">run</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;No package &quot;</span> <span class="o">+</span> <span class="n">pkg_spec</span> <span class="o">+</span> <span class="s">&quot; available.&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">dnf</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">PackageNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">q</span>
-
-    <span class="k">def</span> <span class="nf">_get_query_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pkg_spec</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;&quot;Return a query to match a source rpm file name.&quot;&quot;&quot;</span>
-        <span class="n">pkg_spec</span> <span class="o">=</span> <span class="n">pkg_spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c"># skip the .rpm</span>
-        <span class="n">nevra</span> <span class="o">=</span> <span class="n">hawkey</span><span class="o">.</span><span class="n">split_nevra</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">)</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">sack</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">available</span><span class="p">()</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
-                     <span class="n">release</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">release</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">arch</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">run</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;No package &quot;</span> <span class="o">+</span> <span class="n">pkg_spec</span> <span class="o">+</span> <span class="s">&quot; available.&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">dnf</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">PackageNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">q</span>
-</pre></div>
-
-
-<p>As seen here <em>stub_fn</em> replaces the <em>_get_query</em> methods from the class under
-test. At the time of writing this has probably seemed like a good idea to
-speed up writing the tests.</p>
-<p>The trouble is we should be replacing the external dependencies of <em>_get_query</em>
-(other parts of DNF essentially) and not methods from <em>DownloadCommand</em>. To
-understand why this is a bad idea check
-<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/113">PR #113</a>,
-which directly modifies <em>_get_query</em>. There's no way to test this patch
-with the current state of the test.</p>
-<p>So I took a few days to experiment and update the current test stubs. The
-result is 
-<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a>.
-The important bits are the <em>SackStub</em> and <em>SubjectStub</em> classes which hold
-information about the available RPM packages on the system. The rest are cosmetics
-to fit around the way the query objects are used (q.available(), q.latest(), q.filter()).
-The proposed design correctly overrides the external dependencies on
-<em>dnf.subject.Subject</em> and <em>self.base.sack</em> which are initialized before our
-plugin is loaded by DNF.</p>
-<p>I must say this is the first error of this kind I've seen in my QA practice so far.
-I have no idea if this was a minor oversight or something which happens more frequently
-in open source projects but it's a great example nevertheless.</p>
-<p>For those of you who'd like to get started on unit testing I can recommend the book
-<a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-by Roy Osherove!</p>
-<p><strong>UPDATE</strong>: Part 2 with more practical examples can be found
-<a href="/blog/2015/11/23/bad-stub-design-in-dnf/">here</a>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 25 September 2015
-<p>There are <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 

@@ -85,6 +85,61 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="bookmark" title="Permalink to Hosting Multiple Python WSGI Scripts on OpenShift">
+                <h2 class="post-title">
+                    Hosting Multiple Python WSGI Scripts on OpenShift
+                </h2>
+            </a>
+            <p>With <a href="http://openshift.com">OpenShift</a> you can host WSGI Python
+applications. By default the Python cartridge comes with a simple WSGI app
+and the following directory layout</p>
+<div class="highlight"><pre>./
+./.openshift/
+./requirements.txt
+./setup.py
+./wsgi.py
+</pre></div>
+
+
+<p>I wanted to add my
+<a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/">GitHub Bugzilla Hook</a>
+in a subdirectory (git submodule actually) and simply reserve a URL which will
+be served by this app. My intention is also to add other small scripts to the
+same cartridge in order to better utilize the available resources.</p>
+<p>Using <code>WSGIScriptAlias</code> inside <code>.htaccess</code> <strong>DOESN'T WORK</strong>! OpenShift errors
+out when <code>WSGIScriptAlias</code> is present. I suspect this to be a known limitation
+and I have an open support case with Red Hat to confirm this.</p>
+<p>My workaround is to configure the URL paths from the <code>wsgi.py</code> file in the root
+directory. For example</p>
+<div class="highlight"><pre><span class="gh">diff --git a/wsgi.py b/wsgi.py</span>
+<span class="gh">index c443581..20e2bf5 100644</span>
+<span class="gd">--- a/wsgi.py</span>
+<span class="gi">+++ b/wsgi.py</span>
+<span class="gu">@@ -12,7 +12,12 @@ except IOError:</span>
+ # line, it&#39;s possible required libraries won&#39;t be in your searchable path
+ #
+ 
+<span class="gi">+from github_bugzilla_hook import wsgi as ghbzh</span>
+<span class="gi">+</span>
+ def application(environ, start_response):
+<span class="gi">+    # custom paths</span>
+<span class="gi">+    if environ[&#39;PATH_INFO&#39;] == &#39;/github-bugzilla-hook/&#39;:</span>
+<span class="gi">+        return ghbzh.application(environ, start_response)</span>
+ 
+     ctype = &#39;text/plain&#39;
+     if environ[&#39;PATH_INFO&#39;] == &#39;/health&#39;:
+</pre></div>
+
+
+<p>This does the job and is almost the same as configuring the path in <code>.htaccess</code>.
+I hope it helps you!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 01 December 2015
+<p>There are <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="bookmark" title="Permalink to Commit a file with the GitHub API and Python">
                 <h2 class="post-title">
                     Commit a file with the GitHub API and Python
