@@ -70,7 +70,7 @@ PATH = 'content'
 TIMEZONE = 'Europe/Sofia'
 
 DEFAULT_LANG = u'en'
-LOCALE = 'en_US.UTF-8'
+LOCALE = 'en_US'
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
