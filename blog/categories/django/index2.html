@@ -85,6 +85,64 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/" rel="bookmark" title="Permalink to Django Tips: Using Cache for Stateful HTTP">
+                <h2 class="post-title">
+                    Django Tips: Using Cache for Stateful HTTP
+                </h2>
+            </a>
+            <p>How do you keep state when working with a stateless protocol like HTTP? 
+One possible answer is to use a cache back-end. </p>
+<p>I'm working on an IVR application demo with Django and Twilio. The caller
+will make multiple choices using the phone keyboard. All of this needs to be
+put together and sent back to another server for processing. In my views
+I've added a simple cache get/set lines to preserve the selection.</p>
+<p>Here's how it looks with actual application logic omitted</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">caller_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;From&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;from&#39;</span> <span class="p">:</span> <span class="n">caller_id</span><span class="p">}</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;step2.xml&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">step2</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">state</span><span class="p">[</span><span class="s">&#39;step2_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;final_step.xml&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">final_step</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">state</span><span class="p">[</span><span class="s">&#39;final_step_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+
+    <span class="n">Backend</span><span class="o">.</span><span class="n">process_user_selections</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;thank_you.xml&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>At each step Django will update the current state associated with this call and return
+a <a href="https://www.twilio.com/docs/api/twiml">TwiML</a> XML response. <code>CallSid</code> is a handy unique
+identifier provided by Twilio.</p>
+<p>I am using the latest <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a> version
+which properly works with directories. When going to production that will likely switch to
+Amazon ElastiCache.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 June 2013
+<p>There are <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="bookmark" title="Permalink to Using Django built-in template tags and filters in code">
                 <h2 class="post-title">
                     Using Django built-in template tags and filters in code

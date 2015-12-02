@@ -85,6 +85,57 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/" rel="bookmark" title="Permalink to Why VMware Multi-Hypervisor Manager Architecture Is Wrong">
+                <h2 class="post-title">
+                    Why VMware Multi-Hypervisor Manager Architecture Is Wrong
+                </h2>
+            </a>
+            <p>Today I've visited the annual 
+<a href="http://www.openhouse.vmware-bulgaria.com/">VMware Open House Event</a> in Sofia.
+One of the sessions discussed their product 
+<a href="http://www.vmware.com/support/mhm/doc/vcenter-multi-hypervisor-manager-10-release-notes.html">vCenter Multi-Hypervisor Manager</a>
+and the developers explained their architecture and technology behind it. 
+I think they are wrong.</p>
+<p><img src="/images/vmware_mhm_architecture.png" alt="MHM Architecture" style="clear:both;display:block;"/>
+Image taken from product release notes.</p>
+<p>As shown above the purple-orange components are the MHM ones. They are designed as
+plug-ins to the vCenter product and can not function as stand alone products.
+vCenter MHM Server is responsible for communicating with 3rd party hypervisors
+and then talks back to the MHM Extension in vCenter which feeds the MHM Plug-In (the UI).
+I see three bad design decisions here: </p>
+<p>1) The plugin architecture makes both the management layer and the UI a separate module.
+As was shown in a demo session the user can not manage/visualize ESX and Hyper-V hosts/VMs
+at the same time. They are managed and visualized in separate views. 
+This leads to non uniform user experience. Not to mention both UIs are different because the
+supported hypervisor capabilities are different. -1 for user experience. </p>
+<p>2) From what I understand both vCenter and MHM Extension provide API access. MHM one is not public yet.
+Customers are using this API to build their own scripts around the infrastructure. For a customer
+this means duplicating effort and maintaining scripts that talk to two separate APIs, although they
+will be very similar to one another. -1 for making it easy on the customer.</p>
+<p>3) From development point of view the top two components are not necessary. They introduce
+extra development and management costs to the product. -1 for product maintainability.</p>
+<h2>The Alternative</h2>
+<p>One could design the same product in the fashion that <a href="http://libvirt.org">libvirt</a> does - 
+abstract all hypervisor details and provide a common API to build applications against.
+In this case vCenter Server will be the application on top.
+This interface will also report hypervisor capabilities so that the UI will be disabled
+where appropriate. </p>
+<p><img src="/images/libvirt-driver-arch.png" alt="Libvirt Driver Architecture" style="clear:both;display:block;"/>
+Image taken from <a href="http://libvirt.org/api.html">http://libvirt.org/api.html</a></p>
+<p>I think libvirt's approach is much cleaner and easier to maintain in the long term.</p>
+<p>Indeed I've asked the question why not use libvirt - 
+it already supports ESX and Hyper-V as well as bunch of other hypervisors. I didn't get a clear
+answer on that, just that the team was looking at it, evaluated libvirt but opted to go
+another way. </p>
+<p>I still feel VMware has not learned how to do the open source dance as well as others do.
+What do you think? </p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 30 May 2013
+<p>There are <a href="http://atodorov.org/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/" rel="bookmark" title="Permalink to Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6">
                 <h2 class="post-title">
                     Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6
@@ -1309,44 +1360,6 @@ I will ask them to follow this thread and reply to your questions.</p>
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Wed 03 April 2013
 <p>There are <a href="http://atodorov.org/blog/2013/04/03/what-runs-your-startup-ucha.se/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/" rel="bookmark" title="Permalink to Bug in the Fridge">
-                <h2 class="post-title">
-                    Bug in the Fridge
-                </h2>
-            </a>
-            <p><img src="/images/liebherr_kbgb_3864.jpg" alt="Liebherr KBGB 3864" style="float:left; margin-right: 20px;" /></p>
-<p>Once you've been into
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=quality%20assurance&linkCode=ur2&rh=i%3Aaps%2Ck%3Aquality%20assurance&sprefix=quality%20ass%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Daps">Quality Assurance</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-for 5+ years you start to notice <a href="/blog/categories/qa/">bugs everywhere</a>
-and develop a sixth sense for it. Today I found a bug in my
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=liebherr&linkCode=ur2&rh=n%3A2619525011%2Ck%3Aliebherr&sprefix=Liebherr%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Dappliances">Liebherr</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-KBGB 3864 refrigerator, caused by what looks like a race-condition.</p>
-<p>This appliance starts beeping in case the door is left open for more than 60 seconds.
-The alarm stops if door is closed or can be muted manually while the door is still open.</p>
-<h2>The Bug</h2>
-<p>It happened so that I had the door open for nearly one minute and as it was closing 
-I heard a beep. This time however the beeping didn't stop after the door had closed.
-The alarm continued beeping with the door closed so I tried to re-open and close it again.
-It didn't stop! I had to open the door and manually mute the alarm for it to stop. </p>
-<div style="display:block; clear:both;">&nbsp;</div>
-
-<h2>The Root Cause</h2>
-<p>While not entirely sure, I think the reason for this malfunction
-was a race-condition. The alarm went on at nearly the same time when the 
-controlling timer should have gone off (when closing the door).</p>
-<h2>Steps To Reproduce</h2>
-<p>I tried reproducing several times afterwards by opening and closing the door
-at the last possible moment. I used a stop-watch to time my actions. However
-I wasn't able to reproduce twice. Every time I tried, there was only one single
-beep as the door was closing and no more.</p>
-<p>I guess then, like we say in QE, <em>WORKS FOR ME</em>!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 29 March 2013
-<p>There are <a href="http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 

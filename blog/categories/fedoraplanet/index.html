@@ -85,6 +85,338 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="bookmark" title="Permalink to Automatic Upstream Dependency Testing">
+                <h2 class="post-title">
+                    Automatic Upstream Dependency Testing
+                </h2>
+            </a>
+            <p>Ever since
+<a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">RHEL 7.2 python-libs broke s3cmd</a>
+I've been pondering an age old problem: <em>How do I know if my software works with the
+latest upstream dependencies ? How can I pro-actively monitor for new versions
+and add them to my test matrix ?</em></p>
+<p>Mixing together my previous experience with
+<a href="http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/">Difio</a>
+and monitoring upstream sources,
+and <a href="https://twitter.com/ForbesLindesay">Forbes Lindesay's</a> <em>GitHub Automation</em> talk
+at <a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/">DEVit Conf</a> I came
+together with a plan:</p>
+<ul>
+<li>Make an application which will execute when new upstream version is available;</li>
+<li><a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/">Automatically update <code>.travis.yml</code></a>
+for the projects I'm interested in;</li>
+<li>Let Travis-CI execute my test suite for all available upstream versions;</li>
+<li>Profit!</li>
+</ul>
+<h2>How Does It Work</h2>
+<p>First we need to monitor upstream! RubyGems.org has nice
+<a href="http://guides.rubygems.org/rubygems-org-api/#webhook-methods">webhooks interface</a>,
+you can even trigger on individual packages. PyPI however doesn't have anything
+like this :(. My solution is to run a cron job every hour and parse their RSS
+stream for newly released packages. This has been working previously for Difio
+so I re-used one function from the code.</p>
+<p>After finding anything we're interested in comes the hard part - automatically
+updating <code>.travis.yml</code> using the GitHub API. I've described this in more detail
+<a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/">here</a>. This time
+I've slightly modified the code to update only when needed and accept more
+parameters so it can be reused.</p>
+<p>Travis-CI has a clean interface to specify environment variables and
+<a href="https://docs.travis-ci.com/user/environment-variables/#Defining-Multiple-Variables-per-Item">defining several</a>
+of them crates a test matrix. This is exactly what I'm doing.
+<code>.travis.yml</code> is updated with a new ENV setting, which determines the upstream
+package version. After commit new build is triggered which includes the expanded
+test matrix.</p>
+<h2>Example</h2>
+<p><img alt="Travis-CI build log" src="http://atodorov.org/images/travisci_matrix.png" title="Travis-CI build log" /></p>
+<p>Imagine that our <em>Project 2501</em> depends on FOO version <em>0.3.1</em>. The
+<a href="https://travis-ci.org/atodorov/bztest/builds">build log</a> illustrates what
+happened:</p>
+<ul>
+<li>Build #9 is what we've tested with <em>FOO-0.3.1</em> and released to production.
+Test result is PASS!</li>
+<li>Build #10 - meanwhile upstream releases <em>FOO-0.3.2</em> which causes our project
+to break. We're not aware of this and continue developing new features
+while all test results still PASS! When our customers upgrade their systems
+<em>Project 2501</em> will break ! Tests didn't catch it because test matrix wasn't
+updated. Please
+ignore the actual commit message in the example! I've used the same repository
+for the dummy dependency package.</li>
+<li>Build #11 - the monitoring solution finds <em>FOO-0.3.2</em> and updates the test
+matrix automatically. The build immediately breaks! More precisely the
+<a href="https://travis-ci.org/atodorov/bztest/builds/94263181">test with version <em>0.3.2</em> fails</a>!</li>
+<li>Build #12 - we've alerted FOO.org about their problem and they've released
+<em>FOO-0.3.3</em>. Our monitor has found that and updated the test matrix.
+However <a href="https://travis-ci.org/atodorov/bztest/builds/94270592">the 0.3.2 test job still fails</a>!</li>
+<li>Build #13 - we decide to workaround the 0.3.2 failure or simply handle the
+error gracefully. In this example I've removed version 0.3.2 from the test
+matrix to simulate that. In reality I wouldn't touch <code>.travis.yml</code> but instead
+update my application and tests to check for that particular version.
+All test results are PASS again!</li>
+</ul>
+<p>Btw Build #11 above was triggered manually (./monitor.py) while Build #12
+came from OpenShit, my hosting environment.</p>
+<p>At present I have this monitoring enabled for my
+<a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/">new Markdown extensions</a>
+and will also add it to <a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>
+once it migrates to Travis-CI (it uses drone.io now).</p>
+<h2>Enough Talk, Show me the Code</h2>
+<div class="highlight"><span class="filename">monitor.py</span><pre><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">httplib</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">xml.dom.minidom</span> <span class="kn">import</span> <span class="n">parseString</span>
+
+<span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">post_data</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="c"># GitHub requires a valid UA string</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;User-Agent&#39;</span> <span class="p">:</span> <span class="s">&#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120601 Firefox/10.0.5&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c"># shortcut for GitHub API calls</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">&quot;https://api.github.com</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">url</span>
+
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;api.github.com&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&quot;GITHUB_TOKEN&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Set the GITHUB_TOKEN variable&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s">&#39;token </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;GITHUB_TOKEN&#39;</span><span class="p">]</span>
+            <span class="p">})</span>
+
+    <span class="p">(</span><span class="n">proto</span><span class="p">,</span> <span class="n">host_path</span><span class="p">)</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;//&#39;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">host_port</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">=</span> <span class="n">host_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">path</span>
+
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;https&#39;</span><span class="p">):</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPSConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
+
+
+    <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;GET&#39;</span>
+    <span class="k">if</span> <span class="n">post_data</span><span class="p">:</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;POST&#39;</span>
+        <span class="n">post_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_data</span><span class="p">)</span>
+
+    <span class="n">conn</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">post_data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">getresponse</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;404 - </span><span class="si">%s</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="s">&#39;replace&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="c"># not a JSON response</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">post_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scan the PyPI RSS feeds to look for new packages.</span>
+<span class="sd">        If name is found in config then execute the specified callback.</span>
+
+<span class="sd">        @config is a dict with keys matching package names and values</span>
+<span class="sd">        are lists of dicts</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;cb&#39; : a_callback,</span>
+<span class="sd">                &#39;args&#39; : dict</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rss</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;https://pypi.python.org/pypi?:action=rss&quot;</span><span class="p">)</span>
+    <span class="n">dom</span> <span class="o">=</span> <span class="n">parseString</span><span class="p">(</span><span class="n">rss</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pub_date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;pubDate&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">=</span> <span class="n">title</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">released_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">pub_date</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">print</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="s">&quot;found in config&quot;</span>
+                <span class="k">for</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">args</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;args&#39;</span><span class="p">]</span>
+                        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                            <span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                            <span class="s">&#39;version&#39;</span> <span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                            <span class="s">&#39;released_on&#39;</span> <span class="p">:</span> <span class="n">released_on</span>
+                        <span class="p">})</span>
+
+                        <span class="c"># execute the call back</span>
+                        <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;cb&#39;</span><span class="p">](</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="n">e</span>
+                        <span class="k">continue</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">e</span>
+            <span class="k">continue</span>
+
+<span class="k">def</span> <span class="nf">update_travis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">new_version</span><span class="p">):</span>
+    <span class="n">travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="n">new_ver_line</span> <span class="o">=</span> <span class="s">&quot;  - VERSION=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">new_version</span>
+    <span class="k">if</span> <span class="n">travis</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">new_ver_line</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">travis</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="n">new_ver_line</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">return</span> <span class="n">travis</span>
+
+
+<span class="k">def</span> <span class="nf">update_github</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update GitHub via API</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">GITHUB_REPO</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_REPO&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_BRANCH</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_BRANCH&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_FILE</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_FILE&#39;</span><span class="p">)</span>
+
+    <span class="c"># step 1: Get a reference to HEAD</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">))</span>
+    <span class="n">HEAD</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
+        <span class="s">&#39;url&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="c"># step 2: Grab the commit that HEAD points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
+    <span class="c"># remove what we don&#39;t need for clarity</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">,</span> <span class="s">&#39;tree&#39;</span><span class="p">]:</span>
+            <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="c"># step 4: Get a hold of the tree that the commit points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># intermediate step: get the latest content from GitHub and make an updated version</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">GITHUB_FILE</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span> <span class="c"># get the blob from the tree</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;content&#39;</span><span class="p">])</span>
+            <span class="k">break</span>
+
+    <span class="n">old_travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="n">new_travis</span> <span class="o">=</span> <span class="n">update_travis</span><span class="p">(</span><span class="n">old_travis</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;version&#39;</span><span class="p">))</span>
+
+    <span class="c"># bail out if nothing changed</span>
+    <span class="k">if</span> <span class="n">new_travis</span> <span class="o">==</span> <span class="n">old_travis</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;new == old, bailing out&quot;</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="k">return</span>
+
+    <span class="c">####</span>
+    <span class="c">#### WARNING WRITE OPERATIONS BELOW</span>
+    <span class="c">####</span>
+
+    <span class="c"># step 3: Post your new file to the server</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/blobs&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&#39;content&#39;</span> <span class="p">:</span> <span class="n">new_travis</span><span class="p">,</span>
+                    <span class="s">&#39;encoding&#39;</span> <span class="p">:</span> <span class="s">&#39;utf-8&#39;</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 5: Create a tree containing your new file</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/trees&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;base_tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
+                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="n">GITHUB_FILE</span><span class="p">,</span>
+                        <span class="s">&quot;mode&quot;</span><span class="p">:</span> <span class="s">&quot;100644&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;blob&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                    <span class="p">}]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 6: Create a new commit</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/commits&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;message&quot;</span><span class="p">:</span> <span class="s">&quot;New upstream dependency found! Auto update .travis.yml&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;parents&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]],</span>
+                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 7: Update HEAD, but don&#39;t force it!</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">),</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">):</span> <span class="c"># PASS</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c"># FAIL</span>
+        <span class="k">print</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">]</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;atodorov-test&quot;</span> <span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/bztest&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s">&quot;Markdown&quot;</span> <span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/Markdown-Bugzilla-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-Code-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-BlockQuote-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="c"># check the RSS to see if we have something new</span>
+    <span class="n">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 02 December 2015
+<p>There are <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/#disqus_thread">comments</a>.</p>            </p>
+        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="bookmark" title="Permalink to Hosting Multiple Python WSGI Scripts on OpenShift">
                 <h2 class="post-title">
                     Hosting Multiple Python WSGI Scripts on OpenShift
@@ -1496,58 +1828,6 @@ by Roy Osherove!</p>
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Fri 25 September 2015
 <p>There are <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>            </p>
-        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="bookmark" title="Permalink to 4000+ bugs in Fedora - checksec failures">
-                <h2 class="post-title">
-                    4000+ bugs in Fedora - checksec failures
-                </h2>
-            </a>
-            <p>In the last week I've been trying to figure out how many packages
-conform to the new
-<a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages">Harden All Packages</a>
-policy in Fedora!</p>
-<p>From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
-From them 4489 are reported as failed <code>checksec</code>.</p>
-<p>What you should see as the output from <code>checksec is</code></p>
-<div class="highlight"><pre>Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
-Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
-</pre></div>
-
-
-<p>The first line is for binaries, the second one for libraries b/c
-DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
-e.g. <code>%{_libdir}/foo/</code> and I've tried to exclude them unless
-other offenses are found. The script which does this is
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect">checksec-collect</a>.</p>
-<p>Most often I'm seeing <em>Partial RELRO</em>, <em>No canary found</em> and <em>No PIE</em> errors.
-Since all packages potentially process untrusted input, it makes sense for all of them
-to be hardened and enhance the security of Fedora. That's why all of these errors
-should be considered valid bugs.</p>
-<h2>Attn package maintainers</h2>
-<p>Please see if your package is in the list and try to fix it or let me know
-why it should be excluded, for example it's a boot loader and doesn't function
-properly with hardening enabled. The full list is available at
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log">GitHub</a>.</p>
-<p>For more information about the different protection mechanisms see the following
-links:</p>
-<ul>
-<li><a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html">Partial vs Full RELRO</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries">Stack canaries</a></li>
-<li><a href="https://en.wikipedia.org/wiki/NX_bit#Linux">NX memory protection</a></li>
-<li><a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/">Position Independent Executables</a></li>
-<li><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath">RPATH</a></li>
-<li><a href="http://blog.tremily.us/posts/rpath/">RUNPATH</a></li>
-</ul>
-<p><strong>UPDATE 2015-09-17</strong></p>
-<p>I've posted my findings on 
-<a href="https://lists.fedoraproject.org/pipermail/devel/2015-September/thread.html">fedora-devel</a>
-and the comments are more than interesting even revealing an old bug in libtool.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 16 September 2015
-<p>There are <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/#disqus_thread">comments</a>.</p>            </p>
         </div>
         <hr>
 
