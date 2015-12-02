@@ -3,6 +3,7 @@ Headline: with Travis-CI, GitHub and Python
 date: 2015-12-02 10:34
 comments: true
 Tags: fedora.planet, Python, OpenShift, Django, QA
+og_image: images/travisci_matrix.png
 
 Ever since
 [RHEL 7.2 python-libs broke s3cmd]({filename}2015-11-24-python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd.markdown)
