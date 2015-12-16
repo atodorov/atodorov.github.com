@@ -1,0 +1,26 @@
+Title: virtio vs. rtl8139
+date: 2015-12-16 14:34
+comments: true
+Tags: fedora.planet
+
+I've been doing some tests with KVM virtual machines and been launching them
+with virt-install. For some reason the VM wasn't activating its NIC.
+Changing the interface model from virtio to rtl8139 made it work again:
+
+    :::diff
+             virt-install --name $VM_NAME --ram 1024 --os-type=linux --os-variant=rhel7 \
+    -                    --disk none --network bridge=virbr0,model=virtio,mac=$VM_MAC \
+    +                    --disk none --network bridge=virbr0,model=rtl8139,mac=$VM_MAC \
+                         --noreboot --graphics vnc \
+                         --cdrom /var/tmp/tmp*/images/boot.iso --boot cdrom &
+
+virt-install(1) says:
+
+    model
+        Network device model as seen by the guest. Value can be any nic model supported by the hypervisor, e.g.: 'e1000',
+        'rtl8139', 'virtio', ...
+
+I'm not clear if this configures what drivers to be used for the NIC inside the
+guest or what is the driver of the host NIC. At this moment I don't know why
+changing the value causes networking in the guest to fail. If you do know please
+comment below. Thanks!
