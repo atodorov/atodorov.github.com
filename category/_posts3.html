@@ -84,6 +84,61 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/" rel="bookmark" title="Permalink to Fixing Display Brightness on MacBook Air with RHEL 7">
+                <h2 class="post-title">
+                    Fixing Display Brightness on MacBook Air with RHEL 7
+                </h2>
+            </a>
+            <p>One issue with RHEL/CentOS/Fedora on <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> laptops is brightness control
+and backlight behavior after suspend/resume. I've found the solution 
+<a href="http://mattoncloud.org/2014/02/05/fedora-20-on-a-macbook-air/">here</a>
+and only tweaked it slightly for my use case.</p>
+<h2>mba6x_bl doesn't load automatically</h2>
+<p>The reason being the driver matches older hardware:</p>
+<div class="highlight"><pre><span class="nv">$ </span>modinfo mba6x_bl
+filename:       /lib/modules/3.10.0-229.1.2.el7.x86_64/extra/mba6x_bl/mba6x_bl.ko
+<span class="nb">alias</span>:          dmi:*:pnMacBookAir6*
+license:        GPL
+description:    MacBook Air 6,1 and 6,2 backlight driver
+author:         Patrik Jakobsson &lt;patrik.r.jakobsson@gmail.com&gt;
+rhelversion:    7.1
+srcversion:     4D069C8EB0E470AF27E7F8D
+depends:        video
+vermagic:       3.10.0-229.1.2.el7.x86_64 SMP mod_unload modversions
+</pre></div>
+
+
+<p>My system is <strong>MacBookAir7,2</strong> and doesn't match the module alias. So a 
+<a href="https://github.com/patjak/mba6x_bl/pull/25">quick fix</a> was needed.
+For more info about <code>MODULE_ALIAS</code> see
+<a href="https://wiki.archlinux.org/index.php/Modalias">ArchWiki</a>.
+Alternatively on Red Hat based systems you can place a config file
+under <code>/etc/sysconfig/modules</code>, see 
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Persistent_Module_Loading.html">the docs</a>
+for more details.</p>
+<h2>intel_backlight driver is in the way</h2>
+<p>On older systems mba6x_bl doesn't get used automatically. The problem is the offending
+intel_backlight driver which gets used instead. To workaround it add this xorg.conf snippet:</p>
+<div class="highlight"><pre><span class="nv">$ </span>cat /etc/X11/xorg.conf.d/98-mba_bl.conf
+Section <span class="s2">&quot;Device&quot;</span>
+    Identifier      <span class="s2">&quot;Intel Graphics&quot;</span>
+    Driver          <span class="s2">&quot;intel&quot;</span>
+    Option          <span class="s2">&quot;Backlight&quot;</span>     <span class="s2">&quot;mba6x_backlight&quot;</span>
+EndSection
+</pre></div>
+
+
+<p>For more info see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=989555#c19">RHBZ 989555</a>.</p>
+<h2>Everything in one go</h2>
+<p>If you are using RHEL 7 or CentOS 7 (version 7.1 required) instead of Fedora you can take
+a look at my <a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 29 April 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/04/29/fixing-display-brightness-on-macbook-air-with-rhel-7/#disqus_thread">comments</a>.</p>        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/27/how-to-enable-backspace-key-to-navigate-back-in-firefox/" rel="bookmark" title="Permalink to How to Enable backspace Key to Navigate Back in Firefox">
                 <h2 class="post-title">
                     How to Enable backspace Key to Navigate Back in Firefox
@@ -2195,83 +2250,6 @@ into this to figure out exactly where the slowliness comes from.</p>
                  on Fri 07 November 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 1">
-                <h2 class="post-title">
-                    Speeding up Celery Backends, Part 1
-                </h2>
-            </a>
-            <p>I'm working on an application which fires a lot of Celery tasks - the more
-the better! Unfortunately Celery backends seem to be rather slow :(.
-Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
-command for Django I was able to capture some metrics:</p>
-<ul>
-<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
-<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
-<li>Memory backend: around 3000 tasks/sec</li>
-</ul>
-<p>Not bad but I need in the order of 10000 tasks created per sec!
-The other noticeable thing is that memory backend isn't much faster compared to
-the filesystem one! NB: all of these backends actually come from the kombu package.</p>
-<h2>Why is Celery slow ?</h2>
-<p>Using <code>celery_load_test.py</code> together with 
-<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
-was able to pin-point some problematic areas:</p>
-<ul>
-<li>
-<p><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
-self.encode_body() into base64 encoded string. Fixed with custom transport backend
-I called fastmemory which redefines the body_encoding property:</p>
-<div class="highlight"><pre><span class="nd">@cached_property</span>
-<span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">None</span>
-</pre></div>
-
-
-</li>
-<li>
-<p>Celery uses json or pickle (or other) serializers to serialize the data.
-While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
-Replacing with a custom serializer which just returns
-the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
-
-<span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">s</span>
-
-<span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">s</span>
-
-<span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
-        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
-        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
-</pre></div>
-
-
-</li>
-<li>
-<p><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
-which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
-to 7000 tasks/sec.</p>
-</li>
-</ul>
-<p>It's clear that a constant UUID is not of any practical use but serves well to illustrate
-how much does this function affect performance. </p>
-<p><strong>Note:</strong>
-Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
-the most optimized transport backend. I'm not sure why is this. One possibility is the random
-UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
-generating more random numbers becomes slower. If you know better please tell me!</p>
-<p>I will be looking for a better understanding
-of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I'll be
-exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
-If you have any suggestions or pointers please share them in the comments.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 05 November 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/#disqus_thread">comments</a>.</p>        </div>
         <hr>
 
     <!-- Pager -->

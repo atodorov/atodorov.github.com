@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-17T09:34:00+02:00</updated><entry><title>Facebook is Bugging me</title><link href="http://atodorov.org/blog/2015/12/17/facebook-is-bugging-me/" rel="alternate"></link><updated>2015-12-17T09:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-17:blog/2015/12/17/facebook-is-bugging-me/</id><summary type="html">&lt;p&gt;&lt;img alt="Facebook icon" src="/images/facebook_android_icon_small.png" title="Facebook icon" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-17T14:34:00+02:00</updated><entry><title>Logging VM installation to stdout</title><link href="http://atodorov.org/blog/2015/12/17/logging-vm-installation-to-stdout/" rel="alternate"></link><updated>2015-12-17T14:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-17:blog/2015/12/17/logging-vm-installation-to-stdout/</id><summary type="html">&lt;p&gt;Recently I've been using virt-install to create virtual machines inside some
+automated tests and then ssh'ing to the VM guest and inspecting the results.
+What's been bothering me is that while the VM is installing I can't see what's
+going on. The solution is to log everything to stdout which is then collected
+by my test harness and archived on the file server. To do this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;setenforce 0
+virt-install ... -x &amp;quot;console=ttyS0&amp;quot; --serial dev,path=/dev/pts/1
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This puts SELinux into Permissive mode, instructs the VM guest to use a serial
+console and then redirects the serial console to stdout on the host. If you have
+SELinux in Enforcing mode then you get the following error:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;unable to set security context &amp;#39;system_u:object_r:svirt_image_t:s0:c43,c440&amp;#39; on &amp;#39;/dev/pts/1&amp;#39;: Permission denied
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; if you execute this from a script and there is no controlly tty it will
+fail. The next best thing you can do is log to a file with
+&lt;code&gt;--serial file,path=guest.log&lt;/code&gt; and collect this file for later!&lt;/p&gt;</summary><category term="fedora.planet"></category></entry><entry><title>Facebook is Bugging me</title><link href="http://atodorov.org/blog/2015/12/17/facebook-is-bugging-me/" rel="alternate"></link><updated>2015-12-17T09:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-17:blog/2015/12/17/facebook-is-bugging-me/</id><summary type="html">&lt;p&gt;&lt;img alt="Facebook icon" src="/images/facebook_android_icon_small.png" title="Facebook icon" /&gt;&lt;/p&gt;
 &lt;p&gt;Facebook for Android version 55.0.0.18.66 broke the home screen icon title.
 It reads &lt;code&gt;false&lt;/code&gt; instead of &lt;code&gt;Facebook&lt;/code&gt;. This is now fixed in version 58.0.0.28.70.
 I wonder how they managed to get this slip through. Also isn't Google
