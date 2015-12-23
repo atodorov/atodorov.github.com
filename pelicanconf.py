@@ -10,6 +10,7 @@ def build_url(label, base, end):
     u = {
         'MacBook'     : 'http://amzn.to/1RdviyD',
         'MacBook Air' : 'http://amzn.to/1RdviyD',
+        'Tradeo' : 'http://tradeo.com',
     }
 
     if u.has_key(label):
