@@ -1,5 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-17T14:34:00+02:00</updated><entry><title>Logging VM installation to stdout</title><link href="http://atodorov.org/blog/2015/12/17/logging-vm-installation-to-stdout/" rel="alternate"></link><updated>2015-12-17T14:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-17:blog/2015/12/17/logging-vm-installation-to-stdout/</id><summary type="html">&lt;p&gt;Recently I've been using virt-install to create virtual machines inside some
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-23T11:34:00+02:00</updated><entry><title>Speeding up RSpec and PostgreSQL tests</title><link href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="alternate"></link><updated>2015-12-23T11:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-23:blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/</id><summary type="html">&lt;p&gt;I've been working with &lt;a class="wikilink" href="http://tradeo.com"&gt;Tradeo&lt;/a&gt; on testing one of their applications. The app
+is standard Ruby on Rails application with over 1200 tests written with RSpec.
+And they were horribly slow. On my &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt; the entire test suite
+took 27 minutes to execute. On the Jenkins slaves it took over an hour.
+After a few changes Jenkins now takes 15 minutes to execute the test suite.
+Locally it takes around 11 minutes!&lt;/p&gt;
+&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;I've measured the speed (with Time.now) at which individual examples execute
+and it was quickly apparent they were taking a lot of time cleaning the DB. The
+offending code in question was:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;before&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:all&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="no"&gt;DatabaseCleaner&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;clean_with&lt;/span&gt; &lt;span class="ss"&gt;:truncation&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is truncating the tables quite often but it turns out this is a very
+expensive operation on tables with small number of records. I've measured it
+locally around 2.5 seconds. Check out this
+&lt;a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/"&gt;SO thread&lt;/a&gt;
+which describes pretty much the same symptoms:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
+Tailing the logs on our CI server (Ubuntu 10.04 LTS) .... a build takes 84 minutes.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This
+&lt;a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/11423886#11423886"&gt;excellent answer&lt;/a&gt;
+explains why this is happening:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
+    Different fsync configuration or the use of rotational media instead of
+    SSDs could also be at fault.
+
+(b) TRUNCATE has a fixed cost, but not necessarily slower than DELETE,
+    plus it does more work.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;The Fix&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;before&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:suite&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="no"&gt;DatabaseCleaner&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;clean_with&lt;/span&gt; &lt;span class="ss"&gt;:truncation&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+
+&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;before&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:all&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="no"&gt;DatabaseCleaner&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;clean_with&lt;/span&gt; &lt;span class="ss"&gt;:deletion&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;before(:suite)&lt;/code&gt; will truncate tables every time we run rspec, which is when we
+launch the entire test suite. This is to account for the possible side effects
+of DELETE in the future (see the SO thread). Then &lt;code&gt;before(:all)&lt;/code&gt; aka
+&lt;code&gt;before(:context)&lt;/code&gt; simply deletes the records which is significantly faster!&lt;/p&gt;
+&lt;p&gt;Also updated the CI servers &lt;code&gt;postgresql.conf&lt;/code&gt; to&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;fsync=off
+full_page_writes=off
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The entire build/test process now takes only 15 minutes! Only one test broke
+due to PostgreSQL returning records in a different order, but it's the test
+case fault not handling this in the first place!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; Using fsync=off with rotational media pretty much hides any improvements
+introduced by updating the DatabaseCleaner strategy.&lt;/p&gt;
+&lt;h2&gt;What's Next&lt;/h2&gt;
+&lt;p&gt;There are several other things worth trying:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Use UNIX domain sockets instead of TCP/IP (localhost) to connect to PostgreSQL;&lt;/li&gt;
+&lt;li&gt;Load the entire
+&lt;a href="http://magazine.redhat.com/2007/12/12/tip-from-an-rhce-memory-storage-on-postgresql/"&gt;PostgreSQL partition in memory&lt;/a&gt;;&lt;/li&gt;
+&lt;li&gt;Don't delete anything from the database, except once in &lt;code&gt;before(:suite)&lt;/code&gt;.
+If any tests need a particular DB state they have to set this up on their own
+instead of relying on a global cleanup process. I expect this to break quite
+a few examples.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;After the changes and with my crude measurements I have individual examples
+taking 0.31 seconds to execute. Interestingly before and after take less than
+a second while the example code takes around 0.15 seconds. I have no idea where
+the rest 0.15 seconds are spent. My current speculation is probably RSpec.
+This is 50% of the execution time and is also worth looking into!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Ruby"></category></entry><entry><title>Logging VM installation to stdout</title><link href="http://atodorov.org/blog/2015/12/17/logging-vm-installation-to-stdout/" rel="alternate"></link><updated>2015-12-17T14:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-17:blog/2015/12/17/logging-vm-installation-to-stdout/</id><summary type="html">&lt;p&gt;Recently I've been using virt-install to create virtual machines inside some
 automated tests and then ssh'ing to the VM guest and inspecting the results.
 What's been bothering me is that while the VM is installing I can't see what's
 going on. The solution is to log everything to stdout which is then collected

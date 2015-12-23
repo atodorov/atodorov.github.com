@@ -87,6 +87,65 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 2">
+                <h2 class="post-title">
+                    Speeding up Celery Backends, Part 2
+                </h2>
+            </a>
+            <p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+post I looked at a few celery backends and discovered they didn't meet my needs.
+Why is the Celery stack slow? How slow is it actually?</p>
+<h2>How slow is Celery in practice</h2>
+<ul>
+<li>Queue: 500`000 msg/sec</li>
+<li>Kombu:  14`000 msg/sec</li>
+<li>Celery:  2`000 msg/sec</li>
+</ul>
+<h2>Detailed test description</h2>
+<p>There are three main components of the Celery stack: </p>
+<ul>
+<li>Celery itself</li>
+<li>Kombu which handles the transport layer</li>
+<li>Python Queue()'s underlying everything</li>
+</ul>
+<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
+run for 1 000 000 messages I got the following results:</p>
+<ul>
+<li>Raw Python Queue: Msgs per sec: 500`000</li>
+<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0<ul>
+<li>with json serializer: Msgs per sec: 5`988</li>
+<li>with pickle serializer: Msgs per sec: 12`820</li>
+<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
+Msgs per sec: 14`492</li>
+</ul>
+</li>
+</ul>
+<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I've observed similar behavior 
+with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
+exceptions. This is probably the main reason performance becomes saturated over a longer
+execution.</p>
+<ul>
+<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
+</ul>
+<p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
+<div class="highlight"><pre>with producers[connection].acquire(block=True) as producer:
+    for j in range(1000000):
+</pre></div>
+
+
+<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
+construct which is executed every time a new task is published. Next I will be looking 
+into this to figure out exactly where the slowliness comes from.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 07 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/#disqus_thread">comments</a>.</p>        </div>
+        <hr>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 1">
                 <h2 class="post-title">
                     Speeding up Celery Backends, Part 1
@@ -1253,63 +1312,6 @@ at hand I'd love to hear how well this works for you. Please comment below.</p>
                  on Sun 04 May 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/05/03/howto-django-forms-with-dynamic-fields/" rel="bookmark" title="Permalink to Howto: Django Forms with Dynamic Fields">
-                <h2 class="post-title">
-                    Howto: Django Forms with Dynamic Fields
-                </h2>
-            </a>
-            <p>Last week at <a href="http://hackfmi.com">HackFMI 3.0</a> one team had to display a form
-which presented multiple choice selection for filtering, where the filter keys
-are read from the database. They've solved the problem by simply building up the
-HTML required inside the view. I was wondering if this can be done with forms.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
-<span class="o">&gt;&gt;&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
-<span class="o">...</span>     <span class="k">pass</span>
-<span class="o">...</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-
-<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&gt;&gt;&gt;</span>
-<span class="o">&gt;&gt;&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">POST</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="s">&#39;Alex&#39;</span><span class="p">,</span> <span class="s">&#39;age&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">(</span><span class="n">POST</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;Alex&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-<span class="bp">True</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_bound</span>
-<span class="bp">True</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">errors</span>
-<span class="p">{}</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-<span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Alex&#39;</span><span class="p">}</span>
-</pre></div>
-
-
-<p>So if we were to query all names from the database then we could build up the
-class by adding a BooleanField using the object primary key as the name.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s">&#39;123&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-<span class="bp">True</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-<span class="p">{</span><span class="s">&#39;123&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
-</pre></div>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 03 May 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/05/03/howto-django-forms-with-dynamic-fields/#disqus_thread">comments</a>.</p>        </div>
         <hr>
 
     <!-- Pager -->
