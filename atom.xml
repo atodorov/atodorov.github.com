@@ -1,5 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-23T11:34:00+02:00</updated><entry><title>Speeding up RSpec and PostgreSQL tests</title><link href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="alternate"></link><updated>2015-12-23T11:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-23:blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/</id><summary type="html">&lt;p&gt;I've been working with &lt;a class="wikilink" href="http://tradeo.com"&gt;Tradeo&lt;/a&gt; on testing one of their applications. The app
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-23T12:48:00+02:00</updated><entry><title>Interesting Ruby Resources</title><link href="http://atodorov.org/blog/2015/12/23/interesting-ruby-resources/" rel="alternate"></link><updated>2015-12-23T12:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-23:blog/2015/12/23/interesting-ruby-resources/</id><summary type="html">&lt;p&gt;During my quest for
+&lt;a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/"&gt;faster RSpec tests&lt;/a&gt;
+I've come across several interesting posts about Ruby. Being new to the language
+they've helped me understand a bit more about the internals. Posting them here
+so they don't get lost.&lt;/p&gt;
+&lt;h2&gt;Garabage Collection&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://signalvnoise.com/posts/2742-the-road-to-faster-tests"&gt;The road to faster tests&lt;/a&gt;
+- a story about tests and garbage collection.&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://labs.clio.com/tuning-ruby-garbage-collection-for-rspec/"&gt;Tuning Ruby garbage collection for RSpec&lt;/a&gt;
+- practical explanation of Ruby's garbage collector and how to adjust its
+performance for RSpec&lt;/p&gt;
+&lt;p&gt;Probably the very first posts I found referencing slow RSpec tests. It turned out
+this was not the issue but I've nevertheless tried running GC manually. I can clearly
+see (using &lt;code&gt;puts GC.count&lt;/code&gt; in after()) GC invoked less frequently, memory usage rising
+but the overall execution time wasn't affected. The profiler said 2% speed increase
+to be honest.&lt;/p&gt;
+&lt;h2&gt;Profiling&lt;/h2&gt;
+&lt;p&gt;Not being very clear about the different profiling tools available and how to
+interpret their results I've found these articles:&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://www.igvita.com/2009/06/13/profiling-ruby-with-googles-perftools/"&gt;Profiling Ruby With Google's Perftools&lt;/a&gt;
+- practical example for using perftools.rb&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://stackoverflow.com/questions/32212970/how-to-read-ruby-profilers-output"&gt;How to read ruby profiler's output&lt;/a&gt; -
+also see the &lt;a href="http://ruby-doc.org/stdlib-2.1.0/libdoc/profiler/rdoc/Profiler__.html"&gt;Profiler__ module&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://stackoverflow.com/questions/4856500/show-runtime-for-each-rspec-example"&gt;Show runtime for each rspec example&lt;/a&gt;
+- using &lt;code&gt;rspec --profile&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;Suggestions for Faster Tests&lt;/h2&gt;
+&lt;p&gt;Several general best practices for faster tests:&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://www.netguru.co/blog/9-ways-to-speed-up-your-rspec-tests"&gt;9 ways to speed up your RSpec tests&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://infinum.co/the-capsized-eight/articles/run-faster-ruby-on-rails-tests"&gt;Run faster Ruby on Rails tests&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://blog.plataformatec.com.br/2011/12/three-tips-to-improve-the-performance-of-your-test-suite/"&gt;Three tips to improve the performance of your test suite&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;RubyGems related&lt;/h2&gt;
+&lt;p&gt;I've noticed Bundler loading tons of requirements (nearly 3000 unique modules)
+and for some particular specs this wasn't necessary (for example running Rubocop).
+I've found the following articles below which sound very reasonable to me:&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://anti-pattern.com/use-bundler-setup-instead-of-bundler-require"&gt;Use Bundler.setup Instead of Bundler.require&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://myronmars.to/n/dev-blog/2012/12/5-reasons-to-avoid-bundler-require"&gt;5 Reasons to Avoid Bundler.require&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://2ndscale.com/rtomayko/2009/require-rubygems-antipattern"&gt;Why "require 'rubygems'" Is Wrong&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;Weird&lt;/h2&gt;
+&lt;p&gt;Finally (or more precisely first of all) I've seen this
+&lt;a href="https://www.ruby-forum.com/topic/184516 suggests broken rubygems"&gt;Weird performance issue&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;During my initial profiling I've seen (and still see) a similar issue.
+When calling require it goes through lots of hoops before finally loading
+the module. My profiling results show this taking a lot of time but this time
+is likely measured with profiling enabled and doesn't represent the real deal.&lt;/p&gt;
+&lt;p&gt;On my
+&lt;a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/"&gt;MacBook Air with Red Hat Enterprise Linux 7&lt;/a&gt;
+this happens when using Ruby 2.2.2 from Software Collections. If using Ruby
+installed from source with rbenv the profiling profile is completely different.&lt;/p&gt;
+&lt;p&gt;I will be examining this one in more details. I'm interested to know what is
+the difference and if that affects performance somehow so stay tuned!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Ruby"></category></entry><entry><title>Speeding up RSpec and PostgreSQL tests</title><link href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="alternate"></link><updated>2015-12-23T11:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-23:blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/</id><summary type="html">&lt;p&gt;I've been working with &lt;a class="wikilink" href="http://tradeo.com"&gt;Tradeo&lt;/a&gt; on testing one of their applications. The app
 is standard Ruby on Rails application with over 1200 tests written with RSpec.
 And they were horribly slow. On my &lt;a class="wikilink" href="http://amzn.to/1RdviyD"&gt;MacBook Air&lt;/a&gt; the entire test suite
 took 27 minutes to execute. On the Jenkins slaves it took over an hour.
