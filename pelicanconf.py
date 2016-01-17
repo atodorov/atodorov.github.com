@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
+import os
 from pelican.settings import DEFAULT_CONFIG
 
 def build_url(label, base, end):
@@ -63,10 +64,15 @@ HEADER_COVER = "/images/header_02.jpg"
 # and the search box doesn't work
 DISABLE_CUSTOM_THEME_JAVASCRIPT = True
 
+SHOW_FULL_ARTICLE = True
+
 COLOR_SCHEME_CSS = "github.css"
 CSS_OVERRIDE = "override.css"
 
 PATH = 'content'
+
+FOOTER_INCLUDE = "footer.html"
+EXTRA_TEMPLATES_PATHS = [os.path.join(os.path.dirname(__file__), PATH)]
 
 TIMEZONE = 'Europe/Sofia'
 
