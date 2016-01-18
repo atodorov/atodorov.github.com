@@ -22,10 +22,13 @@
         <!-- Code highlight color scheme -->
             <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
 
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
         <!-- Custom Fonts -->
-        <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-        <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -84,6 +87,155 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/" rel="bookmark" title="Permalink to Twilio is Located in Amazon Web Services US East">
+                <h2 class="post-title">
+                    Twilio is Located in Amazon Web Services US East
+                </h2>
+            </a>
+            <blockquote>
+<p>Where do I store my audio files in order to minimize download and call wait time?</p>
+</blockquote>
+<p>Twilio is a cloud vendor that provides telephony services. 
+It can download and <code>&lt;Play&gt;</code> arbitrary audio files and will cache the files
+for better performance.</p>
+<p>Twilio support told me they are not disclosing the location of their servers,
+so from my web application hosted in AWS US East:</p>
+<div class="highlight"><pre><span class="o">[</span>ivr-otb.rhcloud.com logs<span class="o">]</span><span class="se">\&gt;</span> grep TwilioProxy access_log-* <span class="p">|</span> cut -f <span class="m">1</span> -d <span class="s1">&#39;-&#39;</span> <span class="p">|</span> sort <span class="p">|</span> uniq 
+10.125.90.172 
+10.214.183.239 
+10.215.187.220 
+10.245.155.18 
+10.255.119.159 
+10.31.197.102
+</pre></div>
+
+
+<p>Now let's map these addresses to host names. From another EC2 system, also in Amazon US East:</p>
+<div class="highlight"><pre><span class="o">[</span>ec2-user@ip-10-29-206-86 ~<span class="o">]</span><span class="nv">$ </span>dig -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102
+
+<span class="p">;</span> &lt;&lt;&gt;&gt; DiG 9.8.2rc1-RedHat-9.8.2-0.17.rc1.29.amzn1 &lt;&lt;&gt;&gt; -x 10.125.90.172 -x 10.214.183.239 -x 10.215.187.220 -x 10.245.155.18 -x 10.255.119.159 -x 10.31.197.102
+<span class="p">;;</span> global options: +cmd
+<span class="p">;;</span> Got answer:
+<span class="p">;;</span> -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 43245</span>
+<span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+
+<span class="s">;; QUESTION SECTION:</span>
+<span class="s">;172.90.125.10.in-addr.arpa.    IN      PTR</span>
+
+<span class="s">;; ANSWER SECTION:</span>
+<span class="s">172.90.125.10.in-addr.arpa. 113 IN      PTR     ip-10-125-90-172.ec2.internal.</span>
+
+<span class="s">;; Query time: 1 msec</span>
+<span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+<span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+<span class="s">;; MSG SIZE  rcvd: 87</span>
+
+<span class="s">;; Got answer:</span>
+<span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 52693
+<span class="p">;;</span> flags: qr rd ra<span class="p">;</span> QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+<span class="p">;;</span> QUESTION SECTION:
+<span class="p">;</span>239.183.214.10.in-addr.arpa.   IN      PTR
+
+<span class="p">;;</span> ANSWER SECTION:
+239.183.214.10.in-addr.arpa. <span class="m">42619</span> IN   PTR     domU-12-31-39-0B-B0-01.compute-1.internal.
+
+<span class="p">;;</span> Query <span class="nb">time</span>: <span class="m">0</span> msec
+<span class="p">;;</span> SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+<span class="p">;;</span> WHEN: Mon Jun <span class="m">24</span> 20:48:21 2013
+<span class="p">;;</span> MSG SIZE  rcvd: 100
+
+<span class="p">;;</span> Got answer:
+<span class="p">;;</span> -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 25255</span>
+<span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+
+<span class="s">;; QUESTION SECTION:</span>
+<span class="s">;220.187.215.10.in-addr.arpa.   IN      PTR</span>
+
+<span class="s">;; ANSWER SECTION:</span>
+<span class="s">220.187.215.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-0C-B8-2E.compute-1.internal.</span>
+
+<span class="s">;; Query time: 0 msec</span>
+<span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+<span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+<span class="s">;; MSG SIZE  rcvd: 100</span>
+
+<span class="s">;; Got answer:</span>
+<span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 15099
+<span class="p">;;</span> flags: qr rd ra<span class="p">;</span> QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+<span class="p">;;</span> QUESTION SECTION:
+<span class="p">;</span>18.155.245.10.in-addr.arpa.    IN      PTR
+
+<span class="p">;;</span> ANSWER SECTION:
+18.155.245.10.in-addr.arpa. <span class="m">840</span> IN      PTR     ip-10-245-155-18.ec2.internal.
+
+<span class="p">;;</span> Query <span class="nb">time</span>: <span class="m">0</span> msec
+<span class="p">;;</span> SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+<span class="p">;;</span> WHEN: Mon Jun <span class="m">24</span> 20:48:21 2013
+<span class="p">;;</span> MSG SIZE  rcvd: 87
+
+<span class="p">;;</span> Got answer:
+<span class="p">;;</span> -&gt;&gt;HEADER<span class="s">&lt;&lt;- opcode: QUERY, status: NOERROR, id: 28878</span>
+<span class="s">;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0</span>
+
+<span class="s">;; QUESTION SECTION:</span>
+<span class="s">;159.119.255.10.in-addr.arpa.   IN      PTR</span>
+
+<span class="s">;; ANSWER SECTION:</span>
+<span class="s">159.119.255.10.in-addr.arpa. 43140 IN   PTR     domU-12-31-39-01-70-51.compute-1.internal.</span>
+
+<span class="s">;; Query time: 0 msec</span>
+<span class="s">;; SERVER: 172.16.0.23#53(172.16.0.23)</span>
+<span class="s">;; WHEN: Mon Jun 24 20:48:21 2013</span>
+<span class="s">;; MSG SIZE  rcvd: 100</span>
+
+<span class="s">;; Got answer:</span>
+<span class="s">;; -&gt;&gt;HEADER&lt;&lt;- opcode</span>: QUERY, status: NOERROR, id: 28727
+<span class="p">;;</span> flags: qr rd ra<span class="p">;</span> QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+<span class="p">;;</span> QUESTION SECTION:
+<span class="p">;</span>102.197.31.10.in-addr.arpa.    IN      PTR
+
+<span class="p">;;</span> ANSWER SECTION:
+102.197.31.10.in-addr.arpa. <span class="m">840</span> IN      PTR     ip-10-31-197-102.ec2.internal.
+
+<span class="p">;;</span> Query <span class="nb">time</span>: <span class="m">0</span> msec
+<span class="p">;;</span> SERVER: 172.16.0.23#53<span class="o">(</span>172.16.0.23<span class="o">)</span>
+<span class="p">;;</span> WHEN: Mon Jun <span class="m">24</span> 20:48:21 2013
+<span class="p">;;</span> MSG SIZE  rcvd: 87
+</pre></div>
+
+
+<p>In short:</p>
+<div class="highlight"><pre>ip-10-125-90-172.ec2.internal.
+ip-10-245-155-18.ec2.internal.
+ip-10-31-197-102.ec2.internal.
+domU-12-31-39-01-70-51.compute-1.internal.
+domU-12-31-39-0B-B0-01.compute-1.internal.
+domU-12-31-39-0C-B8-2E.compute-1.internal.
+</pre></div>
+
+
+<p>The <code>ip-*.ec2.internal</code> are clearly in US East. The <code>domU-*.computer-1.internal</code> also
+look like US East although I'm not 100% sure what is the difference between the two.
+The later ones look like HVM guests while the former ones are para-virtualized.</p>
+<p>For comparison here are some internal addresses from my own EC2 systems:</p>
+<ul>
+<li>ip-10-228-237-207.eu-west-1.compute.internal - EU Ireland</li>
+<li>ip-10-248-19-46.us-west-2.compute.internal - US West Oregon</li>
+<li>ip-10-160-58-141.us-west-1.compute.internal - US West N. California</li>
+</ul>
+<p>After relocating my audio files to an S3 bucket in US East the average call length
+dropped from 2:30 min to 2:00 min for the same IVR choices. This also minimizes
+the costs since Twilio charges per minute of incoming/outgoing calls.
+I think the audio quality has improved as well.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 24 June 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/20/even-facebook-has-bugs/" rel="bookmark" title="Permalink to Even Facebook has Bugs">
                 <h2 class="post-title">
                     Even Facebook has Bugs
@@ -103,7 +255,6 @@ because they tend to annoy the user and generate support calls or just look unpr
                  on Thu 20 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/20/even-facebook-has-bugs/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/" rel="bookmark" title="Permalink to Tip: Caching Large Objects for Celery and Amazon SQS">
                 <h2 class="post-title">
@@ -152,7 +303,6 @@ and how it works for you. </p>
                  on Wed 19 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/" rel="bookmark" title="Permalink to Django Tips: Using Cache for Stateful HTTP">
                 <h2 class="post-title">
@@ -210,7 +360,6 @@ Amazon ElastiCache.</p>
                  on Wed 19 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/18/nibbler-w3c-validator-on-steroids/" rel="bookmark" title="Permalink to Nibbler - W3C Validator on Steroids">
                 <h2 class="post-title">
@@ -234,7 +383,6 @@ I hope to make it up to speed in the next few weeks. -- Alex</p>
                  on Tue 18 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/18/nibbler-w3c-validator-on-steroids/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/14/personal-experience-with-credit-card-fraud-pt2/" rel="bookmark" title="Permalink to Personal Experience With Credit Card Fraud, Part 2">
                 <h2 class="post-title">
@@ -257,7 +405,6 @@ will be an official press release from VISA. Let me know if you hear about this!
                  on Fri 14 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/14/personal-experience-with-credit-card-fraud-pt2/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/09/another-day-at-the-office/" rel="bookmark" title="Permalink to Another Day At The Office">
                 <h2 class="post-title">
@@ -285,7 +432,6 @@ What do you think?  </p>
                  on Sun 09 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/09/another-day-at-the-office/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/07/software-developer-employee-vs-contractor-part-1/" rel="bookmark" title="Permalink to Software Developer - Employee vs. Contractor, Part 1">
                 <h2 class="post-title">
@@ -440,7 +586,6 @@ to live by its rules as much as I can. I've also done a
                  on Fri 07 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/07/software-developer-employee-vs-contractor-part-1/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/02/sofiavalley-ui-bug/" rel="bookmark" title="Permalink to SofiaValley UI bug">
                 <h2 class="post-title">
@@ -461,7 +606,6 @@ here.</p>
                  on Sun 02 June 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/06/02/sofiavalley-ui-bug/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/31/call-of-the-open-source-guru/" rel="bookmark" title="Permalink to Call of the Open Source Guru">
                 <h2 class="post-title">
@@ -543,7 +687,6 @@ to other folks who may know more on the topic.</p>
                  on Fri 31 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/31/call-of-the-open-source-guru/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/" rel="bookmark" title="Permalink to Why VMware Multi-Hypervisor Manager Architecture Is Wrong">
                 <h2 class="post-title">
@@ -594,7 +737,6 @@ What do you think? </p>
                  on Thu 30 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/30/why-vmware-multi-hypervisor-manager-architecture-is-wrong/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/" rel="bookmark" title="Permalink to Configuring Anonymous FTP Uploads On Red Hat Enterprise Linux 6">
                 <h2 class="post-title">
@@ -631,7 +773,6 @@ service vsftpd start
                  on Thu 30 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/30/configuring-anonymous-ftp-uploads-on-red-hat-enterprise-linux-6/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/27/it-jobs-prediction-quality-engineering-devops-augmented-reality/" rel="bookmark" title="Permalink to IT Jobs Prediction: Quality Engineering, DevOps, Augmented Reality">
                 <h2 class="post-title">
@@ -684,7 +825,6 @@ beginning of your career which fields will you bet on? </p>
                  on Mon 27 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/27/it-jobs-prediction-quality-engineering-devops-augmented-reality/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/23/balkan-venture-forum-sofia-post-mortem/" rel="bookmark" title="Permalink to Balkan Venture Forum Sofia Post-mortem">
                 <h2 class="post-title">
@@ -730,7 +870,6 @@ to get a device for testing and hacking and will keep you posted.</p>
                  on Thu 23 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/23/balkan-venture-forum-sofia-post-mortem/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/" rel="bookmark" title="Permalink to Linux and Python Tools To Compare Images">
                 <h2 class="post-title">
@@ -811,7 +950,6 @@ recognition.</p>
                  on Fri 17 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/17/linux-and-python-tools-to-compare-images/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/" rel="bookmark" title="Permalink to Dual Password Encryption With EncFS On Red Hat Enterprise Linux 6">
                 <h2 class="post-title">
@@ -1001,7 +1139,6 @@ I'll be happy to answer any questions or comments.</p>
                  on Tue 14 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/14/dual-password-encryption-with-encfs-on-red-hat-enterprise-linux-6/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/05/02/why-instagram-could-not-be-founded-in-europe/" rel="bookmark" title="Permalink to Why Instagram Could Not Be Founded In Europe">
                 <h2 class="post-title">
@@ -1070,7 +1207,6 @@ a new blog category  dedicated to this topic.</p>
                  on Thu 02 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/02/why-instagram-could-not-be-founded-in-europe/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/27/the-best-it-school-in-bulgaria/" rel="bookmark" title="Permalink to The Best IT School in Bulgaria">
                 <h2 class="post-title">
@@ -1138,7 +1274,6 @@ class at school! </p>
                  on Sat 27 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/27/the-best-it-school-in-bulgaria/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/26/personal-experience-with-credit-card-fraud/" rel="bookmark" title="Permalink to Personal Experience With Credit Card Fraud">
                 <h2 class="post-title">
@@ -1200,7 +1335,6 @@ gets copied it won't be able to generate the right passcode.</p>
                  on Fri 26 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/26/personal-experience-with-credit-card-fraud/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="bookmark" title="Permalink to How to Deploy Python Hotfix on RedHat OpenShift Cloud">
                 <h2 class="post-title">
@@ -1284,53 +1418,8 @@ as well. Let me know if you have any experience with that.</p>
                  on Wed 24 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/23/what-runs-your-startup-deed/" rel="bookmark" title="Permalink to What Runs Your Start-up - Deed">
-                <h2 class="post-title">
-                    What Runs Your Start-up - Deed
-                </h2>
-            </a>
-            <p><img src="/images/startup/deed.jpg" alt="Deed" style="float:left; margin-right: 15px;" /></p>
-<p><a href="http://www.ideedit.com/">Deed</a> is an action-provoking platform for challenging
-yourself and others and also a business solution for improved engagement by the
-corresponding communities. It solves the problem of passivity by converting people
-who “Like” to people who “Act. The challenge format gives businesses an effective,
-fresh and low-cost solution to maintain active connection with their communities
-and measure engagement.</p>
-<p>Emil Stoychev explains their technical background.</p>
-<h2>Main Technologies</h2>
-<p>Deed is built around Microsoft technologies plus some open source libraries.</p>
-<p>Their web application and API is built with ASP.NET MVC 3 using MS SQL 2008 database engine.
-Deed is hosted on a single cloud server at Rackspace and uses Akamai CDN for static files
-distribution. At the moment the team is testing Windows Azure cloud platform and plans
-migrating there.</p>
-<p>A native Windows Phone application also exists.</p>
-<p>Lots of JavaScript and CSS frameworks come to play at the  web interface layer like
-jQuery, <a href="http://handlebarsjs.com/">Handlebars</a> for templates and <a href="http://lesscss.org/">Less CSS</a>.</p>
-<p>IDE of choice is Microsoft Visual Studio 2012 for C# and Vim for everything else.
-Source code revision control is managed with Mercurial and build scripts are written in Python.</p>
-<h2>Why Not Something Else?</h2>
-<blockquote>
-<p>The Deed team had experience with Microsoft technologies initially so it was natural
-for us to choose this stack. While not perfect and costly in terms of hosting fees,
-it serves its purpose for the moment. When you start a new project and you want to get
-up and running fast your best choice is to use what you already mastered.
-That in our case was the Microsoft stack.</p>
-<p>Emil Stoychev</p>
-</blockquote>
-<p>Indeed I strongly support this! Always use technologies you are a master at and change and
-adapt along the way if necessary.</p>
-<h2>Want More Info?</h2>
-<p>If you’d like to hear more from <em>Deed</em> please comment below.
-I will ask them to follow this thread and reply to your questions.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 23 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/23/what-runs-your-startup-deed/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
 
+    <hr>
     <!-- Pager -->
     <ul class="pager">
         <li class="next">
@@ -1352,31 +1441,30 @@ I will ask them to follow this thread and reply to your questions.</p>
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <ul class="list-inline text-center">
-                        <li>
-                            <a href="https://twitter.com/atodorov_">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://github.com/atodorov">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="https://bg.linkedin.com/in/alextodorov">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
                     </ul>
 
 

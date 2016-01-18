@@ -23,10 +23,13 @@
         <!-- Code highlight color scheme -->
             <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
 
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
         <!-- Custom Fonts -->
-        <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-        <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -83,6 +86,55 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/" rel="bookmark" title="Permalink to Compiling Broadcom wl-kmod WiFi Driver for RHEL 7">
+                <h2 class="post-title">
+                    Compiling Broadcom wl-kmod WiFi Driver for RHEL 7
+                </h2>
+            </a>
+            <p>After I got my 
+<a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> <a href="/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">installed with RHEL 7.1</a>
+the first priority was getting wireless working. 
+First check if your device isn't already supported
+<a href="http://linuxwireless.org/en/users/Drivers/b43/#Supported_devices">upstream</a>. Mine isn't</p>
+<div class="highlight"><pre><span class="mi">14</span><span class="n">e4</span><span class="o">:</span><span class="mi">43</span><span class="n">a0</span><span class="o">:</span> <span class="n">Broadcom</span> <span class="n">Corporation</span> <span class="n">BCM4360</span> <span class="mf">802.11</span><span class="n">ac</span> <span class="n">Wireless</span> <span class="n">Network</span> <span class="n">Adapter</span> <span class="o">(</span><span class="n">rev</span> <span class="mi">03</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Next grab the src.rpm files necessary to build the <em>wl</em> driver from RPM Fusion.
+For <code>akmods-0.5.2-1.fc21.src.rpm</code>, <code>broadcom-wl-6.30.223.248-2.fc21.src.rpm</code>,
+<code>kmodtool-1-23.fc20.src.rpm</code> just execute <em>rpmbuild --rebuild</em> against each file
+and install <code>kmodtool</code> and <code>akmods</code>.</p>
+<p>Then you need two more files <code>buildsys-build-rpmfusion</code> and <code>wl-kmod</code>.
+The first one is a helper tool containing list of recent kernels to build against,
+the later one is the driver source itself. Both needed minor modifications before
+building on RHEL 7.</p>
+<p>I've created my own 
+<a href="https://github.com/atodorov/buildsys-build-rpmfusion-for-rhel7">buildsys-build-rpmfusion</a> package listing the current kernels
+for RHEL 7.1. For <a href="https://github.com/atodorov/wl-kmod-for-rhel7">wl-kmod</a> I've introduced a 
+<a href="https://github.com/atodorov/wl-kmod-for-rhel7/blob/master/wl-kmod-100_redhat.patch">patch</a>
+which modifies the other patches in the package so it builds correctly on 7.1.</p>
+<p><strong>Note:</strong> I don't know if there's a define which can be used to detect if we're building
+on RHEL (maybe I can define my own) but direct kernel version number comparison doesn't
+work here because Red Hat backports chosen functionality from more recent kernels without
+changing the version number. This approach may not be the best one but I've tried to keep it clean
+for easier maintenance in the future and it got me started very quickly.</p>
+<p>Build the modified buildsys-build-rpmfusion and:</p>
+<div class="highlight"><pre>yum install buildsys-build-rpmfusion-7-1.x86_64.rpm buildsys-build-rpmfusion-kerneldevpkgs-current-7-1.x86_64.rpm
+</pre></div>
+
+
+<p>Build the wl-kmod package and:</p>
+<div class="highlight"><pre>yum install akmod-wl-6.30.223.248-5.el7.x86_64.rpm broadcom-wl-6.30.223.248-2.el7.noarch.rpm kmod-wl-3.10.0-229.el7.x86_64-6.30.223.248-5.el7.x86_64.rpm kmod-wl-6.30.223.248-5.el7.x86_64.rpm
+</pre></div>
+
+
+<p>If necessary re-create your initramfs image to include <em>wl.ko</em>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 27 April 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/04/27/compiling-broadcom-wl-kmod-wifi-driver-for-rhel-7/#disqus_thread">comments</a>.</p>        </div>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/" rel="bookmark" title="Permalink to Installing Red Hat Enterprise Linux 7 on MacBook Air 2015">
                 <h2 class="post-title">
@@ -1141,7 +1193,6 @@ af9ffd67-ec10-488a-9dfc-6cbf5ee22c2e-AcpiGlobalVariable
                  on Sun 26 April 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="bookmark" title="Permalink to How to Configure targetcli to Listen on IPv4 and IPv6">
                 <h2 class="post-title">
@@ -1189,7 +1240,6 @@ Could not create NetworkPortal in configFS.
                  on Wed 08 April 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/" rel="bookmark" title="Permalink to Screen Magnifier and Smart Phone!">
                 <h2 class="post-title">
@@ -1220,8 +1270,8 @@ at hand I'd love to hear how well this works for you. Please comment below.</p>
                  on Sun 04 May 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/#disqus_thread">comments</a>.</p>        </div>
-        <hr>
 
+    <hr>
     <!-- Pager -->
     <ul class="pager">
         <li class="next">
@@ -1242,31 +1292,30 @@ at hand I'd love to hear how well this works for you. Please comment below.</p>
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <ul class="list-inline text-center">
-                        <li>
-                            <a href="https://twitter.com/atodorov_">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://github.com/atodorov">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="https://bg.linkedin.com/in/alextodorov">
-                                <span class="fa-stack fa-lg">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
-                                </span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
                     </ul>
 
 
