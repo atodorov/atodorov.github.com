@@ -17,7 +17,6 @@
 
         <!-- Custom CSS -->
         <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
-        <link href="http://atodorov.org/override.css" rel="stylesheet">
 
         <!-- Code highlight color scheme -->
             <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
@@ -37,8 +36,8 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-                <meta property="fb:admins" content="1616937247" />
-                    <meta property="og:locale" content="en_US">
+            <meta property="fb:admins" content="1616937247" />
+                <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
 </head>
 
@@ -86,6 +85,89 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="bookmark" title="Permalink to How to Deploy Python Hotfix on RedHat OpenShift Cloud">
+                <h2 class="post-title">
+                    How to Deploy Python Hotfix on RedHat OpenShift Cloud
+                </h2>
+            </a>
+            <p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+<h2>Background</h2>
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+<h2>Solution</h2>
+<p>There are two basic approaches to solving this problem: </p>
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version. </li>
+</ol>
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+<h2>Building the hotfix</h2>
+<p>First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+<div class="highlight"><pre><span class="nv">$ </span>wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+<span class="nv">$ </span>tar -xzvf python-magic-0.4.3.tar.gz 
+<span class="nv">$ </span><span class="nb">cd </span>python-magic-0.4.3
+<span class="nv">$ </span>curl https://github.com/ahupp/python-magic/pull/31.patch <span class="p">|</span> patch
+</pre></div>
+
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+<h2>Deploying to OpenShift</h2>
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
+<div class="highlight"><pre><span class="gh">diff --git a/setup.py b/setup.py</span>
+<span class="gh">index c6e837c..2daa2a9 100644</span>
+<span class="gd">--- a/setup.py</span>
+<span class="gi">+++ b/setup.py</span>
+<span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
+       author=&#39;Your Name&#39;,
+       author_email=&#39;example@example.com&#39;,
+       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+<span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
+<span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
+<span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
+      )
+</pre></div>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+<div class="highlight"><pre><span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">dependencies</span> <span class="k">for</span> <span class="n">YourAppName</span><span class="o">==</span><span class="mf">1.0</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Searching</span> <span class="k">for</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">==</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Best</span> <span class="n">match</span><span class="o">:</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Downloading</span> <span class="n">https</span><span class="o">://</span><span class="n">s3</span><span class="o">.</span><span class="na">amazonaws</span><span class="o">.</span><span class="na">com</span><span class="sr">/atodorov/blog/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Running</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="sr">/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/</span><span class="n">egg</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="n">tmp</span><span class="o">-</span><span class="n">R_Nxie</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">zip_safe</span> <span class="n">flag</span> <span class="n">not</span> <span class="kd">set</span><span class="o">;</span> <span class="n">analyzing</span> <span class="n">archive</span> <span class="n">contents</span><span class="o">...</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Removing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mi">3</span> <span class="n">from</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Adding</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span> <span class="n">to</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
+</pre></div>
+
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 24 April 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">comments</a>.</p>        </div>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/23/what-runs-your-startup-deed/" rel="bookmark" title="Permalink to What Runs Your Start-up - Deed">
                 <h2 class="post-title">
@@ -1094,89 +1176,6 @@ and how does the software behave when multiple contacts share the same number or
                  on Tue 19 March 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/03/19/bug-in-nokia-software-shows-wrong-caller-id/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/" rel="bookmark" title="Permalink to django-social-auth tip: Reminder of Login Provider">
-                <h2 class="post-title">
-                    django-social-auth tip: Reminder of Login Provider
-                </h2>
-            </a>
-            <p>Every now and then users forget their passwords. This is why I prefer using
-OAuth and social network accounts like GitHub or Twitter. But what do you do
-when somebody forgets which OAuth provider they used to login to your site?
-Your website needs a reminder. This is how to implement one if using
-django-social-auth.</p>
-<h2>Back-end</h2>
-<p>Create a similar view on your Django back-end</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">ajax_social_auth_provider_reminder</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Remind the user which social auth provider they used to login.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-
-    <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;email&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">email</span> <span class="ow">or</span> <span class="p">(</span><span class="n">email</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;@&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Invalid address!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;pk&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No user with address &#39;</span><span class="si">%s</span><span class="s">&#39; found!&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-
-    <span class="n">providers</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">sa</span> <span class="ow">in</span> <span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">only</span><span class="p">(</span><span class="s">&#39;provider&#39;</span><span class="p">):</span>
-        <span class="n">providers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
-
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">providers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">send_templated_mail</span><span class="p">(</span>
-            <span class="n">template_name</span><span class="o">=</span><span class="s">&#39;social_provider_reminder&#39;</span><span class="p">,</span>
-            <span class="n">from_email</span><span class="o">=</span><span class="s">&#39;Difio &lt;reminder@dif.io&gt;&#39;</span><span class="p">,</span>
-            <span class="n">recipient_list</span><span class="o">=</span><span class="p">[</span><span class="n">email</span><span class="p">],</span>
-            <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;providers&#39;</span> <span class="p">:</span> <span class="n">providers</span><span class="p">},</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Reminder sent to &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">email</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;User found but no social providers found!&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-</pre></div>
-
-
-<p>This example assumes it is called via POST request which contains the email address.
-All responses are handled at the front-end via JavaScript. If a user with the specified
-email address exists this address will receive a reminder listing all social auth providers
-associated with the user account.</p>
-<h2>Front-end</h2>
-<p>On the browser side I like to use <a href="http://dojotoolkit.org">Dojo</a>.
-Here is a simple script which connects to a form and POSTs the data
-back to the server.</p>
-<div class="highlight"><pre><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo&quot;</span><span class="p">]);</span>
-<span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dijit&quot;</span><span class="p">]);</span>
-
-<span class="kd">function</span> <span class="nx">sendReminderForm</span><span class="p">(){</span>
-    <span class="kd">var</span> <span class="nx">form</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;reminderForm&quot;</span><span class="p">);</span>
-
-    <span class="nx">dojo</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">form</span><span class="p">,</span> <span class="s2">&quot;onsubmit&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">){</span>
-        <span class="nx">dojo</span><span class="p">.</span><span class="nx">stopEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">);</span>
-        <span class="nx">dijit</span><span class="p">.</span><span class="nx">byId</span><span class="p">(</span><span class="s2">&quot;dlgForgot&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
-        <span class="kd">var</span> <span class="nx">xhrArgs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nx">form</span><span class="o">:</span> <span class="nx">form</span><span class="p">,</span>
-            <span class="nx">handleAs</span><span class="o">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
-            <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">data</span><span class="p">);},</span>
-            <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">ioargs</span><span class="p">){</span><span class="nx">alert</span><span class="p">(</span><span class="nx">ioargs</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);}</span>
-        <span class="p">};</span>
-        <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">dojo</span><span class="p">.</span><span class="nx">xhrPost</span><span class="p">(</span><span class="nx">xhrArgs</span><span class="p">);</span>
-    <span class="p">});</span>
-<span class="p">}</span>
-<span class="nx">dojo</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="nx">sendReminderForm</span><span class="p">);</span>
-</pre></div>
-
-
-<p>You can try this out at <a href="http://www.dif.io">Difio</a> and let me know how it works for you!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 14 March 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/03/14/django-social-auth-tip-reminder-of-login-provider/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -1225,48 +1224,43 @@ back to the server.</p>
                                 </a>
                             </li>
                     </ul>
+<section>
+    <p>
+        I am a QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
 
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
 
-                    <section>
-                        <p>
-                            I am a QA contractor at Red Hat responsible for finding over
-                            <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
-                            a general purpose open source developer, Red Hat Certified professional,
-                            cloud hacker and an entrepreneur! My latest start-up is
-                            <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
-                        </p>
-
-                        <p>
-                            I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
-                            which is emerging as a busy place for start-up founders and tech enthusiasts
-                            in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
-                        </p>
-
-                        <p>
-                            <small>
-                                <em>
-                                    Some of the links contained within this site have my referral id (e.g.,
-                                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
-                                    which provides me with a small commission for each sale. Thank you for your support.
-                                </em>
-                            </small>
-                        </p>
-                    </section>
-
-                    <form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
-                        <fieldset role="search">
-                            <input type="hidden" name="sitesearch" value="http://atodorov.org" />
-                            <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
-                        </fieldset>
-                    </form>
-
-                    <p class="copyright text-muted">
-                        <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
-                        <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
-                        2011-2015 &diams; Alexander Todorov &diams;
-                        <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
-                    </p>
-                </div>
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>                </div>
             </div>
         </div>
     </footer>
