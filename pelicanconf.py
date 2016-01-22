@@ -23,6 +23,7 @@ def build_url(label, base, end):
 AUTHOR = u'Alexander Todorov'
 SITENAME = 'atodorov.org'
 SITESUBTITLE = u'you can logoff, but you can never leave'
+SHOW_SITESUBTITLE_IN_HTML = True
 SITEURL = 'http://localhost:8000'
 
 ARTICLE_URL = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/'
