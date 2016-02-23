@@ -25,7 +25,7 @@
             <link href="http://atodorov.org/override.css" rel="stylesheet">
 
         <!-- Custom Fonts -->
-        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
         <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
         <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
 
@@ -89,12 +89,104 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/" rel="bookmark" title="Permalink to Open Source Quality Assurance Infrastructure for Fedora QA">
+                <h2 class="post-title">
+                    Open Source Quality Assurance Infrastructure for Fedora QA
+                </h2>
+            </a>
+                <p><img alt="&quot;Beaker test lab&quot;" src="/images/fedora/beaker.png" title="Beaker test lab" /></p>
+<p>In the last few weeks I've been working together with 
+<a href="https://fedoraproject.org/wiki/User:Tflink">Tim Flink</a> and
+<a href="https://fedoraproject.org/wiki/User:Kparal">Kamil Paral</a> from the Fedora QA
+team on bringing some installation testing expertise to Fedora and establishing
+an <a href="http://beaker.fedoraproject.org/bkr/">open source test lab</a>
+to perform automated testing in. The infrastructure is
+already in relatively usable condition so I've decided to share this information
+with the community. </p>
+<h2>Beaker is Running Our Test Lab</h2>
+<p><a href="http://beaker-project.org/">Beaker</a> is the software suite that powers the test
+lab infrastructure. It is quite complex, with many components and sometimes not
+very straight-forward to set up. Tim has been working on that with me giving it
+a try and reporting issues as they have been discovered and fixed. </p>
+<p>In the process of working on this I've managed to create
+<a href="http://gerrit.beaker-project.org/#/q/owner:%22Alexander+Todorov%22,n,z">couple of patches</a>
+against Beaker and friends. They are still pending release in a future version
+because of more urgent bug fixes which need to released first.</p>
+<h2>SNAKE is The Kickstart Template Server</h2>
+<p><a href="https://fedorahosted.org/snake/">SNAKE</a> is a client/server Python framework used
+to support Anaconda installations. It supports plain text ks.cfg files, IIRC those
+were static templates, no variable substitution.</p>
+<p>The other possibility is Python templates based on Pykickstart:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">pykickstart.constants</span> <span class="kn">import</span> <span class="n">KS_SCRIPT_POST</span>
+<span class="kn">from</span> <span class="nn">pykickstart.parser</span> <span class="kn">import</span> <span class="n">Script</span>
+<span class="kn">from</span> <span class="nn">installdefaults</span> <span class="kn">import</span> <span class="n">InstallKs</span>
+
+<span class="k">def</span> <span class="nf">ks</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Anaconda autopart&#39;&#39;&#39;</span>
+
+    <span class="n">ks</span><span class="o">=</span><span class="n">InstallKs</span><span class="p">()</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;@base&#39;</span><span class="p">])</span>
+
+    <span class="n">ks</span><span class="o">.</span><span class="n">clearpart</span><span class="p">(</span><span class="n">initAll</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">autopart</span><span class="p">(</span><span class="n">autopart</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">script</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+<span class="s">cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || </span><span class="se">\</span>
+<span class="s">cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg</span>
+<span class="s">&#39;&#39;&#39;</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">Script</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">KS_SCRIPT_POST</span><span class="p">,</span> <span class="n">inChroot</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">scripts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ks</span>
+</pre></div>
+
+
+<p>At the moment SNAKE is essentially abandoned but feature complete.
+I'm thinking about adopting the project just in case we need to make some fixes.
+Will let you know more about this when it happens. </p>
+<h2>Open Source Test Suite</h2>
+<p>I have been working on opening up several test cases for what we (QE) call
+a tier #1 installation test suite. They can be found in
+<a href="http://taskbot.cloud.fedoraproject.org/cgit/fedora-beaker-tests/">git</a>.
+The tests are base on <a href="https://fedorahosted.org/beakerlib/">beakerlib</a> and
+the legacy RHTS framework which is now part of Beaker.</p>
+<p>This effort has been coordinated with Kamil as part of a pilot
+project he's responsible for. I've been executing the same test suite against
+earlier Fedora 20 snapshots but using an internal environment. Now everything
+is going out in the open.</p>
+<h2>Executing The Tests</h2>
+<p>Well you can't do that - YET! There are command line client tools for Fedora
+but Beaker and SNAKE are not well suited for use outside a restricted network
+like LAN or VPN. There are issues with authentication most notably for SNAKE.</p>
+<p>At the moment I have to ssh through two different systems to get proper access.
+However this is been worked on. I've read about a rewrite which will allow Beaker
+to utilize a custom authentication framework like FAS for example. Hopefully that
+will be implemented soon enough.</p>
+<p>I will also like to see the test systems have direct access to the Internet for
+various reasons but this is not without its risks either. This is still to be
+decided.</p>
+<p>If you are interested anyway see the <code>kick-tests.sh</code> file in the test suite for
+examples and command line options.</p>
+<h2>Test Results</h2>
+<p>The first successfully completed
+<a href="http://beaker.fedoraproject.org/bkr/jobs/">test jobs</a> are jobs 50 to 58.
+There's a failure in one of the test cases, namely SELinux related 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1027148">RHBZ #1027148</a>.</p>
+<p>From what I can tell the lab is now working as expected and we can start doing
+some testing against Fedora development snapshots.</p>
+<p>Ping me or join #fedora-qa on irc.freenode.net if you'd like to join Fedora QA!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 19 November 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/" rel="bookmark" title="Permalink to Tip: Cut Leading or Trailing Fields From Strings in Bash">
                 <h2 class="post-title">
                     Tip: Cut Leading or Trailing Fields From Strings in Bash
                 </h2>
             </a>
-            <p>Today I was looking for a command sequence to cut a string in two by predefined
+                <p>Today I was looking for a command sequence to cut a string in two by predefined
 delimiter (e.g. like <code>cut</code> does). I wanted to get the last field only and all
 fields but the last as separate variables.</p>
 <p>The proposed solutions I've found suggested using <code>awk</code> but I don't like it.
@@ -130,7 +222,7 @@ I wasn't aware of. Need to RTFM a little bit.</p>
                     Keeping Backwards Compatibility for pykickstart
                 </h2>
             </a>
-            <p>Consider the following scenario:</p>
+                <p>Consider the following scenario:</p>
 <ul>
 <li>I'm using <a href="https://fedorahosted.org/snake/">SNAKE</a> templates as part of my
 installation testing work;</li>
@@ -166,7 +258,7 @@ test infrastructure. More info TBA soon.</p>
                     My First Article for OpenSource.com
                 </h2>
             </a>
-            <p><img alt="&quot;Annoying bugs&quot;" src="/images/annoyingbugs.png" title="Annoying bugs" />
+                <p><img alt="&quot;Annoying bugs&quot;" src="/images/annoyingbugs.png" title="Annoying bugs" />
 <em>image by opensource.com</em></p>
 <p>Recently OpenSource.com published my first article
 <a href="http://opensource.com/business/13/10/user-guide-bugs-open-source-projects">User guide for open source project bug submissions</a>
@@ -188,7 +280,7 @@ topic.</p>
                     HackFMI 2013 Hacker Gifts
                 </h2>
             </a>
-            <p><a href="http://hackfmi.com">HackFMI</a> starts tonight!
+                <p><a href="http://hackfmi.com">HackFMI</a> starts tonight!
 <a href="/blog/2013/04/15/hackfmi-post-mortem/">During the previous edition</a> of the hackathon
 I gave one team a special personal gift based on my estimation of their hacker level!
 Thanks to <a href="http://blog.ganev.bg">Vihren Ganev</a> (one of the gift winners) for reminding
@@ -220,7 +312,7 @@ cool stuff! See you there!</p>
                     Tip: Extending Btrfs Filesystem for Fedora Virtual Machine
                 </h2>
             </a>
-            <p>I was testing Fedora 20 inside a KVM guest this week when the disk
+                <p>I was testing Fedora 20 inside a KVM guest this week when the disk
 space run out. The system was configured to use Btrfs filesystem and this is how
 to extend it.</p>
 <p>First you have to extend the underlying guest storage. On the host I'm using LVM
@@ -428,7 +520,7 @@ for you.</p>
                     Tip: Installing Missing debuginfo Packages for ABRT
                 </h2>
             </a>
-            <p><img alt="&quot;Reporting disabled&quot;" src="/images/reporting_disabled.png" title="Reporting disabled" /></p>
+                <p><img alt="&quot;Reporting disabled&quot;" src="/images/reporting_disabled.png" title="Reporting disabled" /></p>
 <p>Every once in a while ABRT will tell you that reporting is disabled because
 backtrace is unusable. What it means is that it can't read some of the debugging
 symbols and the most likely reason for that is debuginfo packages are missing.</p>
@@ -450,7 +542,7 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
                     Fedora 20 GNOME 3.10 Test Day Post-mortem
                 </h2>
             </a>
-            <p><img alt="&quot;Fedora sausage banner&quot;" src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" /></p>
+                <p><img alt="&quot;Fedora sausage banner&quot;" src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" /></p>
 <p>Here is my summary of the second Fedora Test Day hosted at
 <a href="http://initlab.org">init Lab</a> yesterday.</p>
 <p>Local attendance was a total disaster, in fact I was testing once again by my own.
@@ -505,7 +597,7 @@ organize some more!</p>
                     This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables
                 </h2>
             </a>
-            <p>Here is a random collection of links I came across this week which
+                <p>Here is a random collection of links I came across this week which
 appear interesting to me but I don't have time to blog about in details.</p>
 <h2>Making a Multi-branch Test Server for Python Apps</h2>
 <p>If you are wondering how to test different feature branches of your Python
@@ -552,7 +644,7 @@ anymore! I will give the new feature a go very soon. </p>
                     Fedora 20 Virtualization Test Day Post-mortem
                 </h2>
             </a>
-            <p><img alt="&quot;Fedora 20 banner&quot;" src="/images/fedora/fedora20-banner.png" title="Fedora 20 banner" /></p>
+                <p><img alt="&quot;Fedora 20 banner&quot;" src="/images/fedora/fedora20-banner.png" title="Fedora 20 banner" /></p>
 <p>Here is a quick summary of the first Fedora Test Day in Sofia I hosted at
 <a href="http://initlab.org">init Lab</a> today.</p>
 <p>Attendance was quite poor, actually nobody else except me participated but
@@ -594,7 +686,7 @@ when we're going to test GNOME 3.10.</p>
                     Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week
                 </h2>
             </a>
-            <p>Fedora 20 Virtualization and GNOME test days will be tomorrow (8th Oct) and on
+                <p>Fedora 20 Virtualization and GNOME test days will be tomorrow (8th Oct) and on
 Thursday (10th Oct)! Local community in Sofia will gather at
 <a href="http://initlab.org">init Lab</a>! We start at 10:00 and everybody is welcome.</p>
 <p>If you have no idea what I'm talking about check my
@@ -615,7 +707,7 @@ Thursday (10th Oct)! Local community in Sofia will gather at
                     Facebook UI Bug Strikes Again at HackFMI
                 </h2>
             </a>
-            <p>Does this look familiar to you ? </p>
+                <p>Does this look familiar to you ? </p>
 <p><img alt="&quot;HackFMI UI bug&quot;" src="/images/hackfmi_facebook_bug.png" title="HackFMI UI bug" /></p>
 <p>No? See 
 <a href="/blog/2013/06/02/sofiavalley-ui-bug/">SofiaValley</a> and 
@@ -633,7 +725,7 @@ Facebook have screwed up their buttons.</p>
                     Fedora Test Days are Coming to Sofia
                 </h2>
             </a>
-            <p>As I <a href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/">mentioned earlier</a>
+                <p>As I <a href="/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/">mentioned earlier</a>
 I will organize some Fedora testing in Sofia. Here's an outline of my talk this
 Saturday and a general guide for anyone who wants to participate.</p>
 <h2>What are Fedora Test Days</h2>
@@ -684,7 +776,7 @@ and earlier next week so stay tuned!</p>
                     Lenovo Rants: Battery and Dock Flaws
                 </h2>
             </a>
-            <p>To all my readers - sorry for not being able to blog more frequently lately.
+                <p>To all my readers - sorry for not being able to blog more frequently lately.
 Here's an easy read about my favourite laptop brand Lenovo and some of their
 design flaws I've found.</p>
 <h2>X220 and T60 Batterries are ALMOST Identical</h2>
@@ -729,7 +821,7 @@ comments.</p>
                     Upcoming Talk: Fedora Test Days in Sofia
                 </h2>
             </a>
-            <p>On September 28th I will be giving a short talk about
+                <p>On September 28th I will be giving a short talk about
 <a href="https://fedoraproject.org/wiki/QA/Test_Days">Fedora Test Days</a> at the regular
 Linux for Bulgarians
 <a href="http://www.linux-bg.org/cgi-bin/y/index.pl?page=news&amp;key=459487176">conference</a>.
@@ -758,7 +850,7 @@ with Penzus Editor - another small step in
                     Bug Analysis Of RHBZ #1337
                 </h2>
             </a>
-            <p>In my <a href="/blog/2013/08/23/red-hats-ebugzilla-hits-one-million-bugs/">previous post</a>
+                <p>In my <a href="/blog/2013/08/23/red-hats-ebugzilla-hits-one-million-bugs/">previous post</a>
 I asked the readers of this blog to pick a bug number from Red Hat's Bugzilla
 so I can analyze it later.</p>
 <p><a href="http://radorado.me">Radoslav Georgiev</a> decided to step up and
@@ -784,7 +876,7 @@ to them in the comments section.</p>
                     Red Hat's Bugzilla Hits One Million Bugs
                 </h2>
             </a>
-            <p><img alt="&quot;RHBZ 1 million&quot;" src="/images/redhat_1mil_bugs.jpg" title="RHBZ 1 million" /></p>
+                <p><img alt="&quot;RHBZ 1 million&quot;" src="/images/redhat_1mil_bugs.jpg" title="RHBZ 1 million" /></p>
 <p>Red Hat's Bugzilla passed the 1 million bugs milestone yesterday!
 <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1000000">RHBZ #1000000</a> has been
 filed by Anton Arapov, a kernel engineer and a very nice guy (I know him btw).
@@ -805,7 +897,7 @@ another close to 5000 I think I will be able to answer almost any question.</p>
                     Small But Annoying Twitter Bug
                 </h2>
             </a>
-            <p><img alt="&quot;Tweet Embed Bug&quot;" src="/images/twitter_embed_bug.png" title="Tweet Embed Bug" /></p>
+                <p><img alt="&quot;Tweet Embed Bug&quot;" src="/images/twitter_embed_bug.png" title="Tweet Embed Bug" /></p>
 <p>I've been having troubles with Twitter lately but this bug is just annoying!
 Where on Earth is the "code below" ? I've already
 <a href="https://twitter.com/atodorov_/status/370833992074809345">reported it</a>. Let's
@@ -821,7 +913,7 @@ see how long it takes for them to fix it!</p>
                     Tip: How to Find Your Red Hat Account Number
                 </h2>
             </a>
-            <p><img src="/images/redhat_account_number.png" style="float:left;display:inline-block;margin-right:10px;" /></p>
+                <p><img src="/images/redhat_account_number.png" style="float:left;display:inline-block;margin-right:10px;" /></p>
 <p>One thing you need to know when ordering Red Hat subscriptions is your
 account number. It is available in the drop down menu at the top right
 corner after you login at <a href="https://access.redhat.com">https://access.redhat.com</a>.</p>
@@ -839,7 +931,7 @@ the first subscription activation.</p>
                     The Rise of .io Domains for Well Crafted Web Services
                 </h2>
             </a>
-            <p>Back in February 2013 Russell Beattie has published an article on his blog
+                <p>Back in February 2013 Russell Beattie has published an article on his blog
 titled
 <a href="http://www.russellbeattie.com/blog/artisanal-websites-the-rise-of-io-domains-for-well-crafted-web-services">Artisanal Websites: The rise of .io domains for well crafted web services</a>
 . He has compiled a great deal of sites in the .io domain space with screenshots
@@ -851,79 +943,6 @@ go and check them out!</p>
                  on Tue 13 August 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/08/13/the-rise-of-io-domains-for-well-crafted-web-services/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/08/07/notes-from-two-interesting-guadec-talks/" rel="bookmark" title="Permalink to Notes From Two Interesting GUADEC Talks">
-                <h2 class="post-title">
-                    Notes From Two Interesting GUADEC Talks
-                </h2>
-            </a>
-            <p>As this year's <a href="https://www.guadec.org/">GUADEC</a> is coming to an end
-I'm publishing an interesting update from 
-<a href="https://cz.linkedin.com/in/mullerpetr">Petr Muller</a> for 
-those who were not able to attend.
-Petr is a Senior Quality Engineer at Red Hat. His notes were
-sent to an internal QE mailing list and re-published with permission.</p>
-<div class="highlight"><pre>As this year&#39;s GUADEC happened in the same building where I have my
-other office, I decided to attend. I&#39;m sharing my notes from the two
-sessions I consider to be especially interesting for the audience of
-this mailing list:
-
-== How to not report your UX bug ==
-Speaker:    Fabiana Simões
-Blog:       http://fabianapsimoes.wordpress.com/
-Twitter:    https://twitter.com/fabianapsimoes
-
-Do not do this stuff:
-* Do not simply present a preferred solution, but describe a problem (a
-difficulty you are having, etc.)
-* Do not use &quot;This sucks&quot; idiom, not even hidden in false niceties like
-&quot;It&#39;s not user friendly&quot;
-* Do not talk for majority, when you are not entitled to (&quot;most users
-would like&quot;)
-* Do not consider all UX issues as minor: an inability to do stuff is
-not a minor issue
-
-What is actually interesting for the designer in a report?
-* What were you trying to do?
-* Why did you want to do it?
-* What did you do?
-* What happened?
-* What were your expectations?
-
-More notes
-* Write as much as needed
-* Describe what you see, did and *how you felt*
-* Print screen is your friend!
-* *Give praise*
-
-== Extreme containment measures: keeping bug reports under control ==
-Speaker:  Jean-Francois Fortin Tam
-Homepage: http://jeff.ecchi.ca
-Twitter:  https://twitter.com/nekohayo
-
-Discussed the problem lot of OS projects are having: lot of useless
-(old, irrelevant, waiting for decision no one wants to make) bug/rfe
-reports in their bug tracking systems. Lots of food for thought about
-our own projects, internal or external. Clever applications of
-principles from personal productivity systems such as GTD and Inbox Zero
-for bug tracking.  
-
-The talk was mostly an applied version of this blog post, which is worth
-reading:
-http://jeff.ecchi.ca/blog/2012/10/08/reducing-our-core-apps-software-inventory/
-</pre></div>
-
-
-<p>I particularly like the UX bug reporting guide lines. Need to take those into
-account when reporting UI issues. </p>
-<p>I still haven't read the second blog post which also looks interesting although 
-not very applicable to me. After all I'm the person reporting bugs not the one
-who decides what and when gets fixed.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 07 August 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/08/07/notes-from-two-interesting-guadec-talks/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -968,6 +987,14 @@ who decides what and when gets fixed.</p>
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
                                     </span>
                                 </a>
                             </li>
