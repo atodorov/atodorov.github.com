@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Puppet for Complete Beginners</title>
+
+            <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="I guess everyone knows what Puppet is but probably not everyone knows how to write Puppet modules. This article outlines what I've ..." >
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="fedora.planet" >
+
+
+	            <meta property="fb:admins" content="1616937247" />
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article" />
+<!--
+            <meta property="article:author" content="Alexander Todorov" />
+-->
+	<meta property="og:url" content="http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/" />
+	<meta property="og:title" content="Puppet for Complete Beginners" />
+            <meta property="og:description" content="I guess everyone knows what Puppet is but probably not everyone knows how to write Puppet modules. This article outlines what I've ..." />
+	<meta property="article:published_time" content="2016-03-01 15:08:00+02:00" />
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Puppet for Complete Beginners</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Tue 01 March 2016
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>I guess everyone knows what <a href="https://puppetlabs.com/">Puppet</a> is but probably not
+everyone knows how to write Puppet modules. This article outlines what I've
+learned while adding a new module to an existing Puppet configuration without
+having any previous knowledge beforehand and not reading the official
+documentation (which I should have done).</p>
+<h2>Existing setup</h2>
+<p>The existing setup is a single git repository, which holds all of the Puppet
+configuration for all hosts and environments. The main directory inside the
+repo is <code>puppet/modules</code>. I wanted to add a few Python scripts which automate
+tasks inside <a href="https://www.jetbrains.com/youtrack/">YouTrack</a>.</p>
+<h2>What to do next</h2>
+<p>First step in understanding Puppet was to figure out what do I need to do ?</p>
+<ul>
+<li>Have my scripts inside the repository;</li>
+<li>Provide configuration file for credentials;</li>
+<li>Configure cron jobs;</li>
+<li>Install all of this on one of the existing systems.</li>
+</ul>
+<p>My directory layout looks like this</p>
+<div class="highlight"><pre>./puppet/modules/youtrack/
+                        ./files/archive
+                        ./manifests/init.pp
+                        ./templates/youtrack.conf.erb
+</pre></div>
+
+
+<p><code>files/</code> is where all the scripts go. They can be accessed from here later on.
+<code>manifests/init.pp</code> is the definition of this module - what gets installed where
+and so on. <code>templates/</code> is where templates go. These are usually config files
+which use a placeholder for their values.</p>
+<p>My <code>files/archive</code> is a simple executable Python script, which queries YouTrack
+for old issues and archives them. It looks for a <code>youtrack.conf</code> file at a
+pre-defined location (the location on the host system) or at environment variables
+for testing purposes.</p>
+<p><code>templates/youtrack.conf.erb</code> looks like this</p>
+<div class="highlight"><pre><span class="k">[main]</span>
+<span class="na">url</span>  <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_url&#39;) %&gt;</span>
+<span class="na">user</span> <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_user&#39;) %&gt;</span>
+<span class="na">pass</span> <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_pass&#39;) %&gt;</span>
+</pre></div>
+
+
+<p><code>manifests/init.pp</code> looks like this</p>
+<div class="highlight"><pre>class youtrack {
+  <span class="nv">$youtrack_files</span> =
+    &#39;/opt/devops/puppet/modules/youtrack/files&#39;
+
+  file { &#39;/opt/youtrack.conf&#39;:
+    content =&gt; template(&#39;youtrack/youtrack.conf.erb&#39;),
+  }
+
+  cron { &#39;Archive issues older than 2 weeks&#39;:
+    ensure      =&gt; present,
+    command     =&gt; &quot;cd <span class="cp">${</span><span class="n">youtrack_files</span><span class="cp">}</span> <span class="err">&amp;&amp;</span> <span class="cp">${</span><span class="n">youtrack_files</span><span class="cp">}</span>/archive&quot;,
+    environment =&gt; [ &#39;MAILTO=devops@example.com&#39; ],
+    user        =&gt; &#39;root&#39;,
+    minute      =&gt; 0,
+    hour        =&gt; 8,
+  }
+}
+</pre></div>
+
+
+<p>Once Puppet applies this configuration on the host system it will</p>
+<ul>
+<li>Install the configuration template under <code>/opt/youtrack.conf</code>
+replacing the placeholder variables with actual values. Notice the
+argument to <code>template()</code> - it's of the form module_name/file_name;</li>
+<li>Add a cron job entry for my Python script.</li>
+</ul>
+<p><strong>NOTE:</strong> The host system is the Puppet master so I don't really need to
+install my Python scripts into another location. I could if I wanted to but
+this isn't necessary. Cron is executing the script from inside the git
+checkout.</p>
+<h2>Bundle it all together</h2>
+<p>Our module is done. Now we need to instruct Puppet that we want to use it.
+I have a <code>puppet/modules/role/manifests/pmaster.pp</code> which defines what modules
+get used on the Puppet master machine. <code>pmaster</code> matches the hostname of the
+system (that's how it's been configured to work). The module looks like this</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="n">role::pmaster</span> {
+  <span class="n">include</span> <span class="n">youtrack</span>
+
+  ...
+}
+</pre></div>
+
+
+<p>There is also a <code>puppet/modules/common/manifests/vars-static.pp</code> file which
+defines all the variables used in the templates. Simply add the necessary ones
+at the bottom:</p>
+<div class="highlight"><pre><span class="x">@@ -197,4 +197,9 @@</span>
+<span class="x">+</span>
+<span class="x">+  </span><span class="err">#</span><span class="x"> YouTrack automation</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_url</span><span class="x">  = &#39;http://example.com&#39;</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_user</span><span class="x"> = &#39;changeMe&#39;</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_pass</span><span class="x"> = &#39;changeMe&#39;</span>
+<span class="x">}</span>
+</pre></div>
+
+
+<p><strong>NOTE:</strong> in reality this file is just a placeholder. The real values are not
+stored in git but are configured manually on systems which need them. On the
+Puppet master there are separate <code>XXX-vars.pp</code> files for different environments
+like devel, staging and production.</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, </p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2016/03/01/puppet-for-complete-beginners/';
+                var disqus_url = 'http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

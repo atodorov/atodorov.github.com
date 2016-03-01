@@ -1,5 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-02-23T13:08:00+02:00</updated><entry><title>Ruby &amp; Time-based Testing</title><link href="http://atodorov.org/blog/2016/02/23/ruby-time-based-testing/" rel="alternate"></link><updated>2016-02-23T13:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-02-23:blog/2016/02/23/ruby-time-based-testing/</id><summary type="html">&lt;p&gt;Publishing this mostly for self reference.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-03-01T15:08:00+02:00</updated><entry><title>Puppet for Complete Beginners</title><link href="http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/" rel="alternate"></link><updated>2016-03-01T15:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-03-01:blog/2016/03/01/puppet-for-complete-beginners/</id><summary type="html">&lt;p&gt;I guess everyone knows what &lt;a href="https://puppetlabs.com/"&gt;Puppet&lt;/a&gt; is but probably not
+everyone knows how to write Puppet modules. This article outlines what I've
+learned while adding a new module to an existing Puppet configuration without
+having any previous knowledge beforehand and not reading the official
+documentation (which I should have done).&lt;/p&gt;
+&lt;h2&gt;Existing setup&lt;/h2&gt;
+&lt;p&gt;The existing setup is a single git repository, which holds all of the Puppet
+configuration for all hosts and environments. The main directory inside the
+repo is &lt;code&gt;puppet/modules&lt;/code&gt;. I wanted to add a few Python scripts which automate
+tasks inside &lt;a href="https://www.jetbrains.com/youtrack/"&gt;YouTrack&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;What to do next&lt;/h2&gt;
+&lt;p&gt;First step in understanding Puppet was to figure out what do I need to do ?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Have my scripts inside the repository;&lt;/li&gt;
+&lt;li&gt;Provide configuration file for credentials;&lt;/li&gt;
+&lt;li&gt;Configure cron jobs;&lt;/li&gt;
+&lt;li&gt;Install all of this on one of the existing systems.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;My directory layout looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;./puppet/modules/youtrack/
+                        ./files/archive
+                        ./manifests/init.pp
+                        ./templates/youtrack.conf.erb
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;files/&lt;/code&gt; is where all the scripts go. They can be accessed from here later on.
+&lt;code&gt;manifests/init.pp&lt;/code&gt; is the definition of this module - what gets installed where
+and so on. &lt;code&gt;templates/&lt;/code&gt; is where templates go. These are usually config files
+which use a placeholder for their values.&lt;/p&gt;
+&lt;p&gt;My &lt;code&gt;files/archive&lt;/code&gt; is a simple executable Python script, which queries YouTrack
+for old issues and archives them. It looks for a &lt;code&gt;youtrack.conf&lt;/code&gt; file at a
+pre-defined location (the location on the host system) or at environment variables
+for testing purposes.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;templates/youtrack.conf.erb&lt;/code&gt; looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[main]&lt;/span&gt;
+&lt;span class="na"&gt;url&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_url&amp;#39;) %&amp;gt;&lt;/span&gt;
+&lt;span class="na"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_user&amp;#39;) %&amp;gt;&lt;/span&gt;
+&lt;span class="na"&gt;pass&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_pass&amp;#39;) %&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;manifests/init.pp&lt;/code&gt; looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;class youtrack {
+  &lt;span class="nv"&gt;$youtrack_files&lt;/span&gt; =
+    &amp;#39;/opt/devops/puppet/modules/youtrack/files&amp;#39;
+
+  file { &amp;#39;/opt/youtrack.conf&amp;#39;:
+    content =&amp;gt; template(&amp;#39;youtrack/youtrack.conf.erb&amp;#39;),
+  }
+
+  cron { &amp;#39;Archive issues older than 2 weeks&amp;#39;:
+    ensure      =&amp;gt; present,
+    command     =&amp;gt; &amp;quot;cd &lt;span class="cp"&gt;${&lt;/span&gt;&lt;span class="n"&gt;youtrack_files&lt;/span&gt;&lt;span class="cp"&gt;}&lt;/span&gt; &lt;span class="err"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="cp"&gt;${&lt;/span&gt;&lt;span class="n"&gt;youtrack_files&lt;/span&gt;&lt;span class="cp"&gt;}&lt;/span&gt;/archive&amp;quot;,
+    environment =&amp;gt; [ &amp;#39;MAILTO=devops@example.com&amp;#39; ],
+    user        =&amp;gt; &amp;#39;root&amp;#39;,
+    minute      =&amp;gt; 0,
+    hour        =&amp;gt; 8,
+  }
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Once Puppet applies this configuration on the host system it will&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Install the configuration template under &lt;code&gt;/opt/youtrack.conf&lt;/code&gt;
+replacing the placeholder variables with actual values. Notice the
+argument to &lt;code&gt;template()&lt;/code&gt; - it's of the form module_name/file_name;&lt;/li&gt;
+&lt;li&gt;Add a cron job entry for my Python script.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; The host system is the Puppet master so I don't really need to
+install my Python scripts into another location. I could if I wanted to but
+this isn't necessary. Cron is executing the script from inside the git
+checkout.&lt;/p&gt;
+&lt;h2&gt;Bundle it all together&lt;/h2&gt;
+&lt;p&gt;Our module is done. Now we need to instruct Puppet that we want to use it.
+I have a &lt;code&gt;puppet/modules/role/manifests/pmaster.pp&lt;/code&gt; which defines what modules
+get used on the Puppet master machine. &lt;code&gt;pmaster&lt;/code&gt; matches the hostname of the
+system (that's how it's been configured to work). The module looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="n"&gt;role::pmaster&lt;/span&gt; {
+  &lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="n"&gt;youtrack&lt;/span&gt;
+
+  ...
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;There is also a &lt;code&gt;puppet/modules/common/manifests/vars-static.pp&lt;/code&gt; file which
+defines all the variables used in the templates. Simply add the necessary ones
+at the bottom:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="x"&gt;@@ -197,4 +197,9 @@&lt;/span&gt;
+&lt;span class="x"&gt;+&lt;/span&gt;
+&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="x"&gt; YouTrack automation&lt;/span&gt;
+&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_url&lt;/span&gt;&lt;span class="x"&gt;  = &amp;#39;http://example.com&amp;#39;&lt;/span&gt;
+&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_user&lt;/span&gt;&lt;span class="x"&gt; = &amp;#39;changeMe&amp;#39;&lt;/span&gt;
+&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_pass&lt;/span&gt;&lt;span class="x"&gt; = &amp;#39;changeMe&amp;#39;&lt;/span&gt;
+&lt;span class="x"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; in reality this file is just a placeholder. The real values are not
+stored in git but are configured manually on systems which need them. On the
+Puppet master there are separate &lt;code&gt;XXX-vars.pp&lt;/code&gt; files for different environments
+like devel, staging and production.&lt;/p&gt;</summary><category term="fedora.planet"></category></entry><entry><title>Ruby &amp; Time-based Testing</title><link href="http://atodorov.org/blog/2016/02/23/ruby-time-based-testing/" rel="alternate"></link><updated>2016-02-23T13:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-02-23:blog/2016/02/23/ruby-time-based-testing/</id><summary type="html">&lt;p&gt;Publishing this mostly for self reference.
 Here are two blog posts on the topic of testing time
 dependent code in Ruby applications:&lt;/p&gt;
 &lt;p&gt;&lt;a href="http://metaskills.net/2012/08/07/synchronized-times-in-ruby-and-javascript-acceptance-tests-using-capybara-timecop-and-sinon-js/"&gt;Synchronized Times In Ruby &amp;amp; JavaScript Acceptance Tests Using Capybara, Timecop &amp;amp; Sinon.JS&lt;/a&gt;&lt;/p&gt;

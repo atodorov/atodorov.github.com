@@ -89,6 +89,84 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/" rel="bookmark" title="Permalink to Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com">
+                <h2 class="post-title">
+                    Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com
+                </h2>
+            </a>
+                <p>In my practice I like to use webhooks and integrate auxiliary services with
+my internal processes or businesses. One of these is the collection of emails.
+In this short article I'll show you an example of how to collect email addresses
+from the comments of a WordPress.com blog and the UserVoice feedback/ticketing system.</p>
+<h2>WordPress.com</h2>
+<p>For your WordPress.com blog from the Admin Dashboard navigate to 
+Settings -&gt; Webhooks and add a new webhook with action <code>comment_post</code>
+and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
+Django view that handles the input is shown below.</p>
+<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
+        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
+        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>UserVoice</h2>
+<p>For UserVoice navigate to Admin Dashboard -&gt; Settings -&gt; Integrations -&gt; 
+Service Hooks and add a custom web hook for the New Ticket notification.
+Then use a sample code like that:</p>
+<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+
+
+<p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
+possibly adding them to a database or anything else.</p>
+<p>I find webhooks extremely easy to setup and develop and used them whenever they are
+supported by the service provider. What other services do you use webhooks for? Please
+share your story in the comments.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 12 July 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/06/30/software-design-vol-1/" rel="bookmark" title="Permalink to Software Design Vol. 1">
                 <h2 class="post-title">
                     Software Design Vol. 1
@@ -1096,71 +1174,6 @@ easier, such as
                  on Mon 17 March 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/" rel="bookmark" title="Permalink to Reducing AWS Cloud Costs - Real Money Example">
-                <h2 class="post-title">
-                    Reducing AWS Cloud Costs - Real Money Example
-                </h2>
-            </a>
-                <p><a href="http://aws.amazon.com/ebs/pricing/effective-february-2014/">Last month</a> Amazon
-reduced by 50% prices for EBS storage. This, combined with 
-<a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">shrinking EBS root volume size</a> and
-<a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">moving /tmp to instance storage</a>
-allowed me to reduce EBS related costs behind <a href="http://www.dif.io">Difio</a> by around 50%.
-Following are the real figures from my AWS Bill.</p>
-<p>EBS costs for Difio were gradually rising up with every new node added to the cluster and
-increased package processing (resulting in more I/O):</p>
-<ul>
-<li>November 2013 - $7.38</li>
-<li>December 2013 - $10.55</li>
-<li>January 2014 - $11.97</li>
-</ul>
-<p>January 2014:</p>
-<div class="highlight"><pre>EBS
-$0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
-$0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
-$0.10  per 1 million I/O requests               9,405,243 IOs   $0.94
-                                                        Total: $11.97
-</pre></div>
-
-
-<p>In February there was one new system added to process additional requests
-(cluster nodes run as spot instances) and an increased number of temporary
-instances (although I haven't counted them) while I was restructuring AMI
-internals to accommodate the <a href="https://github.com/difio/difio">open source</a>
-version of Difio. My assumption (based on historical data) is this would
-have driven the costs up in the region of $15 per month only for EBS.</p>
-<p>After implementing the stated minimal improvements and having Amazon reduced the prices by
-half the bill looks like this:</p>
-<p>February 2014:</p>
-<div class="highlight"><pre>EBS
-$0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
-$0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
-$0.05  per 1 million I/O requests               5,704,482 IOs   $0.29
-                                                        Total:  $4.01
-</pre></div>
-
-
-<h2>Explanation</h2>
-<p><em>Snapshot data stored</em> is the volume of snapshots (AMIs, backups, etc) which
-I have. This is fairly constant.</p>
-<p><em>Provisioned storage</em> is the volume of EBS storage provisioned for running
-instances (e.g. root file system, data partitions, etc.). This was reduced
-mainly because of shrinking the root volumes. (Previously I've used larger
-root volumes for a bigger /tmp).</p>
-<p><em>I/O requests</em> is the number of I/O requests associated with your EBS volumes.
-As far as I understand Amazon doesn't charge for I/O related to ephemeral storage.
-Moving /tmp from EBS to instance storage is the reason this was reduced roughly by half.</p>
-<h2>Where To Next</h2>
-<p>I've reduced the root volumes back to the 8GB defaults but this has still room for
-improvement b/c the AMI is quite minimal. This will bring the largest improvements.
-Another thing is the still relatively high I/O rate that touches EBS volumes.
-I haven't investigated where this comes from though.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 07 March 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -86,6 +86,71 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/" rel="bookmark" title="Permalink to Reducing AWS Cloud Costs - Real Money Example">
+                <h2 class="post-title">
+                    Reducing AWS Cloud Costs - Real Money Example
+                </h2>
+            </a>
+                <p><a href="http://aws.amazon.com/ebs/pricing/effective-february-2014/">Last month</a> Amazon
+reduced by 50% prices for EBS storage. This, combined with 
+<a href="/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/">shrinking EBS root volume size</a> and
+<a href="/blog/2014/02/10/moving-tmp-from-ebs-to-instance-storage/">moving /tmp to instance storage</a>
+allowed me to reduce EBS related costs behind <a href="http://www.dif.io">Difio</a> by around 50%.
+Following are the real figures from my AWS Bill.</p>
+<p>EBS costs for Difio were gradually rising up with every new node added to the cluster and
+increased package processing (resulting in more I/O):</p>
+<ul>
+<li>November 2013 - $7.38</li>
+<li>December 2013 - $10.55</li>
+<li>January 2014 - $11.97</li>
+</ul>
+<p>January 2014:</p>
+<div class="highlight"><pre>EBS
+$0.095 per GB-Month of snapshot data stored     9.052 GB-Mo     $0.86
+$0.10  per GB-month of provisioned storage      101.656 GB-Mo  $10.17
+$0.10  per 1 million I/O requests               9,405,243 IOs   $0.94
+                                                        Total: $11.97
+</pre></div>
+
+
+<p>In February there was one new system added to process additional requests
+(cluster nodes run as spot instances) and an increased number of temporary
+instances (although I haven't counted them) while I was restructuring AMI
+internals to accommodate the <a href="https://github.com/difio/difio">open source</a>
+version of Difio. My assumption (based on historical data) is this would
+have driven the costs up in the region of $15 per month only for EBS.</p>
+<p>After implementing the stated minimal improvements and having Amazon reduced the prices by
+half the bill looks like this:</p>
+<p>February 2014:</p>
+<div class="highlight"><pre>EBS
+$0.095 per GB-Month of snapshot data stored     8.668 GB-Mo     $0.82
+$0.05  per GB-month of provisioned storage      58.012 GB-Mo    $2.90
+$0.05  per 1 million I/O requests               5,704,482 IOs   $0.29
+                                                        Total:  $4.01
+</pre></div>
+
+
+<h2>Explanation</h2>
+<p><em>Snapshot data stored</em> is the volume of snapshots (AMIs, backups, etc) which
+I have. This is fairly constant.</p>
+<p><em>Provisioned storage</em> is the volume of EBS storage provisioned for running
+instances (e.g. root file system, data partitions, etc.). This was reduced
+mainly because of shrinking the root volumes. (Previously I've used larger
+root volumes for a bigger /tmp).</p>
+<p><em>I/O requests</em> is the number of I/O requests associated with your EBS volumes.
+As far as I understand Amazon doesn't charge for I/O related to ephemeral storage.
+Moving /tmp from EBS to instance storage is the reason this was reduced roughly by half.</p>
+<h2>Where To Next</h2>
+<p>I've reduced the root volumes back to the 8GB defaults but this has still room for
+improvement b/c the AMI is quite minimal. This will bring the largest improvements.
+Another thing is the still relatively high I/O rate that touches EBS volumes.
+I haven't investigated where this comes from though.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 07 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/07/reducing-aws-cloud-costs-real-money-example/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/" rel="bookmark" title="Permalink to How do You Test Fonts">
                 <h2 class="post-title">
                     How do You Test Fonts
@@ -1557,72 +1622,6 @@ and what it does poorly. Definitely a mistake I've happened to made myself. I'm 
                  on Mon 09 December 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/12/09/book-review-ux-for-lean-startups/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/" rel="bookmark" title="Permalink to Duplicate Amazon SQS Messages Cause Multiple Emails">
-                <h2 class="post-title">
-                    Duplicate Amazon SQS Messages Cause Multiple Emails
-                </h2>
-            </a>
-                <p>Beware if using Amazon Simple Queue Service to send email messages!
-Sometime SQS messages are duplicated which results in multiple copies of
-the messages being sent. This happened today at <a href="http://www.dif.io">Difio</a>
-and is really annoying to users. In this post I will explain why there is no easy
-way of fixing it.</p>
-<blockquote>
-<p>Q: Can a deleted message be received again?</p>
-<p>Yes, under rare circumstances you might receive a previously deleted message again.
-This can occur in the rare situation in which a DeleteMessage operation doesn't
-delete all copies of a message because one of the servers in the distributed
-Amazon SQS system isn't available at the time of the deletion. That message copy
-can then be delivered again. You should design your application so that no errors
-or inconsistencies occur if you receive a deleted message again.</p>
-<p>Amazon FAQ</p>
-</blockquote>
-<p>In my case the cron scheduler logs say:</p>
-<div class="highlight"><pre>&gt;&gt;&gt; &lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&gt;
-</pre></div>
-
-
-<p>While on the worker nodes the logs say:</p>
-<div class="highlight"><pre><span class="k">[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]</span>
-<span class="k">[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]</span>
-</pre></div>
-
-
-<p>This clearly shows the same message (see the UUID) has been processed twice!
-This resulted in hundreds of duplicate emails :(.</p>
-<h2>Why This Is Hard To Fix</h2>
-<p>There are two basic approaches to solve this issue:</p>
-<ul>
-<li>Check some log files or database for previous record of the message having
-been processed;</li>
-<li>Use idempotent operations that if you process the message again, you
-get the same results, and that those results don't create duplicate files/records.</li>
-</ul>
-<p>The problem with checking for duplicate messages is: </p>
-<ul>
-<li>There is a race condition between marking the message as processed and the
-second check;</li>
-<li>You need to use some sort of locking mechanism to safe-guard against the race condition;</li>
-<li>In the event of an eventual consistency of the log/DB you can't guarantee that
-the previous attempt will show up and so can't guarantee that you won't process
-the message twice.</li>
-</ul>
-<p>All of the above don't seem to work well for distributed applications not to mention
-Difio processes millions of messages per month, per node and the logs are quite big.</p>
-<p>The second option is to have control of the Message-Id or some other email header
-so that the second message will be discarded either at the server (Amazon SES in my case)
-or at the receiving MUA. I like this better but I don't think it is technically possible
-with the current environment. Need to check though. </p>
-<p>I've asked AWS support to look into
-<a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782">this thread</a> and hopefully
-they will have some more hints. If you have any other ideas please post in the comments!
-Thanks!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 06 December 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
