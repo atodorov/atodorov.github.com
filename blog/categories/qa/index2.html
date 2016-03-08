@@ -86,6 +86,94 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/" rel="bookmark" title="Permalink to Unit Testing Example - Bad Stub Design in DNF">
+                <h2 class="post-title">
+                    Unit Testing Example - Bad Stub Design in DNF
+                </h2>
+            </a>
+                <p>In software testing, usually unit testing, test stubs are programs that simulate
+the behaviors of external dependencies that a module undergoing the test depends
+on. Test stubs provide canned answers to calls made during the test.</p>
+<p>I've discovered an improperly written stub method in one of
+<a href="http://dnf.baseurl.org/">DNF</a>'s tests:</p>
+<div class="highlight"><span class="filename">tests/test_download.py</span><pre><span class="k">class</span> <span class="nc">DownloadCommandTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">stub_fn</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&#39;.src.rpm&#39;</span> <span class="ow">in</span> <span class="n">pkg_spec</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">sourcerpm</span><span class="o">=</span><span class="n">pkg_spec</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">Query</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">pkg</span> <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="n">q</span> <span class="k">if</span> <span class="n">pkg_spec</span> <span class="o">==</span> <span class="n">pkg</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+        <span class="n">cli</span> <span class="o">=</span> <span class="n">mock</span><span class="o">.</span><span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">download</span><span class="o">.</span><span class="n">DownloadCommand</span><span class="p">(</span><span class="n">cli</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">cli</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">repos</span> <span class="o">=</span> <span class="n">dnf</span><span class="o">.</span><span class="n">repodict</span><span class="o">.</span><span class="n">RepoDict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">_get_query</span> <span class="o">=</span> <span class="n">stub_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">_get_query_source</span> <span class="o">=</span> <span class="n">stub_fn</span>
+</pre></div>
+
+
+<p>The replaced methods look like this:</p>
+<div class="highlight"><span class="filename">plugins/download.py</span><pre>    <span class="k">def</span> <span class="nf">_get_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pkg_spec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a query to match a pkg_spec.&quot;&quot;&quot;</span>
+        <span class="n">subj</span> <span class="o">=</span> <span class="n">dnf</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">Subject</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">subj</span><span class="o">.</span><span class="n">get_best_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">sack</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">available</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">run</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;No package &quot;</span> <span class="o">+</span> <span class="n">pkg_spec</span> <span class="o">+</span> <span class="s">&quot; available.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">dnf</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">PackageNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">q</span>
+
+    <span class="k">def</span> <span class="nf">_get_query_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pkg_spec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;Return a query to match a source rpm file name.&quot;&quot;&quot;</span>
+        <span class="n">pkg_spec</span> <span class="o">=</span> <span class="n">pkg_spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c"># skip the .rpm</span>
+        <span class="n">nevra</span> <span class="o">=</span> <span class="n">hawkey</span><span class="o">.</span><span class="n">split_nevra</span><span class="p">(</span><span class="n">pkg_spec</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">sack</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">available</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">latest</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+                     <span class="n">release</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">release</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">nevra</span><span class="o">.</span><span class="n">arch</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">run</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;No package &quot;</span> <span class="o">+</span> <span class="n">pkg_spec</span> <span class="o">+</span> <span class="s">&quot; available.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">dnf</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">PackageNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">q</span>
+</pre></div>
+
+
+<p>As seen here <em>stub_fn</em> replaces the <em>_get_query</em> methods from the class under
+test. At the time of writing this has probably seemed like a good idea to
+speed up writing the tests.</p>
+<p>The trouble is we should be replacing the external dependencies of <em>_get_query</em>
+(other parts of DNF essentially) and not methods from <em>DownloadCommand</em>. To
+understand why this is a bad idea check
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/113">PR #113</a>,
+which directly modifies <em>_get_query</em>. There's no way to test this patch
+with the current state of the test.</p>
+<p>So I took a few days to experiment and update the current test stubs. The
+result is 
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a>.
+The important bits are the <em>SackStub</em> and <em>SubjectStub</em> classes which hold
+information about the available RPM packages on the system. The rest are cosmetics
+to fit around the way the query objects are used (q.available(), q.latest(), q.filter()).
+The proposed design correctly overrides the external dependencies on
+<em>dnf.subject.Subject</em> and <em>self.base.sack</em> which are initialized before our
+plugin is loaded by DNF.</p>
+<p>I must say this is the first error of this kind I've seen in my QA practice so far.
+I have no idea if this was a minor oversight or something which happens more frequently
+in open source projects but it's a great example nevertheless.</p>
+<p>For those of you who'd like to get started on unit testing I can recommend the book
+<a href="http://www.amazon.com/gp/product/1933988274/ref=as_li_ss_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=1933988274&linkCode=as2&tag=atodorovorg-20">The Art of Unit Testing: With Examples in .Net</a><img src="http://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=1933988274" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
+by Roy Osherove!</p>
+<p><strong>UPDATE</strong>: Part 2 with more practical examples can be found
+<a href="/blog/2015/11/23/bad-stub-design-in-dnf/">here</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 September 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="bookmark" title="Permalink to 4000+ bugs in Fedora - checksec failures">
                 <h2 class="post-title">
                     4000+ bugs in Fedora - checksec failures
@@ -1040,59 +1128,6 @@ by designing test suites for fonts packages.</p>
                  on Tue 04 March 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/" rel="bookmark" title="Permalink to Last Week in Fedora QA">
-                <h2 class="post-title">
-                    Last Week in Fedora QA
-                </h2>
-            </a>
-                <p>Here are some highlights from the past week discussions in Fedora which I found
-interesting or participated in.</p>
-<h2>Call to Action: Improving Overall Test Coverage in Fedora</h2>
-<p>I can not stress enough how important it is to further
-<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improve test coverage in Fedora</a>!
-You can help too. Here's how:</p>
-<ul>
-<li>Join upstream and create a test suite for a package you find interesting;</li>
-<li>Provide patches - <a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/196035.html">first patch</a>
-came in less than 30 minutes of initial announcement :);</li>
-<li>Review packages in the wiki and help identify false negatives;</li>
-<li>Forward to people who may be interested to work on these items;</li>
-<li>Share and promote in your local open source and developer communities;</li>
-</ul>
-<h2>Auto BuildRequires</h2>
-<p><a href="http://people.redhat.com/~rjones/auto-buildrequires/">Auto-BuildRequires</a>
-is a simple set of scripts which compliments <code>rpmbuild</code> by
-automatically suggesting BuildRequires lines for the just built package.</p>
-<p>It would be interesting to have this integrated into Koji and/or
-continuous integration environment and compare the output between every two
-consecutive builds (iow older and newer package versions). It sounds like a
-good way to identify newly added or removed dependencies and update the package
-specs accordingly.</p>
-<h2>How To Test Fonts Packages</h2>
-<p>This is exactly what 
-<a href="https://lists.fedoraproject.org/pipermail/test/2014-February/120570.html">Christopher Meng asked</a>
-and frankly I have no idea. </p>
-<p>I've come across a few fonts packages (<em>amiri-fonts</em>, <em>gnu-free-fonts</em> and <em>thai-scalable-fonts</em>)
-which seem to have some sort of test suites but I don't know how they work or
-what type of problems they test for. On top of that all three have a different
-way of doing things (e.g. not using a standardized test framework or a variation of such).</p>
-<p>I'll keep you posted on this once I manage to get more info from upstream developers.</p>
-<h2>Is URL Field in RPM Useless</h2>
-<p>So is it? Opinions here differ from totally useless to "don't remove it, I need it".
-However I run a small test and from 2574 RPMs on the source DVD there is around 
-40% of "something different than HTTP 200 OK". This means <strong>40% potentially broken URLs</strong>!</p>
-<p>The majority are responses in the 3XX range and only less than 10% are 
-actual errors (4XX, 5XX, missing URLs or connection errors).</p>
-<p>It will be interesting to see if this can be removed from <code>rpm</code> altogether.
-I don't think it will happen soon but if we don't use it why have it there? </p>
-<p>My script for the test is
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/test-rpm-url-field.sh">here</a>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 03 March 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -1152,7 +1187,7 @@ I don't think it will happen soon but if we don't use it why have it there? </p>
 <section>
     <p>
         I am a QA contractor at Red Hat responsible for finding over
-        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1500 bugs</a>,
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
         a general purpose open source developer, Red Hat Certified professional,
         cloud hacker and an entrepreneur! My latest start-up is
         <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
