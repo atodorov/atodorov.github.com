@@ -73,6 +73,7 @@ CSS_OVERRIDE = "override.css"
 PATH = 'content'
 
 FOOTER_INCLUDE = "myfooter.html"
+IGNORE_FILES = [FOOTER_INCLUDE]
 EXTRA_TEMPLATES_PATHS = [os.path.join(os.path.dirname(__file__), PATH)]
 
 TIMEZONE = 'Europe/Sofia'
