@@ -86,6 +86,53 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="bookmark" title="Permalink to python-libs in RHEL 7.2 broke SSL verification in s3cmd">
+                <h2 class="post-title">
+                    python-libs in RHEL 7.2 broke SSL verification in s3cmd
+                </h2>
+            </a>
+                <p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+<div class="highlight"><pre>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</pre></div>
+
+
+<p>This looks a bit doggy as I don't quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+<p>Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 24 November 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/" rel="bookmark" title="Permalink to GitHub Bugzilla Hook">
                 <h2 class="post-title">
                     GitHub Bugzilla Hook
@@ -1334,35 +1381,6 @@ but so far got no answer. </p>
                  on Wed 13 May 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/05/13/why-does-sysctl-not-write-under-slash-sys/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/" rel="bookmark" title="Permalink to Using USB to VGA Adapter on MacBook Air with Linux">
-                <h2 class="post-title">
-                    Using USB to VGA Adapter on MacBook Air with Linux
-                </h2>
-            </a>
-                <p>A quick solution for <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> users running Linux who want to
-use external projector is to use a USB to VGA adapter. Mine is
-<a href="http://www.amazon.com/gp/product/B004AIJE9G/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B004AIJE9G&linkCode=as2&tag=atodorovorg-20&linkId=74W7KWXBGC7SZ5QH">Plugable UGA-165</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B004AIJE9G" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-and it works great with Red Hat Enterprise Linux 7.1.</p>
-<p>After the device is plugged in the <em>udl</em> kernel module is loaded
-and a new framebuffer device is created (/dev/fb1 in my case). Using
-<em>mate-display-properties</em> I'm able to configure the 2nd monitor attached
-to the USB video card. I was able to succeffully display an OpenOffice
-presentation on the 2nd monitor and play YouTube video.</p>
-<p>All USB 2.0 devices from Plugable should be well supported on Linux.
-For USB 3.0 David Airlie from Red Hat is doing some reverse engineering
-but I have no idea what the status is. For more info see:</p>
-<ul>
-<li><a href="http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0">http://plugable.com/2012/06/21/displaylink-usb-devices-on-linux-kernel-3-4-0</a></li>
-<li><a href="http://airlied.livejournal.com/80307.html">http://airlied.livejournal.com/80307.html</a></li>
-<li><a href="http://airlied.livejournal.com/80516.html">http://airlied.livejournal.com/80516.html</a></li>
-<li><a href="http://airlied.livejournal.com/80797.html">http://airlied.livejournal.com/80797.html</a></li>
-</ul>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 05 May 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/05/05/using-usb-to-vga-adapter-on-macbook-air-with-linux/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

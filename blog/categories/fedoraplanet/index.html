@@ -86,6 +86,86 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/" rel="bookmark" title="Permalink to Hello World QA Challenge">
+                <h2 class="post-title">
+                    Hello World QA Challenge
+                </h2>
+            </a>
+                <p>Recently I've been asked on Quora
+"Do simple programs like hello world have any bugs" ? In particular if the
+computer hardware and OS are healthy, will there be any bugs in a simple
+hello-world program?</p>
+<p>I'm challenging you to tell me what
+kinds of bugs have you seen which would easily apply to a very simple program!
+Below are some I was able to think about.</p>
+<h2>Localization</h2>
+<p>Once we add a requirement to our system to work in environment which supports
+multiple languages and input methods, not supporting them immediately becomes a bug,
+although the SUT still functions correctly. For example, if using a French locale
+I would expect the program to print "Bonjour le monde". Same for German, Spanish,
+Italian, etc. It even becomes trickier with languages using non-latin script like
+Bulgarian and Japanese for example. Depending on your environment you may not be
+able to display non-latin script at all.
+See also
+<a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How do you test fonts</a>!</p>
+<h2>Packaging and distribution</h2>
+<p>This is an entire class of problems not directly related to the SUT but to the way
+it is packaged and distributed to its target customers. For a Linux system it makes
+sense to have an RPM or DEB packages. Dependency resolution and proper installation
+and upgrade for these packages need to be tested and ensured.</p>
+<p>A famous example of a high impact packaging bug is
+<a href="https://code.djangoproject.com/ticket/19858">Django #19858</a>. During an urgent
+security release it was discovered that the source package was shipping byte-compiled
+<code>*.pyc</code> files made with a newer version of Python (2.7). Even worse there were
+byte-compiled files without the corresponding source files.</p>
+<p>Being a security release everyone
+rushed to upgrade immediately. Everyone who had Python 2.6 saw their website
+produce <code>ImportError: Bad magic number</code> and crash immediately after the upgrade!</p>
+<p><strong>NOTE:</strong> byte-compiled files between different versions of Python are
+incompatible!</p>
+<p>Another one is
+<a href="https://github.com/tschellenbach/Django-facebook/issues/262">django-facebook #262</a>
+in which version 4.3.0 suddenly grew from 200KiB to 23MiB in size, shipping a ton
+of extra JPEG images.</p>
+<h2>Portability</h2>
+<p>There are so many different portability issues which may affect an otherwise
+working program. You only need to add a requirement to build/execute on another
+OS or CPU architecture - for example aarch64 (64-bit ARM).
+This resulted in hundreds of bugs
+reported by Dennis Gilmore, for example <a href="https://bugzilla.redhat.com/show_bug.cgi?id=926850">RHBZ#926850</a> which is also related to
+packaging and the build chain.</p>
+<p>Then we have possibility for big endian vs. little endian issues especially if
+we run on Power 8 CPU which supports both modes.</p>
+<p>Another one could be 16bit vs. 32bit vs 64bit memory addressing. For example
+on platforms like IBM mainframe (s390) they reserved the most significant bit
+to easily support applications expecting 24-bit addressing, as well as to
+sidestep a problem with extending two instructions to handle 32-bit unsigned
+addresses, which made the address space 31-bits!</p>
+<h2>Performance</h2>
+<p>Not all processors are created equal! Both Intel (x86_64), ARM and PowerPC
+have different instruction sets and numbers of registers. Depending on what
+sort of calculations you perform one of the architectures may be more suitable
+than the other.</p>
+<h2>Typos</h2>
+<p>It not uncommon to mistype even common words like
+"hello" and "world" and I've rarely seen QAs and developers running spell
+checkers on all of their source strings. We do this for documentation and
+occasionally for man pages but for the actual program output or widget labels -
+almost never.</p>
+<h2>Challenge</h2>
+<p>I find the original question very interesting and a good metal exercise for
+IT professionals. I will be going through Bugzilla
+to find examples which illustrate the above points and even more possible problems
+with a program as simple as hello world and will update this blog accordingly!</p>
+<p>Tell me what kinds of bugs have you seen which would easily apply to a very simple program!
+It's best if you can post links to public bugs and/or detailed explanation.
+Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/03/11/qa-switch-from-waterfall-to-bdd/" rel="bookmark" title="Permalink to QA Switch from Waterfall to BDD">
                 <h2 class="post-title">
                     QA Switch from Waterfall to BDD
@@ -1710,53 +1790,6 @@ in the next few days so stay tuned!</p>
                  on Wed 25 November 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/11/25/blog-migration-from-octopress-to-pelican/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="bookmark" title="Permalink to python-libs in RHEL 7.2 broke SSL verification in s3cmd">
-                <h2 class="post-title">
-                    python-libs in RHEL 7.2 broke SSL verification in s3cmd
-                </h2>
-            </a>
-                <p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
-broken again. Indeed it's been broken since last Friday when I've upgraded to
-the latest RHEL 7.2. I quickly identified that I was hitting
-<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
-git checkout without any luck. This is when I started to suspect that python-libs
-has been updated in an incompatible way.</p>
-<p>After series of reported bugs,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
-<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
-<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
-nicely with this same RFC and that my patch proposal was wrong.
-This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
-<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
-<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
-also supplied the logic which performs SSL hostname validation.</p>
-<div class="highlight"><pre>if not self._context.check_hostname and self._check_hostname:
-    try:
-        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-    except Exception:
-        self.sock.shutdown(socket.SHUT_RDWR)
-        self.sock.close()
-        raise
-</pre></div>
-
-
-<p>This looks a bit doggy as I don't quite understand the intention behind
-<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
-both parameters set to False, which is
-<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
-<p>Notice the two try-except blocks. This is in case we're running with a
-version that has a context but not the check_hostname parameter. I've found
-the <em>inspect.getmembers</em> function which can be used to figure out what
-parameters are there for the init method but a solution based on it
-doesn't appear to be more elegant. I will describe this in more details in
-my next post.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 24 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

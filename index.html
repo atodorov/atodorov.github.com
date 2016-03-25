@@ -89,6 +89,86 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/" rel="bookmark" title="Permalink to Hello World QA Challenge">
+                <h2 class="post-title">
+                    Hello World QA Challenge
+                </h2>
+            </a>
+                <p>Recently I've been asked on Quora
+"Do simple programs like hello world have any bugs" ? In particular if the
+computer hardware and OS are healthy, will there be any bugs in a simple
+hello-world program?</p>
+<p>I'm challenging you to tell me what
+kinds of bugs have you seen which would easily apply to a very simple program!
+Below are some I was able to think about.</p>
+<h2>Localization</h2>
+<p>Once we add a requirement to our system to work in environment which supports
+multiple languages and input methods, not supporting them immediately becomes a bug,
+although the SUT still functions correctly. For example, if using a French locale
+I would expect the program to print "Bonjour le monde". Same for German, Spanish,
+Italian, etc. It even becomes trickier with languages using non-latin script like
+Bulgarian and Japanese for example. Depending on your environment you may not be
+able to display non-latin script at all.
+See also
+<a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How do you test fonts</a>!</p>
+<h2>Packaging and distribution</h2>
+<p>This is an entire class of problems not directly related to the SUT but to the way
+it is packaged and distributed to its target customers. For a Linux system it makes
+sense to have an RPM or DEB packages. Dependency resolution and proper installation
+and upgrade for these packages need to be tested and ensured.</p>
+<p>A famous example of a high impact packaging bug is
+<a href="https://code.djangoproject.com/ticket/19858">Django #19858</a>. During an urgent
+security release it was discovered that the source package was shipping byte-compiled
+<code>*.pyc</code> files made with a newer version of Python (2.7). Even worse there were
+byte-compiled files without the corresponding source files.</p>
+<p>Being a security release everyone
+rushed to upgrade immediately. Everyone who had Python 2.6 saw their website
+produce <code>ImportError: Bad magic number</code> and crash immediately after the upgrade!</p>
+<p><strong>NOTE:</strong> byte-compiled files between different versions of Python are
+incompatible!</p>
+<p>Another one is
+<a href="https://github.com/tschellenbach/Django-facebook/issues/262">django-facebook #262</a>
+in which version 4.3.0 suddenly grew from 200KiB to 23MiB in size, shipping a ton
+of extra JPEG images.</p>
+<h2>Portability</h2>
+<p>There are so many different portability issues which may affect an otherwise
+working program. You only need to add a requirement to build/execute on another
+OS or CPU architecture - for example aarch64 (64-bit ARM).
+This resulted in hundreds of bugs
+reported by Dennis Gilmore, for example <a href="https://bugzilla.redhat.com/show_bug.cgi?id=926850">RHBZ#926850</a> which is also related to
+packaging and the build chain.</p>
+<p>Then we have possibility for big endian vs. little endian issues especially if
+we run on Power 8 CPU which supports both modes.</p>
+<p>Another one could be 16bit vs. 32bit vs 64bit memory addressing. For example
+on platforms like IBM mainframe (s390) they reserved the most significant bit
+to easily support applications expecting 24-bit addressing, as well as to
+sidestep a problem with extending two instructions to handle 32-bit unsigned
+addresses, which made the address space 31-bits!</p>
+<h2>Performance</h2>
+<p>Not all processors are created equal! Both Intel (x86_64), ARM and PowerPC
+have different instruction sets and numbers of registers. Depending on what
+sort of calculations you perform one of the architectures may be more suitable
+than the other.</p>
+<h2>Typos</h2>
+<p>It not uncommon to mistype even common words like
+"hello" and "world" and I've rarely seen QAs and developers running spell
+checkers on all of their source strings. We do this for documentation and
+occasionally for man pages but for the actual program output or widget labels -
+almost never.</p>
+<h2>Challenge</h2>
+<p>I find the original question very interesting and a good metal exercise for
+IT professionals. I will be going through Bugzilla
+to find examples which illustrate the above points and even more possible problems
+with a program as simple as hello world and will update this blog accordingly!</p>
+<p>Tell me what kinds of bugs have you seen which would easily apply to a very simple program!
+It's best if you can post links to public bugs and/or detailed explanation.
+Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/03/11/qa-switch-from-waterfall-to-bdd/" rel="bookmark" title="Permalink to QA Switch from Waterfall to BDD">
                 <h2 class="post-title">
                     QA Switch from Waterfall to BDD
@@ -1602,44 +1682,6 @@ I hope it helps you!</p>
                  on Tue 01 December 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="bookmark" title="Permalink to Commit a file with the GitHub API and Python">
-                <h2 class="post-title">
-                    Commit a file with the GitHub API and Python
-                </h2>
-            </a>
-                <p>How do you commit changes to a file using the GitHub API ?
-I've found
-<a href="http://www.levibotelho.com/development/commit-a-file-with-the-github-api/">this post</a>
-by Levi Botelho which explains the necessary steps but without any code.
-So I've used it and created a
-<a href="https://github.com/atodorov/api-commit-test">Python example</a>.</p>
-<p>I've rearranged the steps so that all write operations follow after a certain
-section in the code and also added an intermediate section which creates the
-updated content based on what is available in the repository.</p>
-<p>I'm just appending
-versions of Markdown to the <code>.travis.yml</code> (I will explain why in my next post)
-and this is hard-coded for the sake of example. All content related operations
-are also based on the GitHub API because I want to be independent of the source
-code being around when I push this script to a hosting provider.</p>
-<p>I've tested this script against itself. In the
-<a href="https://github.com/atodorov/api-commit-test/commits/master">commits log</a>
-you can find the <em>Automatic update to Markdown-X.Y</em> messages. These are
-from the script. Also notice the <em>Merge remote-tracking branch 'origin/master'</em>
-messages, these appeared when I pulled to my local copy. I believe the
-reason for this is that I have some dangling trees and/or commits from
-the time I was still experimenting with a broken script. I've tested on another
-clean repository and <a href="https://github.com/atodorov/bztest/commits/master">there are</a>
-no such merges.</p>
-<p><strong>IMPORTANT</strong></p>
-<p>For this to work you need to properly authenticate with GitHub. I've crated
-a new token at <a href="https://github.com/settings/tokens">https://github.com/settings/tokens</a> with the <em>public_repo</em>
-permission and that works for me.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 01 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
