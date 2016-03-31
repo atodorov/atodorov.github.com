@@ -14,6 +14,7 @@ SITEURL = 'http://atodorov.org'
 RELATIVE_URLS = False
 
 FEED_ALL_ATOM = "atom.xml"
+FEED_MAX_ITEMS = DEFAULT_PAGINATION
 TAG_FEED_ATOM = TAG_URL.replace('{slug}', "%s") + 'atom.xml'
 
 DELETE_OUTPUT_DIRECTORY = True
