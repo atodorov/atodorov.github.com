@@ -3,6 +3,7 @@ date: 2016-01-15 12:00
 comments: true
 Tags: QA
 og_image: images/tesla_qa_bug.png
+twitter_image: images/tesla_qa_bug.png
 
 ![Tesla email](/images/tesla_qa_bug.png "Tesla email")
 

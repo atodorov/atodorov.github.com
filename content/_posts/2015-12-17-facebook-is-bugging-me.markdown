@@ -3,6 +3,7 @@ date: 2015-12-17 09:34
 comments: true
 Tags: QA
 og_image: images/facebook_android_icon_small.png
+twitter_image: images/facebook_android_icon_small.png
 
 ![Facebook icon](/images/facebook_android_icon_small.png "Facebook icon")
 
