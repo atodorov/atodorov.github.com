@@ -2,6 +2,7 @@ Title: Beware of Double Stubs in RSpec
 date: 2016-03-31 12:08
 comments: true
 og_image: /images/double-dip.jpg
+twitter_image: /images/double-dip.jpg
 Tags: fedora.planet, Ruby, QA
 
 I've been re-factoring some RSpec tests and encountered a method which has been
