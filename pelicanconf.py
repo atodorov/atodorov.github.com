@@ -95,17 +95,11 @@ DEFAULT_PAGINATION = 20
 
 THEME = '../pelican-clean-blog'
 
-TWITTER_USERNAME = "atodorov_"
-TWITTER_URL = "https://twitter.com/%s" % TWITTER_USERNAME
-GITHUB_URL = "https://github.com/atodorov"
-LINKEDIN_URL = "https://bg.linkedin.com/in/alextodorov"
-
 ADDTHIS_PUBID = "ra-5103cc5a2bc6ba17"
-FEEDBURNER_URL = "http://feeds.feedburner.com/atodorov"
 
 SOCIAL = (
-            ('twitter',  TWITTER_URL),
-            ('github',   GITHUB_URL),
-            ('linkedin', LINKEDIN_URL),
-            ('rss', FEEDBURNER_URL),
+            ('twitter',  "https://twitter.com/atodorov_"),
+            ('github',   "https://github.com/atodorov"),
+            ('linkedin', "https://bg.linkedin.com/in/alextodorov"),
+            ('rss',      "http://feeds.feedburner.com/atodorov"),
         )
