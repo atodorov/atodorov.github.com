@@ -103,3 +103,5 @@ SOCIAL = (
             ('linkedin', "https://bg.linkedin.com/in/alextodorov"),
             ('rss',      "http://feeds.feedburner.com/atodorov"),
         )
+
+FACEBOOK_ADMINS = ['1616937247']
