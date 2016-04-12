@@ -90,6 +90,82 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 1">
+                <h2 class="post-title">
+                    Speeding up Celery Backends, Part 1
+                </h2>
+            </a>
+                <p>I'm working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn't much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
+<h2>Why is Celery slow ?</h2>
+<p>Using <code>celery_load_test.py</code> together with 
+<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
+<ul>
+<li>
+<p><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</p>
+<div class="highlight"><pre><span class="nd">@cached_property</span>
+<span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">None</span>
+</pre></div>
+
+
+</li>
+<li>
+<p>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+
+<span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">s</span>
+
+<span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">s</span>
+
+<span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+</li>
+<li>
+<p><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</p>
+</li>
+</ul>
+<p>It's clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance. </p>
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I'm not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I'll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 05 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/" rel="bookmark" title="Permalink to Performance Profiling in Python with cProfile">
                 <h2 class="post-title">
                     Performance Profiling in Python with cProfile
@@ -1261,35 +1337,6 @@ comments.</p>
                  on Sun 15 September 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/09/15/lenovo-rants-battery-and-dock-flaws/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/" rel="bookmark" title="Permalink to Upcoming Talk: Fedora Test Days in Sofia">
-                <h2 class="post-title">
-                    Upcoming Talk: Fedora Test Days in Sofia
-                </h2>
-            </a>
-                <p>On September 28th I will be giving a short talk about
-<a href="https://fedoraproject.org/wiki/QA/Test_Days">Fedora Test Days</a> at the regular
-Linux for Bulgarians
-<a href="http://www.linux-bg.org/cgi-bin/y/index.pl?page=news&amp;key=459487176">conference</a>.
-I will explain what these are and how one can participate. I will also announce
-my plans and schedule to organize some
-<a href="https://fedoraproject.org/wiki/QA/Fedora_20_test_days">Fedora 20 test days</a>
-locally in Sofia. If you are a fan of Fedora and want to file bugs and kick 
-some developers' ass this is the way to do it!</p>
-<p>Other talks include Alexander Shopov's „Oracle's take on NoSQL“ which I wanted
-to hear since this summer and TBA talks about MicroTik routers.</p>
-<p>The conference will take place on September 28th at the French Institute at
-Sofia University
-(see <a href="http://conf.linux-bg.org/wp-content/uploads/2009/12/su-2.png">map</a>).
-It starts at 13:00 and my talk should be at the beginning. See you there!</p>
-<p>PS: this post was initially written on my <a href="http://amzn.to/12y4ewJ">BlackBerry Z10</a>
-with Penzus Editor - another small step in 
-<a href="/blog/2013/08/01/laptop-vs-smartphone-part-one/">retiring my laptop</a>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 14 September 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/09/14/upcoming-talk-fedora-test-days-in-sofia/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -91,6 +91,39 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/16/virtio-vs-rtl8139/" rel="bookmark" title="Permalink to virtio vs. rtl8139">
+                <h2 class="post-title">
+                    virtio vs. rtl8139
+                </h2>
+            </a>
+                <p>I've been doing some tests with KVM virtual machines and been launching them
+with virt-install. For some reason the VM wasn't activating its NIC.
+Changing the interface model from virtio to rtl8139 made it work again:</p>
+<div class="highlight"><pre>         virt-install --name $VM_NAME --ram 1024 --os-type=linux --os-variant=rhel7 \
+<span class="gd">-                    --disk none --network bridge=virbr0,model=virtio,mac=$VM_MAC \</span>
+<span class="gi">+                    --disk none --network bridge=virbr0,model=rtl8139,mac=$VM_MAC \</span>
+                     --noreboot --graphics vnc \
+                     --cdrom /var/tmp/tmp*/images/boot.iso --boot cdrom &amp;
+</pre></div>
+
+
+<p>virt-install(1) says:</p>
+<div class="highlight"><pre>model
+    Network device model as seen by the guest. Value can be any nic model supported by the hypervisor, e.g.: &#39;e1000&#39;,
+    &#39;rtl8139&#39;, &#39;virtio&#39;, ...
+</pre></div>
+
+
+<p>I'm not clear if this configures what drivers to be used for the NIC inside the
+guest or what is the driver of the host NIC. At this moment I don't know why
+changing the value causes networking in the guest to fail. If you do know please
+comment below. Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 16 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/16/virtio-vs-rtl8139/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="bookmark" title="Permalink to Automatic Upstream Dependency Testing">
                 <h2 class="post-title">
                     Automatic Upstream Dependency Testing
@@ -1703,89 +1736,6 @@ analysis against coverage data from the various test methods and test cases!</p>
                  on Thu 15 October 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/" rel="bookmark" title="Permalink to Anaconda & coverage.py - Pt.1 - Introduction">
-                <h2 class="post-title">
-                    Anaconda &amp; coverage.py - Pt.1 - Introduction
-                </h2>
-            </a>
-                <p>Since early 2015 I've been working on testing installation related
-components in Rawhide. I'm interested in the code produced by the
-<a href="https://github.com/rhinstaller/">Red Hat Installer Engineering Team</a> and in
-particular in <em>anaconda</em>, <em>blivet</em>, <em>pyparted</em> and <em>pykickstart</em>. The goal of
-this effort is to improve the overall testing of these components and also
-have Red Hat QE contribute some of our knowledge back to the community. The benefit
-of course will be better software for everyone. In the next
-several posts I'll summarize what has been done so far and what's to be expected
-in the future.</p>
-<h2>Test Documentation Matters</h2>
-<p>Do you want others to contribute tests? I certainly do! When I started looking
-at the code it was obviously clear there was no documentation related to testing.
-Everyone needs to know how to write and execute these tests! Currently we have
-basic README files describing how to install necessary dependencies for development
-and test execution, how to execute the tests (and what can be tested) and most
-importantly what is the test architecture. There is description of how the file
-structure is organized and which are the base classes to inherit from when adding
-new tests. Most of the times each component goes through a <em>pylint</em> check and
-a standard PyUnit test suite.</p>
-<p>Test documentation is usually in a <code>tests/README</code> file. For example:</p>
-<ul>
-<li><a href="https://github.com/rhinstaller/anaconda/blob/master/tests/README.rst">anaconda</a></li>
-<li><a href="https://github.com/rhinstaller/blivet/blob/master/tests/README.rst">blivet</a></li>
-<li><a href="https://github.com/rhinstaller/pykickstart/blob/master/tests/README.rst">pykickstart</a></li>
-<li><a href="https://github.com/rhinstaller/pyparted/blob/master/tests/README.rst">pyparted</a></li>
-</ul>
-<p>I've tried to explain as much as possible without bloating the files and going into
-unnecessary details. If you spot something missing please send a pull request.</p>
-<h2>Continuous Integration</h2>
-<p>This has been largely an effort driven by Chris Lumens from the devel team.
-All the components I'm interested in are tested regularly in a CI environment.
-There is a <code>make ci</code> Makefile target for those of you interested in what exactly
-gets executed.</p>
-<h2>Test Coverage</h2>
-<p>In order to <strong>improve</strong> something you need to know where you stand. We'll I didn't.
-That's why the first step was to integrate the
-<a href="https://bitbucket.org/ned/coveragepy">coverage.py</a> tool with all of these components.</p>
-<p>With the exception of blivet (written in C) all of the other
-components integrate well with coverage.py and produce good statistics. pykickstart is
-the champ here with 90% coverage, while anaconda is somewhere between 10% and 50%.
-Full test coverage measurement for anaconda isn't straight forward and will be the
-subject of my next post. For the C based code we have to hook up with
-<a href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html">Gcov</a> which shouldn't be too difficult.</p>
-<p>At the moment there are several open pull requests to integrate the coverage test
-targets with <code>make ci</code> and also report the results in human readable form. I will be
-collecting these for historical references.</p>
-<h2>Tools</h2>
-<p>I've created some basic text-mode
-<a href="https://github.com/atodorov/coverage-tools">coverage-tools</a> to help me combine and
-compare data from different executions. These are only the start of it and I'm expanding
-them as my needs for reporting and analytics evolve. I'm also looking into
-<a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">more detailed coverage reports</a>
-but I don't have enough data and use cases to work on this front at the moment.</p>
-<p>Some ideas currently in mind:</p>
-<ul>
-<li>map code changes (git commits) to existing test coverage to get a feeling where to
-invest in more testing;</li>
-<li>map bugs to code areas and to existing test coverage to see if we aren't
-missing tests in areas where the bugs are happening;</li>
-</ul>
-<h2>Bugs</h2>
-<p>coverage.py is a very nice tool indeed but I guess most people use it in a very
-limited way. Shortly after I started working with it I've found several places which
-need improvements. These have to do with combining and reporting on multiple files.</p>
-<p>Some of the interesting issues I've found and still open are:</p>
-<ul>
-<li><a href="https://bitbucket.org/ned/coveragepy/pull-requests/63/">PR #63 - New option --dont-remove when combining coverage data</a></li>
-<li><a href="https://bitbucket.org/ned/coveragepy/issues/425">#425 - source parameter not including files which are explicitly specified</a></li>
-<li><a href="https://bitbucket.org/ned/coveragepy/issues/426">#426 - Difference between coverage results with source specifies full dir instead of module name</a></li>
-</ul>
-<p>In my next post I will talk about anaconda code coverage and what I want to do with it.
-In the mean time please use the comments to share your feedback.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 14 October 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
