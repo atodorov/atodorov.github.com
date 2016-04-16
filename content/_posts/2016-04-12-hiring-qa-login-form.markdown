@@ -237,7 +237,8 @@ about.
 
 
 
-Feel free to send me suggestions and answers in the comments below. In the next few
-days I will blog about my other question *How do you test a Sudoku solving function*.
+Feel free to send me suggestions and answers in the comments below. You can find
+the second part of this post at
+[How do you test a Sudoku solving function]({filename}2016-04-16-hiring-qa-sudoku.markdown).
 
 Thanks for reading and happy testing!
