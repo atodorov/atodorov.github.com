@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-        <meta charset="utf-8">
+            <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
             <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
 
-        <title>atodorov.org - Authors</title>
+        <title>3 Bugs in Grajdanite</title>
 
         <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
         <!-- Bootstrap Core CSS -->
@@ -35,15 +35,36 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-            <meta property="fb:admins" content="1616937247" />
+
+
+        <meta name="description" content="Grajdanite is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of traffic rules or misbehaving drivers, ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="QA">
+
+	            <meta property="fb:admins" content="1616937247" />
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
 
+	<meta property="og:type" content="article" />
+<!--
+            <meta property="article:author" content="Alexander Todorov" />
+-->
+	<meta property="og:url" content="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/" />
+	<meta property="og:title" content="3 Bugs in Grajdanite" />
+	<meta property="article:published_time" content="2016-04-17 10:34:00+03:00">
+            <meta property="og:description" content="Grajdanite is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of traffic rules or misbehaving drivers, ...">
+
+                <meta property="og:image" content="http://atodorov.org/images/grajdanite/bug1.png">
+
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="3 Bugs in Grajdanite">
+
             <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:site" content="@atodorov_">
-            <meta name="twitter:title" content="atodorov.org">
-            <meta name="twitter:description" content="you can logoff, but you can never leave">
-                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+                <meta property="twitter:image" content="http://atodorov.org/images/grajdanite/bug1.png">
+
+            <meta name="twitter:description" content="Grajdanite is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of traffic rules or misbehaving drivers, ...">
 </head>
 
 <body>
@@ -79,7 +100,12 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>Articles by </h1>
+                        <h1>3 Bugs in Grajdanite</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sun 17 April 2016
+                        </span>
+                        
                     </div>
                 </div>
             </div>
@@ -90,14 +116,111 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-preview">
-            <a href="http://atodorov.org/author/alexander-todorov.html" rel="bookmark">
-                <h2 class="post-title">
-                    Alexander Todorov (238)
-                </h2>
-            </a>
+    <!-- Post Content -->
+    <article>
+        <p><a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite">Grajdanite</a>
+is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of
+traffic rules or misbehaving drivers, upload them online and ask them to
+appologize. They also offer some functionality to report offenses to the
+authorities are are partnering with local municipalities and law enforcement
+agencies to make the process easier. And of course this is one of my
+favorite apps as of latest.</p>
+<h2>Missing Icon in My Profile</h2>
+<p><img alt="Missing icon" src="/images/grajdanite/bug1.png" title="Missing icon bug" /></p>
+<p>The more offenses you report the more points you get.
+Points lead to ranks (e.g. junior officer, senior officer, etc).
+The page showing your points and rank is missing an icon. If I had to guess
+this is the badge which comes with different ranks.</p>
+<h2>Preloading the Very First Form Value</h2>
+<p><img alt="Preloading gone wrong" src="/images/grajdanite/bug2.png" title="Preloading gone wrong" /></p>
+<p>Once you opt for reporting an offence to the authorities you need to specify
+the address where the action took place, your name, phone and e-mail address.
+The app correctly saves your details and pre-loads them later to speed-up
+data entry. However I typed my e-mail wrong the very first time. Now every time
+I want to report something the app pre-loads the wrong address. Even after I
+change it to the correct one, the next time I still see the very first, wrong value.</p>
+<p>In code this is probably something like:</p>
+<div class="highlight"><pre># pre-load
+form.email = store.get(&quot;email&quot;, &quot;&quot;)
+form.show()
+
+# save
+if form.firstTime():
+    store.save(&quot;email&quot;, form.email)
+</pre></div>
+
+
+<p>The fix is to save the form value every time (not expensive operation here)
+or check if the current value is different from the last time and only then save it.</p>
+<h2>DST and Time Sync</h2>
+<p>The last bug is in the app confirmation email. Once an offence is reported the
+user receives an email with the uploaded photo and the information they have
+provided. The email includes a timestamp. However the email timestamp is 
+1 hour off from the actual time. In particular it is 1 hour behind the current time
+and I think the email server doesn't follow summer time.</p>
+<p>The result from this is:</p>
+<ul>
+<li>Report an offense</li>
+<li>Wait 1 minute for the email to be received;</li>
+<li>The email says the offense happened 1 hour ago!</li>
+</ul>
+<p>All of these bugs are in version 3.86.3, which is the latest one.</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/qa/">QA</a>, </p>
         </div>
-        <hr>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2016/04/17/3-bugs-in-grajdanite/';
+                var disqus_url = 'http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
             </div>
         </div>
     </div>
