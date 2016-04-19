@@ -94,6 +94,32 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="bookmark" title="Permalink to Using Django built-in template tags and filters in code">
+                <h2 class="post-title">
+                    Using Django built-in template tags and filters in code
+                </h2>
+            </a>
+                <p>In case you are wondering how to use Django's
+<a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
+in your source code, not inside a template here is how:</p>
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+<span class="s">u&#39;1.0 KB&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
+<span class="s">u&#39;1020 bytes&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
+<span class="s">u&#39;97.7 MB&#39;</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 06 April 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/06/tip-renaming-model-fields-in-django/" rel="bookmark" title="Permalink to Tip: Renaming Model Fields in Django">
                 <h2 class="post-title">
                     Tip: Renaming Model Fields in Django
@@ -1235,109 +1261,6 @@ with them? </p>
                  on Wed 20 February 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/02/20/how-large-are-my-mysql-tables/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/" rel="bookmark" title="Permalink to Secure VNC Installation of Red Hat Enterprise Linux 6">
-                <h2 class="post-title">
-                    Secure VNC Installation of Red Hat Enterprise Linux 6
-                </h2>
-            </a>
-                <p><img src="/images/rhel6_welcome.png" alt="RHEL 6 welcome screen" />
-Image CC-BY-SA,
-<a href="https://access.redhat.com/knowledge/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Installation_Guide/sn-welcome-s390.html">Red Hat</a></p>
-<p>From time to time I happen to remotely
-<a href="http://otb.bg">install Red Hat Enterprise Linux</a>
-servers via the Internet.
-When the system configuration is not decided upfront you need
-to use interactive mode. This means VNC in my case.</p>
-<p>In this tutorial I will show you how to make VNC installations more secure
-when using public networks to connect to the server.</p>
-<h2>Meet your tools</h2>
-<p>Starting with Red Hat Enterprise Linux 6 and all the latest Fedora releases, the
-installer supports SSH connections during install.</p>
-<blockquote>
-<p>Note that by default, root has a blank password.</p>
-<p>If you don't want any user to be able to ssh in and have full access to your hardware, 
-you must specify sshpw for username root. Also note that if Anaconda fails to parse the 
-kickstart file, it will allow anyone to login as root and have full access to your hardware.</p>
-<p>Fedora Kickstart manual https://fedoraproject.org/wiki/Anaconda/Kickstart#sshpw</p>
-</blockquote>
-<h2>Preparation</h2>
-<p>We are going to use SSH port forwarding and tunnel VNC traffic through it.
-Create a kickstart file as shown below:</p>
-<div class="highlight"><pre>install
-url --url http://example.com/path/to/rhel6
-lang en_US.UTF-8
-keyboard us
-network --onboot yes --device eth0 --bootproto dhcp
-vnc --password=s3cr3t
-sshpw --user=root s3cr3t
-</pre></div>
-
-
-<p>The first 5 lines configure the loader portion of the installer. They will setup
-networking and fetch the installer image called stage2. This is completely automated.
-<strong>NB:</strong> If you miss some of the lines or have a syntax error the installer will prompt for
-values. You either need a remote console access or somebody present at the server console!</p>
-<p>The last 2 lines configure passwords for VNC and SSH respectively.</p>
-<p>Make this file
-<a href="https://fedoraproject.org/wiki/Anaconda/Kickstart#Chapter_6._Making_the_Kickstart_File_Available">available</a>
-over HTTP(S), FTP or NFS.</p>
-<p><strong>NB:</strong> Make sure that the file is available on the same network where your server is,
-or use HTTPS if on public networks.</p>
-<h2>Installation</h2>
-<p>Now, using your favorite installation media start the
-installation process like this: </p>
-<div class="highlight"><pre><span class="n">boot</span><span class="o">:</span> <span class="n">linux</span> <span class="n">sshd</span><span class="o">=</span><span class="mi">1</span> <span class="n">ks</span><span class="o">=</span><span class="n">http</span><span class="o">://</span><span class="n">example</span><span class="o">.</span><span class="na">com</span><span class="o">/</span><span class="n">ks</span><span class="o">.</span><span class="na">cfg</span>
-</pre></div>
-
-
-<p>After a minute or more the installer will load stage2, with the
-interactive VNC session. You need to know the IP address or hostname
-of the server. Either look into DHCP logs, have somebody look at the
-server console and tell you that (it's printed on tty1) or script it in
-a <a href="https://fedoraproject.org/wiki/Anaconda/Kickstart#Chapter_4._Pre-installation_Script">%pre</a>
-script which will send you an email for example.</p>
-<p>When ready, redirect one of your local ports through SSH to the VNC port on the server:</p>
-<div class="highlight"><pre><span class="nv">$ </span>ssh -L 5902:localhost:5901 -N root@server.example.com
-</pre></div>
-
-
-<p>Now connect to DISPLAY :2 on your system to begin the installation:</p>
-<div class="highlight"><pre><span class="nv">$ </span>vncviewer localhost:2 <span class="p">&amp;</span>
-</pre></div>
-
-
-<h2>Warning Bugs Present</h2>
-<p>As it happens, I find bugs everywhere. This is no exception.
-Depending on your network/DHCP configuration IP address during install may 
-change mid-air and cause VNC client connection to freeze.</p>
-<p>The reason for this bug is evident from the code (rhel6-branch):</p>
-<div class="highlight"><span class="filename">iw/timezone_gui.py</span><pre><span class="k">if</span> <span class="ow">not</span> <span class="n">anaconda</span><span class="o">.</span><span class="n">isKickstart</span><span class="p">:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">utcCheckbox</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="ow">not</span> <span class="n">hasWindows</span><span class="p">(</span><span class="n">anaconda</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">bootloader</span><span class="p">))</span>
-</pre></div>
-
-
-<div class="highlight"><span class="filename">textw/timezone_text.py</span><pre><span class="k">if</span> <span class="ow">not</span> <span class="n">anaconda</span><span class="o">.</span><span class="n">isKickstart</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hasWindows</span><span class="p">(</span><span class="n">anaconda</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">bootloader</span><span class="p">):</span>
-    <span class="n">asUtc</span> <span class="o">=</span> <span class="bp">True</span>
-</pre></div>
-
-
-<p>Because we are using a kickstart file Anaconda will assume the system clock <strong>DOES NOT</strong>
-use UTC. If you forget to configure it manually you may see time on the server shifting
-back or forward (depending on your timezone) while installing. If your DHCP is configured
-for short lease time the address will expire before the installation completes. When new
-address is requested from DHCP it may be different and this will cause your VNC connection
-to freeze.</p>
-<p>To workaround this issue select the appropriate value for the system clock settings during install
-and possibly use static IP address during the installation.</p>
-<h2>Feedback</h2>
-<p>As always I'd love to hear your feedback in the comments section below. Let me know 
-your tips and tricks to perform secure remote installations using public networks.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 13 February 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

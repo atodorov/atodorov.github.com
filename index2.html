@@ -94,6 +94,97 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="bookmark" title="Permalink to Speeding up RSpec and PostgreSQL tests">
+                <h2 class="post-title">
+                    Speeding up RSpec and PostgreSQL tests
+                </h2>
+            </a>
+                <p>I've been working with <a class="wikilink" href="http://tradeo.com">Tradeo</a> on testing one of their applications. The app
+is standard Ruby on Rails application with over 1200 tests written with RSpec.
+And they were horribly slow. On my <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> the entire test suite
+took 27 minutes to execute. On the Jenkins slaves it took over an hour.
+After a few changes Jenkins now takes 15 minutes to execute the test suite.
+Locally it takes around 11 minutes!</p>
+<h2>The Problem</h2>
+<p>I've measured the speed (with Time.now) at which individual examples execute
+and it was quickly apparent they were taking a lot of time cleaning the DB. The
+offending code in question was:</p>
+<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>This is truncating the tables quite often but it turns out this is a very
+expensive operation on tables with small number of records. I've measured it
+locally around 2.5 seconds. Check out this
+<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/">SO thread</a>
+which describes pretty much the same symptoms:</p>
+<div class="highlight"><pre>Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
+Tailing the logs on our CI server (Ubuntu 10.04 LTS) .... a build takes 84 minutes.
+</pre></div>
+
+
+<p>This
+<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/11423886#11423886">excellent answer</a>
+explains why this is happening:</p>
+<div class="highlight"><pre>(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
+    Different fsync configuration or the use of rotational media instead of
+    SSDs could also be at fault.
+
+(b) TRUNCATE has a fixed cost, but not necessarily slower than DELETE,
+    plus it does more work.
+</pre></div>
+
+
+<h2>The Fix</h2>
+<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<span class="k">end</span>
+
+<span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:deletion</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p><code>before(:suite)</code> will truncate tables every time we run rspec, which is when we
+launch the entire test suite. This is to account for the possible side effects
+of DELETE in the future (see the SO thread). Then <code>before(:all)</code> aka
+<code>before(:context)</code> simply deletes the records which is significantly faster!</p>
+<p>Also updated the CI servers <code>postgresql.conf</code> to</p>
+<div class="highlight"><pre>fsync=off
+full_page_writes=off
+</pre></div>
+
+
+<p>The entire build/test process now takes only 15 minutes! Only one test broke
+due to PostgreSQL returning records in a different order, but it's the test
+case fault not handling this in the first place!</p>
+<p><strong>NOTE:</strong> Using fsync=off with rotational media pretty much hides any improvements
+introduced by updating the DatabaseCleaner strategy.</p>
+<h2>What's Next</h2>
+<p>There are several other things worth trying:</p>
+<ul>
+<li>Use UNIX domain sockets instead of TCP/IP (localhost) to connect to PostgreSQL;</li>
+<li>Load the entire
+<a href="http://magazine.redhat.com/2007/12/12/tip-from-an-rhce-memory-storage-on-postgresql/">PostgreSQL partition in memory</a>;</li>
+<li>Don't delete anything from the database, except once in <code>before(:suite)</code>.
+If any tests need a particular DB state they have to set this up on their own
+instead of relying on a global cleanup process. I expect this to break quite
+a few examples.</li>
+</ul>
+<p>After the changes and with my crude measurements I have individual examples
+taking 0.31 seconds to execute. Interestingly before and after take less than
+a second while the example code takes around 0.15 seconds. I have no idea where
+the rest 0.15 seconds are spent. My current speculation is probably RSpec.
+This is 50% of the execution time and is also worth looking into!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 23 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/17/logging-vm-installation-to-stdout/" rel="bookmark" title="Permalink to Logging VM installation to stdout">
                 <h2 class="post-title">
                     Logging VM installation to stdout
@@ -1197,270 +1288,6 @@ Mind you we've talked many times on IRC but not once seen in person.</p>
                  on Wed 11 November 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/11/11/openfest-2015-impressions/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/10/28/building-docker-images-with-anaconda/" rel="bookmark" title="Permalink to Building Docker Images with Anaconda">
-                <h2 class="post-title">
-                    Building Docker Images with Anaconda
-                </h2>
-            </a>
-                <p>Anaconda, the Fedora and Red Hat Enterprise Linux installer, has gained some
-features to facilitate building Docker images. These are only available
-in kickstart. To build a Docker image for HTTPD, using packages provided in the
-distro use the following ks.cfg file:</p>
-<div class="highlight"><pre><span class="n">install</span>
-<span class="n">lang</span> <span class="n">en_US</span><span class="p">.</span><span class="n">UTF</span><span class="o">-</span><span class="mi">8</span>
-<span class="n">keyboard</span> <span class="n">us</span>
-<span class="n">network</span> <span class="o">--</span><span class="n">onboot</span> <span class="n">yes</span> <span class="o">--</span><span class="n">device</span> <span class="n">eth0</span> <span class="o">--</span><span class="n">bootproto</span> <span class="n">dhcp</span>
-
-<span class="n">rootpw</span>  <span class="o">--</span><span class="n">lock</span>
-<span class="n">firewall</span> <span class="o">--</span><span class="n">disabled</span>
-<span class="n">timezone</span> <span class="n">Europe</span><span class="o">/</span><span class="n">Sofia</span>
-
-<span class="n">clearpart</span> <span class="o">--</span><span class="n">all</span> <span class="o">--</span><span class="n">initlabel</span>
-<span class="n">part</span> <span class="o">/</span> <span class="o">--</span><span class="n">fstype</span><span class="o">=</span><span class="n">ext4</span> <span class="o">--</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">grow</span>
-
-<span class="n">bootloader</span> <span class="o">--</span><span class="n">disabled</span>
-
-<span class="nf">%packages</span> <span class="o">--</span><span class="n">nocore</span> <span class="o">--</span><span class="n">instLangs</span><span class="o">=</span><span class="n">en_US</span> <span class="o">--</span><span class="n">excludedocs</span>
-<span class="n">httpd</span>
-<span class="o">-</span><span class="n">kernel</span>
-<span class="n">yum</span><span class="o">-</span><span class="n">langpacks</span> <span class="err">#</span> <span class="n">workaround</span> <span class="k">for</span> <span class="n">rhbz</span><span class="err">#</span><span class="mi">1271766</span>
-<span class="nf">%end</span>
-</pre></div>
-
-
-<p>The above kickstart file will:</p>
-<ul>
-<li>install HTTPD and its dependencies</li>
-<li>disable kernel installation by excluding it from the package list</li>
-<li>disable installation of the boot loader using <code>--disabled</code>. The resulting image
-will not be bootable</li>
-<li>disable firewall</li>
-<li>locks the root account so it can't login from the console</li>
-<li>prevent installing @core using <code>--nocore</code></li>
-<li>limit the installation of localization files using <code>--instLangs</code></li>
-<li>limit the installation of documentation using <code>--excludedocs</code></li>
-</ul>
-<p><strong>Note:</strong> the previous <code>--nobase</code> option is deprected and doesn't have any effect.</p>
-<p>After the VM installation is complete grab the contents of the root directory:</p>
-<div class="highlight"><pre># virt-tar-out -a /var/lib/libvirt/images/disk.qcow2 / myimage.tar
-</pre></div>
-
-
-<p>Import the tarball into Docker and inspect the result:</p>
-<div class="highlight"><pre><span class="c"># docker import myimage.tar local_images:ver1.0</span>
-<span class="mi">8</span><span class="n">a2324e6d0e940a998b990262335894a17d261450c33f57dc153d3d1987e4fc1</span>
-
-<span class="c"># docker images</span>
-<span class="n">REPOSITORY</span>                                             <span class="n">TAG</span>                 <span class="n">IMAGE</span> <span class="n">ID</span>            <span class="n">CREATED</span>             <span class="n">VIRTUAL</span> <span class="n">SIZE</span>
-<span class="n">local_images</span>                                           <span class="n">ver1</span><span class="o">.</span><span class="mi">0</span>              <span class="mi">8</span><span class="n">a2324e6d0e9</span>        <span class="mi">13</span> <span class="n">seconds</span> <span class="n">ago</span>      <span class="mf">320.6</span> <span class="n">MB</span>
-<span class="n">registry</span><span class="o">.</span><span class="n">access</span><span class="o">.</span><span class="n">redhat</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">rhel</span>                        <span class="n">latest</span>              <span class="mi">82</span><span class="n">ad5fa11820</span>        <span class="mi">6</span> <span class="n">weeks</span> <span class="n">ago</span>         <span class="mf">158.3</span> <span class="n">MB</span>
-<span class="n">registry</span><span class="o">.</span><span class="n">access</span><span class="o">.</span><span class="n">redhat</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">rhscl_beta</span><span class="o">/</span><span class="n">httpd</span><span class="o">-</span><span class="mi">24</span><span class="o">-</span><span class="n">rhel7</span>   <span class="n">latest</span>              <span class="mi">55</span><span class="n">a8a150cf2d</span>        <span class="mi">9</span> <span class="n">weeks</span> <span class="n">ago</span>         <span class="mf">201.1</span> <span class="n">MB</span>
-</pre></div>
-
-
-<p>Run commands into a new container: </p>
-<div class="highlight"><pre># docker run --name=bash_myimage -it 8a2324e6d0e9 /bin/bash
-bash-4.2# cat /etc/redhat-release 
-Red Hat Enterprise Linux Server release 7.2 Beta (Maipo)
-bash-4.2# rpm -q httpd
-httpd-2.4.6-40.el7.x86_64
-bash-4.2# exit
-
-# docker ps -a
-CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
-64f7ca6d5844        8a2324e6d0e9        &quot;/bin/bash&quot;         24 seconds ago      Exited (0) 19 seconds ago                       bash_myimage
-</pre></div>
-
-
-<p>As you can see the resulting image is bigger than stock images provided by Red Hat.
-At this moment I don't know if this is the minimum package set which satisfies
-dependencies or anaconda adds a bit more on its own. The full package list is
-given below. There are some packages like  device-mapper, dracut, e2fsprogs,
-iptables, kexec-tools, SELinux related, systemd and tzdata which look out
-of place. My guess is some of them are pulled in from the various kickstart
-commands and not really necessary. I will follow up with devel and see if
-the content can be stripped down even more.</p>
-<p>For more information check out these docs:</p>
-<ul>
-<li><a href="https://access.redhat.com/articles/881893">Get Started with Docker Formatted Container Images on Red Hat Systems</a></li>
-<li><a href="https://access.redhat.com/documentation/en/red-hat-enterprise-linux-atomic-host/version-7/red-hat-enterprise-linux-atomic-host-7-getting-started-with-containers/chapter-7-get-started-with-docker-formatted-container-images">Chapter 7. Get Started with Docker Formatted Container Images</a></li>
-</ul>
-<p>Full package list:</p>
-<div class="highlight"><pre>acl-2.2.51-12.el7.x86_64
-apr-1.4.8-3.el7.x86_64
-apr-util-1.5.2-6.el7.x86_64
-audit-libs-2.4.1-5.el7.x86_64
-basesystem-10.0-7.el7.noarch
-bash-4.2.46-19.el7.x86_64
-bind-libs-lite-9.9.4-29.el7.x86_64
-bind-license-9.9.4-29.el7.noarch
-binutils-2.23.52.0.1-54.el7.x86_64
-bzip2-libs-1.0.6-13.el7.x86_64
-ca-certificates-2015.2.4-71.el7.noarch
-chkconfig-1.3.61-5.el7.x86_64
-chrony-2.1.1-1.el7.x86_64
-coreutils-8.22-15.el7.x86_64
-cpio-2.11-24.el7.x86_64
-cracklib-2.9.0-11.el7.x86_64
-cracklib-dicts-2.9.0-11.el7.x86_64
-cryptsetup-libs-1.6.7-1.el7.x86_64
-curl-7.29.0-25.el7.x86_64
-cyrus-sasl-lib-2.1.26-19.2.el7.x86_64
-dbus-1.6.12-13.el7.x86_64
-dbus-glib-0.100-7.el7.x86_64
-dbus-libs-1.6.12-13.el7.x86_64
-dbus-python-1.1.1-9.el7.x86_64
-device-mapper-1.02.107-5.el7.x86_64
-device-mapper-libs-1.02.107-5.el7.x86_64
-dhclient-4.2.5-42.el7.x86_64
-dhcp-common-4.2.5-42.el7.x86_64
-dhcp-libs-4.2.5-42.el7.x86_64
-diffutils-3.3-4.el7.x86_64
-dracut-033-358.el7.x86_64
-dracut-network-033-358.el7.x86_64
-e2fsprogs-1.42.9-7.el7.x86_64
-e2fsprogs-libs-1.42.9-7.el7.x86_64
-ebtables-2.0.10-13.el7.x86_64
-elfutils-libelf-0.163-3.el7.x86_64
-elfutils-libs-0.163-3.el7.x86_64
-ethtool-3.15-2.el7.x86_64
-expat-2.1.0-8.el7.x86_64
-file-libs-5.11-31.el7.x86_64
-filesystem-3.2-20.el7.x86_64
-findutils-4.5.11-5.el7.x86_64
-firewalld-0.3.9-14.el7.noarch
-gawk-4.0.2-4.el7.x86_64
-gdbm-1.10-8.el7.x86_64
-glib2-2.42.2-5.el7.x86_64
-glibc-2.17-105.el7.x86_64
-glibc-common-2.17-105.el7.x86_64
-gmp-6.0.0-11.el7.x86_64
-gnupg2-2.0.22-3.el7.x86_64
-gobject-introspection-1.42.0-1.el7.x86_64
-gpgme-1.3.2-5.el7.x86_64
-grep-2.20-2.el7.x86_64
-gzip-1.5-8.el7.x86_64
-hardlink-1.0-19.el7.x86_64
-hostname-3.13-3.el7.x86_64
-httpd-2.4.6-40.el7.x86_64
-httpd-tools-2.4.6-40.el7.x86_64
-info-5.1-4.el7.x86_64
-initscripts-9.49.30-1.el7.x86_64
-iproute-3.10.0-54.el7.x86_64
-iptables-1.4.21-16.el7.x86_64
-iputils-20121221-7.el7.x86_64
-kexec-tools-2.0.7-37.el7.x86_64
-keyutils-libs-1.5.8-3.el7.x86_64
-kmod-20-5.el7.x86_64
-kmod-libs-20-5.el7.x86_64
-kpartx-0.4.9-85.el7.x86_64
-krb5-libs-1.13.2-10.el7.x86_64
-langtable-0.0.31-3.el7.noarch
-langtable-data-0.0.31-3.el7.noarch
-langtable-python-0.0.31-3.el7.noarch
-libacl-2.2.51-12.el7.x86_64
-libassuan-2.1.0-3.el7.x86_64
-libattr-2.4.46-12.el7.x86_64
-libblkid-2.23.2-26.el7.x86_64
-libcap-2.22-8.el7.x86_64
-libcap-ng-0.7.5-4.el7.x86_64
-libcom_err-1.42.9-7.el7.x86_64
-libcurl-7.29.0-25.el7.x86_64
-libdb-5.3.21-19.el7.x86_64
-libdb-utils-5.3.21-19.el7.x86_64
-libedit-3.0-12.20121213cvs.el7.x86_64
-libffi-3.0.13-16.el7.x86_64
-libgcc-4.8.5-4.el7.x86_64
-libgcrypt-1.5.3-12.el7_1.1.x86_64
-libgpg-error-1.12-3.el7.x86_64
-libidn-1.28-4.el7.x86_64
-libmnl-1.0.3-7.el7.x86_64
-libmount-2.23.2-26.el7.x86_64
-libnetfilter_conntrack-1.0.4-2.el7.x86_64
-libnfnetlink-1.0.1-4.el7.x86_64
-libpwquality-1.2.3-4.el7.x86_64
-libselinux-2.2.2-6.el7.x86_64
-libselinux-python-2.2.2-6.el7.x86_64
-libsemanage-2.1.10-18.el7.x86_64
-libsepol-2.1.9-3.el7.x86_64
-libss-1.42.9-7.el7.x86_64
-libssh2-1.4.3-10.el7.x86_64
-libstdc++-4.8.5-4.el7.x86_64
-libtasn1-3.8-2.el7.x86_64
-libuser-0.60-7.el7_1.x86_64
-libutempter-1.1.6-4.el7.x86_64
-libuuid-2.23.2-26.el7.x86_64
-libverto-0.2.5-4.el7.x86_64
-libxml2-2.9.1-5.el7_1.2.x86_64
-lua-5.1.4-14.el7.x86_64
-lzo-2.06-8.el7.x86_64
-mailcap-2.1.41-2.el7.noarch
-ncurses-5.9-13.20130511.el7.x86_64
-ncurses-base-5.9-13.20130511.el7.noarch
-ncurses-libs-5.9-13.20130511.el7.x86_64
-nspr-4.10.8-1.el7_1.x86_64
-nss-3.19.1-17.el7.x86_64
-nss-softokn-3.16.2.3-13.el7_1.x86_64
-nss-softokn-freebl-3.16.2.3-13.el7_1.x86_64
-nss-sysinit-3.19.1-17.el7.x86_64
-nss-tools-3.19.1-17.el7.x86_64
-nss-util-3.19.1-3.el7_1.x86_64
-openldap-2.4.40-8.el7.x86_64
-openssl-libs-1.0.1e-42.el7_1.9.x86_64
-p11-kit-0.20.7-3.el7.x86_64
-p11-kit-trust-0.20.7-3.el7.x86_64
-pam-1.1.8-12.el7_1.1.x86_64
-pcre-8.32-15.el7.x86_64
-pinentry-0.8.1-14.el7.x86_64
-pkgconfig-0.27.1-4.el7.x86_64
-popt-1.13-16.el7.x86_64
-procps-ng-3.3.10-3.el7.x86_64
-pth-2.0.7-23.el7.x86_64
-pygobject3-base-3.14.0-3.el7.x86_64
-pygpgme-0.3-9.el7.x86_64
-pyliblzma-0.5.3-11.el7.x86_64
-python-2.7.5-34.el7.x86_64
-python-decorator-3.4.0-3.el7.noarch
-python-iniparse-0.4-9.el7.noarch
-python-libs-2.7.5-34.el7.x86_64
-python-pycurl-7.19.0-17.el7.x86_64
-python-slip-0.4.0-2.el7.noarch
-python-slip-dbus-0.4.0-2.el7.noarch
-python-urlgrabber-3.10-7.el7.noarch
-pyxattr-0.5.1-5.el7.x86_64
-qrencode-libs-3.4.1-3.el7.x86_64
-readline-6.2-9.el7.x86_64
-redhat-logos-70.0.3-4.el7.noarch
-redhat-release-server-7.2-7.el7.x86_64
-rpm-4.11.3-17.el7.x86_64
-rpm-build-libs-4.11.3-17.el7.x86_64
-rpm-libs-4.11.3-17.el7.x86_64
-rpm-python-4.11.3-17.el7.x86_64
-sed-4.2.2-5.el7.x86_64
-setup-2.8.71-6.el7.noarch
-shadow-utils-4.1.5.1-18.el7.x86_64
-shared-mime-info-1.1-9.el7.x86_64
-snappy-1.1.0-3.el7.x86_64
-sqlite-3.7.17-8.el7.x86_64
-systemd-219-19.el7.x86_64
-systemd-libs-219-19.el7.x86_64
-sysvinit-tools-2.88-14.dsf.el7.x86_64
-tzdata-2015g-1.el7.noarch
-ustr-1.0.4-16.el7.x86_64
-util-linux-2.23.2-26.el7.x86_64
-xz-5.1.2-12alpha.el7.x86_64
-xz-libs-5.1.2-12alpha.el7.x86_64
-yum-3.4.3-132.el7.noarch
-yum-langpacks-0.4.2-4.el7.noarch
-yum-metadata-parser-1.1.4-10.el7.x86_64
-zlib-1.2.7-15.el7.x86_64
-</pre></div>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 28 October 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/10/28/building-docker-images-with-anaconda/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
