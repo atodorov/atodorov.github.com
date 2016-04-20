@@ -102,7 +102,7 @@ EBS without journal(Baseline) vs. Instance Storage without journal(Set1)
 ![EBS vs. Instance Storage](/images/aws_iozone/ebs_woj_vs_is_woj.png "EBS vs. Instance Storage")
 
 Instance Storage without journal(Baseline) vs. Ramfs(Set1)
-![IS vs. Ramfs](/images/aws_iozone/ebs_woj_vs_is_woj.png "IS vs. Ramfs")
+![IS vs. Ramfs](/images/aws_iozone/is_woj_vs_ramfs.png "IS vs. Ramfs")
 
 **Results**
 
