@@ -1,5 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-17T10:34:00+03:00</updated><entry><title>3 Bugs in Grajdanite</title><link href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/" rel="alternate"></link><updated>2016-04-17T10:34:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-17:blog/2016/04/17/3-bugs-in-grajdanite/</id><summary type="html">&lt;p&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite"&gt;Grajdanite&lt;/a&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-24T23:50:00+03:00</updated><entry><title>Capybara's within() Altering expect(page) Scope</title><link href="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/" rel="alternate"></link><updated>2016-04-24T23:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-24:blog/2016/04/24/capybaras-within-altering-expectpage-scope/</id><summary type="html">&lt;p&gt;&lt;strong&gt;
+When making assertions inside a &lt;code&gt;within&lt;/code&gt; block the assertion scope
+is limited to the element selected by the &lt;em&gt;within()&lt;/em&gt; function, although
+it looks like you are asserting on the entire page!
+&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;scenario&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;Pressing Escape closes autocomplete popup&amp;#39;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="n"&gt;within&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#new-broadcast&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#broadcast_field&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;set&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Hello &amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;start_typing_name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#broadcast_field&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;@Bret&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="c1"&gt;# will fail below&lt;/span&gt;
+      &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;have_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;.ui-autocomplete&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;send_keys&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#broadcast_field&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ss"&gt;:escape&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;have_no_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;.ui-autocomplete&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The above code failed the first &lt;code&gt;expect()&lt;/code&gt; and it took me some time before
+I figured it out. Capybara's test suite itself gives you the answer&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;should assert content in the given scope&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="vi"&gt;@session&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;within&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:css&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;#for_foo&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="vi"&gt;@session&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;not_to&lt;/span&gt; &lt;span class="n"&gt;have_content&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;First Name&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="vi"&gt;@session&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;have_content&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;First Name&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So know your frameworks and happy testing.&lt;/p&gt;</summary><category term="QA"></category><category term="Ruby"></category></entry><entry><title>3 Bugs in Grajdanite</title><link href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/" rel="alternate"></link><updated>2016-04-17T10:34:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-17:blog/2016/04/17/3-bugs-in-grajdanite/</id><summary type="html">&lt;p&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite"&gt;Grajdanite&lt;/a&gt;
 is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of
 traffic rules or misbehaving drivers, upload them online and ask them to
 appologize. They also offer some functionality to report offenses to the
@@ -1611,8 +1640,4 @@ and no further errors were found.&lt;/p&gt;
 &lt;strong&gt;
 When using mocks, stubs and fake objects we should be replacing external
 dependencies of the software under test, not internal methods from the SUT!
-&lt;/strong&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Tip: Running DNF Plugins from git</title><link href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/" rel="alternate"></link><updated>2015-11-23T15:50:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-23:blog/2015/11/23/tip-running-dnf-plugins-from-git/</id><summary type="html">&lt;p&gt;This is mostly for self reference because it is not currently documented
-in the code. To use dnf plugins from a local git checkout modify your
-&lt;code&gt;/etc/dnf/dnf.conf&lt;/code&gt; and add the following line under the &lt;code&gt;[main]&lt;/code&gt; section:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;pluginpath=/path/to/dnf-plugins-core/plugins
-&lt;/pre&gt;&lt;/div&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="tips"></category></entry></feed>
+&lt;/strong&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
