@@ -1,7 +1,7 @@
 Title: Capybara's within() Altering expect(page) Scope
 date: 2016-04-24 23:50
 comments: true
-categories: QA, Ruby
+tags: QA, Ruby
 og_image: images/capybara-20clipart-hamster3.png
 twitter_image: images/capybara-20clipart-hamster3.png
 
