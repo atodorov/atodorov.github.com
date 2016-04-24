@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-        <meta charset="utf-8">
+            <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
             <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
 
-        <title>atodorov.org - Authors</title>
+        <title>Capybara's within() Altering expect(page) Scope</title>
 
         <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
         <!-- Bootstrap Core CSS -->
@@ -35,15 +35,35 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-            <meta property="fb:admins" content="1616937247" />
+
+
+        <meta name="description" content="When making assertions inside a within block the assertion scope is limited to the element selected by the within() function, although ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+
+	            <meta property="fb:admins" content="1616937247" />
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
 
+	<meta property="og:type" content="article" />
+<!--
+            <meta property="article:author" content="Alexander Todorov" />
+-->
+	<meta property="og:url" content="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/" />
+	<meta property="og:title" content="Capybara's within() Altering expect(page) Scope" />
+	<meta property="article:published_time" content="2016-04-24 23:50:00+03:00">
+            <meta property="og:description" content="When making assertions inside a within block the assertion scope is limited to the element selected by the within() function, although ...">
+
+                <meta property="og:image" content="http://atodorov.org/images/capybara-20clipart-hamster3.png">
+
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Capybara's within() Altering expect(page) Scope">
+
             <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:site" content="@atodorov_">
-            <meta name="twitter:title" content="atodorov.org">
-            <meta name="twitter:description" content="you can logoff, but you can never leave">
-                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+                <meta property="twitter:image" content="http://atodorov.org/images/capybara-20clipart-hamster3.png">
+
+            <meta name="twitter:description" content="When making assertions inside a within block the assertion scope is limited to the element selected by the within() function, although ...">
 </head>
 
 <body>
@@ -79,7 +99,12 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>Articles by </h1>
+                        <h1>Capybara's within() Altering expect(page) Scope</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sun 24 April 2016
+                        </span>
+                        
                     </div>
                 </div>
             </div>
@@ -90,14 +115,91 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-preview">
-            <a href="http://atodorov.org/author/alexander-todorov.html" rel="bookmark">
-                <h2 class="post-title">
-                    Alexander Todorov (240)
-                </h2>
-            </a>
+    <!-- Post Content -->
+    <article>
+        <p><strong>
+When making assertions inside a <code>within</code> block the assertion scope
+is limited to the element selected by the <em>within()</em> function, although
+it looks like you are asserting on the entire page!
+</strong></p>
+<div class="highlight"><pre><span class="n">scenario</span> <span class="s1">&#39;Pressing Escape closes autocomplete popup&#39;</span> <span class="k">do</span>
+  <span class="n">within</span><span class="p">(</span><span class="s1">&#39;#new-broadcast&#39;</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">find</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;Hello &#39;</span><span class="p">)</span>
+      <span class="n">start_typing_name</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">,</span> <span class="s1">&#39;@Bret&#39;</span><span class="p">)</span>
+      <span class="c1"># will fail below</span>
+      <span class="n">expect</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_selector</span><span class="p">(</span><span class="s1">&#39;.ui-autocomplete&#39;</span><span class="p">)</span>
+      <span class="n">send_keys</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">,</span> <span class="ss">:escape</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">expect</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_no_selector</span><span class="p">(</span><span class="s1">&#39;.ui-autocomplete&#39;</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>The above code failed the first <code>expect()</code> and it took me some time before
+I figured it out. Capybara's test suite itself gives you the answer</p>
+<div class="highlight"><pre><span class="n">it</span> <span class="s2">&quot;should assert content in the given scope&quot;</span> <span class="k">do</span>
+  <span class="vi">@session</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="ss">:css</span><span class="p">,</span> <span class="s2">&quot;#for_foo&quot;</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">expect</span><span class="p">(</span><span class="vi">@session</span><span class="p">)</span><span class="o">.</span><span class="n">not_to</span> <span class="n">have_content</span><span class="p">(</span><span class="s1">&#39;First Name&#39;</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">expect</span><span class="p">(</span><span class="vi">@session</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_content</span><span class="p">(</span><span class="s1">&#39;First Name&#39;</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>So know your frameworks and happy testing.</p>
+    </article>
+
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
         </div>
-        <hr>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2016/04/24/capybaras-within-altering-expectpage-scope/';
+                var disqus_url = 'http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
             </div>
         </div>
     </div>
