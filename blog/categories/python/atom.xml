@@ -1,5 +1,147 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-02T10:34:00+02:00</updated><entry><title>Automatic Upstream Dependency Testing</title><link href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="alternate"></link><updated>2015-12-02T10:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-02:blog/2015/12/02/automatic-upstream-dependency-testing/</id><summary type="html">&lt;p&gt;Ever since
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-26T10:50:00+03:00</updated><entry><title>Mismatch in Pyparted Interfaces</title><link href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="alternate"></link><updated>2016-04-26T10:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-26:blog/2016/04/26/mismatch-in-pyparted-interfaces/</id><summary type="html">&lt;p&gt;Last week my co-worker Marek Hruscak found an interesting case of
+mismatch between the two interfaces provided by pyparted. In this article
+I'm going to give an example, using simplified code and explain what is
+happening. From pyparted's documentation we learn the following&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;pyparted is a set of native Python bindings for libparted.  libparted is the
+library portion of the GNU parted project.  With pyparted, you can write
+applications that interact with disk partition tables and filesystems.&lt;/p&gt;
+&lt;p&gt;The Python bindings are implemented in two layers.  Since libparted itself
+is written in C without any real implementation of objects, a simple 1:1
+mapping of externally accessible libparted functions was written.  This
+mapping is provided in the _ped Python module.  You can use that module if
+you want to, but it's really just meant for the larger parted module.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;_ped&lt;/span&gt;       &lt;span class="nx"&gt;libparted&lt;/span&gt; &lt;span class="nx"&gt;Python&lt;/span&gt; &lt;span class="nx"&gt;bindings&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;direct&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;mapping&lt;/span&gt;
+&lt;span class="nx"&gt;parted&lt;/span&gt;     &lt;span class="nx"&gt;Native&lt;/span&gt; &lt;span class="nx"&gt;Python&lt;/span&gt; &lt;span class="nx"&gt;code&lt;/span&gt; &lt;span class="nx"&gt;building&lt;/span&gt; &lt;span class="nx"&gt;on&lt;/span&gt; &lt;span class="nx"&gt;_ped&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;complete&lt;/span&gt; &lt;span class="kd"&gt;with&lt;/span&gt; &lt;span class="nx"&gt;classes&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+           &lt;span class="nx"&gt;exceptions&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;and&lt;/span&gt; &lt;span class="nx"&gt;advanced&lt;/span&gt; &lt;span class="nx"&gt;functionality&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/blockquote&gt;
+&lt;p&gt;The two interfaces are the &lt;code&gt;_ped&lt;/code&gt; and &lt;code&gt;parted&lt;/code&gt; modules. As a user I expect them
+to behave exactly the same but they don't. For example some partition properties
+are read-only in libparted and &lt;code&gt;_ped&lt;/code&gt; but not in &lt;code&gt;parted&lt;/code&gt;. This is the mismatch
+I'm talking about.&lt;/p&gt;
+&lt;p&gt;Consider the following tests (also available on
+&lt;a href="https://github.com/atodorov/pyparted/tree/not_read_only_demo"&gt;GitHub&lt;/a&gt;)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/tests/baseclass.py b/tests/baseclass.py&lt;/span&gt;
+&lt;span class="gh"&gt;index 4f48b87..30ffc11 100644&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/tests/baseclass.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/tests/baseclass.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -168,6 +168,12 @@ class RequiresPartition(RequiresDisk):&lt;/span&gt;
+         self._part = _ped.Partition(disk=self._disk, type=_ped.PARTITION_NORMAL,
+         self._part = _ped.Partition(disk=self._disk, type=_ped.PARTITION_NORMAL,
+                                     start=0, end=100, fs_type=_ped.file_system_type_get(&amp;quot;ext2&amp;quot;))
+ 
+&lt;span class="gi"&gt;+        geom = parted.Geometry(self.device, start=100, length=100)&lt;/span&gt;
+&lt;span class="gi"&gt;+        fs = parted.FileSystem(type=&amp;#39;ext2&amp;#39;, geometry=geom)&lt;/span&gt;
+&lt;span class="gi"&gt;+        self.part = parted.Partition(disk=self.disk, type=parted.PARTITION_NORMAL,&lt;/span&gt;
+&lt;span class="gi"&gt;+                                    geometry=geom, fs=fs)&lt;/span&gt;
+&lt;span class="gi"&gt;+&lt;/span&gt;
+&lt;span class="gi"&gt;+&lt;/span&gt;
+ # Base class for any test case that requires a hash table of all
+ # _ped.DiskType objects available
+ class RequiresDiskTypes(unittest.TestCase):
+&lt;span class="gh"&gt;diff --git a/tests/test__ped_partition.py b/tests/test__ped_partition.py&lt;/span&gt;
+&lt;span class="gh"&gt;index 7ef049a..26449b4 100755&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/tests/test__ped_partition.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/tests/test__ped_partition.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -62,8 +62,10 @@ class PartitionGetSetTestCase(RequiresPartition):&lt;/span&gt;
+         self.assertRaises(exn, setattr, self._part, &amp;quot;num&amp;quot;, 1)
+         self.assertRaises(exn, setattr, self._part, &amp;quot;fs_type&amp;quot;,
+             _ped.file_system_type_get(&amp;quot;fat32&amp;quot;))
+&lt;span class="gd"&gt;-        self.assertRaises(exn, setattr, self._part, &amp;quot;geom&amp;quot;,&lt;/span&gt;
+&lt;span class="gd"&gt;-                                     _ped.Geometry(self._device, 10, 20))&lt;/span&gt;
+&lt;span class="gi"&gt;+        with self.assertRaises((AttributeError, TypeError)):&lt;/span&gt;
+&lt;span class="gi"&gt;+#            setattr(self._part, &amp;quot;geom&amp;quot;, _ped.Geometry(self._device, 10, 20))&lt;/span&gt;
+&lt;span class="gi"&gt;+            self._part.geom = _ped.Geometry(self._device, 10, 20)&lt;/span&gt;
+&lt;span class="gi"&gt;+&lt;/span&gt;
+         self.assertRaises(exn, setattr, self._part, &amp;quot;disk&amp;quot;, self._disk)
+ 
+         # Check that values have the right type.
+&lt;span class="gh"&gt;diff --git a/tests/test_parted_partition.py b/tests/test_parted_partition.py&lt;/span&gt;
+&lt;span class="gh"&gt;index 0a406a0..8d8d0fd 100755&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/tests/test_parted_partition.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/tests/test_parted_partition.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -23,7 +23,7 @@&lt;/span&gt;
+ import parted
+ import unittest
+ 
+&lt;span class="gd"&gt;-from tests.baseclass import RequiresDisk&lt;/span&gt;
+&lt;span class="gi"&gt;+from tests.baseclass import RequiresDisk, RequiresPartition&lt;/span&gt;
+ 
+ # One class per method, multiple tests per class.  For these simple methods,
+ # that seems like good organization.  More complicated methods may require
+&lt;span class="gu"&gt;@@ -34,11 +34,11 @@ class PartitionNewTestCase(unittest.TestCase):&lt;/span&gt;
+         # TODO
+         self.fail(&amp;quot;Unimplemented test case.&amp;quot;)
+ 
+&lt;span class="gd"&gt;-@unittest.skip(&amp;quot;Unimplemented test case.&amp;quot;)&lt;/span&gt;
+&lt;span class="gd"&gt;-class PartitionGetSetTestCase(unittest.TestCase):&lt;/span&gt;
+&lt;span class="gi"&gt;+class PartitionGetSetTestCase(RequiresPartition):&lt;/span&gt;
+     def runTest(self):
+&lt;span class="gd"&gt;-        # TODO&lt;/span&gt;
+&lt;span class="gd"&gt;-        self.fail(&amp;quot;Unimplemented test case.&amp;quot;)&lt;/span&gt;
+&lt;span class="gi"&gt;+        with self.assertRaises((AttributeError, TypeError)):&lt;/span&gt;
+&lt;span class="gi"&gt;+            #setattr(self.part, &amp;quot;geometry&amp;quot;, parted.Geometry(self.device, start=10, length=20))&lt;/span&gt;
+&lt;span class="gi"&gt;+            self.part.geometry = parted.Geometry(self.device, start=10, length=20)&lt;/span&gt;
+ 
+ @unittest.skip(&amp;quot;Unimplemented test case.&amp;quot;)
+ class PartitionGetFlagTestCase(unittest.TestCase):
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The test in &lt;code&gt;test__ped_partition.py&lt;/code&gt; works without problems, I've modified it for
+visual reference only. This was also the inspiration behind the test in
+&lt;code&gt;test_parted_partition.py&lt;/code&gt;. However the second test fails with&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;======================================================================
+FAIL: runTest (tests.test_parted_partition.PartitionGetSetTestCase)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File &amp;quot;/tmp/pyparted/tests/test_parted_partition.py&amp;quot;, line 41, in runTest
+    self.part.geometry = parted.Geometry(self.device, start=10, length=20)
+AssertionError: (&amp;lt;type &amp;#39;exceptions.AttributeError&amp;#39;&amp;gt;, &amp;lt;type &amp;#39;exceptions.TypeError&amp;#39;&amp;gt;) not raised
+
+----------------------------------------------------------------------
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now it's clear that something isn't quite the same between the two interfaces.
+If we look at &lt;code&gt;src/parted/partition.py&lt;/code&gt; we see the following snippet&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;137     fileSystem = property(lambda s: s._fileSystem, lambda s, v: setattr(s, &amp;quot;_fileSystem&amp;quot;, v))
+138     geometry = property(lambda s: s._geometry, lambda s, v: setattr(s, &amp;quot;_geometry&amp;quot;, v))
+139     system = property(lambda s: s.__writeOnly(&amp;quot;system&amp;quot;), lambda s, v: s.__partition.set_system(v))
+140     type = property(lambda s: s.__partition.type, lambda s, v: setattr(s.__partition, &amp;quot;type&amp;quot;, v))
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The geometry property is indeed read-write but the system property is write-only.
+&lt;code&gt;git blame&lt;/code&gt; leads us to the interesting
+&lt;a href="https://github.com/rhinstaller/pyparted/commit/2fc0ee2b"&gt;commit 2fc0ee2b&lt;/a&gt;, which changes
+definitions for quite a few properties and removes the &lt;code&gt;_readOnly&lt;/code&gt; method which raises
+an exception. Even more interesting is the fact that the &lt;code&gt;Partition.geometry&lt;/code&gt; property
+hasn't been changed. If you look closer you will notice that the deleted definition and
+the new one are exactly the same. Looks like the problem existed even before this change.&lt;/p&gt;
+&lt;p&gt;Digging down even further we find
+&lt;a href="https://github.com/rhinstaller/pyparted/commit/7599aa1ae505f3784ca4936b58b38b8dffb752ff"&gt;commit 7599aa1&lt;/a&gt;
+which is the very first implementation of the &lt;code&gt;parted&lt;/code&gt; module. There you can see the
+&lt;code&gt;_readOnly&lt;/code&gt; method and some properties like &lt;code&gt;path&lt;/code&gt; and &lt;code&gt;disk&lt;/code&gt; correctly marked as such
+but &lt;code&gt;geometry&lt;/code&gt; isn't.&lt;/p&gt;
+&lt;p&gt;Shortly after this commit the first test was added (4b9de0e) and a bit
+later the second, empty test class, was added (c85a5e6). This only goes
+to show that every piece of software needs appropriate QA coverage, which
+pyparted was kind of lacking (and I'm trying to change that).&lt;/p&gt;
+&lt;p&gt;The reason this bug went unnoticed for so long
+is the limited exposure of pyparted. To my knowledge anaconda, the Fedora installer
+is its biggest (if not single) consumer and maybe it uses only the &lt;code&gt;_ped&lt;/code&gt;
+interface (I didn't check) or it doesn't try to do silly things like setting
+a value to a read-only property.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;
+The lesson from this story is to test all of your interfaces and also
+make sure they are behaving in exactly the same manner!
+&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="Python"></category><category term="fedora.planet"></category></entry><entry><title>Automatic Upstream Dependency Testing</title><link href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="alternate"></link><updated>2015-12-02T10:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-02:blog/2015/12/02/automatic-upstream-dependency-testing/</id><summary type="html">&lt;p&gt;Ever since
 &lt;a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"&gt;RHEL 7.2 python-libs broke s3cmd&lt;/a&gt;
 I've been pondering an age old problem: &lt;em&gt;How do I know if my software works with the
 latest upstream dependencies ? How can I pro-actively monitor for new versions
