@@ -94,6 +94,63 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/" rel="bookmark" title="Permalink to Django Tips: Using Cache for Stateful HTTP">
+                <h2 class="post-title">
+                    Django Tips: Using Cache for Stateful HTTP
+                </h2>
+            </a>
+                <p>How do you keep state when working with a stateless protocol like HTTP? 
+One possible answer is to use a cache back-end. </p>
+<p>I'm working on an IVR application demo with Django and Twilio. The caller
+will make multiple choices using the phone keyboard. All of this needs to be
+put together and sent back to another server for processing. In my views
+I've added a simple cache get/set lines to preserve the selection.</p>
+<p>Here's how it looks with actual application logic omitted</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">incoming_call</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">caller_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;From&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;from&#39;</span> <span class="p">:</span> <span class="n">caller_id</span><span class="p">}</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;step2.xml&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">step2</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">state</span><span class="p">[</span><span class="s">&#39;step2_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;final_step.xml&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">final_step</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">call_sid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;CallSid&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Digits&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_sid</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">state</span><span class="p">[</span><span class="s">&#39;final_step_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection</span>
+
+    <span class="n">Backend</span><span class="o">.</span><span class="n">process_user_selections</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;thank_you.xml&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>At each step Django will update the current state associated with this call and return
+a <a href="https://www.twilio.com/docs/api/twiml">TwiML</a> XML response. <code>CallSid</code> is a handy unique
+identifier provided by Twilio.</p>
+<p>I am using the latest <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a> version
+which properly works with directories. When going to production that will likely switch to
+Amazon ElastiCache.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 June 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/18/nibbler-w3c-validator-on-steroids/" rel="bookmark" title="Permalink to Nibbler - W3C Validator on Steroids">
                 <h2 class="post-title">
                     Nibbler - W3C Validator on Steroids
@@ -1277,102 +1334,6 @@ may not have the time to maintain this project in the long term.</p>
                  on Tue 16 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/16/quick-script-for-khan-academy/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/" rel="bookmark" title="Permalink to HackFMI Post-mortem">
-                <h2 class="post-title">
-                    HackFMI Post-mortem
-                </h2>
-            </a>
-                <p><img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" /></p>
-<p>The first <a href="http://hackfmi.com">HackFMI</a> event is now over :(. It was HUGE!
-Kudos to the organizers, sponsors, mentors and all teams who took part and worked hard during
-the weekend.</p>
-<p>More than 100 people participated. There were 22 different teams presenting at the
-finale yesterday evening. That in my opinion counts as a BIG success. I was surprised
-to see so many people, lots of them first and second year at the university. There were
-a good number of female hackers too, which I also didn't expect.
-<em>DISCLAIMER: I've graduated a different university where the culture and male/female ratio
-was different so my expectations were biased.</em></p>
-<p>People had interesting ideas and were passionate about them. They set off hacking
-on a big scale. At times they wanted to create too big of an application and had to
-cut off some features due to time constraints.</p>
-<p>Congrats to all of them and hopefully they continue hacking!</p>
-<h2>What Happened</h2>
-<p>I wasn't able to talk to all the teams nor stay at the event full time but here is
-how I saw things. </p>
-<p>Organization was perfect. The best organized non-commercial local event I've seen in years.
-There was food, beverages, T-shirts, even beer :). There were six big IT companies
-<a href="http://hackfmi.com/sponsors-and-partners/">sponsoring</a> the
-event. All of these are successful Bulgarian born companies.
-Let that serve as an example!</p>
-<p>The faculty was supporting the event too.
-There were API and SQL dump for the teams to use. The entire building was open
-during the weekend and during the night. Teams were able to make use of many rooms. 
-From what I know some of the successful ideas will be implemented into the faculty
-administration as well. All of this is a first time and quite unexpected for a 
-Bulgarian university. I smell the wind of change already. </p>
-<h2>Technology</h2>
-<p>My technology view of the event is limited to the teams I've mentored explicitly and the ones
-I happened to walk by and interfere with. Naturally I gravitated around 4 teams using
-Django and found two teams using PHP.</p>
-<p>Django guys were doing well despite one of the teams not having any experience with it. 
-Most of the applications were such that didn't require extensive knowledge of Django internals
-but require mere programming of all features they wanted to implement. </p>
-<p>What stroked me is that folks were making their database models too complicated. 
-I stumbled across two use cases in different teams where they wanted to have 
-one to many or many to many relationships. I strongly advised against this.
-Hopefully they will remember.</p>
-<p>Django makes schema design a child's play and probably this is why lots of people
-abuse and misuse that. My advise is keep the database as simple as possible
-and move everything up the application layer. It's easier to change and to maintain
-that way. Not to mention experienced DBAs are hard to find. </p>
-<p><strong>Keep the DB simple and know your tools well! </strong></p>
-<p>With PHP the case was pretty much the same. Guys had some extra fields in their DB schema
-which were unnecessary. They also wanted to abuse the data types of the DB and not use native types.</p>
-<p>All of these technological misunderstandings are coming from inexperience, I know.
-To get a closer look at why it is important to have a simple schema look at:
-<a href="http://ontwik.com/python/disqus-scaling-the-world%E2%80%99s-largest-django-application/">Disqus: Scaling the World’s Largest Django Application</a></p>
-<h2>The Hackers</h2>
-<p>During one of the breaks I was outside and one of the mentors complained that
-ideas were pretty much standard. No screen scraping for additional information, 
-no mashing up, no revolutionary ideas. Everybody was using the provided API and
-SQL dumps. Well almost.</p>
-<p>One of my favorite <a href="https://github.com/vcrazy/project-6">teams</a> set off to
-write a PHP robot which will automatically login and extract information from
-SUSI (the faculty information system). Unfortunately that didn't work so they
-had to abandon it. They didn't known <a href="http://docs.seleniumhq.org/">Selenium</a>
-and there was not enough time to
-try and hack some browser side extension which will do the trick but they promised
-to try it.</p>
-<p>Because of their unorthodox approach from the start they became my personal favorites
-and received Red Hat swag from me.</p>
-<p><img alt="Team Six" src="/images/hackfmi/hackfmi2013_team_six_rh_swag.jpg" title="Team Six" />
-Adrian and Vihren are Team Six!</p>
-<h2>What I didn't like</h2>
-<p>I didn't like the fact that there was lots of duplicate work and ideas. Only one team
-built a mobile application based on API and services provided by another team.</p>
-<p>I suggest there's a #hackfmi IRC channel next time so that people can communicate
-with each other and focus on building great apps not reinventing the wheel. 
-<strong>Use IRC, you are hackers!</strong></p>
-<p>What I was missing is that nobody proposed a pure cloud or big data application.
-I don't know if there was enough data provided by the faculty for such kind of
-ideas, probably there wasn't. Maybe next time there will be.</p>
-<h2>Ohloh Stats</h2>
-<p>While not participating actively except for a few hours of mentoring I found a
-way to contribute. Many of the projects repositories are listed under
-<a href="https://www.ohloh.net/p/hackfmi2013">https://www.ohloh.net/p/hackfmi2013</a> which provides some interesting insight
-and stats.</p>
-<p>The list is incomplete. Lots of teams didn't have any GitHub repos
-or didn't push the code recently. I will be contacting all of them in the next few days
-and hopefully we will have a more accurate statistics by the end of the week.
-Expect a separate blog post about it.</p>
-<p>If you missed this event you should be sorry. <a href="/blog/2013/03/24/upcoming-hackathons-in-sofia/">You were warned</a>!
-If you attended please share your experience with me. What you liked, what you didn't. </p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 15 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

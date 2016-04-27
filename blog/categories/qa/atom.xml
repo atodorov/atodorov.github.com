@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-26T10:50:00+03:00</updated><entry><title>Mismatch in Pyparted Interfaces</title><link href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="alternate"></link><updated>2016-04-26T10:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-26:blog/2016/04/26/mismatch-in-pyparted-interfaces/</id><summary type="html">&lt;p&gt;Last week my co-worker Marek Hruscak found an interesting case of
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-27T15:30:00+03:00</updated><entry><title>Changing Rails consider_all_requests_local in RSpec fails</title><link href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="alternate"></link><updated>2016-04-27T15:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-27:blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/</id><summary type="html">&lt;p&gt;As many others I've been trying to change
+&lt;code&gt;Rails.application.config.consider_all_requests_local&lt;/code&gt; and
+&lt;code&gt;Rails.application.config.action_dispatch.show_exceptions&lt;/code&gt; inside my
+RSpec tests in order to test custom error pages in a Rails app. However this
+doesn't work. My code looked like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;feature&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;Exceptions&amp;#39;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;action_dispatch&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;show_exceptions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kp"&gt;true&lt;/span&gt;
+    &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;consider_all_requests_local&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This works only if I &lt;code&gt;exceptions_spec.rb&lt;/code&gt; to RSpec. However when something
+else executes before that it fails. The config values are
+correctly updated but that doesn't seem to have effect.&lt;/p&gt;
+&lt;p&gt;The answer and solution comes from
+&lt;a href="http://thepugautomatic.com/2014/08/404-with-rails-4/#comment-1714338343"&gt;Henrik N&lt;/a&gt;.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;action_dispatch.show_exceptions gets copied and cached in
+Rails.application.env_config, so even if you change
+Rails.application.config.action_dispatch.show_exceptions in this
+before block the value isn't what you expect when it's used in
+ActionDispatch::DebugExceptions.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;In fact &lt;code&gt;DebugExceptions&lt;/code&gt; uses &lt;code&gt;env['action_dispatch.show_exceptions']&lt;/code&gt;. The
+correct code should look like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="nb"&gt;method&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:env_config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;receive&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:env_config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;with&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;no_args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="nb"&gt;method&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;call&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;merge&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;action_dispatch.show_exceptions&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;action_dispatch.show_detailed_exceptions&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;consider_all_requests_local&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This allows the test to work regardless of the order of execution
+of spec files. I don't know why but I also had to leave
+&lt;code&gt;show_detailed_exceptions&lt;/code&gt; otherwise I wasn't getting the desired results.&lt;/p&gt;</summary><category term="QA"></category><category term="Ruby"></category></entry><entry><title>Mismatch in Pyparted Interfaces</title><link href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="alternate"></link><updated>2016-04-26T10:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-26:blog/2016/04/26/mismatch-in-pyparted-interfaces/</id><summary type="html">&lt;p&gt;Last week my co-worker Marek Hruscak found an interesting case of
 mismatch between the two interfaces provided by pyparted. In this article
 I'm going to give an example, using simplified code and explain what is
 happening. From pyparted's documentation we learn the following&lt;/p&gt;
@@ -1708,21 +1750,4 @@ version that has a context but not the check_hostname parameter. I've found
 the &lt;em&gt;inspect.getmembers&lt;/em&gt; function which can be used to figure out what
 parameters are there for the init method but a solution based on it
 doesn't appear to be more elegant. I will describe this in more details in
-my next post.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="RHEL"></category><category term="Python"></category></entry><entry><title>GitHub Bugzilla Hook</title><link href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/" rel="alternate"></link><updated>2015-11-24T13:32:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-24:blog/2015/11/24/github-bugzilla-hook/</id><summary type="html">&lt;p&gt;Last month I've created a tool which adds comments to Bugzilla when a commit
-message references a bug number. It was done as a proof of concept and didn't
-receive much attention at the time. Today I'm happy to announce the existence
-of &lt;a href="https://github.com/atodorov/github-bugzilla-hook"&gt;GitHub Bugzilla Hook&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;I've used David Shea's
-&lt;a href="https://github.com/rhinstaller/github-email-hook/"&gt;GitHub Email Hook&lt;/a&gt; as my
-starting template and only modified it where needed. GitHub Bugzilla Hook will
-examine push data and post comments for every unique bug+branch combination.
-Once a comment for that particular bug+branch combination is made, new ones
-will not be posted, even if later commits reference the same bug.
-My main assumption is commits which are related to a bug will be pushed together
-most of the times so there shouldn't be lots of noise in Bugzilla.&lt;/p&gt;
-&lt;p&gt;See &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1274703"&gt;rhbz#1274703&lt;/a&gt; for
-example of how the comments look. The parser behavior is taken from anaconda
-and conforms to the style the Red Hat Installer Engineering Team uses.
-Hopefully you find it useful as well.&lt;/p&gt;
-&lt;p&gt;My next step is to find a hosting place for this script and hook it up
-with the rhinstaller GitHub repos!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
+my next post.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="RHEL"></category><category term="Python"></category></entry></feed>

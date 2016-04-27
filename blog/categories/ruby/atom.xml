@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ruby/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-24T23:50:00+03:00</updated><entry><title>Capybara's within() Altering expect(page) Scope</title><link href="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/" rel="alternate"></link><updated>2016-04-24T23:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-24:blog/2016/04/24/capybaras-within-altering-expectpage-scope/</id><summary type="html">&lt;p&gt;&lt;strong&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ruby/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-27T15:30:00+03:00</updated><entry><title>Changing Rails consider_all_requests_local in RSpec fails</title><link href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="alternate"></link><updated>2016-04-27T15:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-27:blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/</id><summary type="html">&lt;p&gt;As many others I've been trying to change
+&lt;code&gt;Rails.application.config.consider_all_requests_local&lt;/code&gt; and
+&lt;code&gt;Rails.application.config.action_dispatch.show_exceptions&lt;/code&gt; inside my
+RSpec tests in order to test custom error pages in a Rails app. However this
+doesn't work. My code looked like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;feature&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;Exceptions&amp;#39;&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;action_dispatch&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;show_exceptions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kp"&gt;true&lt;/span&gt;
+    &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;consider_all_requests_local&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This works only if I &lt;code&gt;exceptions_spec.rb&lt;/code&gt; to RSpec. However when something
+else executes before that it fails. The config values are
+correctly updated but that doesn't seem to have effect.&lt;/p&gt;
+&lt;p&gt;The answer and solution comes from
+&lt;a href="http://thepugautomatic.com/2014/08/404-with-rails-4/#comment-1714338343"&gt;Henrik N&lt;/a&gt;.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;action_dispatch.show_exceptions gets copied and cached in
+Rails.application.env_config, so even if you change
+Rails.application.config.action_dispatch.show_exceptions in this
+before block the value isn't what you expect when it's used in
+ActionDispatch::DebugExceptions.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;In fact &lt;code&gt;DebugExceptions&lt;/code&gt; uses &lt;code&gt;env['action_dispatch.show_exceptions']&lt;/code&gt;. The
+correct code should look like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="nb"&gt;method&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:env_config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;application&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;receive&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:env_config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;with&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;no_args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="nb"&gt;method&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;call&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;merge&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;action_dispatch.show_exceptions&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;action_dispatch.show_detailed_exceptions&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="s1"&gt;&amp;#39;consider_all_requests_local&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="kp"&gt;false&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This allows the test to work regardless of the order of execution
+of spec files. I don't know why but I also had to leave
+&lt;code&gt;show_detailed_exceptions&lt;/code&gt; otherwise I wasn't getting the desired results.&lt;/p&gt;</summary><category term="QA"></category><category term="Ruby"></category></entry><entry><title>Capybara's within() Altering expect(page) Scope</title><link href="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/" rel="alternate"></link><updated>2016-04-24T23:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-24:blog/2016/04/24/capybaras-within-altering-expectpage-scope/</id><summary type="html">&lt;p&gt;&lt;strong&gt;
 When making assertions inside a &lt;code&gt;within&lt;/code&gt; block the assertion scope
 is limited to the element selected by the &lt;em&gt;within()&lt;/em&gt; function, although
 it looks like you are asserting on the entire page!
