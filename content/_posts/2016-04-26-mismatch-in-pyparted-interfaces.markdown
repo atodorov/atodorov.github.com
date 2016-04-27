@@ -4,7 +4,7 @@ date: 2016-04-26 10:50
 comments: true
 tags: QA, Python, fedora.planet
 
-Last week my co-worker Marek Hruscak found an interesting case of
+Last week my co-worker Marek Hruscak, from Red Hat, found an interesting case of
 mismatch between the two interfaces provided by pyparted. In this article
 I'm going to give an example, using simplified code and explain what is
 happening. From pyparted's documentation we learn the following
