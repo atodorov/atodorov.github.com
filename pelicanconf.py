@@ -105,3 +105,7 @@ SOCIAL = (
         )
 
 FACEBOOK_ADMINS = ['1616937247']
+
+MENUITEMS = (
+    ("Mr. Senko", "http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu"),
+)
