@@ -30,7 +30,7 @@ want to get the members for a function then
 
 if you want to get the members for a class method then
 
-    inspect.getmembers(MyClass.my_method.__function__.__code__)
+    inspect.getmembers(MyClass.my_method.__func__.__code__)
 
 
 Consider the following example
