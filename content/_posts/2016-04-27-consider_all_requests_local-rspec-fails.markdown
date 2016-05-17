@@ -19,7 +19,7 @@ doesn't work. My code looked like this
         Rails.application.config.consider_all_requests_local = false
       end
 
-This works only if I `exceptions_spec.rb` to RSpec. However when something
+This works only if I execute `exceptions_spec.rb` alone. However when something
 else executes before that it fails. The config values are
 correctly updated but that doesn't seem to have effect.
 
