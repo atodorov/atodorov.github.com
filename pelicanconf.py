@@ -107,6 +107,8 @@ SOCIAL = (
             ('user-secret', "http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon"),
         )
 
+SHOW_SOCIAL_ON_INDEX_PAGE_HEADER = True
+
 FACEBOOK_ADMINS = ['1616937247']
 
 MENUITEMS = (
