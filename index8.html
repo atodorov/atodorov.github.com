@@ -35,10 +35,9 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-            <meta property="fb:admins" content="1616937247" />
+                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:site" content="@atodorov_">
             <meta name="twitter:title" content="atodorov.org">
@@ -145,6 +144,214 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/" rel="bookmark" title="Permalink to Tip: Extending Btrfs Filesystem for Fedora Virtual Machine">
+                <h2 class="post-title">
+                    Tip: Extending Btrfs Filesystem for Fedora Virtual Machine
+                </h2>
+            </a>
+                <p>I was testing Fedora 20 inside a KVM guest this week when the disk
+space run out. The system was configured to use Btrfs filesystem and this is how
+to extend it.</p>
+<p>First you have to extend the underlying guest storage. On the host I'm using LVM
+so this is a no brainer:</p>
+<div class="highlight"><pre># pvs
+  PV                                                    VG              Fmt  Attr PSize   PFree  
+  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 134,11g
+
+# lvs
+  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
+  vm_fedora     vg_redbull_mini -wi-ao---  15,00g                                             
+
+# lvextend -L +5G /dev/mapper/vg_redbull_mini-vm_fedora 
+  Extending logical volume vm_fedora to 20,00 GiB
+  Logical volume vm_fedora successfully resized
+
+# lvs
+  LV            VG              Attr      LSize   Pool Origin Data%  Move Log Cpy%Sync Convert
+  vm_fedora     vg_redbull_mini -wi-ao---  20,00g                                             
+
+# pvs
+  PV                                                    VG              Fmt  Attr PSize   PFree  
+  /dev/mapper/luks-f3f6cea1-baba-4aaf-bca8-33a0ec540369 vg_redbull_mini lvm2 a--  289,11g 129,11g
+</pre></div>
+
+
+<p>On the VM we have a default Btrfs layout:</p>
+<div class="highlight"><pre># blkid
+/dev/vda1: UUID=&quot;410ee563-e701-42ff-9d5f-5805dd103e35&quot; TYPE=&quot;ext4&quot; PARTUUID=&quot;0000330f-01&quot; 
+/dev/vda2: UUID=&quot;f4addad4-a0fc-482e-ad5a-240864b76f09&quot; TYPE=&quot;swap&quot; PARTUUID=&quot;0000330f-02&quot; 
+/dev/vda3: LABEL=&quot;fedora&quot; UUID=&quot;f0b589ce-061c-4ac3-826e-7f3f8c8a6d30&quot; UUID_SUB=&quot;11aa8414-3ce1-4fe7-a506-9a4f91ba5c30&quot; TYPE=&quot;btrfs&quot; PARTUUID=&quot;0000330f-03&quot; 
+
+# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        13G   11G  1.4G  89% /
+devtmpfs        996M     0  996M   0% /dev
+tmpfs          1002M   80K 1002M   1% /dev/shm
+tmpfs          1002M  668K 1002M   1% /run
+tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
+tmpfs          1002M   16K 1002M   1% /tmp
+/dev/vda3        13G   11G  1.4G  89% /home
+/dev/vda1       477M   72M  376M  17% /boot
+</pre></div>
+
+
+<p>Now power-off (not reboot) and power-on the VM guest so that it sees the new size
+of the underlying storage. See the fdisk header (line 9 below), vda is now 20GiB!</p>
+<p>Before extending the filesystem you have to extend the underlying disk partition! This is the
+trickiest part. Using fdisk or parted you have to delete the partition and add it again.
+Make sure to use the <strong>SAME</strong> starting sector for the new partition (line 33)!</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62</pre></div></td><td class="code"><div class="highlight"><pre><span class="c"># fdisk /dev/vda</span>
+
+Welcome to fdisk <span class="o">(</span>util-linux 2.24-rc1<span class="o">)</span>.
+Changes will remain in memory only, <span class="k">until</span> you decide to write them.
+Be careful before using the write command.
+
+
+Command <span class="o">(</span>m <span class="k">for</span> <span class="nb">help</span><span class="o">)</span>: p
+Disk /dev/vda: <span class="m">20</span> GiB, <span class="m">21474836480</span> bytes, <span class="m">41943040</span> sectors
+Units: sectors of <span class="m">1</span> * <span class="nv">512</span> <span class="o">=</span> <span class="m">512</span> bytes
+Sector size <span class="o">(</span>logical/physical<span class="o">)</span>: <span class="m">512</span> bytes / <span class="m">512</span> bytes
+I/O size <span class="o">(</span>minimum/optimal<span class="o">)</span>: <span class="m">512</span> bytes / <span class="m">512</span> bytes
+Disk label <span class="nb">type</span>: dos
+Disk identifier: 0x0000330f
+
+Device    Boot     Start       End   Blocks  Id System
+/dev/vda1 *         <span class="m">2048</span>   <span class="m">1026047</span>   <span class="m">512000</span>  <span class="m">83</span> Linux
+/dev/vda2        <span class="m">1026048</span>   <span class="m">5253119</span>  <span class="m">2113536</span>  <span class="m">82</span> Linux swap / Solaris
+/dev/vda3        <span class="m">5253120</span>  <span class="m">31457279</span> <span class="m">13102080</span>  <span class="m">83</span> Linux
+
+Command <span class="o">(</span>m <span class="k">for</span> <span class="nb">help</span><span class="o">)</span>: d
+Partition number <span class="o">(</span>1-3, default 3<span class="o">)</span>: 3
+
+Partition <span class="m">3</span> is deleted
+
+Command <span class="o">(</span>m <span class="k">for</span> <span class="nb">help</span><span class="o">)</span>: n
+
+Partition <span class="nb">type</span>:
+   p   primary <span class="o">(</span><span class="m">2</span> primary, <span class="m">0</span> extended, <span class="m">2</span> free<span class="o">)</span>
+   e   extended
+Select <span class="o">(</span>default p<span class="o">)</span>: p
+Partition number <span class="o">(</span>3,4, default 3<span class="o">)</span>: 3
+First sector <span class="o">(</span>5253120-41943039, default 5253120<span class="o">)</span>: 
+Last sector, +sectors or +size<span class="o">{</span>K,M,G,T,P<span class="o">}</span> <span class="o">(</span>5253120-41943039, default 41943039<span class="o">)</span>: 
+
+Created a new partition <span class="m">3</span> of <span class="nb">type</span> <span class="s1">&#39;Linux&#39;</span> and of size 17,5 GiB.
+
+Command <span class="o">(</span>m <span class="k">for</span> <span class="nb">help</span><span class="o">)</span>: p
+Disk /dev/vda: <span class="m">20</span> GiB, <span class="m">21474836480</span> bytes, <span class="m">41943040</span> sectors
+Units: sectors of <span class="m">1</span> * <span class="nv">512</span> <span class="o">=</span> <span class="m">512</span> bytes
+Sector size <span class="o">(</span>logical/physical<span class="o">)</span>: <span class="m">512</span> bytes / <span class="m">512</span> bytes
+I/O size <span class="o">(</span>minimum/optimal<span class="o">)</span>: <span class="m">512</span> bytes / <span class="m">512</span> bytes
+Disk label <span class="nb">type</span>: dos
+Disk identifier: 0x0000330f
+
+Device    Boot     Start       End   Blocks  Id System
+/dev/vda1 *         <span class="m">2048</span>   <span class="m">1026047</span>   <span class="m">512000</span>  <span class="m">83</span> Linux
+/dev/vda2        <span class="m">1026048</span>   <span class="m">5253119</span>  <span class="m">2113536</span>  <span class="m">82</span> Linux swap / Solaris
+/dev/vda3        <span class="m">5253120</span>  <span class="m">41943039</span> <span class="m">18344960</span>  <span class="m">83</span> Linux
+
+Command <span class="o">(</span>m <span class="k">for</span> <span class="nb">help</span><span class="o">)</span>: w
+
+The partition table has been altered.
+Calling ioctl<span class="o">()</span> to re-read partition table.
+Re-reading the partition table failed.: Device or resource busy
+
+The kernel still uses the old table. The new table will be used at the next reboot or after you run partprobe<span class="o">(</span>8<span class="o">)</span> or kpartx<span class="o">(</span>8<span class="o">)</span>.
+
+<span class="c"># partprobe</span>
+Error: Partition<span class="o">(</span>s<span class="o">)</span> <span class="m">3</span> on /dev/vda have been written, but we have been unable to inform the kernel of the change, probably because it/they are in use.  As a result, the old partition<span class="o">(</span>s<span class="o">)</span> will remain in use.  You should reboot now before making further changes.
+
+<span class="c"># reboot</span>
+</pre></div>
+</td></tr></table>
+
+<p>See lines 36 and 49 above. The new partition has a greater size.
+After reboot just resize the filesystem and verify the new space has been added</p>
+<div class="highlight"><pre># btrfs filesystem resize max /
+Resize &#39;/&#39; of &#39;max&#39;
+
+# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        18G   11G  6.4G  63% /
+devtmpfs        996M     0  996M   0% /dev
+tmpfs          1002M   80K 1002M   1% /dev/shm
+tmpfs          1002M  660K 1002M   1% /run
+tmpfs          1002M     0 1002M   0% /sys/fs/cgroup
+tmpfs          1002M   16K 1002M   1% /tmp
+/dev/vda3        18G   11G  6.4G  63% /home
+/dev/vda1       477M   72M  376M  17% /boot
+</pre></div>
+
+
+<p>This is it, more disk space available for the virtual machine. Let me know how it works
+for you.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 13 October 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/10/13/tip-extending-btrfs-filesystem-for-fedora-virtual-machine/#disqus_thread">comments</a>.</p>        </div>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/" rel="bookmark" title="Permalink to Tip: Installing Missing debuginfo Packages for ABRT">
                 <h2 class="post-title">
@@ -895,39 +1102,13 @@ updated with USB host mode requirement.</p>
                  on Sat 03 August 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/08/03/quick-update-laptop-vs-smartphone-updated/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia/" rel="bookmark" title="Permalink to Summer Hackathon in Sofia">
-                <h2 class="post-title">
-                    Summer Hackathon in Sofia
-                </h2>
-            </a>
-                <p><img src="/images/hackfmi/Logo_SummerHackFMI.png" alt="Summer HackFMI" style="display:block;clear:both" /></p>
-<p>A <a href="http://hackfmi.com/spontanen-leten-hachathon/">summer hackathon</a>
-will be held in Sofia between 16th and 22nd of August. The week prior to the
-event (12th to 15th) will be full of lectures and workshops to prepare the students
-for their task.</p>
-<p>The goal this time is to create a new system for the Student Council organization
-which will host their new website and also provide more transparency into the 
-organization and the work they do. The idea is initiated by the chairman of the
-council which is quite surprising for me to hear. You can read his motivation
-(in Bulgarian) <a href="https://github.com/Hackfmi/SummerHackathon/blob/master/motivation.md">here</a>.</p>
-<p>At the moment it is agreed that the system will be written in Python and Django
-and this is where I join. Together with Kiril Vladimirov I will be leading the
-Python/Django lecture and workshop in one of the days, likely 14th of August.</p>
-<p>The program is not yet finalized so I can't share more info. Please watch this
-space for more details when they are available. </p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 02 August 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/08/02/summer-hackathon-in-sofia/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
     <ul class="pager">
         <li class="next">
-                <a href="http://atodorov.org/index7.html">Newest Posts &rarr;</a>
                 <a href="http://atodorov.org/index9.html">Older Posts &rarr;</a>
+                <a href="http://atodorov.org/index7.html"> &larr; Newest Posts</a>
         </li>
     </ul>
     Page 8 / 13

@@ -35,10 +35,9 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-            <meta property="fb:admins" content="1616937247" />
+                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:site" content="@atodorov_">
             <meta name="twitter:title" content="atodorov.org">
@@ -91,6 +90,113 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/" rel="bookmark" title="Permalink to DEVit Conf 2016">
+                <h2 class="post-title">
+                    DEVit Conf 2016
+                </h2>
+            </a>
+                <p>It's been another busy week after <a href="http://devitconf.org/">DEVit conf</a> took place in
+Thessaloniki. Here are my impressions.</p>
+<p><img alt="DEVit 2016" src="/images/devit2016.jpg" title="DEVit 2016" /></p>
+<h2>Pre-conference</h2>
+<p><a href="http://techministry.gr">TechMinistry</a> is Thessaloniki's hacker space which
+is hosted at a central location, near major shopping streets.
+I've attended an
+<a href="http://discourse.techministry.gr/t/18-05-2016-19-30-open-source-wednesday/67">Open Source Wednesday</a>
+meeting. From the event description I thought that
+there was going to be a discussion about getting involved with
+Firefox. However that was not the case.
+Once people started coming in they formed organic groups and
+started discussing various topics on their own.</p>
+<p>I was also shown their 3D printer which IMO is the most precise of 3D printers
+I've seen so far. Imagine what it would be like to click <em>Print</em>, sometime
+in the future, and have your online orders appear on your desk over night.
+That would be quite cool!</p>
+<p>I've met with <a href="https://twitter.com/bacharakis">Christos Bacharakis</a>, a Mozilla
+representative for Greece, who gave me some goodies for my students at HackBulgaria!</p>
+<p>On Thursday I spent the day merging pull requests for
+<a href="https://github.com/MrSenko/pelican-octopress-theme">MrSenko/pelican-octopress-theme</a>
+and attended the DEVit Speakers dinner at
+<a href="https://www.facebook.com/massaliathessaloniki/">Massalia</a>.
+Food and drinks were very good and I even found a new recipe for mushrooms with
+ouzo, of which I think I had a bit too many :).</p>
+<p>I was also told that <em>"a full stack developer is a developer who can introduce
+a bug to every layer of the software stack"</em>. I can't agree more!</p>
+<h2>DEVit</h2>
+<p>The conference day started with a huge delay due to long queues for registration.
+The fist talk I attended, and the best one IMO was
+<a href="https://www.youtube.com/watch?v=nCGBgI1MNwE&amp;index=1&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">Need It Robust? Make It Fragile!</a>
+by Yegor Bugayenko (watch the video). There he talked about two different approaches to writing
+software: fail safe vs. fail fast.</p>
+<p>He argues that when software is designed to
+fail fast bugs are discovered earlier in the development cycle/software lifetime
+and thus are easier to fix, making the whole system more robust and more stable.
+On the other hand when software is designed to hide failures and tries to
+recover auto-magically the same problems remain hidden for longer and when they
+are finally discovered they are harder to fix. This is mostly due to the fact that
+the original error condition is hidden and manifested in a different way which
+makes it harder to debug.</p>
+<p>Yegor made several examples, all of which are valid code, which he considers
+bad practice. For example imagine we have a function that accepts a filename
+as parameter:</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">read_file_fail_safe</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c"># read the file, do something else</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">bytes_read</span>
+
+
+<span class="k">def</span> <span class="nf">read_file_fail_fast</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;File does not exist&#39;</span><span class="p">)</span>
+
+    <span class="c"># read the file, do something else</span>
+    <span class="k">return</span> <span class="n">bytes_read</span>
+</pre></div>
+
+
+<p>In the first example <code>read_file_fail_safe</code> returns -1 on error. The trouble is
+whoever is calling this method may not check for errors thus corrupting the
+flow of the program further down the line. You may also want to collect metrics and
+update your database with the number of bytes processed - this will totally
+skew your metrics. C programmers out there will quickly remember at least
+one case when they didn't check the return code for errors!</p>
+<p>The second example <code>read_file_fail_fast</code> will raise an exception the moment
+it encounters a problem. It's not its fault that the file doesn't exist and
+there's nothing it can do about it, nor is its job to do anything about it.
+Raising an exception will surface back to the caller and they will be notified
+about the problem, taking appropriate actions to resolve it.</p>
+<p>Yegor was also unhappy that many books teach fail safe and even IDEs (for Java)
+generate fail safe boiler-plate code (need to check this)!
+Indeed it is me who asks the first question
+<em>Are there any tools to detect fail safe code patterns?</em> and it turns out there aren't
+(for the majority of cases that is). If you happen to know such a tool
+please post a link in the comments below.</p>
+<p>I was a bit disappointed by the rest of the talks. They were all high-level
+overviews IMO and didn't go deep technical. Last year was better. I also
+wanted to attend the GitHub Patchwork workshop but looking at the agenda
+it looked like this is for users who are starting with git and GitHub
+(which I'm not).</p>
+<p>The closing session of the day was
+<em>"Real time front-end alchemy, or: capturing, playing, altering and encoding
+video and audio streams, without servers or plugins!"</em> by Soledad Penades from
+Mozilla. There she gave a demo about the latest and greatest in terms of
+audio and video capturing, recording and mixing natively in the browser.
+This is definitively very cool for apps in the audio/video space but I can
+also imagine an application for us software testers.</p>
+<p>Depending on computational and memory requirements you should be able to
+record everything the user does in their browser (while on your website)
+and send it back home when they want to report an error or contact support.
+Definitely better than screenshots and having to go back and forth until
+the exact steps to reproduce are established.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 25 May 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/#disqus_thread">comments</a>.</p>        </div>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="bookmark" title="Permalink to Changing Rails consider_all_requests_local in RSpec fails">
                 <h2 class="post-title">
@@ -1673,192 +1779,6 @@ everything coming out of an IT system needs to be tested.</p>
                  on Fri 15 January 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/" rel="bookmark" title="Permalink to Controlling Interactive Terminal Programs">
-                <h2 class="post-title">
-                    Controlling Interactive Terminal Programs
-                </h2>
-            </a>
-                <p>Building on my previous experience about
-<a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/">capturing terminal output from other processes</a>
-I wanted to create an automated test case for the initial-setup-text service
-which would control <code>stdin</code>. Something like
-<a href="https://fedorahosted.org/dogtail/">Dogtail</a> but for text mode applications.</p>
-<p>What you have to do is attach <code>gdb</code> to the process. Then you can <code>write</code> to
-any file descriptor that is already opened. <strong>WARNING:</strong> writing directly to
-stdin didn't quite work! Because (I assume) stdin is a tty the text was shown on
-the console but the return character wasn't interpreted and the application wasn't
-accepting the input string. What I had to do is replace the tty with a pipe and
-it worked. However the input is not duplicated on the console this way!</p>
-<p>Another drawback is that I couldn't use <code>strace</code> to log the output in combination
-with <code>gdb</code>. Once a process is under trace you can't trace it a second time! For this
-simple test I was able to live with this by not inspecting the actual text printed
-by initial-setup. Instead I'm validating the state of the system after setup is
-complete. I've tried to <code>read</code> from <code>stdout</code> in gdb but that didn't work either.
-If there's a way to make this happen I can convert this script to a mini-framework.</p>
-<p>Another unknown is interacting with <code>passwd</code>. Probably for security reasons
-it doesn't allow to mess around with its stdin but I didn't investigate deeper.</p>
-<p>I've used the
-<a href="https://github.com/ticpu/tools/blob/master/fdmanage.py">fdmanage.py</a>
-script which does most of the work for me. I've removed the extra bits
-that I didn't need, added the <code>write()</code> method and removed the original call to
-<code>fcntl</code> which puts gdb.stdout into non-blocking mode (that didn't work for me).</p>
-<div class="highlight"><span class="filename">initial_setup_driver.py</span><pre><span class="c">#!/usr/bin/env python</span>
-<span class="c"># -*- coding: utf-8 -*-</span>
-<span class="c">#</span>
-<span class="c"># fdmanage.py is a program to manage file descriptors of running programs</span>
-<span class="c"># by using GDB to modify the running program.</span>
-<span class="c"># https://github.com/ticpu/tools/blob/master/fdmanage.py</span>
-<span class="c"># Copyright (C) 2015 Jérôme Poulin &lt;jeromepoulin@gmail.com&gt;</span>
-<span class="c">#</span>
-<span class="c"># This program is free software: you can redistribute it and/or modify</span>
-<span class="c"># it under the terms of the GNU General Public License as published by</span>
-<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
-<span class="c"># (at your option) any later version.</span>
-<span class="c">#</span>
-<span class="c"># This program is distributed in the hope that it will be useful,</span>
-<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
-<span class="c"># GNU General Public License for more details.</span>
-<span class="c">#</span>
-<span class="c"># You should have received a copy of the GNU General Public License</span>
-<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
-<span class="c">#</span>
-<span class="c"># Copyright (c) 2016 Alexander Todorov &lt;atodorov@redhat.com&gt;</span>
-
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
-
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">select</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
-
-
-<span class="k">class</span> <span class="nc">Gdb</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="n">pid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
-            <span class="p">[</span><span class="s">&quot;gdb&quot;</span><span class="p">,</span> <span class="s">&quot;-q&quot;</span><span class="p">,</span> <span class="s">&quot;-p&quot;</span><span class="p">,</span> <span class="n">pid</span><span class="p">],</span>
-            <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
-            <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
-            <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
-            <span class="n">close_fds</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">pid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
-
-    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
-        <span class="k">del</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;detach&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;quit&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Program terminated.&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">send_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;utf8&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">send_command_expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
-        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf8&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s">&quot; = &quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-                <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mf">0.1</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">close_fd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;call close(</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">dup2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_fd</span><span class="p">,</span> <span class="n">new_fd</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;call dup2(</span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">old_fd</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_fd</span><span class="p">)))</span>
-
-    <span class="k">def</span> <span class="nf">open_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">66</span><span class="p">):</span>
-        <span class="n">fd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_command_expect</span><span class="p">(</span><span class="s">&#39;call open(&quot;</span><span class="si">%s</span><span class="s">&quot;, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">fd</span>
-
-    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">txt</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&#39;call write(</span><span class="si">%d</span><span class="s">, &quot;</span><span class="si">%s</span><span class="s">&quot;, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">txt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">time</span>
-    <span class="kn">import</span> <span class="nn">tempfile</span>
-
-    <span class="c"># these are specific to initial-setup-text</span>
-    <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s">&quot;1</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># License information</span>
-        <span class="s">&quot;2</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Accept license</span>
-        <span class="s">&quot;c</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Continue back to the main hub</span>
-
-        <span class="s">&quot;3</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span>  <span class="c"># Timezone settings</span>
-        <span class="s">&quot;8</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span>  <span class="c"># Europe</span>
-        <span class="s">&quot;43</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Sofia</span>
-
-<span class="c"># passwd doesn&#39;t allow us to overwrite its file descriptors</span>
-<span class="c"># either aborts or simply doesn&#39;t work</span>
-<span class="c">#        &quot;4\\n&quot;,      # Root password</span>
-<span class="c">#        &quot;redhat\\n&quot;,</span>
-<span class="c">#        &quot;redhat\\n&quot;,</span>
-<span class="c">#        &quot;no\\n&quot;,     # password is weak</span>
-<span class="c">#        &quot;123\\n&quot;,</span>
-<span class="c">#        &quot;123\\n&quot;,</span>
-<span class="c">#        &quot;no\\n&quot;,     # password is too short</span>
-<span class="c">#        &quot;Th1s-Is-a-Str0ng-Password!\\n&quot;,</span>
-<span class="c">#        &quot;Th1s-Is-a-Str0ng-Password!\\n&quot;,</span>
-
-        <span class="s">&quot;c</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Continue to exit</span>
-    <span class="p">]</span>
-
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;USAGE: </span><span class="si">%s</span><span class="s"> &lt;PID&gt;&quot;</span> <span class="o">%</span> <span class="n">__file__</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
-    <span class="n">pipe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="s">&quot;pipe&quot;</span><span class="p">)</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">mkfifo</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>
-
-    <span class="k">with</span> <span class="n">Gdb</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">gdb</span><span class="p">:</span>
-        <span class="n">fd</span> <span class="o">=</span> <span class="n">gdb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># O_RDWR</span>
-        <span class="n">gdb</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># replace STDIN with a PIPE</span>
-        <span class="n">gdb</span><span class="o">.</span><span class="n">close_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
-
-        <span class="c"># set a breakpoint before continuing</span>
-        <span class="n">break_point_num</span> <span class="o">=</span> <span class="n">gdb</span><span class="o">.</span><span class="n">send_command_expect</span><span class="p">(</span><span class="s">&quot;break read&quot;</span><span class="p">)</span>
-
-        <span class="c"># now execute the process step-by-step</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">len_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">txt</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
-            <span class="n">gdb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">len_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">gdb</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;delete </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">break_point_num</span><span class="p">)</span>
-            <span class="n">gdb</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;continue&quot;</span><span class="p">)</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="c"># clean up</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">)</span>
-</pre></div>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 14 January 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

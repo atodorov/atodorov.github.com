@@ -35,10 +35,9 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-            <meta property="fb:admins" content="1616937247" />
+                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:site" content="@atodorov_">
             <meta name="twitter:title" content="atodorov.org">
@@ -90,6 +89,113 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/" rel="bookmark" title="Permalink to DEVit Conf 2016">
+                <h2 class="post-title">
+                    DEVit Conf 2016
+                </h2>
+            </a>
+                <p>It's been another busy week after <a href="http://devitconf.org/">DEVit conf</a> took place in
+Thessaloniki. Here are my impressions.</p>
+<p><img alt="DEVit 2016" src="/images/devit2016.jpg" title="DEVit 2016" /></p>
+<h2>Pre-conference</h2>
+<p><a href="http://techministry.gr">TechMinistry</a> is Thessaloniki's hacker space which
+is hosted at a central location, near major shopping streets.
+I've attended an
+<a href="http://discourse.techministry.gr/t/18-05-2016-19-30-open-source-wednesday/67">Open Source Wednesday</a>
+meeting. From the event description I thought that
+there was going to be a discussion about getting involved with
+Firefox. However that was not the case.
+Once people started coming in they formed organic groups and
+started discussing various topics on their own.</p>
+<p>I was also shown their 3D printer which IMO is the most precise of 3D printers
+I've seen so far. Imagine what it would be like to click <em>Print</em>, sometime
+in the future, and have your online orders appear on your desk over night.
+That would be quite cool!</p>
+<p>I've met with <a href="https://twitter.com/bacharakis">Christos Bacharakis</a>, a Mozilla
+representative for Greece, who gave me some goodies for my students at HackBulgaria!</p>
+<p>On Thursday I spent the day merging pull requests for
+<a href="https://github.com/MrSenko/pelican-octopress-theme">MrSenko/pelican-octopress-theme</a>
+and attended the DEVit Speakers dinner at
+<a href="https://www.facebook.com/massaliathessaloniki/">Massalia</a>.
+Food and drinks were very good and I even found a new recipe for mushrooms with
+ouzo, of which I think I had a bit too many :).</p>
+<p>I was also told that <em>"a full stack developer is a developer who can introduce
+a bug to every layer of the software stack"</em>. I can't agree more!</p>
+<h2>DEVit</h2>
+<p>The conference day started with a huge delay due to long queues for registration.
+The fist talk I attended, and the best one IMO was
+<a href="https://www.youtube.com/watch?v=nCGBgI1MNwE&amp;index=1&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">Need It Robust? Make It Fragile!</a>
+by Yegor Bugayenko (watch the video). There he talked about two different approaches to writing
+software: fail safe vs. fail fast.</p>
+<p>He argues that when software is designed to
+fail fast bugs are discovered earlier in the development cycle/software lifetime
+and thus are easier to fix, making the whole system more robust and more stable.
+On the other hand when software is designed to hide failures and tries to
+recover auto-magically the same problems remain hidden for longer and when they
+are finally discovered they are harder to fix. This is mostly due to the fact that
+the original error condition is hidden and manifested in a different way which
+makes it harder to debug.</p>
+<p>Yegor made several examples, all of which are valid code, which he considers
+bad practice. For example imagine we have a function that accepts a filename
+as parameter:</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">read_file_fail_safe</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c"># read the file, do something else</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">bytes_read</span>
+
+
+<span class="k">def</span> <span class="nf">read_file_fail_fast</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;File does not exist&#39;</span><span class="p">)</span>
+
+    <span class="c"># read the file, do something else</span>
+    <span class="k">return</span> <span class="n">bytes_read</span>
+</pre></div>
+
+
+<p>In the first example <code>read_file_fail_safe</code> returns -1 on error. The trouble is
+whoever is calling this method may not check for errors thus corrupting the
+flow of the program further down the line. You may also want to collect metrics and
+update your database with the number of bytes processed - this will totally
+skew your metrics. C programmers out there will quickly remember at least
+one case when they didn't check the return code for errors!</p>
+<p>The second example <code>read_file_fail_fast</code> will raise an exception the moment
+it encounters a problem. It's not its fault that the file doesn't exist and
+there's nothing it can do about it, nor is its job to do anything about it.
+Raising an exception will surface back to the caller and they will be notified
+about the problem, taking appropriate actions to resolve it.</p>
+<p>Yegor was also unhappy that many books teach fail safe and even IDEs (for Java)
+generate fail safe boiler-plate code (need to check this)!
+Indeed it is me who asks the first question
+<em>Are there any tools to detect fail safe code patterns?</em> and it turns out there aren't
+(for the majority of cases that is). If you happen to know such a tool
+please post a link in the comments below.</p>
+<p>I was a bit disappointed by the rest of the talks. They were all high-level
+overviews IMO and didn't go deep technical. Last year was better. I also
+wanted to attend the GitHub Patchwork workshop but looking at the agenda
+it looked like this is for users who are starting with git and GitHub
+(which I'm not).</p>
+<p>The closing session of the day was
+<em>"Real time front-end alchemy, or: capturing, playing, altering and encoding
+video and audio streams, without servers or plugins!"</em> by Soledad Penades from
+Mozilla. There she gave a demo about the latest and greatest in terms of
+audio and video capturing, recording and mixing natively in the browser.
+This is definitively very cool for apps in the audio/video space but I can
+also imagine an application for us software testers.</p>
+<p>Depending on computational and memory requirements you should be able to
+record everything the user does in their browser (while on your website)
+and send it back home when they want to report an error or contact support.
+Definitely better than screenshots and having to go back and forth until
+the exact steps to reproduce are established.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 25 May 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/#disqus_thread">comments</a>.</p>        </div>
         <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/02/23/bulgaria-web-summit-2016-report-videos/" rel="bookmark" title="Permalink to Bulgaria Web Summit 2016 Report & Videos">
                 <h2 class="post-title">
@@ -1101,102 +1207,6 @@ to get a device for testing and hacking and will keep you posted.</p>
                  on Thu 23 May 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/05/23/balkan-venture-forum-sofia-post-mortem/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/" rel="bookmark" title="Permalink to HackFMI Post-mortem">
-                <h2 class="post-title">
-                    HackFMI Post-mortem
-                </h2>
-            </a>
-                <p><img src="/images/hackfmi/hackfmi_beer.jpg" alt="HackFMI" style="float:left;margin-right:10px;" /></p>
-<p>The first <a href="http://hackfmi.com">HackFMI</a> event is now over :(. It was HUGE!
-Kudos to the organizers, sponsors, mentors and all teams who took part and worked hard during
-the weekend.</p>
-<p>More than 100 people participated. There were 22 different teams presenting at the
-finale yesterday evening. That in my opinion counts as a BIG success. I was surprised
-to see so many people, lots of them first and second year at the university. There were
-a good number of female hackers too, which I also didn't expect.
-<em>DISCLAIMER: I've graduated a different university where the culture and male/female ratio
-was different so my expectations were biased.</em></p>
-<p>People had interesting ideas and were passionate about them. They set off hacking
-on a big scale. At times they wanted to create too big of an application and had to
-cut off some features due to time constraints.</p>
-<p>Congrats to all of them and hopefully they continue hacking!</p>
-<h2>What Happened</h2>
-<p>I wasn't able to talk to all the teams nor stay at the event full time but here is
-how I saw things. </p>
-<p>Organization was perfect. The best organized non-commercial local event I've seen in years.
-There was food, beverages, T-shirts, even beer :). There were six big IT companies
-<a href="http://hackfmi.com/sponsors-and-partners/">sponsoring</a> the
-event. All of these are successful Bulgarian born companies.
-Let that serve as an example!</p>
-<p>The faculty was supporting the event too.
-There were API and SQL dump for the teams to use. The entire building was open
-during the weekend and during the night. Teams were able to make use of many rooms. 
-From what I know some of the successful ideas will be implemented into the faculty
-administration as well. All of this is a first time and quite unexpected for a 
-Bulgarian university. I smell the wind of change already. </p>
-<h2>Technology</h2>
-<p>My technology view of the event is limited to the teams I've mentored explicitly and the ones
-I happened to walk by and interfere with. Naturally I gravitated around 4 teams using
-Django and found two teams using PHP.</p>
-<p>Django guys were doing well despite one of the teams not having any experience with it. 
-Most of the applications were such that didn't require extensive knowledge of Django internals
-but require mere programming of all features they wanted to implement. </p>
-<p>What stroked me is that folks were making their database models too complicated. 
-I stumbled across two use cases in different teams where they wanted to have 
-one to many or many to many relationships. I strongly advised against this.
-Hopefully they will remember.</p>
-<p>Django makes schema design a child's play and probably this is why lots of people
-abuse and misuse that. My advise is keep the database as simple as possible
-and move everything up the application layer. It's easier to change and to maintain
-that way. Not to mention experienced DBAs are hard to find. </p>
-<p><strong>Keep the DB simple and know your tools well! </strong></p>
-<p>With PHP the case was pretty much the same. Guys had some extra fields in their DB schema
-which were unnecessary. They also wanted to abuse the data types of the DB and not use native types.</p>
-<p>All of these technological misunderstandings are coming from inexperience, I know.
-To get a closer look at why it is important to have a simple schema look at:
-<a href="http://ontwik.com/python/disqus-scaling-the-world%E2%80%99s-largest-django-application/">Disqus: Scaling the World’s Largest Django Application</a></p>
-<h2>The Hackers</h2>
-<p>During one of the breaks I was outside and one of the mentors complained that
-ideas were pretty much standard. No screen scraping for additional information, 
-no mashing up, no revolutionary ideas. Everybody was using the provided API and
-SQL dumps. Well almost.</p>
-<p>One of my favorite <a href="https://github.com/vcrazy/project-6">teams</a> set off to
-write a PHP robot which will automatically login and extract information from
-SUSI (the faculty information system). Unfortunately that didn't work so they
-had to abandon it. They didn't known <a href="http://docs.seleniumhq.org/">Selenium</a>
-and there was not enough time to
-try and hack some browser side extension which will do the trick but they promised
-to try it.</p>
-<p>Because of their unorthodox approach from the start they became my personal favorites
-and received Red Hat swag from me.</p>
-<p><img alt="Team Six" src="/images/hackfmi/hackfmi2013_team_six_rh_swag.jpg" title="Team Six" />
-Adrian and Vihren are Team Six!</p>
-<h2>What I didn't like</h2>
-<p>I didn't like the fact that there was lots of duplicate work and ideas. Only one team
-built a mobile application based on API and services provided by another team.</p>
-<p>I suggest there's a #hackfmi IRC channel next time so that people can communicate
-with each other and focus on building great apps not reinventing the wheel. 
-<strong>Use IRC, you are hackers!</strong></p>
-<p>What I was missing is that nobody proposed a pure cloud or big data application.
-I don't know if there was enough data provided by the faculty for such kind of
-ideas, probably there wasn't. Maybe next time there will be.</p>
-<h2>Ohloh Stats</h2>
-<p>While not participating actively except for a few hours of mentoring I found a
-way to contribute. Many of the projects repositories are listed under
-<a href="https://www.ohloh.net/p/hackfmi2013">https://www.ohloh.net/p/hackfmi2013</a> which provides some interesting insight
-and stats.</p>
-<p>The list is incomplete. Lots of teams didn't have any GitHub repos
-or didn't push the code recently. I will be contacting all of them in the next few days
-and hopefully we will have a more accurate statistics by the end of the week.
-Expect a separate blog post about it.</p>
-<p>If you missed this event you should be sorry. <a href="/blog/2013/03/24/upcoming-hackathons-in-sofia/">You were warned</a>!
-If you attended please share your experience with me. What you liked, what you didn't. </p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 15 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/15/hackfmi-post-mortem/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
