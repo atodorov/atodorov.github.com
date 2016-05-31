@@ -1,5 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-27T15:30:00+03:00</updated><entry><title>Changing Rails consider_all_requests_local in RSpec fails</title><link href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="alternate"></link><updated>2016-04-27T15:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-27:blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/</id><summary type="html">&lt;p&gt;As many others I've been trying to change
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-05-31T14:01:00+03:00</updated><entry><title>Capybara's find().click doesn't always fire onClick</title><link href="http://atodorov.org/blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/" rel="alternate"></link><updated>2016-05-31T14:01:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-05-31:blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/</id><summary type="html">&lt;p&gt;Recently I've observed a strange behavior in one of the test suites I'm
+working with - a test which submits a web form appeared to fail at a rate
+between 10% and 30%. This immediately made me think there is some kind of
+race-condition but it turned out that Capybara's &lt;code&gt;find().click&lt;/code&gt; method
+doesn't always fire the onClick event in the browser!&lt;/p&gt;
+&lt;p&gt;The test suite uses Capybara, Poltergeist and PhantomJS. The element we
+click on is an image, coupled to a hidden check-box underneath. When the image
+is clicked onClick is fired and the check-box is updated accordingly. In the
+failed cases the underlying check-box wasn't updated!
+Searching the web reveals a similar problem described by
+&lt;a href="http://aokolish.me/blog/2012/01/22/testing-hover-events-with-capybara/"&gt;Alex Okolish&lt;/a&gt;
+so we've tried his solution:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;div&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;.replacement&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ss"&gt;visible&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kp"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;trigger&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;:click&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;How to Test&lt;/h2&gt;
+&lt;p&gt;The failure behavior being somewhat flaky I've opted for running the
+test multiple times and see what happens when it fails. Initially I've
+executed the test in batches of 10 and 20 repetitions to get a feeling
+of how often does it fail before proceeding with debugging. Debugging
+was done by logging variables and state on the console and repeating
+multiple times. Once a possible solution was
+proposed we've run the tests in batches of 100 repetitions and counted
+how often they failed.&lt;/p&gt;
+&lt;p&gt;At the end, when Alex's solution was discovered we've repeated the
+testing around 1000 times just to make sure it works reliably.
+So far this has been working without issues!&lt;/p&gt;
+&lt;p&gt;I've spent around a week working on this together with a co-worker
+and we didn't really want to spend more time trying to figure out
+what was going wrong with our tools. Once we saw that &lt;code&gt;trigger&lt;/code&gt; does
+the job we didn't continue debugging Capybara or PhantomJS.&lt;/p&gt;</summary><category term="QA"></category><category term="Ruby"></category></entry><entry><title>Changing Rails consider_all_requests_local in RSpec fails</title><link href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="alternate"></link><updated>2016-04-27T15:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-27:blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/</id><summary type="html">&lt;p&gt;As many others I've been trying to change
 &lt;code&gt;Rails.application.config.consider_all_requests_local&lt;/code&gt; and
 &lt;code&gt;Rails.application.config.action_dispatch.show_exceptions&lt;/code&gt; inside my
 RSpec tests in order to test custom error pages in a Rails app. However this
@@ -1715,39 +1746,4 @@ once it migrates to Travis-CI (it uses drone.io now).&lt;/p&gt;
 
     &lt;span class="c"&gt;# check the RSS to see if we have something new&lt;/span&gt;
     &lt;span class="n"&gt;monitor_rss&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="OpenShift"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>python-libs in RHEL 7.2 broke SSL verification in s3cmd</title><link href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="alternate"></link><updated>2015-11-24T21:44:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-11-24:blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/</id><summary type="html">&lt;p&gt;Today started with &lt;a href="http://planet.sofiavalley.com"&gt;Planet Sofia Valley&lt;/a&gt; being
-broken again. Indeed it's been broken since last Friday when I've upgraded to
-the latest RHEL 7.2. I quickly identified that I was hitting
-&lt;a href="https://github.com/s3tools/s3cmd/issues/647"&gt;Issue #647&lt;/a&gt;. Then I tried the
-git checkout without any luck. This is when I started to suspect that python-libs
-has been updated in an incompatible way.&lt;/p&gt;
-&lt;p&gt;After series of reported bugs,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916"&gt;rhbz#1284916&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930"&gt;rhbz#1284930&lt;/a&gt;,
-&lt;a href="http://bugs.python.org/issue25722"&gt;Python#25722&lt;/a&gt;, it was clear that
-&lt;code&gt;ssl.py&lt;/code&gt; was working according to RFC6125, that Amazon S3 was not playing
-nicely with this same RFC and that my patch proposal was wrong.
-This immediately had me looking upper in the stack at &lt;code&gt;httplib.py&lt;/code&gt; and &lt;code&gt;s3cmd&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Indeed there was a change in &lt;code&gt;httplib.py&lt;/code&gt; which introduced two parameters,
-&lt;em&gt;context&lt;/em&gt; and &lt;em&gt;check_hostname&lt;/em&gt;, to &lt;code&gt;HTTPSConnection.__init__&lt;/code&gt;. The change
-also supplied the logic which performs SSL hostname validation.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;if not self._context.check_hostname and self._check_hostname:
-    try:
-        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-    except Exception:
-        self.sock.shutdown(socket.SHUT_RDWR)
-        self.sock.close()
-        raise
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;This looks a bit doggy as I don't quite understand the intention behind
-&lt;em&gt;not PREDICATE and PREDICATE&lt;/em&gt;. Anyway to disable the validation you need
-both parameters set to False, which is
-&lt;a href="https://github.com/s3tools/s3cmd/pull/668"&gt;PR #668&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Notice the two try-except blocks. This is in case we're running with a
-version that has a context but not the check_hostname parameter. I've found
-the &lt;em&gt;inspect.getmembers&lt;/em&gt; function which can be used to figure out what
-parameters are there for the init method but a solution based on it
-doesn't appear to be more elegant. I will describe this in more details in
-my next post.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="RHEL"></category><category term="Python"></category></entry></feed>
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="OpenShift"></category><category term="Django"></category><category term="QA"></category></entry></feed>

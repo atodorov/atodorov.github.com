@@ -97,6 +97,49 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/" rel="bookmark" title="Permalink to Capybara's find().click doesn't always fire onClick">
+                <h2 class="post-title">
+                    Capybara's find().click doesn't always fire onClick
+                </h2>
+            </a>
+                <p>Recently I've observed a strange behavior in one of the test suites I'm
+working with - a test which submits a web form appeared to fail at a rate
+between 10% and 30%. This immediately made me think there is some kind of
+race-condition but it turned out that Capybara's <code>find().click</code> method
+doesn't always fire the onClick event in the browser!</p>
+<p>The test suite uses Capybara, Poltergeist and PhantomJS. The element we
+click on is an image, coupled to a hidden check-box underneath. When the image
+is clicked onClick is fired and the check-box is updated accordingly. In the
+failed cases the underlying check-box wasn't updated!
+Searching the web reveals a similar problem described by
+<a href="http://aokolish.me/blog/2012/01/22/testing-hover-events-with-capybara/">Alex Okolish</a>
+so we've tried his solution:</p>
+<div class="highlight"><pre><span class="n">div</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.replacement&#39;</span><span class="p">,</span> <span class="ss">visible</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span><span class="o">.</span><span class="n">trigger</span><span class="p">(</span><span class="ss">:click</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>How to Test</h2>
+<p>The failure behavior being somewhat flaky I've opted for running the
+test multiple times and see what happens when it fails. Initially I've
+executed the test in batches of 10 and 20 repetitions to get a feeling
+of how often does it fail before proceeding with debugging. Debugging
+was done by logging variables and state on the console and repeating
+multiple times. Once a possible solution was
+proposed we've run the tests in batches of 100 repetitions and counted
+how often they failed.</p>
+<p>At the end, when Alex's solution was discovered we've repeated the
+testing around 1000 times just to make sure it works reliably.
+So far this has been working without issues!</p>
+<p>I've spent around a week working on this together with a co-worker
+and we didn't really want to spend more time trying to figure out
+what was going wrong with our tools. Once we saw that <code>trigger</code> does
+the job we didn't continue debugging Capybara or PhantomJS.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 31 May 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/" rel="bookmark" title="Permalink to DEVit Conf 2016">
                 <h2 class="post-title">
                     DEVit Conf 2016
@@ -1770,21 +1813,6 @@ again:</p>
                  on Mon 18 January 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/01/18/using-multiple-software-collections/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/" rel="bookmark" title="Permalink to Tesla Needs More QA">
-                <h2 class="post-title">
-                    Tesla Needs More QA
-                </h2>
-            </a>
-                <p><img alt="Tesla email" src="/images/tesla_qa_bug.png" title="Tesla email" /></p>
-<p>A nice way for Tesla Motors to tell me they won't consider my interest in their
-QA positions - by sending me an email with a bug! It only goes to show that
-everything coming out of an IT system needs to be tested.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 15 January 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
