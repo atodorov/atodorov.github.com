@@ -50,9 +50,9 @@ What was interesting for me on the hardware side was the fact that you can plug
 the computer directly to a cheap TV set and that it's been one of the first computers
 which could operate on 12V DC, powered directly from a car battery.
 
-![Pravetz 16](/images/pravetz16.jpg "Pravetz 16")
+![Pravetz 8](/images/pravetz16.jpg "Pravetz 8")
 
-There was also a fully functional Pravetz 16 with an additional VGA port to
+There was also a fully functional Pravetz 8 with an additional VGA port to
 connect it to the LCD monitor as well as a SD card reader wired to function as a
 floppy disk reader (the small black dot behind the joystick).
 
