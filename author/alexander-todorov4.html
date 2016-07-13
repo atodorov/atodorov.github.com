@@ -97,6 +97,48 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/" rel="bookmark" title="Permalink to Call for Ideas: Graphical Test Coverage Reports">
+                <h2 class="post-title">
+                    Call for Ideas: Graphical Test Coverage Reports
+                </h2>
+            </a>
+                <p>If you are working with Python and writing unit tests chances are you are
+familiar with the <a href="http://nedbatchelder.com/code/coverage/">coverage</a> reporting
+tool. However there are testing scenarios in which we either don't use unit tests
+or maybe execute different code paths(test cases) independent of each other.</p>
+<p>For example, this is the case with installation testing in Fedora. Because anaconda
+- the installer is very complex the easiest way is to test it live, not with unit tests.
+Even though we can get a coverage report (anaconda is written in Python) it reflects
+only the test case it was collected from.</p>
+<p><code>coverage combine</code> can be used to combine several data files and produce an aggregate
+report. This can tell you how much test coverage you have across all your tests.</p>
+<p>As far as I can tell Python's coverage doesn't tell you how many times a particular
+line of code has been executed. It also doesn't tell you which test cases executed
+a particular line
+(see <a href="https://bitbucket.org/ned/coveragepy/pull-request/59">PR #59</a>).
+In the Fedora example, I have the feeling many of our tests are touching the same
+code base and not contributing that much to the overall test coverage.
+So I started working on these items.</p>
+<p>I imagine a script which will read coverage data from several test executions
+(preferably in JSON format, 
+<a href="https://bitbucket.org/ned/coveragepy/pull-request/60">PR #60</a>) and produce a 
+graphical report similar to what GitHub does for your commit activity.</p>
+<p>See an example <a href="https://s3.amazonaws.com/atodorov/blog/pykickstart_report.html">here</a>!</p>
+<p>The example uses darker colors to indicate more line executions, lighter for less
+executions. Check the HTML for the actual numbers b/c there are no hints yet.
+The input JSON files are
+<a href="https://s3.amazonaws.com/atodorov/blog/coverage_json_reports.tar.gz">here</a> and
+the script to generate the above HTML is at 
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/coverage-tool">GitHub</a>.</p>
+<p>Now I need your ideas and comments!</p>
+<p>What kinds of coverage reports are you using in your job ? How do you generate them ?
+How do they look like ?</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 27 July 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/07/01/open-data-event-coming-to-sofia/" rel="bookmark" title="Permalink to Open Data Event Coming to Sofia">
                 <h2 class="post-title">
                     Open Data Event Coming to Sofia
@@ -1845,185 +1887,6 @@ Could not create NetworkPortal in configFS.
                  on Wed 08 April 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/" rel="bookmark" title="Permalink to How to Configure iSCSI Target on Red Hat Enterprise Linux 7">
-                <h2 class="post-title">
-                    How to Configure iSCSI Target on Red Hat Enterprise Linux 7
-                </h2>
-            </a>
-                <p>Linux-IO (LIO) Target is an open-source implementation of the SCSI target that
-has become the standard one included in the Linux kernel and the one present in
-Red Hat Enterprise Linux 7. The popular <em>scsi-target-utils</em> package is replaced
-by the newer <em>targetcli</em> which makes configuring a software iSCSI target quite
-different.</p>
-<p>In earlier versions one had to edit the <code>/etc/tgtd/targets.conf</code> file and
-<code>service tgtd restart</code>. Here is an example configuration:</p>
-<div class="highlight"><pre><span class="nt">&lt;target</span> <span class="err">iqn.2008-09.com.example:server.target1</span><span class="nt">&gt;</span>
-    backing-store /dev/vg_iscsi/lv_lun1
-    backing-store /dev/vg_iscsi/lv_lun2
-
-    incominguser user2 secretpass23
-    outgoinguser userA secretpassA
-<span class="nt">&lt;/target&gt;</span>
-</pre></div>
-
-
-<p><em>targetcli</em> can be used either as an interactive shell or as stand alone commands.
-Here is an example shell session which creates a file-based disk image. Comments are
-provided inline:</p>
-<div class="highlight"><pre><span class="cp"># yum install -y targetcli</span>
-<span class="cp"># systemctl enable target</span>
-
-<span class="cp"># targetcli </span>
-
-<span class="cp"># first create a disk image with the name of disk1. All files are sparsely created.</span>
-
-<span class="o">/&gt;</span> <span class="n">backstores</span><span class="o">/</span><span class="n">fileio</span> <span class="n">create</span> <span class="n">disk1</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk1</span><span class="p">.</span><span class="n">img</span> <span class="mi">10</span><span class="n">G</span>
-<span class="n">Created</span> <span class="n">fileio</span> <span class="n">disk1</span> <span class="n">with</span> <span class="n">size</span> <span class="mi">10737418240</span>
-
-<span class="cp"># create an iSCSI target. NB: this only defines the target</span>
-
-<span class="o">/&gt;</span> <span class="n">iscsi</span><span class="o">/</span> <span class="n">create</span> <span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target1</span>
-<span class="n">Created</span> <span class="n">target</span> <span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target1</span><span class="p">.</span>
-<span class="n">Created</span> <span class="n">TPG</span> <span class="mf">1.</span>
-<span class="n">Global</span> <span class="n">pref</span> <span class="n">auto_add_default_portal</span><span class="o">=</span><span class="nb">true</span>
-<span class="n">Created</span> <span class="k">default</span> <span class="n">portal</span> <span class="n">listening</span> <span class="n">on</span> <span class="n">all</span> <span class="n">IPs</span> <span class="p">(</span><span class="mf">0.0.0.0</span><span class="p">),</span> <span class="n">port</span> <span class="mf">3260.</span>
-
-<span class="cp"># TPGs (Target Portal Groups) allow the iSCSI to support multiple complete</span>
-<span class="cp"># configurations within one target. This is useful for complex quality-of-service</span>
-<span class="cp"># configurations. targetcli will automatically create one TPG when the target</span>
-<span class="cp"># is created, and almost all setups only need one.</span>
-
-<span class="cp"># switch to TPG definition for our target</span>
-
-<span class="o">/&gt;</span> <span class="n">cd</span> <span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span>
-
-<span class="cp"># list the contents</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">ls</span> 
-<span class="n">o</span><span class="o">-</span> <span class="n">tpg1</span> <span class="p">.....................................................................................................</span> <span class="p">[</span><span class="n">no</span><span class="o">-</span><span class="n">gen</span><span class="o">-</span><span class="n">acls</span><span class="p">,</span> <span class="n">no</span><span class="o">-</span><span class="n">auth</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">acls</span> <span class="p">................................................................................................................</span> <span class="p">[</span><span class="nl">ACLs</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">luns</span> <span class="p">................................................................................................................</span> <span class="p">[</span><span class="nl">LUNs</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">portals</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">Portals</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-    <span class="n">o</span><span class="o">-</span> <span class="mf">0.0.0.0</span><span class="o">:</span><span class="mi">3260</span> <span class="p">...........................................................................................................</span> <span class="p">[</span><span class="n">OK</span><span class="p">]</span>
-
-<span class="cp"># create a portal aka IP:port pairs which expose the target on the network</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">portals</span><span class="o">/</span> <span class="n">create</span>
-<span class="n">Using</span> <span class="k">default</span> <span class="n">IP</span> <span class="n">port</span> <span class="mi">3260</span>
-<span class="n">Binding</span> <span class="n">to</span> <span class="n">INADDR_ANY</span> <span class="p">(</span><span class="mf">0.0.0.0</span><span class="p">)</span>
-<span class="n">This</span> <span class="n">NetworkPortal</span> <span class="n">already</span> <span class="n">exists</span> <span class="k">in</span> <span class="n">configFS</span><span class="p">.</span>
-
-<span class="cp"># create logical units (LUNs) aka disks inside our target</span>
-<span class="cp"># in other words bind the target to its on-disk storage</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">luns</span><span class="o">/</span> <span class="n">create</span> <span class="o">/</span><span class="n">backstores</span><span class="o">/</span><span class="n">fileio</span><span class="o">/</span><span class="n">disk1</span>
-<span class="n">Created</span> <span class="n">LUN</span> <span class="mf">0.</span>
-
-<span class="cp"># disable authentication</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">attribute</span> <span class="n">authentication</span><span class="o">=</span><span class="mi">0</span>
-<span class="n">Parameter</span> <span class="n">authentication</span> <span class="n">is</span> <span class="n">now</span> <span class="sc">&#39;0&#39;</span><span class="p">.</span>
-
-<span class="cp"># enable read/write mode</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">attribute</span> <span class="n">demo_mode_write_protect</span><span class="o">=</span><span class="mi">0</span>
-<span class="n">Parameter</span> <span class="n">demo_mode_write_protect</span> <span class="n">is</span> <span class="n">now</span> <span class="sc">&#39;0&#39;</span><span class="p">.</span>
-
-<span class="cp"># Enable generate_node_acls mode. This can be thought of as </span>
-<span class="cp"># &quot;ignore ACLs mode&quot; -- both  authentication and LUN mapping</span>
-<span class="cp"># will then use the TPG settings.</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">attribute</span> <span class="n">generate_node_acls</span><span class="o">=</span><span class="mi">1</span>
-<span class="n">Parameter</span> <span class="n">generate_node_acls</span> <span class="n">is</span> <span class="n">now</span> <span class="sc">&#39;1&#39;</span><span class="p">.</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">ls</span>
-<span class="n">o</span><span class="o">-</span> <span class="n">tpg1</span> <span class="p">........................................................................................................</span> <span class="p">[</span><span class="n">gen</span><span class="o">-</span><span class="n">acls</span><span class="p">,</span> <span class="n">no</span><span class="o">-</span><span class="n">auth</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">acls</span> <span class="p">................................................................................................................</span> <span class="p">[</span><span class="nl">ACLs</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">luns</span> <span class="p">................................................................................................................</span> <span class="p">[</span><span class="nl">LUNs</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">lun0</span> <span class="p">.....................................................................</span> <span class="p">[</span><span class="n">fileio</span><span class="o">/</span><span class="n">disk1</span> <span class="p">(</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk1</span><span class="p">.</span><span class="n">img</span><span class="p">)]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">portals</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">Portals</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-    <span class="n">o</span><span class="o">-</span> <span class="mf">0.0.0.0</span><span class="o">:</span><span class="mi">3260</span> <span class="p">...........................................................................................................</span> <span class="p">[</span><span class="n">OK</span><span class="p">]</span>
-
-<span class="cp"># exit or Ctrl+D will save the configuration under /etc/target/saveconfig.json</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">exit</span>
-<span class="n">Global</span> <span class="n">pref</span> <span class="n">auto_save_on_exit</span><span class="o">=</span><span class="nb">true</span>
-<span class="n">Last</span> <span class="mi">10</span> <span class="n">configs</span> <span class="n">saved</span> <span class="k">in</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">backup</span><span class="p">.</span>
-<span class="n">Configuration</span> <span class="n">saved</span> <span class="n">to</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">saveconfig</span><span class="p">.</span><span class="n">json</span>
-
-<span class="cp"># after creating a second target the layout looks like this</span>
-
-<span class="o">/&gt;</span> <span class="n">ls</span>
-<span class="n">o</span><span class="o">-</span> <span class="o">/</span> <span class="p">.........................................................................................................................</span> <span class="p">[...]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">backstores</span> <span class="p">..............................................................................................................</span> <span class="p">[...]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">block</span> <span class="p">..................................................................................................</span> <span class="p">[</span><span class="n">Storage</span> <span class="nl">Objects</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">fileio</span> <span class="p">.................................................................................................</span> <span class="p">[</span><span class="n">Storage</span> <span class="nl">Objects</span><span class="p">:</span> <span class="mi">2</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">disk1</span> <span class="p">..................................................</span> <span class="p">[</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk1</span><span class="p">.</span><span class="n">img</span> <span class="p">(</span><span class="mf">10.0</span><span class="n">GiB</span><span class="p">)</span> <span class="n">write</span><span class="o">-</span><span class="n">back</span> <span class="n">activated</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">disk2</span> <span class="p">..................................................</span> <span class="p">[</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk2</span><span class="p">.</span><span class="n">img</span> <span class="p">(</span><span class="mf">10.0</span><span class="n">GiB</span><span class="p">)</span> <span class="n">write</span><span class="o">-</span><span class="n">back</span> <span class="n">activated</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">pscsi</span> <span class="p">..................................................................................................</span> <span class="p">[</span><span class="n">Storage</span> <span class="nl">Objects</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">ramdisk</span> <span class="p">................................................................................................</span> <span class="p">[</span><span class="n">Storage</span> <span class="nl">Objects</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">iscsi</span> <span class="p">............................................................................................................</span> <span class="p">[</span><span class="nl">Targets</span><span class="p">:</span> <span class="mi">2</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target1</span> <span class="p">...................................................................................</span> <span class="p">[</span><span class="nl">TPGs</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">tpg1</span> <span class="p">..................................................................................................</span> <span class="p">[</span><span class="n">gen</span><span class="o">-</span><span class="n">acls</span><span class="p">,</span> <span class="n">no</span><span class="o">-</span><span class="n">auth</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span>   <span class="n">o</span><span class="o">-</span> <span class="n">acls</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">ACLs</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span>   <span class="n">o</span><span class="o">-</span> <span class="n">luns</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">LUNs</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span>   <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">lun0</span> <span class="p">...............................................................</span> <span class="p">[</span><span class="n">fileio</span><span class="o">/</span><span class="n">disk1</span> <span class="p">(</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk1</span><span class="p">.</span><span class="n">img</span><span class="p">)]</span>
-  <span class="o">|</span> <span class="o">|</span>   <span class="n">o</span><span class="o">-</span> <span class="n">portals</span> <span class="p">....................................................................................................</span> <span class="p">[</span><span class="nl">Portals</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span> <span class="o">|</span>     <span class="n">o</span><span class="o">-</span> <span class="mf">0.0.0.0</span><span class="o">:</span><span class="mi">3260</span> <span class="p">.....................................................................................................</span> <span class="p">[</span><span class="n">OK</span><span class="p">]</span>
-  <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target2</span> <span class="p">...................................................................................</span> <span class="p">[</span><span class="nl">TPGs</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span>   <span class="n">o</span><span class="o">-</span> <span class="n">tpg1</span> <span class="p">..................................................................................................</span> <span class="p">[</span><span class="n">gen</span><span class="o">-</span><span class="n">acls</span><span class="p">,</span> <span class="n">no</span><span class="o">-</span><span class="n">auth</span><span class="p">]</span>
-  <span class="o">|</span>     <span class="n">o</span><span class="o">-</span> <span class="n">acls</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">ACLs</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-  <span class="o">|</span>     <span class="n">o</span><span class="o">-</span> <span class="n">luns</span> <span class="p">..........................................................................................................</span> <span class="p">[</span><span class="nl">LUNs</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span>     <span class="o">|</span> <span class="n">o</span><span class="o">-</span> <span class="n">lun0</span> <span class="p">...............................................................</span> <span class="p">[</span><span class="n">fileio</span><span class="o">/</span><span class="n">disk2</span> <span class="p">(</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libvirt</span><span class="o">/</span><span class="n">images</span><span class="o">/</span><span class="n">disk2</span><span class="p">.</span><span class="n">img</span><span class="p">)]</span>
-  <span class="o">|</span>     <span class="n">o</span><span class="o">-</span> <span class="n">portals</span> <span class="p">....................................................................................................</span> <span class="p">[</span><span class="nl">Portals</span><span class="p">:</span> <span class="mi">1</span><span class="p">]</span>
-  <span class="o">|</span>       <span class="n">o</span><span class="o">-</span> <span class="mf">0.0.0.0</span><span class="o">:</span><span class="mi">3260</span> <span class="p">.....................................................................................................</span> <span class="p">[</span><span class="n">OK</span><span class="p">]</span>
-  <span class="n">o</span><span class="o">-</span> <span class="n">loopback</span> <span class="p">.........................................................................................................</span> <span class="p">[</span><span class="nl">Targets</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-
-
-<span class="cp"># enable CHAP and Reverse CHAP (mutual) for both discovery and login authentication</span>
-
-<span class="cp"># discovery authentication is enabled under the global iscsi node</span>
-
-<span class="o">/&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">iscsi</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">discovery_auth</span> <span class="n">enable</span><span class="o">=</span><span class="mi">1</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">discovery_auth</span> <span class="n">userid</span><span class="o">=</span><span class="n">IncomingUser</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">discovery_auth</span> <span class="n">password</span><span class="o">=</span><span class="n">SomePassword1</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">discovery_auth</span> <span class="n">mutual_userid</span><span class="o">=</span><span class="n">OutgoingUser</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">discovery_auth</span> <span class="n">mutual_password</span><span class="o">=</span><span class="n">AnotherPassword2</span>
-
-<span class="cp"># login authentication is enabled either under the TPG node or under ACLs</span>
-
-<span class="o">/</span><span class="n">iscsi</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="n">iqn</span><span class="mf">.2015</span><span class="o">-</span><span class="mf">04.</span><span class="n">com</span><span class="p">.</span><span class="nl">example</span><span class="p">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">attribute</span> <span class="n">authentication</span><span class="o">=</span><span class="mi">1</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">auth</span> <span class="n">userid</span><span class="o">=</span><span class="n">IncomingUser2</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">auth</span> <span class="n">password</span><span class="o">=</span><span class="n">SomePassword3</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">auth</span> <span class="n">mutual_userid</span><span class="o">=</span><span class="n">OutgoingUser2</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">set</span> <span class="n">auth</span> <span class="n">mutual_password</span><span class="o">=</span><span class="n">AnotherPassword4</span>
-<span class="o">/</span><span class="n">iscsi</span><span class="o">/</span><span class="n">iqn</span><span class="mf">.20</span><span class="p">...</span><span class="o">:</span><span class="n">target1</span><span class="o">/</span><span class="n">tpg1</span><span class="o">&gt;</span> <span class="n">exit</span>
-</pre></div>
-
-
-<p>Hints:</p>
-<ul>
-<li>activating targetcli service at boot is mandatory, otherwise your configuration won’t be read after a reboot</li>
-<li>if you type <code>cd</code> <em>targetcli</em> will display an interactive node tree</li>
-<li>after configuration is saved you don't need to restart anything</li>
-<li>the old <em>scsi-target-utils</em> doesn't support discovery authentication</li>
-<li><em>targetcli</em> allows kernel memory to be shared as a block SCSI device via the
-ramdisk backstore. It also supports "nullio" mode, which discards all writes, and returns all-zeroes for reads.</li>
-<li>I'm having troubles configuring portals to listen both on any IPv4 addresses and any IPv6 addresses
-the system has. I've still not figured that out entirely.</li>
-</ul>
-<p>For more information please read Chapter 25 from Red Hat's
-<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Storage_Administration_Guide/ch25.html">Storage Administration Guide</a>
-or checkout
-<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=red%20hat%20enterprise%20linux%207&linkCode=ur2&rh=n%3A283155%2Ck%3Ared%20hat%20enterprise%20linux%207&sprefix=red%20hat%20enterprise%20linux%207%2Cstripbooks%2C253&tag=atodorovorg-20&url=search-alias%3Dstripbooks&linkId=SI7U3LCMCMA4EZOM">Red Hat Enterprise Linux 7 books on Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 07 April 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

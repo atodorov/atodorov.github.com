@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-        <meta charset="utf-8">
+            <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
             <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
 
-        <title>atodorov.org - Authors</title>
+        <title>Bug in TuxCon Website</title>
 
         <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
         <!-- Bootstrap Core CSS -->
@@ -35,14 +35,33 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-                <meta property="fb:admins" content="1616937247" >
+
+
+        <meta name="description" content="due to wrong initialization values">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="QA">
+
+	                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-            <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:site" content="@atodorov_">
-            <meta name="twitter:title" content="atodorov.org">
-            <meta name="twitter:description" content="you can logoff, but you can never leave">
-                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/">
+	<meta property="og:title" content="Bug in TuxCon Website">
+	<meta property="article:published_time" content="2016-07-13 14:10:00+03:00">
+            <meta property="og:description" content="due to wrong initialization values">
+
+                <meta property="og:image" content="http://atodorov.org/images/bugs/tuxcon_bug.png">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Bug in TuxCon Website">
+
+                <meta property="twitter:image" content="http://atodorov.org/images/bugs/tuxcon_bug.png">
+
+            <meta name="twitter:description" content="due to wrong initialization values">
 </head>
 
 <body>
@@ -79,7 +98,13 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>Articles by </h1>
+                        <h1>Bug in TuxCon Website</h1>
+                            <h3 class="subheading">due to wrong initialization values</h3>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Wed 13 July 2016
+                        </span>
+                        
                     </div>
                 </div>
             </div>
@@ -90,14 +115,88 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-preview">
-            <a href="http://atodorov.org/author/alexander-todorov.html" rel="bookmark">
-                <h2 class="post-title">
-                    Alexander Todorov (249)
-                </h2>
-            </a>
+    <!-- Post Content -->
+    <article>
+        <p><img alt="TuxCon bug" src="/images/bugs/tuxcon_bug.png" title="TuxCon bug" /></p>
+<p>Here comes July 9th 2016 and the start of <a href="http://tuxcon.mobi">TuxCon</a> ...
+with a bug on their website! The image above is taken during the first
+talk of the conference. Obviously the count down timer is completely off.</p>
+<p>In
+<a href="https://github.com/TuxCon/tuxcon-website/blob/master/js/init.js#L100">init.js:100</a>
+there is this piece of code</p>
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">finalDate</span> <span class="o">=</span> <span class="s1">&#39;2016/07/09&#39;</span><span class="p">;</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s1">&#39;div#counter&#39;</span><span class="p">).</span><span class="nx">countdown</span><span class="p">(</span><span class="nx">finalDate</span><span class="p">)</span>
+<span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;update.countdown&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">strftime</span><span class="p">(</span><span class="s1">&#39;&lt;span&gt;%D &lt;em&gt;days&lt;/em&gt;&lt;/span&gt;&#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;&lt;span&gt;%H &lt;em&gt;hours&lt;/em&gt;&lt;/span&gt;&#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;&lt;span&gt;%M &lt;em&gt;minutes&lt;/em&gt;&lt;/span&gt;&#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;&lt;span&gt;%S &lt;em&gt;seconds&lt;/em&gt;&lt;/span&gt;&#39;</span><span class="p">));</span>
+<span class="p">});</span>
+</pre></div>
+
+
+<p>It counts backwards and updates the HTML until <code>finalDate</code> is reached. Then
+the HTML is no longer updated and the default values are shown, which in
+this case are non zero. A simple
+<a href="https://github.com/TuxCon/tuxcon-website/pull/1">patch</a> fixes the problem.</p>
+<p>Initialize your variables properly and happy testing!</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/qa/">QA</a></p>
         </div>
-        <hr>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2016/07/13/bug-in-tuxcon-website/';
+                var disqus_url = 'http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
             </div>
         </div>
     </div>
