@@ -91,6 +91,121 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/" rel="bookmark" title="Permalink to Puppet for Complete Beginners">
+                <h2 class="post-title">
+                    Puppet for Complete Beginners
+                </h2>
+            </a>
+                <p>I guess everyone knows what <a href="https://puppetlabs.com/">Puppet</a> is but probably not
+everyone knows how to write Puppet modules. This article outlines what I've
+learned while adding a new module to an existing Puppet configuration without
+having any previous knowledge beforehand and not reading the official
+documentation (which I should have done).</p>
+<h2>Existing setup</h2>
+<p>The existing setup is a single git repository, which holds all of the Puppet
+configuration for all hosts and environments. The main directory inside the
+repo is <code>puppet/modules</code>. I wanted to add a few Python scripts which automate
+tasks inside <a href="https://www.jetbrains.com/youtrack/">YouTrack</a>.</p>
+<h2>What to do next</h2>
+<p>First step in understanding Puppet was to figure out what do I need to do ?</p>
+<ul>
+<li>Have my scripts inside the repository;</li>
+<li>Provide configuration file for credentials;</li>
+<li>Configure cron jobs;</li>
+<li>Install all of this on one of the existing systems.</li>
+</ul>
+<p>My directory layout looks like this</p>
+<div class="highlight"><pre>./puppet/modules/youtrack/
+                        ./files/archive
+                        ./manifests/init.pp
+                        ./templates/youtrack.conf.erb
+</pre></div>
+
+
+<p><code>files/</code> is where all the scripts go. They can be accessed from here later on.
+<code>manifests/init.pp</code> is the definition of this module - what gets installed where
+and so on. <code>templates/</code> is where templates go. These are usually config files
+which use a placeholder for their values.</p>
+<p>My <code>files/archive</code> is a simple executable Python script, which queries YouTrack
+for old issues and archives them. It looks for a <code>youtrack.conf</code> file at a
+pre-defined location (the location on the host system) or at environment variables
+for testing purposes.</p>
+<p><code>templates/youtrack.conf.erb</code> looks like this</p>
+<div class="highlight"><pre><span class="k">[main]</span>
+<span class="na">url</span>  <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_url&#39;) %&gt;</span>
+<span class="na">user</span> <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_user&#39;) %&gt;</span>
+<span class="na">pass</span> <span class="o">=</span> <span class="s">&lt;%= scope.lookupvar(&#39;common::vars::youtrack_pass&#39;) %&gt;</span>
+</pre></div>
+
+
+<p><code>manifests/init.pp</code> looks like this</p>
+<div class="highlight"><pre>class youtrack {
+  <span class="nv">$youtrack_files</span> =
+    &#39;/opt/devops/puppet/modules/youtrack/files&#39;
+
+  file { &#39;/opt/youtrack.conf&#39;:
+    content =&gt; template(&#39;youtrack/youtrack.conf.erb&#39;),
+  }
+
+  cron { &#39;Archive issues older than 2 weeks&#39;:
+    ensure      =&gt; present,
+    command     =&gt; &quot;cd <span class="cp">${</span><span class="n">youtrack_files</span><span class="cp">}</span> <span class="err">&amp;&amp;</span> <span class="cp">${</span><span class="n">youtrack_files</span><span class="cp">}</span>/archive&quot;,
+    environment =&gt; [ &#39;MAILTO=devops@example.com&#39; ],
+    user        =&gt; &#39;root&#39;,
+    minute      =&gt; 0,
+    hour        =&gt; 8,
+  }
+}
+</pre></div>
+
+
+<p>Once Puppet applies this configuration on the host system it will</p>
+<ul>
+<li>Install the configuration template under <code>/opt/youtrack.conf</code>
+replacing the placeholder variables with actual values. Notice the
+argument to <code>template()</code> - it's of the form module_name/file_name;</li>
+<li>Add a cron job entry for my Python script.</li>
+</ul>
+<p><strong>NOTE:</strong> The host system is the Puppet master so I don't really need to
+install my Python scripts into another location. I could if I wanted to but
+this isn't necessary. Cron is executing the script from inside the git
+checkout.</p>
+<h2>Bundle it all together</h2>
+<p>Our module is done. Now we need to instruct Puppet that we want to use it.
+I have a <code>puppet/modules/role/manifests/pmaster.pp</code> which defines what modules
+get used on the Puppet master machine. <code>pmaster</code> matches the hostname of the
+system (that's how it's been configured to work). The module looks like this</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="n">role::pmaster</span> {
+  <span class="n">include</span> <span class="n">youtrack</span>
+
+  ...
+}
+</pre></div>
+
+
+<p>There is also a <code>puppet/modules/common/manifests/vars-static.pp</code> file which
+defines all the variables used in the templates. Simply add the necessary ones
+at the bottom:</p>
+<div class="highlight"><pre><span class="x">@@ -197,4 +197,9 @@</span>
+<span class="x">+</span>
+<span class="x">+  </span><span class="err">#</span><span class="x"> YouTrack automation</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_url</span><span class="x">  = &#39;http://example.com&#39;</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_user</span><span class="x"> = &#39;changeMe&#39;</span>
+<span class="x">+  </span><span class="p">$</span><span class="nv">youtrack_pass</span><span class="x"> = &#39;changeMe&#39;</span>
+<span class="x">}</span>
+</pre></div>
+
+
+<p><strong>NOTE:</strong> in reality this file is just a placeholder. The real values are not
+stored in git but are configured manually on systems which need them. On the
+Puppet master there are separate <code>XXX-vars.pp</code> files for different environments
+like devel, staging and production.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 01 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/02/23/ruby-time-based-testing/" rel="bookmark" title="Permalink to Ruby & Time-based Testing">
                 <h2 class="post-title">
                     Ruby & Time-based Testing
@@ -1473,66 +1588,6 @@ can be seen
                  on Thu 26 November 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/25/blog-migration-from-octopress-to-pelican/" rel="bookmark" title="Permalink to Blog Migration: from Octopress to Pelican">
-                <h2 class="post-title">
-                    Blog Migration: from Octopress to Pelican
-                </h2>
-            </a>
-                <p>Finally I have migrated this blog from <a href="http://octopress.org">Octopress</a> to
-<a href="https://github.com/getpelican/pelican">Pelican</a>. I am using the
-<a href="https://github.com/gilsondev/pelican-clean-blog/">clean-blog</a> theme with
-<a href="https://github.com/gilsondev/pelican-clean-blog/pull/3">modifications</a>.</p>
-<p>See the
-<a href="https://github.com/atodorov/atodorov.github.com/commits/pelican_migration">pelican_migration</a>
-branch for technical details. Here's the summary:</p>
-<ul>
-<li>I removed pretty much everything that Octopress uses, only left the content files;</li>
-<li>I've added my own CSS overrides;</li>
-<li>I had several Octopress pages, these were merged and converted into blog posts;</li>
-<li>In Octopress all titles had quotes, which were removed using sed;</li>
-<li>Octopress categories were converted to Pelican tags and removed quotes around them,
-again using sed;</li>
-<li>Manually updated Octopress's <code>{% codeblock %}</code> and <code>{% blockquote %}</code> tags to
-match Pelican syntax. This is the biggest content change;</li>
-<li>I was trying to keep as much as the original URLs as possible. <code>ARTICLE_URL</code>,
-<code>ARTICLE_SAVE_AS</code>, <code>TAG_URL</code>, <code>TAG_SAVE_AS</code>, <code>FEED_ALL_ATOM</code> and <code>TAG_FEED_ATOM</code>
-are the relevant settings. For 50+ posts I had to manually specify the <code>Slug:</code>
-variable so that they match existing Octopress URLs. Verifying the resulting names
-was as simple as diffing the file listings from both Octopress and Pelican.
-<strong>NOTE:</strong> The <em>fedora.planet</em> tag changed its URL because there's no way
-to assign slugs for tags in Pelican. The new URL is missing the dot! Luckily
-I make use of this only in one place which was manually updated!</li>
-</ul>
-<p>I've also found a few bugs and missing functionality:</p>
-<ul>
-<li>There's no <code>rake new_post</code> counterpart in Pelican. See
-<a href="https://github.com/getpelican/pelican/issues/1410">Issue 1410</a> and 
-<a href="https://github.com/Kdecherf/blog.kdecherf.com/commit/6552f6f02e6c501a6cc13816cd9bb2cd6c601f9c">commit 6552f6f</a>.
-Thanks Kevin Decherf;</li>
-<li><strike>As far as I can tell the preview server doesn't regenerate files automatically.</strike>
-Do <code>make regenerate</code> and <code>make serve</code> in two separate shells. Thanks Kevin Decherf;</li>
-<li><strike>Pelican will merge code blocks and quotes which follow one after another
-but are separated with a newline in Markdown. This makes it visually impossible
-to distinguish code from two files, or quotes from two people, which are published
-without any other comments in between.</strike> See
-<a href="https://github.com/atodorov/Markdown-No-Lazy-BlockQuote-Extension">Markdown-No-Lazy-BlockQuote-Extension</a>
-and <a href="https://github.com/atodorov/Markdown-No-Lazy-Code-Extension">Markdown-No-Lazy-Code-Extension</a>;</li>
-<li><strike>The syntax doesn't allow to specify filename or a quote title when publishing
-code blocks and quotes. Octopress did that easily. I will be happy with something
-like <code>:::python settings.py</code>.</strike>
-See <a href="https://github.com/waylan/Python-Markdown/pull/445">PR #445</a>;</li>
-<li>There's no way to specify slugs for tag URLs in order to keep compatibility
-with existing URLs, see <a href="https://github.com/getpelican/pelican/issues/1873">Issue 1873</a>.</li>
-</ul>
-<p>I will be filling Issues and pull requests for both Pelican and the clear-blog theme
-in the next few days so stay tuned!</p>
-<p><strong>UPDATED 2015-11-26:</strong> added links to issues, pull requests and custom extensions.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 25 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/25/blog-migration-from-octopress-to-pelican/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

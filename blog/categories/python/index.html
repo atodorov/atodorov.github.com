@@ -90,6 +90,76 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="bookmark" title="Permalink to On Python Infinite Loops">
+                <h2 class="post-title">
+                    On Python Infinite Loops
+                </h2>
+            </a>
+                <p>How do you write an endless loop without using <code>True</code>, <code>False</code>, number constants
+and comparison operators in Python ?</p>
+<p>I've been working on the mutation test tool
+<a href="https://github.com/sixty-north/cosmic-ray">Cosmic Ray</a> and discovered that it
+was missing a boolean replacement operator, that is an operator which will switch
+<code>True</code> to <code>False</code> and vice versa, so I wrote one. I've also added some tests to
+Cosmic Ray's test suite and then I hit the infinite loop problem.
+CR's test suite contains the following code inside a module called <code>adam.py</code></p>
+<div class="highlight"><pre><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">break</span>
+</pre></div>
+
+
+<p>The test suite executes mutations on <code>adam.py</code> and then runs some tests which
+it expects to fail. During execution one of the mutations is
+<code>replace break with continue</code> which makes the above loop infinite. The test suite
+times out after a while and kills the mutation. Everything fails as expected and
+we're good.</p>
+<p>Adding my boolean replacement operator broke this function. All of the other mutations
+work as expected but then the loop becomes</p>
+<div class="highlight"><pre><span class="k">while</span> <span class="bp">False</span><span class="p">:</span>
+    <span class="k">break</span>
+</pre></div>
+
+
+<p>When we test this particular mutation there is no infinite loop so Cosmic Ray's
+test suite doesn't time out like it should and an error is reported.</p>
+<div class="highlight"><pre>job ID 25:Outcome.SURVIVED:adam
+command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
+<span class="gd">--- mutation diff ---</span>
+<span class="gd">--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py</span>
+<span class="gi">+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py</span>
+<span class="gu">@@ -32,6 +32,6 @@</span>
+     return x
+ 
+ def trigger_infinite_loop():
+<span class="gd">-    while True:</span>
+<span class="gi">+    while False:</span>
+         break
+</pre></div>
+
+
+<p>So the question becomes how to write the loop condition in such a way that nothing
+will mutate it but it will still remain true so that when <code>break</code> becomes <code>continue</code>
+this piece of code will become an infinite loop ? Using <code>True</code> or <code>False</code> constants
+obviously is a no go. Same goes for numeric constants, e.g. <code>1</code> or comparison
+operators like <code>&gt;</code>, <code>&lt;</code>, <code>is</code>, <code>not</code>, etc. - all of them will be mutated and will
+break the loop condition.</p>
+<p>So I took a look at the docs for
+<a href="https://docs.python.org/2.4/lib/truth.html">truth value testing</a> and discovered
+<a href="https://github.com/sixty-north/cosmic-ray/pull/155">my solution</a>:</p>
+<div class="highlight"><pre><span class="k">while</span> <span class="nb">object</span><span class="p">():</span>
+    <span class="k">break</span>
+</pre></div>
+
+
+<p>I'm creating an object instance here which will not be mutated by any of the
+existing mutation operators.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 15 July 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="bookmark" title="Permalink to Mismatch in Pyparted Interfaces">
                 <h2 class="post-title">
                     Mismatch in Pyparted Interfaces
@@ -1636,91 +1706,15 @@ in your source code, not inside a template here is how:</p>
                  on Sat 06 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/" rel="bookmark" title="Permalink to Performance test of MD5, SHA1, SHA256 and SHA512">
-                <h2 class="post-title">
-                    Performance test of MD5, SHA1, SHA256 and SHA512
-                </h2>
-            </a>
-                <p>A few months ago I wrote
-<a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
-This is Amazon Simple Storage Service (S3) cache backend for Django
-which uses hashed file names.
-django-s3-cache uses <code>sha1</code> instead of <code>md5</code> which appeared to be
-faster at the time. I recall that my testing wasn't very robust so I did another
-round.</p>
-<h2>Test Data</h2>
-<p>The file <a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz">urls.txt</a>
-contains 10000 unique paths from the <a href="http://www.dif.io">dif.io</a>
-website and looks like this:</p>
-<div class="highlight"><pre>/updates/Django-1.3.1/Django-1.3.4/7858/
-/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
-/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
-/updates/Data::Compare-1.22/Data::Compare-Type/8313/
-/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
-</pre></div>
-
-
-<h2>Test Automation</h2>
-<p>I used the standard <a href="http://docs.python.org/2/library/timeit.html">timeit</a>
-module in Python.</p>
-<div class="highlight"><span class="filename">test.py</span><pre><span class="c">#!/usr/bin/python</span>
-
-<span class="kn">import</span> <span class="nn">timeit</span>
-
-<span class="n">t</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">import hashlib</span>
-<span class="sd">for line in url_paths:</span>
-<span class="sd">    h = hashlib.md5(line).hexdigest()</span>
-<span class="sd">#    h = hashlib.sha1(line).hexdigest()</span>
-<span class="sd">#    h = hashlib.sha256(line).hexdigest()</span>
-<span class="sd">#    h = hashlib.sha512(line).hexdigest()</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="p">,</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">url_paths = []</span>
-<span class="sd">f = open(&#39;urls.txt&#39;, &#39;r&#39;)</span>
-<span class="sd">for l in f.readlines():</span>
-<span class="sd">    url_paths.append(l)</span>
-<span class="sd">f.close()</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="p">)</span>
-
-<span class="k">print</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
-</pre></div>
-
-
-<h2>Test Results</h2>
-<p>The main statement hashes all 10000 entries one by one. This statement is
-executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
-on my system. After every test run the system was rebooted.
-Execution time in seconds is available below.</p>
-<div class="highlight"><pre>MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
-SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
-SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
-SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
-</pre></div>
-
-
-<p>Looks like I was wrong the first time! MD5 is still faster but not that much.
-I will stick with SHA1 for the time being.</p>
-<p>If you are interested in Performance Testing checkout the
-<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=performance%20testing&linkCode=ur2&rh=n%3A283155%2Ck%3Aperformance%20testing&sprefix=performance%20testing%2Caps%2C270&tag=atodorovorg-20&url=search-alias%3Dstripbooks&linkId=UVEZLZJOVYOCVGOT">performance testing books on Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />.</p>
-<p>As always I’d love to hear your thoughts and feedback. Please use the comment form below.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 05 February 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
     <ul class="pager">
         <li class="next">
+                <a href="http://atodorov.org/blog/categories/python/index2.html">Older Posts &rarr;</a>
         </li>
     </ul>
-    Page 1 / 1
+    Page 1 / 2
     <hr>
             </div>
         </div>

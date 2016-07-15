@@ -1,5 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-07-13T14:10:00+03:00</updated><entry><title>Bug in TuxCon Website</title><link href="http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/" rel="alternate"></link><updated>2016-07-13T14:10:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-13:blog/2016/07/13/bug-in-tuxcon-website/</id><summary type="html">&lt;p&gt;&lt;img alt="TuxCon bug" src="/images/bugs/tuxcon_bug.png" title="TuxCon bug" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-07-15T09:30:00+03:00</updated><entry><title>On Python Infinite Loops</title><link href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="alternate"></link><updated>2016-07-15T09:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-15:blog/2016/07/15/on-python-infinite-loops/</id><summary type="html">&lt;p&gt;How do you write an endless loop without using &lt;code&gt;True&lt;/code&gt;, &lt;code&gt;False&lt;/code&gt;, number constants
+and comparison operators in Python ?&lt;/p&gt;
+&lt;p&gt;I've been working on the mutation test tool
+&lt;a href="https://github.com/sixty-north/cosmic-ray"&gt;Cosmic Ray&lt;/a&gt; and discovered that it
+was missing a boolean replacement operator, that is an operator which will switch
+&lt;code&gt;True&lt;/code&gt; to &lt;code&gt;False&lt;/code&gt; and vice versa, so I wrote one. I've also added some tests to
+Cosmic Ray's test suite and then I hit the infinite loop problem.
+CR's test suite contains the following code inside a module called &lt;code&gt;adam.py&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The test suite executes mutations on &lt;code&gt;adam.py&lt;/code&gt; and then runs some tests which
+it expects to fail. During execution one of the mutations is
+&lt;code&gt;replace break with continue&lt;/code&gt; which makes the above loop infinite. The test suite
+times out after a while and kills the mutation. Everything fails as expected and
+we're good.&lt;/p&gt;
+&lt;p&gt;Adding my boolean replacement operator broke this function. All of the other mutations
+work as expected but then the loop becomes&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we test this particular mutation there is no infinite loop so Cosmic Ray's
+test suite doesn't time out like it should and an error is reported.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;job ID 25:Outcome.SURVIVED:adam
+command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
+&lt;span class="gd"&gt;--- mutation diff ---&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -32,6 +32,6 @@&lt;/span&gt;
+     return x
+ 
+ def trigger_infinite_loop():
+&lt;span class="gd"&gt;-    while True:&lt;/span&gt;
+&lt;span class="gi"&gt;+    while False:&lt;/span&gt;
+         break
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So the question becomes how to write the loop condition in such a way that nothing
+will mutate it but it will still remain true so that when &lt;code&gt;break&lt;/code&gt; becomes &lt;code&gt;continue&lt;/code&gt;
+this piece of code will become an infinite loop ? Using &lt;code&gt;True&lt;/code&gt; or &lt;code&gt;False&lt;/code&gt; constants
+obviously is a no go. Same goes for numeric constants, e.g. &lt;code&gt;1&lt;/code&gt; or comparison
+operators like &lt;code&gt;&amp;gt;&lt;/code&gt;, &lt;code&gt;&amp;lt;&lt;/code&gt;, &lt;code&gt;is&lt;/code&gt;, &lt;code&gt;not&lt;/code&gt;, etc. - all of them will be mutated and will
+break the loop condition.&lt;/p&gt;
+&lt;p&gt;So I took a look at the docs for
+&lt;a href="https://docs.python.org/2.4/lib/truth.html"&gt;truth value testing&lt;/a&gt; and discovered
+&lt;a href="https://github.com/sixty-north/cosmic-ray/pull/155"&gt;my solution&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I'm creating an object instance here which will not be mutated by any of the
+existing mutation operators.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="Python"></category></entry><entry><title>Bug in TuxCon Website</title><link href="http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/" rel="alternate"></link><updated>2016-07-13T14:10:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-13:blog/2016/07/13/bug-in-tuxcon-website/</id><summary type="html">&lt;p&gt;&lt;img alt="TuxCon bug" src="/images/bugs/tuxcon_bug.png" title="TuxCon bug" /&gt;&lt;/p&gt;
 &lt;p&gt;Here comes July 9th 2016 and the start of &lt;a href="http://tuxcon.mobi"&gt;TuxCon&lt;/a&gt; ...
 with a bug on their website! The image above is taken during the first
 talk of the conference. Obviously the count down timer is completely off.&lt;/p&gt;
@@ -1375,104 +1433,4 @@ think about sponsoring let me know.&lt;/p&gt;
 Anaconda developer whom I've worked with in the past. He is now at the
 Virtualization Development team at Red Hat and we briefly talked about
 the need for more oVirt testing. I have something in mind about this
-which will be announced in the next 2 months so stay tuned.&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>How to Get Started on a New QA Project</title><link href="http://atodorov.org/blog/2016/01/21/how-to-get-started-on-a-new-qa-project/" rel="alternate"></link><updated>2016-01-21T14:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-01-21:blog/2016/01/21/how-to-get-started-on-a-new-qa-project/</id><summary type="html">&lt;p&gt;Every time I have to look at a new software project and use my QA powers
-to help them I follow a standard process of getting involved. Usually my
-job is to reveal which areas are lacking adequate test coverage and propose
-and implement improvements. Here's what it looks like.&lt;/p&gt;
-&lt;h2&gt;Obtain Domain Knowledge&lt;/h2&gt;
-&lt;p&gt;Whatever the software does I don't start looking into the technical details
-before I have domain knowledge about the subject. If the domain is purely
-outside my expertise my first reading materials have
-nothing to do with the product itself. My goal is to learn how the domain
-works, what language it uses, any particular specifics that may exists, etc.&lt;/p&gt;
-&lt;p&gt;Then I start asking general questions about the software, how it works and
-what it does. At this stage I'm not trying to go into details but rather
-cover as much angles as possible. I want to know the big picture of how
-things are supposed to work and what the team is trying to do. This also
-starts to reveal the architecture behind the project.&lt;/p&gt;
-&lt;p&gt;Then I start using the software as if I'm the intended target audience while
-taking notes about everything that seems odd or I simply don't understand.
-Being with limited knowledge about the domain and the product helps a lot
-because I haven't developed any bias yet. This initial hands-on introduction
-is best done with a peer who is better familiar with the
-product. It is not necessary for the peer to be a technical person, although
-that helps when implementation related questions arise.&lt;/p&gt;
-&lt;h2&gt;RTFM&lt;/h2&gt;
-&lt;p&gt;I make a point to read any available documents, wikis, READMEs, etc. They can
-fill the gaps with often used terms, explain processes and workflows or
-reveal that such are missing and document existing infrastructure.
-Quite often I'm able to see some areas for
-improvements directly from reading the documentation.&lt;/p&gt;
-&lt;p&gt;At this stage I'm just collecting notes and impressions which will be validated
-later. I don't try to remember all of the docs because I can always go back
-and read them again. Instead I try to remember the topics these documents
-talk about and possibly collect links for future reference.&lt;/p&gt;
-&lt;h2&gt;Get to Know the Devel Team&lt;/h2&gt;
-&lt;p&gt;One thing I hate the most, except not knowing what a piece of code does is
-not knowing who to ask. Quite often team structure follows the application
-structure - front-end, back-end, mobile, etc. While getting to know who does
-what I also use this as opportunity to gain deeper knowledge about the
-product. I will talk to team leads and individual developers asking them to
-explain the chosen architecture and also tell me what are the most annoying
-problems according to them.&lt;/p&gt;
-&lt;p&gt;Later this knowledge makes it easier to see trends and suggest changes that
-will improve the overall product quality. Having good working relationship
-with developers also makes it easy for these changes to get through.&lt;/p&gt;
-&lt;h2&gt;Get to Know the QA Team&lt;/h2&gt;
-&lt;p&gt;Similar to the previous step but with a deeper focus on details. This is my
-personal domain so I'm trying to figure out who does what in terms of software
-testing for the project in question. When I'm working with less experienced
-QA teams I focus on what are the individual tasks at hand, how often are they
-executed, what is the general workflow and how are we dealing with bugs.&lt;/p&gt;
-&lt;p&gt;Behind the scenes what this accomplishes is that I'm able to find what the
-bug reporting, testing and verification process is. How are new bugs discovered
-and what are the general test strategies without confronting people
-directly. I also find what tools are used and get familiar with them in the
-process and discover the level of technical abilities of individual team members.&lt;/p&gt;
-&lt;h2&gt;Get to Know the App&lt;/h2&gt;
-&lt;p&gt;Armed with the previous knowledge I set off to explore the entire application.
-Again this is best done with a peer. This time I look at every screen, widget
-and button there is. I try using all the available features which also doubles
-as an exploratory testing session.&lt;/p&gt;
-&lt;p&gt;For backend services which are usually harder to test I opt for a more
-detailed explanation session with the developers. Here's the time when I'm
-asking the question "How do you test .... ?" multiple times.&lt;/p&gt;
-&lt;h2&gt;Deploy to Production&lt;/h2&gt;
-&lt;p&gt;If possible I like to keep an eye on how things are deployed to production.
-It is not uncommon for software to experience problems due to problems with
-the deployment procedure or the production environment itself.&lt;/p&gt;
-&lt;p&gt;Also with agile teams it is common to deploy more often. This in turn may
-generate additional work for QA. Knowing how software is deployed to
-production and what the workflow in the team is helps later with planning
-test activities and resources.&lt;/p&gt;
-&lt;h2&gt;Read All Bugs&lt;/h2&gt;
-&lt;p&gt;Unless there are millions of them I try to go through all the bugs reported
-in the bug tracker. If the project has some age to it earlier reports may not
-be relevant anymore. In this case my marker is an important event like big
-refactoring, important or big new features, changes in teams and organization
-or similar. The thinking behind this is that every big change introduces lots
-of risks from software quality stand point. Also large changes invalidate
-previous conditions and may render existing problems obsolete, replacing them
-with newer set of problems instead!&lt;/p&gt;
-&lt;p&gt;From reading bug reports I'm able to discover failure trends, which in turn
-indicate areas for improvement. For example: lots of translation related bugs
-indicate problems with the translation workflow, lots of broken existing
-functionality means poor regression testing, probably also lack of unit tests,
-lots of partially(poorly) implemented features shows chaotic planning and
-unclear feature specifications, etc.&lt;/p&gt;
-&lt;p&gt;At this stage I try to classify problems both by technical component and
-by type of issue. Later this will be my starting reference for creating
-test strategies and test plans!&lt;/p&gt;
-&lt;p&gt;If possible and practical I talk to support and read all the support tickets
-as well. This gives me an idea which problems are most visible to
-customers which aren't necessary the biggest technical issues but may consume
-man power dealing with them.&lt;/p&gt;
-&lt;h2&gt;Summarize, Divide and Conquer&lt;/h2&gt;
-&lt;p&gt;Depending on the project and team size these initial steps will take anywhere 
-from a full week to a month or even more. After they are complete I'm
-feeling comfortable talking about the software at hand and have a list of
-possible problems and areas of improvements.&lt;/p&gt;
-&lt;p&gt;After talking to people in charge (e.g. PMs, Project Leads, etc) my initial
-list is transformed into tasks. I strive to keep the tasks as independent
-as possible. Then these tasks are prioritized and it's time to start executing
-them one by one.&lt;/p&gt;</summary><category term="QA"></category></entry></feed>
+which will be announced in the next 2 months so stay tuned.&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category><category term="QA"></category></entry></feed>

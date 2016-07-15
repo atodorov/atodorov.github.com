@@ -1,5 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-04-26T10:50:00+03:00</updated><entry><title>Mismatch in Pyparted Interfaces</title><link href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="alternate"></link><updated>2016-04-26T10:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-26:blog/2016/04/26/mismatch-in-pyparted-interfaces/</id><summary type="html">&lt;p&gt;Last week my co-worker Marek Hruscak, from Red Hat, found an interesting case of
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-07-15T09:30:00+03:00</updated><entry><title>On Python Infinite Loops</title><link href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="alternate"></link><updated>2016-07-15T09:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-15:blog/2016/07/15/on-python-infinite-loops/</id><summary type="html">&lt;p&gt;How do you write an endless loop without using &lt;code&gt;True&lt;/code&gt;, &lt;code&gt;False&lt;/code&gt;, number constants
+and comparison operators in Python ?&lt;/p&gt;
+&lt;p&gt;I've been working on the mutation test tool
+&lt;a href="https://github.com/sixty-north/cosmic-ray"&gt;Cosmic Ray&lt;/a&gt; and discovered that it
+was missing a boolean replacement operator, that is an operator which will switch
+&lt;code&gt;True&lt;/code&gt; to &lt;code&gt;False&lt;/code&gt; and vice versa, so I wrote one. I've also added some tests to
+Cosmic Ray's test suite and then I hit the infinite loop problem.
+CR's test suite contains the following code inside a module called &lt;code&gt;adam.py&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The test suite executes mutations on &lt;code&gt;adam.py&lt;/code&gt; and then runs some tests which
+it expects to fail. During execution one of the mutations is
+&lt;code&gt;replace break with continue&lt;/code&gt; which makes the above loop infinite. The test suite
+times out after a while and kills the mutation. Everything fails as expected and
+we're good.&lt;/p&gt;
+&lt;p&gt;Adding my boolean replacement operator broke this function. All of the other mutations
+work as expected but then the loop becomes&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we test this particular mutation there is no infinite loop so Cosmic Ray's
+test suite doesn't time out like it should and an error is reported.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;job ID 25:Outcome.SURVIVED:adam
+command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
+&lt;span class="gd"&gt;--- mutation diff ---&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -32,6 +32,6 @@&lt;/span&gt;
+     return x
+ 
+ def trigger_infinite_loop():
+&lt;span class="gd"&gt;-    while True:&lt;/span&gt;
+&lt;span class="gi"&gt;+    while False:&lt;/span&gt;
+         break
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So the question becomes how to write the loop condition in such a way that nothing
+will mutate it but it will still remain true so that when &lt;code&gt;break&lt;/code&gt; becomes &lt;code&gt;continue&lt;/code&gt;
+this piece of code will become an infinite loop ? Using &lt;code&gt;True&lt;/code&gt; or &lt;code&gt;False&lt;/code&gt; constants
+obviously is a no go. Same goes for numeric constants, e.g. &lt;code&gt;1&lt;/code&gt; or comparison
+operators like &lt;code&gt;&amp;gt;&lt;/code&gt;, &lt;code&gt;&amp;lt;&lt;/code&gt;, &lt;code&gt;is&lt;/code&gt;, &lt;code&gt;not&lt;/code&gt;, etc. - all of them will be mutated and will
+break the loop condition.&lt;/p&gt;
+&lt;p&gt;So I took a look at the docs for
+&lt;a href="https://docs.python.org/2.4/lib/truth.html"&gt;truth value testing&lt;/a&gt; and discovered
+&lt;a href="https://github.com/sixty-north/cosmic-ray/pull/155"&gt;my solution&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I'm creating an object instance here which will not be mutated by any of the
+existing mutation operators.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="Python"></category></entry><entry><title>Mismatch in Pyparted Interfaces</title><link href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="alternate"></link><updated>2016-04-26T10:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-04-26:blog/2016/04/26/mismatch-in-pyparted-interfaces/</id><summary type="html">&lt;p&gt;Last week my co-worker Marek Hruscak, from Red Hat, found an interesting case of
 mismatch between the two interfaces provided by pyparted. In this article
 I'm going to give an example, using simplified code and explain what is
 happening. From pyparted's documentation we learn the following&lt;/p&gt;
@@ -1318,69 +1376,4 @@ in your source code, not inside a template here is how:&lt;/p&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;All built-ins live in &lt;code&gt;pythonX.Y/site-packages/django/template/defaultfilters.py&lt;/code&gt;.&lt;/p&gt;</summary><category term="tips"></category><category term="Django"></category><category term="Python"></category></entry><entry><title>Performance test of MD5, SHA1, SHA256 and SHA512</title><link href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/" rel="alternate"></link><updated>2013-02-05T10:33:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-02-05:blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/</id><summary type="html">&lt;p&gt;A few months ago I wrote
-&lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt;.
-This is Amazon Simple Storage Service (S3) cache backend for Django
-which uses hashed file names.
-django-s3-cache uses &lt;code&gt;sha1&lt;/code&gt; instead of &lt;code&gt;md5&lt;/code&gt; which appeared to be
-faster at the time. I recall that my testing wasn't very robust so I did another
-round.&lt;/p&gt;
-&lt;h2&gt;Test Data&lt;/h2&gt;
-&lt;p&gt;The file &lt;a href="http://s3.amazonaws.com/atodorov/blog/urls.txt.gz"&gt;urls.txt&lt;/a&gt;
-contains 10000 unique paths from the &lt;a href="http://www.dif.io"&gt;dif.io&lt;/a&gt;
-website and looks like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;/updates/Django-1.3.1/Django-1.3.4/7858/
-/updates/delayed_paperclip-2.4.5.2 c23a537/delayed_paperclip-2.4.5.2/8085/
-/updates/libv8-3.3.10.4 x86_64-darwin-10/libv8-3.3.10.4/8087/
-/updates/Data::Compare-1.22/Data::Compare-Type/8313/
-/updates/Fabric-1.4.0/Fabric-1.4.4/8652/
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;h2&gt;Test Automation&lt;/h2&gt;
-&lt;p&gt;I used the standard &lt;a href="http://docs.python.org/2/library/timeit.html"&gt;timeit&lt;/a&gt;
-module in Python.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/python&lt;/span&gt;
-
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
-
-&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
-&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;import hashlib&lt;/span&gt;
-&lt;span class="sd"&gt;for line in url_paths:&lt;/span&gt;
-&lt;span class="sd"&gt;    h = hashlib.md5(line).hexdigest()&lt;/span&gt;
-&lt;span class="sd"&gt;#    h = hashlib.sha1(line).hexdigest()&lt;/span&gt;
-&lt;span class="sd"&gt;#    h = hashlib.sha256(line).hexdigest()&lt;/span&gt;
-&lt;span class="sd"&gt;#    h = hashlib.sha512(line).hexdigest()&lt;/span&gt;
-&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="p"&gt;,&lt;/span&gt;
-&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;url_paths = []&lt;/span&gt;
-&lt;span class="sd"&gt;f = open(&amp;#39;urls.txt&amp;#39;, &amp;#39;r&amp;#39;)&lt;/span&gt;
-&lt;span class="sd"&gt;for l in f.readlines():&lt;/span&gt;
-&lt;span class="sd"&gt;    url_paths.append(l)&lt;/span&gt;
-&lt;span class="sd"&gt;f.close()&lt;/span&gt;
-&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="p"&gt;)&lt;/span&gt;
-
-&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;h2&gt;Test Results&lt;/h2&gt;
-&lt;p&gt;The main statement hashes all 10000 entries one by one. This statement is
-executed 1000 times in a loop, which is repeated 3 times. I have Python 2.6.6
-on my system. After every test run the system was rebooted.
-Execution time in seconds is available below.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;MD5     10.275190830230713, 10.155328989028931, 10.250311136245728
-SHA1    11.985718965530396, 11.976419925689697, 11.86873197555542
-SHA256  16.662450075149536, 21.551337003707886, 17.016510963439941
-SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Looks like I was wrong the first time! MD5 is still faster but not that much.
-I will stick with SHA1 for the time being.&lt;/p&gt;
-&lt;p&gt;If you are interested in Performance Testing checkout the
-&lt;a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&amp;camp=1789&amp;creative=390957&amp;field-keywords=performance%20testing&amp;linkCode=ur2&amp;rh=n%3A283155%2Ck%3Aperformance%20testing&amp;sprefix=performance%20testing%2Caps%2C270&amp;tag=atodorovorg-20&amp;url=search-alias%3Dstripbooks&amp;linkId=UVEZLZJOVYOCVGOT"&gt;performance testing books on Amazon&lt;/a&gt;&lt;img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=ur2&amp;o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" /&gt;.&lt;/p&gt;
-&lt;p&gt;As always I’d love to hear your thoughts and feedback. Please use the comment form below.&lt;/p&gt;</summary><category term="Python"></category><category term="performance testing"></category><category term="QA"></category></entry></feed>
+&lt;p&gt;All built-ins live in &lt;code&gt;pythonX.Y/site-packages/django/template/defaultfilters.py&lt;/code&gt;.&lt;/p&gt;</summary><category term="tips"></category><category term="Django"></category><category term="Python"></category></entry></feed>

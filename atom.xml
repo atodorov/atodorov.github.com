@@ -1,5 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-07-13T14:10:00+03:00</updated><entry><title>Bug in TuxCon Website</title><link href="http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/" rel="alternate"></link><updated>2016-07-13T14:10:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-13:blog/2016/07/13/bug-in-tuxcon-website/</id><summary type="html">&lt;p&gt;&lt;img alt="TuxCon bug" src="/images/bugs/tuxcon_bug.png" title="TuxCon bug" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-07-15T09:30:00+03:00</updated><entry><title>On Python Infinite Loops</title><link href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="alternate"></link><updated>2016-07-15T09:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-15:blog/2016/07/15/on-python-infinite-loops/</id><summary type="html">&lt;p&gt;How do you write an endless loop without using &lt;code&gt;True&lt;/code&gt;, &lt;code&gt;False&lt;/code&gt;, number constants
+and comparison operators in Python ?&lt;/p&gt;
+&lt;p&gt;I've been working on the mutation test tool
+&lt;a href="https://github.com/sixty-north/cosmic-ray"&gt;Cosmic Ray&lt;/a&gt; and discovered that it
+was missing a boolean replacement operator, that is an operator which will switch
+&lt;code&gt;True&lt;/code&gt; to &lt;code&gt;False&lt;/code&gt; and vice versa, so I wrote one. I've also added some tests to
+Cosmic Ray's test suite and then I hit the infinite loop problem.
+CR's test suite contains the following code inside a module called &lt;code&gt;adam.py&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The test suite executes mutations on &lt;code&gt;adam.py&lt;/code&gt; and then runs some tests which
+it expects to fail. During execution one of the mutations is
+&lt;code&gt;replace break with continue&lt;/code&gt; which makes the above loop infinite. The test suite
+times out after a while and kills the mutation. Everything fails as expected and
+we're good.&lt;/p&gt;
+&lt;p&gt;Adding my boolean replacement operator broke this function. All of the other mutations
+work as expected but then the loop becomes&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we test this particular mutation there is no infinite loop so Cosmic Ray's
+test suite doesn't time out like it should and an error is reported.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;job ID 25:Outcome.SURVIVED:adam
+command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
+&lt;span class="gd"&gt;--- mutation diff ---&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -32,6 +32,6 @@&lt;/span&gt;
+     return x
+ 
+ def trigger_infinite_loop():
+&lt;span class="gd"&gt;-    while True:&lt;/span&gt;
+&lt;span class="gi"&gt;+    while False:&lt;/span&gt;
+         break
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So the question becomes how to write the loop condition in such a way that nothing
+will mutate it but it will still remain true so that when &lt;code&gt;break&lt;/code&gt; becomes &lt;code&gt;continue&lt;/code&gt;
+this piece of code will become an infinite loop ? Using &lt;code&gt;True&lt;/code&gt; or &lt;code&gt;False&lt;/code&gt; constants
+obviously is a no go. Same goes for numeric constants, e.g. &lt;code&gt;1&lt;/code&gt; or comparison
+operators like &lt;code&gt;&amp;gt;&lt;/code&gt;, &lt;code&gt;&amp;lt;&lt;/code&gt;, &lt;code&gt;is&lt;/code&gt;, &lt;code&gt;not&lt;/code&gt;, etc. - all of them will be mutated and will
+break the loop condition.&lt;/p&gt;
+&lt;p&gt;So I took a look at the docs for
+&lt;a href="https://docs.python.org/2.4/lib/truth.html"&gt;truth value testing&lt;/a&gt; and discovered
+&lt;a href="https://github.com/sixty-north/cosmic-ray/pull/155"&gt;my solution&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="k"&gt;break&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I'm creating an object instance here which will not be mutated by any of the
+existing mutation operators.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="Python"></category></entry><entry><title>Bug in TuxCon Website</title><link href="http://atodorov.org/blog/2016/07/13/bug-in-tuxcon-website/" rel="alternate"></link><updated>2016-07-13T14:10:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-13:blog/2016/07/13/bug-in-tuxcon-website/</id><summary type="html">&lt;p&gt;&lt;img alt="TuxCon bug" src="/images/bugs/tuxcon_bug.png" title="TuxCon bug" /&gt;&lt;/p&gt;
 &lt;p&gt;Here comes July 9th 2016 and the start of &lt;a href="http://tuxcon.mobi"&gt;TuxCon&lt;/a&gt; ...
 with a bug on their website! The image above is taken during the first
 talk of the conference. Obviously the count down timer is completely off.&lt;/p&gt;
@@ -1375,107 +1433,4 @@ use &lt;code&gt;Time.parse&lt;/code&gt; to reconstruct the value.&lt;/p&gt;
 
 
 &lt;p&gt;If you'd like to read more about floating point arithmetics please see
-&lt;a href="http://floating-point-gui.de"&gt;http://floating-point-gui.de&lt;/a&gt;.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Ruby"></category><category term="QA"></category></entry><entry><title>Puppet for Complete Beginners</title><link href="http://atodorov.org/blog/2016/03/01/puppet-for-complete-beginners/" rel="alternate"></link><updated>2016-03-01T15:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-03-01:blog/2016/03/01/puppet-for-complete-beginners/</id><summary type="html">&lt;p&gt;I guess everyone knows what &lt;a href="https://puppetlabs.com/"&gt;Puppet&lt;/a&gt; is but probably not
-everyone knows how to write Puppet modules. This article outlines what I've
-learned while adding a new module to an existing Puppet configuration without
-having any previous knowledge beforehand and not reading the official
-documentation (which I should have done).&lt;/p&gt;
-&lt;h2&gt;Existing setup&lt;/h2&gt;
-&lt;p&gt;The existing setup is a single git repository, which holds all of the Puppet
-configuration for all hosts and environments. The main directory inside the
-repo is &lt;code&gt;puppet/modules&lt;/code&gt;. I wanted to add a few Python scripts which automate
-tasks inside &lt;a href="https://www.jetbrains.com/youtrack/"&gt;YouTrack&lt;/a&gt;.&lt;/p&gt;
-&lt;h2&gt;What to do next&lt;/h2&gt;
-&lt;p&gt;First step in understanding Puppet was to figure out what do I need to do ?&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Have my scripts inside the repository;&lt;/li&gt;
-&lt;li&gt;Provide configuration file for credentials;&lt;/li&gt;
-&lt;li&gt;Configure cron jobs;&lt;/li&gt;
-&lt;li&gt;Install all of this on one of the existing systems.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;My directory layout looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;./puppet/modules/youtrack/
-                        ./files/archive
-                        ./manifests/init.pp
-                        ./templates/youtrack.conf.erb
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;&lt;code&gt;files/&lt;/code&gt; is where all the scripts go. They can be accessed from here later on.
-&lt;code&gt;manifests/init.pp&lt;/code&gt; is the definition of this module - what gets installed where
-and so on. &lt;code&gt;templates/&lt;/code&gt; is where templates go. These are usually config files
-which use a placeholder for their values.&lt;/p&gt;
-&lt;p&gt;My &lt;code&gt;files/archive&lt;/code&gt; is a simple executable Python script, which queries YouTrack
-for old issues and archives them. It looks for a &lt;code&gt;youtrack.conf&lt;/code&gt; file at a
-pre-defined location (the location on the host system) or at environment variables
-for testing purposes.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;templates/youtrack.conf.erb&lt;/code&gt; looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[main]&lt;/span&gt;
-&lt;span class="na"&gt;url&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_url&amp;#39;) %&amp;gt;&lt;/span&gt;
-&lt;span class="na"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_user&amp;#39;) %&amp;gt;&lt;/span&gt;
-&lt;span class="na"&gt;pass&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;lt;%= scope.lookupvar(&amp;#39;common::vars::youtrack_pass&amp;#39;) %&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;&lt;code&gt;manifests/init.pp&lt;/code&gt; looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;class youtrack {
-  &lt;span class="nv"&gt;$youtrack_files&lt;/span&gt; =
-    &amp;#39;/opt/devops/puppet/modules/youtrack/files&amp;#39;
-
-  file { &amp;#39;/opt/youtrack.conf&amp;#39;:
-    content =&amp;gt; template(&amp;#39;youtrack/youtrack.conf.erb&amp;#39;),
-  }
-
-  cron { &amp;#39;Archive issues older than 2 weeks&amp;#39;:
-    ensure      =&amp;gt; present,
-    command     =&amp;gt; &amp;quot;cd &lt;span class="cp"&gt;${&lt;/span&gt;&lt;span class="n"&gt;youtrack_files&lt;/span&gt;&lt;span class="cp"&gt;}&lt;/span&gt; &lt;span class="err"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="cp"&gt;${&lt;/span&gt;&lt;span class="n"&gt;youtrack_files&lt;/span&gt;&lt;span class="cp"&gt;}&lt;/span&gt;/archive&amp;quot;,
-    environment =&amp;gt; [ &amp;#39;MAILTO=devops@example.com&amp;#39; ],
-    user        =&amp;gt; &amp;#39;root&amp;#39;,
-    minute      =&amp;gt; 0,
-    hour        =&amp;gt; 8,
-  }
-}
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Once Puppet applies this configuration on the host system it will&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Install the configuration template under &lt;code&gt;/opt/youtrack.conf&lt;/code&gt;
-replacing the placeholder variables with actual values. Notice the
-argument to &lt;code&gt;template()&lt;/code&gt; - it's of the form module_name/file_name;&lt;/li&gt;
-&lt;li&gt;Add a cron job entry for my Python script.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; The host system is the Puppet master so I don't really need to
-install my Python scripts into another location. I could if I wanted to but
-this isn't necessary. Cron is executing the script from inside the git
-checkout.&lt;/p&gt;
-&lt;h2&gt;Bundle it all together&lt;/h2&gt;
-&lt;p&gt;Our module is done. Now we need to instruct Puppet that we want to use it.
-I have a &lt;code&gt;puppet/modules/role/manifests/pmaster.pp&lt;/code&gt; which defines what modules
-get used on the Puppet master machine. &lt;code&gt;pmaster&lt;/code&gt; matches the hostname of the
-system (that's how it's been configured to work). The module looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="n"&gt;role::pmaster&lt;/span&gt; {
-  &lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="n"&gt;youtrack&lt;/span&gt;
-
-  ...
-}
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;There is also a &lt;code&gt;puppet/modules/common/manifests/vars-static.pp&lt;/code&gt; file which
-defines all the variables used in the templates. Simply add the necessary ones
-at the bottom:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="x"&gt;@@ -197,4 +197,9 @@&lt;/span&gt;
-&lt;span class="x"&gt;+&lt;/span&gt;
-&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="x"&gt; YouTrack automation&lt;/span&gt;
-&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_url&lt;/span&gt;&lt;span class="x"&gt;  = &amp;#39;http://example.com&amp;#39;&lt;/span&gt;
-&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_user&lt;/span&gt;&lt;span class="x"&gt; = &amp;#39;changeMe&amp;#39;&lt;/span&gt;
-&lt;span class="x"&gt;+  &lt;/span&gt;&lt;span class="p"&gt;$&lt;/span&gt;&lt;span class="nv"&gt;youtrack_pass&lt;/span&gt;&lt;span class="x"&gt; = &amp;#39;changeMe&amp;#39;&lt;/span&gt;
-&lt;span class="x"&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; in reality this file is just a placeholder. The real values are not
-stored in git but are configured manually on systems which need them. On the
-Puppet master there are separate &lt;code&gt;XXX-vars.pp&lt;/code&gt; files for different environments
-like devel, staging and production.&lt;/p&gt;</summary><category term="fedora.planet"></category></entry></feed>
+&lt;a href="http://floating-point-gui.de"&gt;http://floating-point-gui.de&lt;/a&gt;.&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Ruby"></category><category term="QA"></category></entry></feed>
