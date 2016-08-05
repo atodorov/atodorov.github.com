@@ -90,6 +90,64 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/" rel="bookmark" title="Permalink to Python 2 vs. Python 3 List Sort Causes Bugs">
+                <h2 class="post-title">
+                    Python 2 vs. Python 3 List Sort Causes Bugs
+                </h2>
+            </a>
+                <p>Can sorting a list of values crash your software? Apparently it can and is
+another example of my
+<a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/">Hello World Bugs</a>.
+Python 3 has simplified the
+<a href="https://docs.python.org/3/whatsnew/3.0.html#ordering-comparisons">rules for ordering comparisons</a>
+which changes the behavior of sorting lists when their contents are dictionaries.
+For example:</p>
+<div class="highlight"><pre><span class="n">Python</span> <span class="mf">2.7</span><span class="o">.</span><span class="mi">5</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Oct</span> <span class="mi">11</span> <span class="mi">2015</span><span class="p">,</span> <span class="mi">17</span><span class="p">:</span><span class="mi">47</span><span class="p">:</span><span class="mi">16</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">3</span> <span class="mi">20140911</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">3</span><span class="o">-</span><span class="mi">9</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux2</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[{</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">}]</span> <span class="o">&lt;</span> <span class="p">[{</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}]</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span class="n">Python</span> <span class="mf">3.5</span><span class="o">.</span><span class="mi">1</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Apr</span> <span class="mi">27</span> <span class="mi">2016</span><span class="p">,</span> <span class="mo">04</span><span class="p">:</span><span class="mi">21</span><span class="p">:</span><span class="mi">56</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">3</span> <span class="mi">20140911</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">3</span><span class="o">-</span><span class="mi">9</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[{</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">}]</span> <span class="o">&lt;</span> <span class="p">[{</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}]</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="n">unorderable</span> <span class="n">types</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()</span> <span class="o">&lt;</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>The problem is that the second elements in both lists have different keys
+and Python doesn't know how to compare them. In earlier Python versions
+this has been special cased as
+<a href="http://stackoverflow.com/questions/3484293/is-there-a-description-of-how-cmp-works-for-dict-objects-in-python-2/3484456#3484456">described here</a>
+by Ned Batchelder (the author of Python's coverage tool) but in Python 3
+dictionaries have no natural sort order.</p>
+<p>In the case of <em>django-chartit</em> (of which I'm now the official maintainer) this
+bug triggers when you want to plot data from multiple sources (models) on the same
+chart. In this case the fields coming from each data series are different and the
+above error is triggered.</p>
+<p>I have worked around this in
+<a href="https://github.com/chartit/django-chartit/commit/9d9033ecd5a8592a12872293cdf6d710cebf894f">commit 9d9033e</a>
+by simply disabling an iterator sort but this is sub-optimal and I'm not quite certain
+what the side effect might be. I suspect you may end up with a chart where the order
+of values on the X axis isn't the same for the different models, e.g. one graph plotting
+the data in ascending order the other one in descending.</p>
+<p>The trouble also comes from the fact that we're sorting an iterator (a list of fields) by
+telling Python to use a list of dicts to determine the sort order. In this arrangement
+there is no way to tell Python how we want to compare our dicts. The only solution I
+can think about is creating a custom class and implementing a custom <code>__cmp__()</code> method
+for this data structure!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 05 August 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="bookmark" title="Permalink to On Python Infinite Loops">
                 <h2 class="post-title">
                     On Python Infinite Loops
@@ -1680,32 +1738,6 @@ as well. Let me know if you have any experience with that.</p>
                  on Wed 24 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="bookmark" title="Permalink to Using Django built-in template tags and filters in code">
-                <h2 class="post-title">
-                    Using Django built-in template tags and filters in code
-                </h2>
-            </a>
-                <p>In case you are wondering how to use Django's
-<a href="https://docs.djangoproject.com/en/dev/ref/templates/builtins/">built-in template tags and filters</a>
-in your source code, not inside a template here is how:</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.template.defaultfilters</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
-<span class="s">u&#39;1.0 KB&#39;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">1020</span><span class="p">)</span>
-<span class="s">u&#39;1020 bytes&#39;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">filesizeformat</span><span class="p">(</span><span class="mi">102412354</span><span class="p">)</span>
-<span class="s">u&#39;97.7 MB&#39;</span>
-<span class="o">&gt;&gt;&gt;</span>
-</pre></div>
-
-
-<p>All built-ins live in <code>pythonX.Y/site-packages/django/template/defaultfilters.py</code>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 06 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -90,6 +90,147 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/" rel="bookmark" title="Permalink to Performance test: Amazon ElastiCache vs Amazon S3">
+                <h2 class="post-title">
+                    Performance test: Amazon ElastiCache vs Amazon S3
+                </h2>
+            </a>
+                <p>Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ?</p>
+<p>Previously I've mentioned about
+<a href="/blog/2013/06/19/django-tips-using-cache-for-stateful-http/">using Django's cache to keep state between HTTP requests</a>.
+In my demo described there I was using <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+It is time to move to production so I decided to measure the performance difference between the two
+cache options available at Amazon Web Services.</p>
+<p><strong>Update 2013-07-01</strong>: my initial test may have been false since I had not configured
+ElastiCache access properly. I saw no errors but discovered the issue today on another
+system which was failing to store the cache keys but didn't show any errors either. 
+I've re-run the tests and updated times are shown below.</p>
+<h2>Test infrastructure</h2>
+<ul>
+<li>One Amazon S3 bucket, located in US Standard (aka US East) region;</li>
+<li>One Amazon ElastiCache cluster with one Small Cache Node (cache.m1.small) with Moderate I/O capacity;</li>
+<li>One Amazon Elasticache cluster with one Large Cache Node (cache.m1.large) with High I/O Capacity;</li>
+<li><strong>Update:</strong> I've tested both <code>python-memcached</code> and <code>pylibmc</code> client libraries for Django;</li>
+<li><strong>Update:</strong> Test is executed from an EC2 node in the us-east-1a availability zone;</li>
+<li><strong>Update:</strong> Cache clusters are in the us-east-1a availability zone.</li>
+</ul>
+<h2>Test Scenario</h2>
+<p>The test platform is Django. I've created a
+<a href="https://github.com/atodorov/Amazon-ElastiCache-vs-Amazon-S3-Django">skeleton project</a>
+with only <code>CACHES</code> settings
+defined and necessary dependencies installed. A file called <code>test.py</code> holds the
+test cases, which use the standard timeit module. The object which is stored in cache
+is very small - it holds a phone/address identifiers and couple of user made selections.
+The code looks like this:</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">timeit</span>
+
+<span class="n">s3_set</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">for i in range(1000):</span>
+<span class="sd">    my_cache.set(i, MyObject)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">,</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from django.core import cache</span>
+
+<span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+
+<span class="sd">MyObject = {</span>
+<span class="sd">    &#39;from&#39; : &#39;359123456789&#39;,</span>
+<span class="sd">    &#39;address&#39; : &#39;6afce9f7-acff-49c5-9fbe-14e238f73190&#39;,</span>
+<span class="sd">    &#39;hour&#39; : &#39;12:30&#39;,</span>
+<span class="sd">    &#39;weight&#39; : 5,</span>
+<span class="sd">    &#39;type&#39; : 1,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">)</span>
+
+<span class="n">s3_get</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">for i in range(1000):</span>
+<span class="sd">    MyObject = my_cache.get(i)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">,</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from django.core import cache</span>
+
+<span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">)</span>
+</pre></div>
+
+
+<p>Tests were executed from the Django shell <del>on my laptop</del>
+on an EC2 instance in the us-east-1a availability zone. ElastiCache nodes
+were freshly created/rebooted before test execution. S3 bucket had no objects.</p>
+<div class="highlight"><pre><span class="err">$</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell</span>
+<span class="n">Python</span> <span class="mf">2.6</span><span class="o">.</span><span class="mi">8</span> <span class="p">(</span><span class="n">unknown</span><span class="p">,</span> <span class="n">Mar</span> <span class="mi">14</span> <span class="mi">2013</span><span class="p">,</span> <span class="mi">09</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">22</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span> <span class="mi">20111027</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux2</span>
+<span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="p">(</span><span class="n">InteractiveConsole</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">test</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">s3_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">68.089607000350952</span><span class="p">,</span> <span class="mf">70.806712865829468</span><span class="p">,</span> <span class="mf">72.49261999130249</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">s3_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">43.778793096542358</span><span class="p">,</span> <span class="mf">43.054368019104004</span><span class="p">,</span> <span class="mf">36.19232702255249</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.40637087821960449</span><span class="p">,</span> <span class="mf">0.3568730354309082</span><span class="p">,</span> <span class="mf">0.35815882682800293</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.35759496688842773</span><span class="p">,</span> <span class="mf">0.35180497169494629</span><span class="p">,</span> <span class="mf">0.39198613166809082</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.3902890682220459</span><span class="p">,</span> <span class="mf">0.30157709121704102</span><span class="p">,</span> <span class="mf">0.30596804618835449</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.28874802589416504</span><span class="p">,</span> <span class="mf">0.30520200729370117</span><span class="p">,</span> <span class="mf">0.29050207138061523</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">1.0291709899902344</span><span class="p">,</span> <span class="mf">0.31709098815917969</span><span class="p">,</span> <span class="mf">0.32010698318481445</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.2957158088684082</span><span class="p">,</span> <span class="mf">0.29067802429199219</span><span class="p">,</span> <span class="mf">0.29692888259887695</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<h2>Results</h2>
+<p>As expected ElastiCache is much faster (10x) compared to S3. However the difference
+between the two ElastiCache node types is subtle. I will stay with the smallest
+possible node to minimize costs. Also as seen, pylibmc is a bit faster compared to
+the pure Python implementation. </p>
+<p>Depending on your objects size or how many set/get operations you perform per
+second you may need to go with the larger nodes. Just test it!</p>
+<p><del>It surprised me how slow django-s3-cache is.</del>
+The false test showed django-s3-cache to be 100x slower but new results are better.
+10x decrease in performance sounds about right for a filesystem backed cache.</p>
+<p>A quick look at the code
+of the two backends shows some differences. The one I immediately see is that
+for every cache key django-s3-cache creates an sha1 hash which is used as the
+storage file name. This was modeled after the filesystem backend but I think the
+design is wrong - the memcached backends don't do this.</p>
+<p>Another one is that django-s3-cache time-stamps all objects and uses pickle to serialize them. 
+I wonder if it can't just write them as binary blobs directly. There's definitely lots
+of room for improvement of django-s3-cache. I will let you know my findings once I
+get to it. </p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 26 June 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/20/even-facebook-has-bugs/" rel="bookmark" title="Permalink to Even Facebook has Bugs">
                 <h2 class="post-title">
                     Even Facebook has Bugs
