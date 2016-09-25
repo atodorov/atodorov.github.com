@@ -91,6 +91,128 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/31/beware-of-double-stubs-in-rspec/" rel="bookmark" title="Permalink to Beware of Double Stubs in RSpec">
+                <h2 class="post-title">
+                    Beware of Double Stubs in RSpec
+                </h2>
+            </a>
+                <p>I've been re-factoring some RSpec tests and encountered a method which has been
+stubbed-out 2 times in a row. This of course led to problems when I tried to delete
+some of the code, which I deemed unnecessary. Using
+<a href="http://blog.teamtreehouse.com/an-introduction-to-rspec">Treehouse's burger example</a>
+I've recreated my use-case. Comments are in the code below:</p>
+<div class="highlight"><span class="filename">burger_spec.rb</span><pre><span class="k">class</span> <span class="nc">Burger</span>
+  <span class="kp">attr_reader</span> <span class="ss">:options</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="p">{})</span>
+    <span class="vi">@options</span> <span class="o">=</span> <span class="n">options</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">apply_ketchup</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="vi">@ketchup</span> <span class="o">=</span> <span class="vi">@options</span><span class="o">[</span><span class="ss">:ketchup</span><span class="o">]</span>
+    <span class="c1"># the number is passed from the tests below to make it easier to</span>
+    <span class="c1"># monitor execution of this method.</span>
+    <span class="nb">printf</span> <span class="s2">&quot;Ketchup applied %d times</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">number</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">apply_mayo_and_ketchup</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="vi">@options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="n">apply_ketchup</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">has_ketchup_on_it?</span>
+    <span class="vi">@ketchup</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">describe</span> <span class="no">Burger</span> <span class="k">do</span>
+  <span class="n">describe</span> <span class="s2">&quot;#apply_mayo_and_ketchup&quot;</span> <span class="k">do</span>
+    <span class="n">context</span> <span class="s2">&quot;with ketchup and single stubs&quot;</span> <span class="k">do</span>
+      <span class="n">let</span><span class="p">(</span><span class="ss">:burger</span><span class="p">)</span> <span class="p">{</span> <span class="no">Burger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:ketchup</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">)</span> <span class="p">}</span>
+
+      <span class="n">it</span> <span class="s2">&quot;1: sets the mayo flag to true, ketchup is nil&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line stubs-out the apply_ketchup method</span>
+        <span class="c1"># and @ketchup will remain nil b/c the original</span>
+        <span class="c1"># method is not executed at all</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="n">it</span> <span class="s2">&quot;2: sets the mayo and ketchup flags to true&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line stubs-out the apply_ketchup method</span>
+        <span class="c1"># but in the end calls the non-stubbed out version as well</span>
+        <span class="c1"># so that has_ketchup_on_it? will return true !</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span><span class="o">.</span><span class="n">and_call_original</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">context</span> <span class="s2">&quot;with ketchup and double stubs&quot;</span> <span class="k">do</span>
+      <span class="n">let</span><span class="p">(</span><span class="ss">:burger</span><span class="p">)</span> <span class="p">{</span> <span class="no">Burger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:ketchup</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">)</span> <span class="p">}</span>
+      <span class="n">before</span> <span class="p">{</span>
+        <span class="c1"># this line creates a stub for the apply_ketchup method</span>
+        <span class="n">allow</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+      <span class="p">}</span>
+
+      <span class="n">it</span> <span class="s2">&quot;3: sets the mayo flag to true, ketchup is nil&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line creates a second stub for the fake apply_ketchup method</span>
+        <span class="c1"># @ketchup will remain nil b/c the original method which sets its value</span>
+        <span class="c1"># isn&#39;t actually executed. we may as well comment out this line and</span>
+        <span class="c1"># this will not affect the test at all</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="n">it</span> <span class="s2">&quot;4: sets the mayo and ketchup flags to true&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line creates a second stub for the fake apply_ketchup method.</span>
+        <span class="c1"># .and_call_original will traverse up the stubs and call the original</span>
+        <span class="c1"># method. If we don&#39;t want to assert that the method has been called</span>
+        <span class="c1"># or we don&#39;t care about its parameters, but only the end result</span>
+        <span class="c1"># that system state has been changed then this line is redundant!</span>
+        <span class="c1"># Don&#39;t stub &amp; call the original, just call the original method, right?</span>
+        <span class="c1"># Commenting out this line will cause a failure due to the first stub</span>
+        <span class="c1"># in before() above. The first stub will execute and @ketchup will remain</span>
+        <span class="c1"># nil! To set things straight also comment out the allow() line in</span>
+        <span class="c1"># before()!</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span><span class="o">.</span><span class="n">and_call_original</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>When I see a <code>.and_call_original</code> method
+after a stub I immediately delete it because in most of the cases this isn't
+necessary. Why stub out something just to call it again later ? See my comments
+above. Also the <code>expect to receive &amp;&amp; do action</code>
+sequence is a bit counter intuitive. I prefer the <code>do action &amp; assert results</code>
+sequence instead.</p>
+<p>The problem here comes from the fact that RSpec has very flexible syntax for
+creating stubs which makes it very easy to abuse them, especially when you
+have no idea what you're doing. If you write tests with RSpec please make a
+note of this and try to avoid this mistake.</p>
+<p>If you'd like to learn more about stubs see
+<a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 31 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/31/beware-of-double-stubs-in-rspec/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/" rel="bookmark" title="Permalink to Hello World QA Challenge">
                 <h2 class="post-title">
                     Hello World QA Challenge
@@ -1630,60 +1752,6 @@ once it migrates to Travis-CI (it uses drone.io now).</p>
                  on Wed 02 December 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="bookmark" title="Permalink to Hosting Multiple Python WSGI Scripts on OpenShift">
-                <h2 class="post-title">
-                    Hosting Multiple Python WSGI Scripts on OpenShift
-                </h2>
-            </a>
-                <p>With <a href="http://openshift.com">OpenShift</a> you can host WSGI Python
-applications. By default the Python cartridge comes with a simple WSGI app
-and the following directory layout</p>
-<div class="highlight"><pre>./
-./.openshift/
-./requirements.txt
-./setup.py
-./wsgi.py
-</pre></div>
-
-
-<p>I wanted to add my
-<a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/">GitHub Bugzilla Hook</a>
-in a subdirectory (git submodule actually) and simply reserve a URL which will
-be served by this app. My intention is also to add other small scripts to the
-same cartridge in order to better utilize the available resources.</p>
-<p>Using <code>WSGIScriptAlias</code> inside <code>.htaccess</code> <strong>DOESN'T WORK</strong>! OpenShift errors
-out when <code>WSGIScriptAlias</code> is present. I suspect this to be a known limitation
-and I have an open support case with Red Hat to confirm this.</p>
-<p>My workaround is to configure the URL paths from the <code>wsgi.py</code> file in the root
-directory. For example</p>
-<div class="highlight"><pre><span class="gh">diff --git a/wsgi.py b/wsgi.py</span>
-<span class="gh">index c443581..20e2bf5 100644</span>
-<span class="gd">--- a/wsgi.py</span>
-<span class="gi">+++ b/wsgi.py</span>
-<span class="gu">@@ -12,7 +12,12 @@ except IOError:</span>
- # line, it&#39;s possible required libraries won&#39;t be in your searchable path
- #
- 
-<span class="gi">+from github_bugzilla_hook import wsgi as ghbzh</span>
-<span class="gi">+</span>
- def application(environ, start_response):
-<span class="gi">+    # custom paths</span>
-<span class="gi">+    if environ[&#39;PATH_INFO&#39;] == &#39;/github-bugzilla-hook/&#39;:</span>
-<span class="gi">+        return ghbzh.application(environ, start_response)</span>
- 
-     ctype = &#39;text/plain&#39;
-     if environ[&#39;PATH_INFO&#39;] == &#39;/health&#39;:
-</pre></div>
-
-
-<p>This does the job and is almost the same as configuring the path in <code>.htaccess</code>.
-I hope it helps you!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 01 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
