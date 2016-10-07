@@ -97,6 +97,51 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/" rel="bookmark" title="Permalink to Beware of Django default Model Field Option When Using datetime.now()">
+                <h2 class="post-title">
+                    Beware of Django default Model Field Option When Using datetime.now()
+                </h2>
+            </a>
+                <p>Beware if you are using code like this:</p>
+<div class="highlight"><pre>models.DateTimeField(default=datetime.now())
+</pre></div>
+
+
+<p>i.e. passing a function return value as the default option for a model field in Django.
+In some cases the value will be calculated once when the application starts or
+the module is imported and will not be updated later. The most common scenario
+is DateTime fields which default to now(). The correct way is to use a callable:</p>
+<div class="highlight"><pre>models.DateTimeField(default=datetime.now)
+</pre></div>
+
+
+<p>I've hit this issue on a low volume application which uses cron to collect its own
+metrics by calling an internal URL. The app was running as WSGI app and I wondered
+why I got records with duplicate dates in the DB. A more detailed (correct) example follows:</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Metrics</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">added_on</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">added_on_as_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_strftime</span><span class="p">)</span>
+</pre></div>
+
+
+<p><a href="http://www.dif.io">Difio</a> also had the same bug but didn't exhibit the problem
+because all objects with default date-time values were created on the backend nodes
+which get updated and restarted very often.</p>
+<p>For more info read this
+<a href="http://david.feinzeig.com/blog/2011/12/06/how-to-properly-set-a-default-value-for-a-datetimefield-in-django/">blog</a>.
+For general info on Django, please check out
+<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=Django&linkCode=ur2&rh=n%3A283155%2Ck%3ADjango&tag=atodorovorg-20&url=search-alias%3Dstripbooks&linkId=M56M35GO5XWGIBJE">Django books on Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 15 April 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/04/15/beware-of-django-default-model-field-option-when-using-datetime-now/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/04/08/positive-biological-effects-of-open-source-on-humans/" rel="bookmark" title="Permalink to Positive Biological Effects of Open Source on Humans">
                 <h2 class="post-title">
                     Positive Biological Effects of Open Source on Humans
@@ -1595,86 +1640,6 @@ you there if you're coming.</p>
                  on Tue 28 January 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/01/28/book-review-january-2014/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/01/02/book-review-of-2013/" rel="bookmark" title="Permalink to Book Review of 2013">
-                <h2 class="post-title">
-                    Book Review of 2013
-                </h2>
-            </a>
-                <p>Happy New Year everyone! I was able to complete reading a few books in the last
-days so this first post will be a quick review of
-<a href="https://www.goodreads.com/review/list/16191345-alexander-todorov?read_at=2013&amp;view=covers">all twelve books I've read in 2013</a>.</p>
-<h2>Technical Blogging</h2>
-<p>I've started the year with 
-<a href="http://amzn.to/1a2QySD">Technical Blogging: Turn Your Expertise into a Remarkable Online Presence</a>
-by Antonio Cangiano. This is the book which prompted me to start this blog. It is
-targeted primarily at technical blogging but could be useful to non-tech bloggers as well.
-I strongly recommend this book to anyone who is writing for the web.</p>
-<h2>The 4-Hour Workweek</h2>
-<p><a href="http://amzn.to/1ivu2q4">The 4-Hour Workweek: Escape 9-5, Live Anywhere, and Join the New Rich</a>
-by Timothy Ferriss. This book I found at a local 
-<a href="/blog/2013/01/30/startup-talk-5-book-list/">start-up event</a> and is one of my
-all time favorites. The basic idea is to ditch the traditional working space and
-work less utilizing more automation. This is something I've been doing to an extent
-during the last 5+ years and I am still changing my life and working habits to 
-reach the moment where I work only a few hours a week.</p>
-<p>A must read for any entrepreneur, freelancer or work from home folks.</p>
-<h2>The E-Myth Revisited</h2>
-<p><a href="http://amzn.to/1d0j5ee">The E-Myth Revisited: Why Most Small Businesses Don't Work and What to Do About It</a>
-by Michael Gerber is the second book I've found at the same start-up event mentioned
-previously. I found this one particularly hard to read. What I took from it was
-that you should think about your business as a franchise and document processes
-so that others can do it for you in the same way you would do it yourself.</p>
-<h2>Culture and Wine</h2>
-<p>Next two books are in Bulgarian and can be found at my 
-<a href="https://www.goodreads.com/review/list/16191345-alexander-todorov?read_at=2013&amp;view=covers">Goodreads list</a>.
-They are about culture and religion and wine tasting 101.</p>
-<h2>Accelerando</h2>
-<p><a href="http://amzn.to/19Ctnk8">Accelerando (Singularity)</a> by Charles Stross is also one
-of my favorites. I've heard about it at a local CloudFoundry conference a few years
-back and finally had the time to read it. This is a fiction book where events start
-in the near future and drive forward to dismantling the planets in the Solar system,
-uploading lobsters minds on the Internet, space travel, aliens and family
-relationships. I will definitely recommend it, the book is a very relaxing read.</p>
-<h2>DevOps</h2>
-<p><a href="http://amzn.to/1eXk3JN">What Is DevOps?</a> by Mike Loukides and
-<a href="http://amzn.to/19KobFn">Building a DevOps Culture</a> by Mandi Walls are two short
-free books for Kindle. They just touch base on the topic of DevOps and what it
-takes to create a DevOps organization. Definitely worth reading even if you're
-not deeply interested in this topic. </p>
-<p><a href="http://amzn.to/1dVvQmE">DevOps for Developers</a> by Michael Huttermann is a
-practical books about DevOps. It talks about processes and tools and lists
-lots of examples. The tools part is Ruby centric though.
-I found it a bit hard to read at times and it took me a while
-to complete it. I'm not sure if the book is really helpful if one decides to
-change an exiting organization to a DevOps like structure but it is definitely
-a starting point. </p>
-<p>The days of waterfall software development are gone and knowingly or not most of
-us work in a DevOps like environment these days. I think it's worth at least skimming
-through this book and taking some essentials from it. </p>
-<h2>UX For Lean Startups</h2>
-<p><a href="http://amzn.to/1fi1KeE">UX for Lean Startups</a> by Laura Klein is a very good book
-about designing user experience and validation which I've
-<a href="/blog/2013/12/09/book-review-ux-for-lean-startups/">reviewed previously</a>.
-I strongly recommend this book to everyone who is building a product of some sort.</p>
-<h2>Bulgarian Comics</h2>
-<p>At the end of the year I've managed to read two comics books, both in Bulgarian.
-The first one is a brief history of the comics arts in the country in the past 150
-years with lots of references to good old stories which I've read when I was a kid.</p>
-<p>The second one is a special edition (ebook only, print edition is out of stock) of
-the popular Daga (Rainbow) magazine which ceased to exist 20 years ago. There are
-some new episodes of the old stories drawn by the original artists.</p>
-<p>Both books seem to be a turning point in Bulgarian comics art and market. Hopefully
-we'll see more cool stuff in the future. These books are not available on Amazon
-but there are some <a href="http://amzn.to/19Cw6tV">free comics books for Kindle</a> which
-you may give a try.</p>
-<p>I hope you find something interesting to read in my list. Also feel free to comment
-and share your favorite books in the comments below.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 02 January 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/01/02/book-review-of-2013/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
