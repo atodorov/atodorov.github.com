@@ -1,14 +1,15 @@
-Title: Petar Sabev on Test Automation
+Title: Peter Sabev on Test Automation
 Headline: the automation snake chart
 date: 2016-10-07 11:30
 comments: true
 Tags: events
+Slug: petar-sabev-on-test-automation
 og_image: images/petar_sabev_automation.jpg
 twitter_image: images/petar_sabev_automation.jpg
 
 ![the automation snake chart](/images/petar_sabev_automation.jpg "The automation snake chart")
 
-Last week Petar Sabev gave his talk
+Last week Peter Sabev gave his talk
 "On Reporting Bugs: Errors Made and Lessons learned" for DEV.bg
 ([watch in Bulgarian](https://www.youtube.com/watch?v=jVY3U58Js90&index=6&list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db)).
 At the end of the talk there was a quick question how would he approach automation.
@@ -30,7 +31,7 @@ to write and more complex than the previous one. This is a good fit for
 team who don't have strong experience with test automation and/or are
 unfamiliar with the product.
 
-Petar proposes a different approach. He plots the test cases as dots, based
+Peter proposes a different approach. He plots the test cases as dots, based
 on how much time they take to execute manually and how much time/how hard
 is it to automate the particular case. Then you start to move from the lower right
 corner towards the upper left corner in a weaving motion, like a snake,
@@ -41,6 +42,9 @@ within the team. As you progress up the chart the test cases become harder
 to automate and yield less return of investment because they don't take
 some much time to execute manually.
 
+For more information about Peter's approach please read
+[his article](http://waset.org/publications/10003250/manual-to-automated-testing-an-effort-based-approach-for-determining-the-priority-of-software-test-automation).
+
 As you can see from the snake chart the team constantly faces test scenarios
 jumping up and down on the automation hardness scale. Which also means
 that you need to have the suitable skills within the team. IMO this is best
@@ -49,7 +53,7 @@ I'm also in favor of using the snake chart as a tool to distribute
 automation tasks within the team.
 
 
-If you'd like to hear more about Petar's and mine views on manual vs. automated
+If you'd like to hear more about Peter's and mine views on manual vs. automated
 testing be sure to follow [DEV.bg](http://dev.bg).
 We are going to host a discussion on October 18th so stay tuned!
 
