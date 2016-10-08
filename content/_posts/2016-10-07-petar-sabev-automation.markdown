@@ -2,7 +2,6 @@ Title: Peter Sabev on Test Automation
 Headline: the automation snake chart
 date: 2016-10-07 11:30
 comments: true
-Tags: events
 Slug: petar-sabev-on-test-automation
 og_image: images/petar_sabev_automation.jpg
 twitter_image: images/petar_sabev_automation.jpg
