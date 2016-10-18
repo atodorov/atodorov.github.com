@@ -91,6 +91,34 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/19/unix-stickers-for-your-laptop/" rel="bookmark" title="Permalink to Unix Stickers for Your Laptop">
+                <h2 class="post-title">
+                    Unix Stickers for Your Laptop
+                </h2>
+            </a>
+                <p>Last month I was asked to review stickers from
+<a href="https://www.unixstickers.com/">UnixStickers</a>. In return I would receive
+some of them.
+I've made them a counter offer - they send me stickers and I give them to students
+attending my
+<a href="https://github.com/HackBulgaria/QA-and-Automation-101">QA-and-Automation-101</a>
+course.</p>
+<p><img alt="Unix Stickers" src="/images/unixstickers.jpg" title="Unix Stickers" /></p>
+<p>Yesterday I gave away everything I was sent, some of which you can see on the
+picture above. All stickers were gone in minutes. The ones that were left were
+the yellow JS ones and the Fedora infinity logo. It turned out most students are
+not familiar with Fedora but otherwise liked the stickers.</p>
+<p>If you haven't come across <a href="https://www.unixstickers.com/">UnixStickers</a> until
+now I definitely recommend it. It is a great source to purchase stickers, mugs
+and T-shirts branded with your favorite open source project(s). In return some
+of the money is donated back to the community to support their open source work.
+A great business model in my opinion.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 19 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/19/unix-stickers-for-your-laptop/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/" rel="bookmark" title="Permalink to 3 Bugs in Grajdanite">
                 <h2 class="post-title">
                     3 Bugs in Grajdanite
@@ -1689,97 +1717,6 @@ the difference and if that affects performance somehow so stay tuned!</p>
                  on Wed 23 December 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/12/23/interesting-ruby-resources/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="bookmark" title="Permalink to Speeding up RSpec and PostgreSQL tests">
-                <h2 class="post-title">
-                    Speeding up RSpec and PostgreSQL tests
-                </h2>
-            </a>
-                <p>I've been working with <a class="wikilink" href="http://tradeo.com">Tradeo</a> on testing one of their applications. The app
-is standard Ruby on Rails application with over 1200 tests written with RSpec.
-And they were horribly slow. On my <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> the entire test suite
-took 27 minutes to execute. On the Jenkins slaves it took over an hour.
-After a few changes Jenkins now takes 15 minutes to execute the test suite.
-Locally it takes around 11 minutes!</p>
-<h2>The Problem</h2>
-<p>I've measured the speed (with Time.now) at which individual examples execute
-and it was quickly apparent they were taking a lot of time cleaning the DB. The
-offending code in question was:</p>
-<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
-<span class="k">end</span>
-</pre></div>
-
-
-<p>This is truncating the tables quite often but it turns out this is a very
-expensive operation on tables with small number of records. I've measured it
-locally around 2.5 seconds. Check out this
-<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/">SO thread</a>
-which describes pretty much the same symptoms:</p>
-<div class="highlight"><pre>Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
-Tailing the logs on our CI server (Ubuntu 10.04 LTS) .... a build takes 84 minutes.
-</pre></div>
-
-
-<p>This
-<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/11423886#11423886">excellent answer</a>
-explains why this is happening:</p>
-<div class="highlight"><pre>(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
-    Different fsync configuration or the use of rotational media instead of
-    SSDs could also be at fault.
-
-(b) TRUNCATE has a fixed cost, but not necessarily slower than DELETE,
-    plus it does more work.
-</pre></div>
-
-
-<h2>The Fix</h2>
-<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
-<span class="k">end</span>
-
-<span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:deletion</span>
-<span class="k">end</span>
-</pre></div>
-
-
-<p><code>before(:suite)</code> will truncate tables every time we run rspec, which is when we
-launch the entire test suite. This is to account for the possible side effects
-of DELETE in the future (see the SO thread). Then <code>before(:all)</code> aka
-<code>before(:context)</code> simply deletes the records which is significantly faster!</p>
-<p>Also updated the CI servers <code>postgresql.conf</code> to</p>
-<div class="highlight"><pre>fsync=off
-full_page_writes=off
-</pre></div>
-
-
-<p>The entire build/test process now takes only 15 minutes! Only one test broke
-due to PostgreSQL returning records in a different order, but it's the test
-case fault not handling this in the first place!</p>
-<p><strong>NOTE:</strong> Using fsync=off with rotational media pretty much hides any improvements
-introduced by updating the DatabaseCleaner strategy.</p>
-<h2>What's Next</h2>
-<p>There are several other things worth trying:</p>
-<ul>
-<li>Use UNIX domain sockets instead of TCP/IP (localhost) to connect to PostgreSQL;</li>
-<li>Load the entire
-<a href="http://magazine.redhat.com/2007/12/12/tip-from-an-rhce-memory-storage-on-postgresql/">PostgreSQL partition in memory</a>;</li>
-<li>Don't delete anything from the database, except once in <code>before(:suite)</code>.
-If any tests need a particular DB state they have to set this up on their own
-instead of relying on a global cleanup process. I expect this to break quite
-a few examples.</li>
-</ul>
-<p>After the changes and with my crude measurements I have individual examples
-taking 0.31 seconds to execute. Interestingly before and after take less than
-a second while the example code takes around 0.15 seconds. I have no idea where
-the rest 0.15 seconds are spent. My current speculation is probably RSpec.
-This is 50% of the execution time and is also worth looking into!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 23 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

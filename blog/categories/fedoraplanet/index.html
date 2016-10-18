@@ -90,6 +90,42 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/10/18/updated-macbook-air-drivers-for-rhel-7.3/" rel="bookmark" title="Permalink to Updated MacBook Air Drivers for RHEL 7.3">
+                <h2 class="post-title">
+                    Updated MacBook Air Drivers for RHEL 7.3
+                </h2>
+            </a>
+                <p>Today I have re-build the wifi and backlight drivers for MacBook Air
+against the upcoming Red Hat Enterprise Linux 7.3 kernel.
+<em>wl-kmod</em> again needed a
+<a href="https://github.com/atodorov/wl-kmod-for-rhel7/commit/c6b3d0fde66dd29671df5f52c40f7395f1e1e59e">small patch</a>
+before it can be compiled. <em>mba6x_bl</em> has been updated to the latest
+upstream and compiled without errors. The current RPM versions are</p>
+<div class="highlight"><pre>akmod-wl-6.30.223.248-9.el7.x86_64.rpm
+kmod-wl-3.10.0-513.el7.x86_64-6.30.223.248-9.el7.x86_64.rpm
+kmod-wl-6.30.223.248-9.el7.x86_64.rpm
+wl-kmod-debuginfo-6.30.223.248-9.el7.x86_64.rpm
+</pre></div>
+
+
+<div class="highlight"><pre>kmod-mba6x_bl-20161018.d05c125-1.el7.x86_64.rpm
+kmod-mba6x_bl-3.10.0-513.el7.x86_64-20161018.d05c125-1.el7.x86_64.rpm
+mba6x_bl-common-20161018.d05c125-1.el7.x86_64.rpm
+</pre></div>
+
+
+<p>and they seem to work fine for me. Let me know if you have any issues
+after RHEL 7.3 comes out officially.</p>
+<p>PS: The <a href="https://github.com/patjak/bcwc_pcie">bcwc_pcie</a> driver for the video camera
+appears to be ready for general use, regardless of some issues. No promises here
+but I'll try to compile that one as well and provide it in my
+<a href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 18 October 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/10/18/updated-macbook-air-drivers-for-rhel-7.3/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/" rel="bookmark" title="Permalink to PhantomJS 2.1.1 in Ubuntu different from upstream">
                 <h2 class="post-title">
                     PhantomJS 2.1.1 in Ubuntu different from upstream
@@ -1954,37 +1990,6 @@ that I didn't need, added the <code>write()</code> method and removed the origin
                  on Thu 14 January 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/" rel="bookmark" title="Permalink to Capture Terminal Output From Other Processes">
-                <h2 class="post-title">
-                    Capture Terminal Output From Other Processes
-                </h2>
-            </a>
-                <p>I've been working on a test case to verify that Anaconda will print its EULA
-notice at the end of a text mode installation. The problem is how do you capture
-all the text which is printed to the terminal from processes outside your control ?
-The answer is surprisingly simple - using strace! </p>
-<div class="highlight"><pre><span class="nf">%post</span> <span class="o">--</span><span class="n">nochroot</span>
-<span class="n">PID</span><span class="o">=</span><span class="err">`</span><span class="n">ps</span> <span class="n">aux</span> <span class="o">|</span> <span class="n">grep</span> <span class="s">&quot;/usr/bin/python /sbin/anaconda&quot;</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">v</span> <span class="s">&quot;grep&quot;</span> <span class="o">|</span> <span class="n">tr</span> <span class="o">-</span><span class="n">s</span> <span class="sc">&#39; &#39;</span> <span class="o">|</span> <span class="n">cut</span> <span class="o">-</span><span class="n">f2</span> <span class="o">-</span><span class="n">d</span><span class="sc">&#39; &#39;</span><span class="err">`</span>
-<span class="n">STRACE_LOG</span><span class="o">=</span><span class="s">&quot;/mnt/sysimage/root/anaconda.strace&quot;</span>
-
-<span class="cp"># see https:</span><span class="c1">//fedoraproject.org/wiki/Features/SELinuxDenyPtrace</span>
-<span class="n">setsebool</span> <span class="n">deny_ptrace</span> <span class="mi">0</span>
-
-<span class="cp"># EULA notice is printed after post-scripts are run</span>
-<span class="n">strace</span> <span class="o">-</span><span class="n">e</span> <span class="n">read</span><span class="p">,</span><span class="n">write</span> <span class="o">-</span><span class="n">s16384</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">x</span> <span class="o">-</span><span class="n">o</span> <span class="n">$STRACE_LOG</span> <span class="o">-</span><span class="n">p</span> <span class="n">$PID</span> <span class="o">-</span><span class="n">f</span> <span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">&amp;</span>
-</pre></div>
-
-
-<p>strace is tracing only read and write events (we really only need write) and
-extending the maximum string size printed in the log file. For a simple grep
-this is sufficient. If you need to pretty-print the strace output have a look
-at the <a href="http://search.cpan.org/~bbb/ttylog/ttylog">ttylog</a> utility.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 25 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
