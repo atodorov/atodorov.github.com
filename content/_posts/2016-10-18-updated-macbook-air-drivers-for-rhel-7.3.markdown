@@ -30,3 +30,14 @@ PS: The [bcwc_pcie](https://github.com/patjak/bcwc_pcie) driver for the video ca
 appears to be ready for general use, regardless of some issues. No promises here
 but I'll try to compile that one as well and provide it in my
 [Macbook Air RHEL 7 repository]({filename}2015-04-29-rhel-7-repository-for-macbook-air.markdown).
+
+PS2: Sometime after Sept 14th I have probably upgraded my system and now it can't
+detect external displays if the display is not plugged in during boot. I'm seeing
+the following
+
+    # cat /sys/class/drm/card0-DP-1/enabled
+    disabled
+
+which appears to be the same issue reported on the
+[ArchLinux forum](https://bbs.archlinux.org/viewtopic.php?pid=1269591#p1269591).
+I'm in a hurry to resolve this and any help is welcome.
