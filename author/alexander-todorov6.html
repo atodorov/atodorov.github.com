@@ -97,6 +97,84 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/" rel="bookmark" title="Permalink to Speeding Up Celery Backends, Part 3">
+                <h2 class="post-title">
+                    Speeding Up Celery Backends, Part 3
+                </h2>
+            </a>
+                <p>In the second part of this article we've seen 
+<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
+Now let's explore what happens inside and see if we can't speed things up.</p>
+<p>I've used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
+call graph visualizations of my application. It has the nice feature to also show
+execution time and use different colors for fast and slow operations.</p>
+<p>Full command line is:</p>
+<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+</pre></div>
+
+
+<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
+<h2>General findings</h2>
+<p><img alt="call graph" src="/images/celery/general.png" title="call graph" /></p>
+<ul>
+<li>The first four calls is where most of the time is spent as seen on the picture. </li>
+<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
+transport Kombu (not shown on picture)</li>
+<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
+<code>celery.app.base.Celery.send_task</code></li>
+<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
+rewrites the code.</li>
+</ul>
+<h2>More findings</h2>
+<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
+<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
+350             self.backend.on_task_call(P, task_id)
+351             task_id = P.publish_task(
+352                 name, args, kwargs, countdown=countdown, eta=eta,
+353                 task_id=task_id, expires=expires,
+354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
+355                 reply_to=reply_to or self.oid, **options
+356             )
+</pre></div>
+
+
+<p><code>producer</code> is always None because delay() doesn't pass it as argument.
+I've tried passing it explicitly to apply_async() as so:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
+<span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">debug_task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">producer</span><span class="o">=</span><span class="n">producer</span><span class="p">)</span>
+</pre></div>
+
+
+<p>However this doesn't speedup anything. If we replace the above code block like this:</p>
+<div class="highlight"><pre>349         with producer as P:
+</pre></div>
+
+
+<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
+<p>If you are unfamiliar with the with statement in Python please read
+<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
+a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
+<code>self.release()</code> on exit of the with statement.</p>
+<p>I also tried killing the with statement and using producer directly but with limited success. While
+it was not released(was non None) on subsequent iterations the memory usage grew much more and there
+wasn't any performance boost.</p>
+<h2>Conclusion</h2>
+<p>The with statement is used throughout both Celery and Kombu and I'm not at all sure if
+there's a mechanism for keep-alive connections. My time constraints are limited and I'll probably
+not spend anymore time on this problem soon.</p>
+<p>Since my use case involves task producer and consumers on localhost I'll try to workaround the
+current limitations by using Kombu directly 
+(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
+uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 11 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 2">
                 <h2 class="post-title">
                     Speeding up Celery Backends, Part 2
@@ -1273,36 +1351,6 @@ the core of their Kendo UI framework on the
                  on Tue 06 May 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/" rel="bookmark" title="Permalink to Screen Magnifier and Smart Phone!">
-                <h2 class="post-title">
-                    Screen Magnifier and Smart Phone!
-                </h2>
-            </a>
-                <p>Hey guys, I want to
-<a href="/blog/2013/08/01/laptop-vs-smartphone-part-one/">replace my laptop for a smartphone</a>.
-There's the issue with a desk working environment and one solution is to
-<a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&field-keywords=computer%20display&linkCode=ur2&tag=atodorovorg-20&url=search-alias%3Daps&linkId=HB2I5AOCIBVSZOTG">buy an external display</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />
-The other one is to use a
-<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=screen%20magnifier&linkCode=ur2&rh=i%3Aaps%2Ck%3Ascreen%20magnifier&sprefix=screen%20magnifie%2Ccomputers%2C277&tag=atodorovorg-20&url=search-alias%3Daps&linkId=KGF6F22QDNBRWAMP">screen magnifier</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-as shown on the picture.
-<img alt="Mobile Screen Magnifier" src="/images/mobile_screen_magnifier.jpg" title="Mobile Screen Magnifier" /></p>
-<p>Ultimately it should be possible to use
-any 3x Fresnel lens magnifier and make your 5" phone display into a 15" laptop
-size one, which is perfect for me!
-The magnifiers used for reading, like
-<a href="http://www.amazon.com/gp/product/B001TLJXJ8/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B001TLJXJ8&linkCode=as2&tag=atodorovorg-20&linkId=HS6EY4BELCHBZ6HC">this one</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B001TLJXJ8" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-are cheap and portable but don't look very well around the edges.</p>
-<p>None of the
-<a rel="nofollow" href="http://www.amazon.com/gp/product/B0173AZL62/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B0173AZL62&linkCode=as2&tag=atodorovorg-20&linkId=RWCHMP2LMA6OLMKO">phone screen magnifiers</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B0173AZL62" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" />
-on Amazon ships to my country so I don't have any experience with them,
-although they appear to be exactly what I need. If anyone has such a device
-at hand I'd love to hear how well this works for you. Please comment below.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 04 May 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/05/04/screen-magnifier-and-smart-phone-has-anyone-used-it/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
