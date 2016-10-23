@@ -90,6 +90,101 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/" rel="bookmark" title="Permalink to How do You Test Fonts">
+                <h2 class="post-title">
+                    How do You Test Fonts
+                </h2>
+            </a>
+                <p><a href="/blog/2014/03/03/last-week-in-fedora-qa/">Previously</a> I mentioned about testing
+fonts but didn't have any idea how this is done. Authors
+Khaled Hosny of <a href="http://www.amirifont.org/">Amiri Font</a> and Steve White of
+<a href="http://www.gnu.org/software/freefont/">GNU FreeFont</a> provided valuable insight
+and material for further reading. I've asked them:</p>
+<ul>
+<li>What is your approach for testing ?</li>
+<li>What kind of problems is your test suite designed for ?</li>
+</ul>
+<p>Here's what they say:</p>
+<blockquote>
+<p>Currently my test suite consists of text strings (or lists of code
+points) and expected output glyph sequences and then use HarfBuzz
+(through its hb-shape command line tool) to check that the fonts always
+output the expected sequence of glyphs, sometimes with the expected
+positioning as well. Amiri is a complex font that have many glyph
+substitution and positioning rules, so the test suite is designed to
+make sure those rules are always executed correctly to catch regressions
+in the font (or in HarfBuzz, which sometimes happens since the things I
+do in my fonts are not always that common).</p>
+<p>I think Lohit project do similar testing for their fonts, and HarfBuzz
+itself has a similar test suite with a bunch of nice scripts (though
+they are not installed when building HarfBuzz, yet[1]).</p>
+<p>Recently I added more kinds of tests, namely checking that OTS[2]
+sanitizes the fonts successfully as this is important for using them on
+the web, and a test for a common mistakes I made in my feature files
+that result in unexpected blank glyphs in the fonts.</p>
+<ol>
+<li><a href="https://github.com/behdad/harfbuzz/pull/12">https://github.com/behdad/harfbuzz/pull/12</a></li>
+<li><a href="https://github.com/khaledhosny/ots">https://github.com/khaledhosny/ots</a></li>
+</ol>
+<p>Khaled Hosny, Amiri Font</p>
+</blockquote>
+<blockquote>
+<p>The answer is complicated.  I'll do what I can to answer.</p>
+<p>First, the FontForge application has a "verification" function which
+can be run from a script, and which identifies numerous technical
+problems.</p>
+<p>FontForge also has a "Find Problems" function that I run by hand.</p>
+<p>The monospaced face has special restrictions, first that all glyphs of
+non-zero width must be of the same width, and second, that all glyphs
+lie within the vertical bounds of the font.</p>
+<p>Beside this, I have several other scripts that check for a few things
+that FontForge doesn't (duplicate names, that glyph slots agree with
+Unicode code within Unicode character blocks).</p>
+<p>Several tests scripts have yet to be uploaded to the version control
+system -- because I'm unsure of them.</p>
+<p>There is a more complicated check of TrueType tables, which attempts
+to find cases of tables that have been "shadowed" by the
+script/language specification of another table.  This is helpful, but
+works imperfectly.</p>
+<p>ALL THAT SAID,</p>
+<p>In the end, every script used in the font has to be visually checked.
+This process takes me weeks, and there's nothing systematic about it,
+except that I look at printout of documents in each language to see if
+things have gone awry.</p>
+<p>For a few documents in a few languages, I have images of how text
+<em>should</em> look, and can compare that visually (especially important for
+complex scripts.)</p>
+<p>A few years back, somebody wrote a clever script that generated images
+of text and compared them pixel-by-pixel.  This was a great idea, and
+I wish I could use it more effectively, but the problem was that it
+was much too sensitive.  A small change to the font (e.g. PostScript
+parameters) would cause a small but global change in the rendering.
+Also the rendering could vary from one version of the rendering
+software to another.  So I don't use this anymore.</p>
+<p>That's all I can think of right now.</p>
+<p>In fact, testing has been a big problem in getting releases out.  In
+the past, each release has taken at least two weeks to test, and then
+another week to fix and bundle...if I was lucky.  And for the past
+couple of years, I just haven't been able to justify the time
+expenditure.  (Besides this, there are still a few serious problems
+with the fonts--once again, a matter of time.)</p>
+<p>Have a look at the bugs pages, to get an idea of work being done.</p>
+<p><a href="http://savannah.gnu.org/bugs/?group=freefont">http://savannah.gnu.org/bugs/?group=freefont</a></p>
+<p>Steve White, GNU FreeFont</p>
+</blockquote>
+<p>I'm not sure if ImageMagic or PIL can help solve the rendering and compare
+problem Steve is talking about. They can definitely be used for
+<a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">image comparison</a>
+so maybe coupled with some rendering library it's worth a quick try.</p>
+<p>If you happen to know more about fonts, please join me in 
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improving overall test coverage in Fedora</a>
+by designing test suites for fonts packages.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 04 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/" rel="bookmark" title="Permalink to Last Week in Fedora QA">
                 <h2 class="post-title">
                     Last Week in Fedora QA
@@ -1138,79 +1233,6 @@ see how long it takes for them to fix it!</p>
                  on Fri 23 August 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/08/23/small-but-annoying-twitter-bug/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/08/07/notes-from-two-interesting-guadec-talks/" rel="bookmark" title="Permalink to Notes From Two Interesting GUADEC Talks">
-                <h2 class="post-title">
-                    Notes From Two Interesting GUADEC Talks
-                </h2>
-            </a>
-                <p>As this year's <a href="https://www.guadec.org/">GUADEC</a> is coming to an end
-I'm publishing an interesting update from 
-<a href="https://cz.linkedin.com/in/mullerpetr">Petr Muller</a> for 
-those who were not able to attend.
-Petr is a Senior Quality Engineer at Red Hat. His notes were
-sent to an internal QE mailing list and re-published with permission.</p>
-<div class="highlight"><pre>As this year&#39;s GUADEC happened in the same building where I have my
-other office, I decided to attend. I&#39;m sharing my notes from the two
-sessions I consider to be especially interesting for the audience of
-this mailing list:
-
-== How to not report your UX bug ==
-Speaker:    Fabiana Simões
-Blog:       http://fabianapsimoes.wordpress.com/
-Twitter:    https://twitter.com/fabianapsimoes
-
-Do not do this stuff:
-* Do not simply present a preferred solution, but describe a problem (a
-difficulty you are having, etc.)
-* Do not use &quot;This sucks&quot; idiom, not even hidden in false niceties like
-&quot;It&#39;s not user friendly&quot;
-* Do not talk for majority, when you are not entitled to (&quot;most users
-would like&quot;)
-* Do not consider all UX issues as minor: an inability to do stuff is
-not a minor issue
-
-What is actually interesting for the designer in a report?
-* What were you trying to do?
-* Why did you want to do it?
-* What did you do?
-* What happened?
-* What were your expectations?
-
-More notes
-* Write as much as needed
-* Describe what you see, did and *how you felt*
-* Print screen is your friend!
-* *Give praise*
-
-== Extreme containment measures: keeping bug reports under control ==
-Speaker:  Jean-Francois Fortin Tam
-Homepage: http://jeff.ecchi.ca
-Twitter:  https://twitter.com/nekohayo
-
-Discussed the problem lot of OS projects are having: lot of useless
-(old, irrelevant, waiting for decision no one wants to make) bug/rfe
-reports in their bug tracking systems. Lots of food for thought about
-our own projects, internal or external. Clever applications of
-principles from personal productivity systems such as GTD and Inbox Zero
-for bug tracking.  
-
-The talk was mostly an applied version of this blog post, which is worth
-reading:
-http://jeff.ecchi.ca/blog/2012/10/08/reducing-our-core-apps-software-inventory/
-</pre></div>
-
-
-<p>I particularly like the UX bug reporting guide lines. Need to take those into
-account when reporting UI issues. </p>
-<p>I still haven't read the second blog post which also looks interesting although 
-not very applicable to me. After all I'm the person reporting bugs not the one
-who decides what and when gets fixed.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 07 August 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/08/07/notes-from-two-interesting-guadec-talks/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

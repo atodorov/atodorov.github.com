@@ -145,6 +145,44 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/" rel="bookmark" title="Permalink to Compiling Twinkle SIP Phone on RHEL 7">
+                <h2 class="post-title">
+                    Compiling Twinkle SIP Phone on RHEL 7
+                </h2>
+            </a>
+                <p>One of the best SIP clients for Linux is <a href="http://twinklephone.com/">Twinkle</a>.
+However upstream is not active (or even maybe dead) and the package is missing from
+latest Fedora releases and fails to build on RHEL 7.</p>
+<p>First you need to build and install a few dependencies in the following order:
+<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=8437">ucommon</a>,
+<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=1443">ccrtp</a>,
+<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=6408">libzrtpcpp</a>.
+You will also need <a href="https://fedoraproject.org/wiki/EPEL">EPEL 7</a> enabled
+to satisfy build dependencies.</p>
+<p>Then apply the following patch to the original 
+<a href="http://koji.fedoraproject.org/koji/buildinfo?buildID=397914">twinkle.spec</a></p>
+<div class="highlight"><pre><span class="o">---</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span><span class="p">.</span><span class="n">orig</span>   <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">14</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">01.870710147</span> <span class="o">+</span><span class="mo">0300</span>
+<span class="o">+++</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span>    <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">15</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">28.734734573</span> <span class="o">+</span><span class="mo">0300</span>
+<span class="err">@@</span> <span class="o">-</span><span class="mi">47</span><span class="p">,</span><span class="mi">6</span> <span class="o">+</span><span class="mi">47</span><span class="p">,</span><span class="mi">8</span> <span class="err">@@</span>
+ 
+ <span class="nf">%build</span>
+ <span class="k">export</span> <span class="n">LDFLAGS</span><span class="o">=-</span><span class="n">lkio</span> 
+<span class="o">+</span><span class="k">export</span> <span class="n">CPPFLAGS</span><span class="o">=</span><span class="s">&quot;$CPPFLAGS -I/usr/include/libzrtpcpp/&quot;</span> 
+<span class="o">+</span><span class="nf">%__autoconf</span>
+ <span class="nf">%configure</span>
+ <span class="n">make</span> <span class="o">%</span><span class="p">{</span><span class="o">?</span><span class="n">_smp_mflags</span><span class="p">}</span>
+</pre></div>
+
+
+<p>The package now builds, installs and runs successfully on RHEL 7.
+The compiled packages and dependencies are available in my
+<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 01 May 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/" rel="bookmark" title="Permalink to Fixing Tilde and Function Keys Mapping for MacBook Air on Linux">
                 <h2 class="post-title">
                     Fixing Tilde and Function Keys Mapping for MacBook Air on Linux
@@ -2192,36 +2230,6 @@ Now let's do some testing.</p>
                  on Tue 18 November 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/" rel="bookmark" title="Permalink to HackFMI SMS Delivery Powered by Twilio">
-                <h2 class="post-title">
-                    HackFMI SMS Delivery Powered by Twilio
-                </h2>
-            </a>
-                <p>Ten days ago the regular <a href="http://hackfmi.com/">HackFMI</a> competition was held.
-This year they tried sending SMS notifications to all participants which was powered
-by <a href="http://twilio.com">Twilio</a> both in terms of infrastructure and cost.</p>
-<p><strong>Twilio</strong> provided a <strong>20$ upgrade code</strong> valid in the next 6 months for all new accounts.
-This was officially announced at the opening ceremony (although at the last possible time) of the
-competition, however no teams decided to incorporate SMS/Voice into their games.
-I'm a little disappointed by this fact.</p>
-<p>In terms of software a simple <a href="https://github.com/atodorov/django-twilio-sms">Django app</a>
-was used. It is by no means production ready but does the job and was quick to write.</p>
-<p>A little over 300 messages were sent with number distribution as follows:</p>
-<ul>
-<li>Mtel - 166</li>
-<li>Globul - 86</li>
-<li>Vivacom - 50</li>
-</ul>
-<p>The total price for Mtel and Globul messages is roughly the same because sending
-SMS to Globul via Twilio is as twice expensive. The total sums up to about 25 $.
-HackFMI team used two accounts to send the messages - one using the provided
-20$ upgrade code from Twilio and the second one was mine.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 17 November 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -2231,7 +2239,7 @@ HackFMI team used two accounts to send the messages - one using the provided
                 <a href="http://atodorov.org/index4.html"> &larr; Newest Posts</a>
         </li>
     </ul>
-    Page 5 / 13
+    Page 5 / 14
     <hr>
             </div>
         </div>
