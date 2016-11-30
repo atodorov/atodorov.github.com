@@ -1,0 +1,147 @@
+Title: Highlights from ISTA and GTAC 2016
+date: 2016-11-30 17:48
+comments: true
+Tags: events, QA, fedora.planet
+og_image: images/ista2016.jpg
+twitter_image: images/ista2016.jpg
+
+![ISTA 2016](/images/ista2016.jpg "ISTA 2016")
+
+Another two weeks have passed and I'm blogging about another 2 conferences.
+This year both
+[Innovations in Software Technologies and Automation](https://istacon.org/) and
+[Google Test Automation Conference](https://developers.google.com/google-test-automation-conference/2016/)
+happened on the same day. I was attending ISTA in Sofia during the day and
+watching the live stream of GTAC during the evenings. Here are some of the things
+that reflected on me:
+
+* How can I build my software in order to make this a perfect day for the user ?
+* People are not the problem which causes bad software to exist. When designing
+software focus on what people need not on what technology is forcing them to do;
+* You need to have blind trust in the people you work with because all the times
+projects look like they are not going to work until the very end!
+* It's good to have diverse set of characters in the company and not homogenize people;
+* Team performance grows over time. Effective teams minimize time waste
+during bad periods. They (have and) extract value from conflicts!
+* One-on-one meetings are usually like status reports which is bad. Both parties
+should bring their own issues to the table;
+* To grow an effective team members need to do things together. For example
+pair programming, writing test scenarios, etc;
+* When teams don't take actions after retrospective meetings it is usually a 
+sign of missing foundational trust;
+* QA engineers need to be present at every step of the software development
+life-cycle! This is something I teach my students and have been confirmed by
+many friends in the industry;
+* Agile is all about data, even when it comes to testing and quality. We need to
+decompose and measure iteratively;
+* Agile is also about really skillful people. One way to boost your skills is to
+adopt the T-shaped specialist model;
+* In agile iterative work and continuous delivery is king so QA engineers need to focus
+even more on visualization (I will also add documentation), refactoring and code reviews;
+* Agile teams need to give opportunities to team members for taking risk and taking
+ownership of their actions in the gray zone (e.g. actions which isn't clear who should
+be doing).
+
+
+In the brave new world of micro services end to end testing is no more! We test each level
+in isolation but keep stable contracts/APIs between levels. That way we can reduce
+the test burden and still guarantee an acceptable level of risk. This change in
+software architecture (monolithic vs. micro) leads to change in technologies (one framework/language
+vs. what's best for the task) which in turn leads to changes in testing approach and
+testing tools. This ultimately leads to changing people on the team because they now
+need different skills than when they were hired! This circles back to the T-shaped
+specialist model and the fact that QA should be integrated in every step of the way!
+Thanks to Denitsa Evtimova and Lyudmila Labova for this wisdom and the quote pictured
+above.
+
+
+Aneta Petkova talked about monitoring of test results which is a topic very close to my work.
+Imagine you have your automated test suite but still get failures occasionally. Are these
+bugs or something else broke ? If they are bugs and you are waiting for them to be fixed
+do you execute the tests against the still broken build or wait ? If you do, what additional info
+do you get from these executions vs. how much time do you spend figuring out
+"oh, that's still not fixed or geez, here's another hidden bug in the code" ?
+
+Her team has modified their test execution framework (what I'd usually call a test runner
+or even test lab) to have knowledge about issues in JIRA and skip some tests
+when no meaningful information can be extracted from them. I have to point out that this
+approach may require a lot of maintenance in environments where you have failures due to
+infrastructure issues. This idea connects very nicely
+with the general idea behind this year's GTAC - don't run tests if you don't need to aka
+smart test execution!
+
+[Boris Prikhodskiy](https://www.youtube.com/watch?v=2yN53k9jz3U#t=2h54m0s)
+shared a very simple rule. Don't execute tests
+
+* which have 100 % pass rate;
+* during the last month;
+* and have been executed at least 100 times before that!
+
+This is what Unity does for their numerous topic branches and reduces test time
+with 60-70 percent. All of the test suite is still executed against their trunk branch
+and PR merge queue branches!
+
+
+At GTAC there were several presentations about speeding up test execution time.
+[Emanuil Slavov](https://www.youtube.com/watch?v=hbocBqOpuAo#t=3h18m25s) was very practical
+but the most important thing he said was that a fast test suite is the result of many
+conscious actions which introduced small improvements over time. His team had assigned
+themselves the task to iteratively improve their test suite performance and at every step
+of the way they analyzed the existing bottlenecks and experimented with possible solutions.
+
+The steps in particular are (on a single machine):
+
+* Execute tests in dedicated environment;
+* Start with empty database, not used by anything else; This also leads to
+adjustments in your test suite architecture and DB setup procedures;
+* Simulate and stub external dependencies like 3rd party services;
+* Move to containers but beware of slow disk I/O;
+* Run database in memory not on disk because it is a temporary DB anyway;
+* Don't clean test data, just trash the entire DB once you're done;
+* Execute tests in parallel which should be the last thing to do!
+* Equalize workload between parallel threads for optimal performance;
+* Upgrade the hardware (RAM, CPU) aka vertical scaling;
+* Add horizontal scaling (probably with a messaging layer);
+
+
+[John Micco and Atif Memon](https://www.youtube.com/watch?v=2yN53k9jz3U#t=6h38m7s)
+talked about flaky tests at Google:
+
+* 84% of the transitions from PASS to FAIL are flakes;
+* Almost 16% of their 3.5 million tests have some level of flakiness;
+* Flaky failures frequently block and delay releases;
+* Google spends between 2% and 16% of their CI compute resources
+re-running flaky tests;
+* Flakiness insertion speed is comparable to flakiness removal speed!
+* The optimal setting is 2 persons modifying the same source file at the same time.
+This leads to minimal chance of breaking stuff;
+* Fix or delete flaky tests because you don't get meaningful value out of them.
+
+So Google want to stop a test execution before it is executed if historical
+data shows that the test has attributes of flakiness. The research they talk
+about utilizes tons of data collected from Google's CI environment which was
+the most interesting fact for me. Indeed if we use data to decide which features
+to build for our customers then why not use data to govern the process of testing?
+In addition to the video you should read John's post
+[Flaky Tests at Google and How We Mitigate Them](https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html).
+
+
+At the end I'd like to finish with 
+Rahul Gopinath's
+[Code Coverage is a Strong Predictor of Test suite Effectiveness in the Real World](https://www.youtube.com/watch?v=hbocBqOpuAo#t=4h57m30s).
+He basically said that code coverage metrics as we know them today are still
+the best practical indicator of how good a test suite is. He argues that mutation testing is slow
+and only provides additional 4% to a well designed test suite. This is absolutely the opposite of
+what Laura Inozemtseva presented last year in her
+[Coverage is Not Strongly Correlated with Test Suite Effectiveness](https://www.youtube.com/watch?v=sAfROROGujU&list=PLSIUOFhnxEiCWGsN9t5A-XOhRbmz54IS1&index=25)
+lightning talk. Rahul also made a point about sample size in the two research papers
+and I had the impression he's saying Laura didn't do a proper academic research.
+
+I'm a heavy contributor to Cosmic Ray, the mutation testing tool for Python and also use
+mutation testing in my daily job so this is a very interesting topic indeed. I've asked
+fellow tool authors to have a look at both presentations and share their opinions.
+I also have an idea about a practical experiment to see if full branch coverage and
+full mutation coverage will be able to find a known bug in a piece of software
+I wrote. I will be writing about this experiment next week so stay tuned.
+
+Thanks for reading and happy testing!
