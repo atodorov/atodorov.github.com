@@ -97,6 +97,70 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/" rel="bookmark" title="Permalink to How to create auxiliary build jobs in Travis-CI matrix">
+                <h2 class="post-title">
+                    How to create auxiliary build jobs in Travis-CI matrix
+                </h2>
+            </a>
+                <p><img alt="Auxiliary build job in Travis-CI" src="/images/travisci_extra_job_in_matrix.png" title="Auxiliary build job in Travis-CI" /></p>
+<p>In Travis-CI when you combine the three main configuration options of
+<em>Runtime (language)</em>, <em>Environment</em> and <em>Exclusions/Inclusions</em> you get a
+<a href="https://docs.travis-ci.com/user/customizing-the-build#Build-Matrix">build matrix</a>
+of all possible combinations! For example, for <em>django-chartit</em> the matrix includes
+43 build jobs, spread across various Python and Django versions. For reference
+see <a href="https://travis-ci.org/chartit/django-chartit/builds/181115880">Build #75</a>.</p>
+<p>For <em>django-chartit</em> I wanted to have an additional build job which would execute
+pylint. I wanted the job to be independent because currently pylint produces lots
+of errors and warnings. Having an independent job instead of integrating pylint
+together with all jobs makes it easier to see if any of the functional tests failed.</p>
+<p>Using the inclusion functionality of Travis-CI I was able to define an auxiliary
+build job. The trick is to provide sane environment defaults for all
+build jobs (regular and auxiliary ones) so you don't have to expand your environment
+section! In this case the change looks like this</p>
+<div class="highlight"><pre><span class="gh">diff --git a/.travis.yml b/.travis.yml</span>
+<span class="gh">index 67f656d..9b669f9 100644</span>
+<span class="gd">--- a/.travis.yml</span>
+<span class="gi">+++ b/.travis.yml</span>
+<span class="gu">@@ -2,6 +2,8 @@ after_success:</span>
+ - coveralls
+ before_install:
+ - pip install coveralls
+<span class="gi">+- if [ -z &quot;$_COMMAND&quot; ]; then export _COMMAND=coverage; fi</span>
+<span class="gi">+- if [ -z &quot;$_DJANGO&quot; ]; then export _DJANGO=1.10.4; fi</span>
+ env:
+ - !!python/unicode &#39;_DJANGO=1.10&#39;
+ - !!python/unicode &#39;_DJANGO=1.10.2&#39;
+<span class="gu">@@ -41,6 +43,10 @@ matrix:</span>
+     python: 3.3
+   - env: _DJANGO=1.10.4
+     python: 3.3
+<span class="gi">+  include:</span>
+<span class="gi">+  - env: _COMMAND=pylint</span>
+<span class="gi">+    python: 3.5</span>
+<span class="gi">+</span>
+ notifications:
+   email:
+     on_failure: change
+<span class="gu">@@ -50,4 +56,4 @@ python:</span>
+ - 3.3
+ - 3.4
+ - 3.5
+<span class="gd">-script: make coverage</span>
+<span class="gi">+script: make $_COMMAND</span>
+</pre></div>
+
+
+<p>For more info take a look at
+<a href="https://github.com/chartit/django-chartit/commit/b22eda7cd67a062f49a0f60b8ac51383e4f8c3a5">commit b22eda7</a>
+and <a href="https://travis-ci.org/chartit/django-chartit/builds/183883813">Build #77</a>. Note
+Job #77.44!</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 16 December 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/" rel="bookmark" title="Permalink to Overridden let() causes segfault with RSpec">
                 <h2 class="post-title">
                     Overridden let() causes segfault with RSpec
@@ -1583,60 +1647,6 @@ data structures.</p>
                  on Wed 06 July 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/07/06/testing-data-structures-in-pykickstart/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/06/09/dont-upgrade-galaxy-s5-to-android-60/" rel="bookmark" title="Permalink to Don't Upgrade Galaxy S5 to Android 6.0">
-                <h2 class="post-title">
-                    Don't Upgrade Galaxy S5 to Android 6.0
-                </h2>
-            </a>
-                <p>Samsung is shipping out buggy software like a boss, no doubt about it.
-I've written a bit about <a href="http://atodorov.org/blog/categories/samsung/">their bugs</a> previously.
-However I didn't expect them to release Android 6.0.1 and render my
-<a href="http://amzn.to/1tiiqze">Galaxy S5</a> completely useless with respect
-to the feature I use the most.</p>
-<p><img alt="Lockscreen" src="/images/samsung/lockscreen_bug.jpg" title="Lockscreen" /></p>
-<h2>Tell me the weather for Brussels</h2>
-<p>So on Monday I've let Android upgrade to 6.0.1 to be completely surprised
-that the lockscreen shows the weather report for Brussels, while
-I'm based in Sofia. I've checked <em>AccuWeather</em> (I did go to
-<a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/">Brussels earlier this year</a>)
-but it displayed only Sofia and Thessaloniki. To get rid of this widget
-go to <code>Settings -&gt; Lockscreen -&gt; Additional information</code> and turn it off!</p>
-<p>I think this weather report comes from GPS/Location based data, which I
-have turned off by default but did use a while back ago. After turning
-the widget off and back on it didn't appear on the lockscreen. I suspect
-they fall back to showing the last good known value when data is missing
-instead of handling the error properly.</p>
-<h2>Apps are gone</h2>
-<p>Some of my installed apps are missing now. So far I've noticed that the
-<em>Gallery</em> and <em>S Health</em> icons have disappeared from my homescreen. I think
-<em>S Health</em> came from Samsung's app store but still they shouldn't have removed
-it silently. Now I wonder what happened to my data.</p>
-<p>I don't see why <em>Gallery</em> was removed though. The only way to view pictures
-is to use the camera app preview functionality which is kind of grose.</p>
-<h2>Grayscale in powersafe mode is gone</h2>
-<p>The killer feature on these higher end Galaxy devices is the <em>Powersafe mode</em>
-and <em>Ultra Powersafe mode</em>. I use them a lot and by default have my phone in
-<em>Powersafe mode</em> with grayscale colors enabled. It is easier on the eyes and
-also safes your battery.</p>
-<p><strong>NOTE:</strong> grayscale colors don't affect some displays but these devices use
-AMOLED screens which need different amounts of power to display different
-colors. More black means less power required!</p>
-<p>After the upgrade grayscale is no more. There's not even an on/off switch.
-I've managed to find a workaround though. First you need to enable developer mode
-by tapping 7 times on <code>About device -&gt; Build number</code>. Then go to
-<code>Settings -&gt; Developer options</code>, look for the <code>Hardware Accelerated Rendering</code>
-section and select <code>Simulate Color Space -&gt; Monochromacy</code>! This is a bit ugly
-hack and doesn't have the convenience of turning colors on/off by tapping
-the quick Powersafe mode button at the top of the screen!</p>
-<p>It looks like Samsung didn't think this upgrade well enough or didn't test it
-well enough ? In my line of work (installation and upgrade testing) I've rarely
-seen such a big blunder. Thanks for reading and happy testing!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 09 June 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/06/09/dont-upgrade-galaxy-s5-to-android-60/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
