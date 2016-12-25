@@ -348,5 +348,5 @@ As a bonus to this article let me share a transcript from the
 As you can see members in the community are strong supporters of mutation testing, all of them
 having much more experience than I do.
 
-
-Thanks for reading and happy testing!
+I'd like to hear more practical examples if you are able to share them since I'm
+collecting conference material on this topic. Thanks for reading and happy testing!
