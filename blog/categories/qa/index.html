@@ -90,6 +90,331 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/" rel="bookmark" title="Permalink to Mutation Testing vs. Coverage">
+                <h2 class="post-title">
+                    Mutation Testing vs. Coverage
+                </h2>
+            </a>
+                <p>At GTAC 2015 Laura Inozemtseva made a lightning talk titled
+<a href="https://www.youtube.com/watch?v=sAfROROGujU&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;index=47">Coverage is Not Strongly Correlated with Test Suite Effectiveness</a>
+which is the single event that got me hooked up with mutation testing.
+This year, at GTAC 2016, Rahul Gopinath made a counter argument
+with his lightning talk
+<a href="https://www.youtube.com/watch?v=NKEptA3KP08&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;index=1">Code Coverage is a Strong Predictor of Test Suite Effectiveness</a>.
+So which one is better ? I urge you to watch both talks and take notes before
+reading about my practical experiment and other opinions on the topic!</p>
+<p><strong>DISCLAIMER:</strong> I'm a heavy contributor to Cosmic-Ray, the mutation testing tool for Python
+so my view is biased!</p>
+<p>Both Laura and Rahul (you will too) agree that a test suite effectiveness depends
+on the strength of its oracles. In other words the assertions you make in your tests.
+This is what makes a test suite good and determines its ability to detect bugs when
+present. I've decided to use <a href="https://github.com/MrSenko/pelican-ab">pelican-ab</a> as
+a practical example. pelican-ab is a plugin for Pelican, the static site generator
+for Python. It allows you to generate A/B experiments by writing out the content
+into different directories and adjusting URL paths based on the experiment name.</p>
+<h2>Can 100% code coverage detect bugs</h2>
+<p>Absolutely <strong>NOT</strong>! In version 0.2.1,
+<a href="https://github.com/MrSenko/pelican-ab/commit/ef1e2117ad8ffa5b9fa8470d32d54a36ccb140bb">commit ef1e211</a>,
+pelican-ab had the following bug:</p>
+<div class="highlight"><pre><span class="n">Given</span><span class="o">:</span> <span class="n">Pelican</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">DELETE_OUTPUT_DIRECTORY</span> <span class="k">is</span> <span class="kd">set</span> <span class="n">to</span> <span class="n">True</span> <span class="o">(</span><span class="n">which</span> <span class="n">it</span> <span class="k">is</span> <span class="n">by</span> <span class="k">default</span><span class="o">)</span>
+<span class="n">When</span><span class="o">:</span> <span class="n">we</span> <span class="n">generate</span> <span class="n">several</span> <span class="n">experiments</span> <span class="n">using</span> <span class="n">the</span> <span class="n">commands</span><span class="o">:</span>
+    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;control&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
+    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;123&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
+    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
+    <span class="n">make</span> <span class="n">publish</span>
+<span class="n">Actual</span> <span class="n">result</span><span class="o">:</span> <span class="n">only</span> <span class="n">the</span> <span class="s2">&quot;xy&quot;</span> <span class="n">experiment</span> <span class="o">(</span><span class="n">the</span> <span class="n">last</span> <span class="n">one</span><span class="o">)</span> <span class="n">would</span> <span class="n">be</span> <span class="n">published</span> <span class="n">online</span><span class="o">.</span>
+<span class="n">And</span><span class="o">:</span> <span class="n">all</span> <span class="n">of</span> <span class="n">the</span> <span class="n">other</span> <span class="n">contents</span> <span class="n">will</span> <span class="n">be</span> <span class="n">deleted</span><span class="o">.</span>
+
+<span class="n">Expected</span> <span class="n">result</span><span class="o">:</span> <span class="n">content</span> <span class="n">from</span> <span class="n">all</span> <span class="n">experiments</span> <span class="n">will</span> <span class="n">be</span> <span class="n">available</span> <span class="n">under</span> <span class="n">the</span> <span class="n">output</span> <span class="n">directory</span><span class="o">.</span>
+</pre></div>
+
+
+<p>This is because before each invocation Pelican deletes the output directory and
+re-creates the entire content structure. The bug was not caught regardless of
+having 100% line + branch coverage. See
+<a href="https://travis-ci.org/MrSenko/pelican-ab/builds/129514715">Build #10</a> for more
+info.</p>
+<h2>Can 100% mutation coverage detect bugs</h2>
+<p>So I've branched off since commit ef1e211 into the
+<a href="https://github.com/MrSenko/pelican-ab/commits/mutation_testing_vs_coverage_experiment">mutation_testing_vs_coverage_experiment branch</a>
+(requires Pelican==3.6.3).</p>
+<p>After initial execution of Cosmic Ray I have 2 mutants left:</p>
+<div class="highlight"><pre>$ cosmic-ray run --baseline=10 --test-runner=unittest example.json pelican_ab -- tests/
+$ cosmic-ray report example.json 
+job ID 29:Outcome.SURVIVED:pelican_ab
+command: cosmic-ray worker pelican_ab mutate_comparison_operator 3 unittest -- tests/
+<span class="gd">--- mutation diff ---</span>
+<span class="gd">--- a/home/senko/pelican-ab/pelican_ab/__init__.py</span>
+<span class="gi">+++ b/home/senko/pelican-ab/pelican_ab/__init__.py</span>
+<span class="gu">@@ -14,7 +14,7 @@</span>
+     def __init__(self, output_path, settings=None):
+         super(self.__class__, self).__init__(output_path, settings)
+         experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
+<span class="gd">-        if (experiment != jinja_ab._ENV_DEFAULT):</span>
+<span class="gi">+        if (experiment &gt; jinja_ab._ENV_DEFAULT):</span>
+             self.output_path = os.path.join(self.output_path, experiment)
+             Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
+             URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
+
+job ID 33:Outcome.SURVIVED:pelican_ab
+command: cosmic-ray worker pelican_ab mutate_comparison_operator 7 unittest -- tests/
+<span class="gd">--- mutation diff ---</span>
+<span class="gd">--- a/home/senko/pelican-ab/pelican_ab/__init__.py</span>
+<span class="gi">+++ b/home/senko/pelican-ab/pelican_ab/__init__.py</span>
+<span class="gu">@@ -14,7 +14,7 @@</span>
+     def __init__(self, output_path, settings=None):
+         super(self.__class__, self).__init__(output_path, settings)
+         experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
+<span class="gd">-        if (experiment != jinja_ab._ENV_DEFAULT):</span>
+<span class="gi">+        if (experiment not in jinja_ab._ENV_DEFAULT):</span>
+             self.output_path = os.path.join(self.output_path, experiment)
+             Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
+             URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
+
+total jobs: 33
+complete: 33 (100.00%)
+survival rate: 6.06%
+</pre></div>
+
+
+<p>The last one, job 33 is equivalent mutation. The first one, job 29 is killed by the test
+added in
+<a href="https://github.com/MrSenko/pelican-ab/commit/b8bff85eeca6c18fbf62cac55fd1a0d64295c43c">commit b8bff85</a>.
+For all practical purposes we now have 100% code coverage and 100% mutation coverage.
+The bug described above still exists thought.</p>
+<h2>How can we detect the bug</h2>
+<p>The bug isn't detected by any test because
+we don't have tests designed to perform and validate the exact same steps that a
+physical person will execute when using pelican-ab. Such test is added in
+<a href="https://github.com/MrSenko/pelican-ab/commit/ca85bd042d783f2f6551ae17f16b29aa3750711b">commit ca85bd0</a>
+and you can see that it causes
+<a href="https://travis-ci.org/MrSenko/pelican-ab/builds/186510356">Build #22</a> to fail.</p>
+<p>Experiment with setting <code>DELETE_OUTPUT_DIRECTORY=False</code> in <code>tests/pelicanconf.py</code> and
+the test will PASS!</p>
+<h2>Is pelican-ab bug free</h2>
+<p>Not of course. Even after 100% code and mutation coverage and after manually constructing
+a test which mimics user behavior there is at least one more bug present. There
+is a pylint <code>bad-super-call</code> error, fixed in
+<a href="https://github.com/MrSenko/pelican-ab/commit/193e3db9e7d021e11b54f54ac8b8718651c633c8">commit 193e3db</a>.
+For more information about the error see
+<a href="http://mrsenko.com/blog/atodorov/2016/09/14/beware-of-recursion-loop-when-using-super/">this blog post</a>.</p>
+<h2>Other bugs found</h2>
+<p>During my humble experience with mutation testing so far I've added
+<a href="https://github.com/rhinstaller/pykickstart/pulls/atodorov">quite a few new tests</a>
+and discovered two bugs which went unnoticed for years. The first one is
+constructor parameter not passed to parent constructor,
+see
+<a href="https://github.com/rhinstaller/pykickstart/pull/96/files#diff-f4294048719aeac4da7a86eee0fbdfd3">PR#96, pykickstart/commands/authconfig.py</a></p>
+<div class="highlight"><pre>     def __init__(self, writePriority=0, *args, **kwargs):
+<span class="gd">-        KickstartCommand.__init__(self, *args, **kwargs)</span>
+<span class="gi">+        KickstartCommand.__init__(self, writePriority, *args, **kwargs)</span>
+         self.authconfig = kwargs.get(&quot;authconfig&quot;, &quot;&quot;)
+</pre></div>
+
+
+<p>The second bug is parameter being passed to parent class constructor,
+but the parent class doesn't care about this parameter. For example
+<a href="https://github.com/rhinstaller/pykickstart/pull/96/files#diff-7d2833450b6e1c9a94eb90e7f171ff52">PR#96, pykickstart/commands/driverdisk.py</a></p>
+<div class="highlight"><pre><span class="gd">-    def __init__(self, writePriority=0, *args, **kwargs):</span>
+<span class="gd">-        BaseData.__init__(self, writePriority, *args, **kwargs)</span>
+<span class="gi">+    def __init__(self, *args, **kwargs):</span>
+<span class="gi">+        BaseData.__init__(self, *args, **kwargs)</span>
+</pre></div>
+
+
+<p>Also note that pykickstart has nearly 100% test coverage as a whole
+and the affected files were 100% covered as well.</p>
+<p>The bugs above don't seem like a big deal and when considered out of context
+are relatively minor. However pykickstart's biggest client is anaconda, the Fedora
+and Red Hat Enterprise Linux installation program. Anaconda uses pykickstart to
+parse and generate text files (called kickstart files) which contain information
+for driving the installation in a fully automated manner. This is used by everyone
+who installs Linux on a large scale and is pretty important functionality!</p>
+<p><code>writePriority</code> controls the order of which individual commands are written to file
+at the end of the installation. In rare cases the order of commands may depend
+on each other. Now imagine the bugs above produce a disordered kickstart file,
+which a system administrator thinks should work but it doesn't. It may be the case
+this administrator is trying to provision hundreds of Linux systems to bootstrap
+a new data center or maybe performing disaster recovery. You get the scale of
+the problem now, don't you?</p>
+<p>To be honest I've seen bugs of this nature but not in the last several years.</p>
+<p>This is all to say a minor change like this may have
+an unexpectedly big impact somewhere down the line.</p>
+<h2>Conclusion</h2>
+<p>With respect to the above findings and my bias I'll say the following:</p>
+<ul>
+<li>Neither 100% coverage, nor 100% mutation coverage are a silver bullet against bugs;</li>
+<li>100% mutation coverage appears to be better than 100% code coverage in practice;</li>
+<li>Mutation testing clearly shows out pieces of code which need refactoring
+  which in turn minimizes the number of possible mutations;</li>
+<li>Mutation testing causes you to write more asserts and construct more detailed tests
+  which is always a good thing when testing software;</li>
+<li>You can't replace humans designing test cases just yet but can give them tools
+  to allow them to write more and better tests;</li>
+<li>You should not rely on a single tool (or two of them) because tools are only
+  able to find bugs they were designed for!</li>
+</ul>
+<h2>Bonus: What others think</h2>
+<p>As a bonus to this article let me share a transcript from the
+<a href="https://mutation-testing.slack.com">mutation-testing.slack.com</a> community:</p>
+<div class="highlight"><pre>atodorov 2:28 PM
+Hello everyone, I&#39;d like to kick-off a discussion / interested in what you think about
+Rahul Gopinath&#39;s talk at GTAC this year. What he argues is that test coverage is still
+the best metric for how good a test suite is and that mutation coverage doesn&#39;t add much
+additional value. His talk is basically the opposite of what @lminozem presented last year
+at GTAC. Obviously the community here and especially tools authors will have an opinion on
+these two presentations.
+
+tjchambers 12:37 AM
+@atodorov I have had the &quot;pleasure&quot; of working on a couple projects lately that illustrate
+why LOC test coverage is a misnomer. I am a **strong** proponent of mutation testing so will
+declare my bias.
+
+The projects I have worked on have had a mix of test coverage - one about 50% and
+another &gt; 90%.
+
+In both cases however there was a significant difference IMO relative to mutation coverage
+(which I have more faith in as representative of true tested code).
+
+Critical factors I see when I look at the difference:
+
+- Line length: in both projects the line lengths FAR exceeded visible line lengths that are
+&quot;acceptable&quot;. Many LONGER lines had inline conditionals at the end, or had ternary operators
+and therefore were in fact only 50% or not at all covered, but were &quot;traversed&quot;
+
+- Code Conviction (my term): Most of the code in these projects (Rails applications) had
+significant Hash references all of which were declared in &quot;traditional&quot; format hhh[:symbol].
+So it was nearly impossible for the code in execution to confirm the expectation of the
+existence of a hash entry as would be the case with stronger code such as &quot;hhh.fetch(:symbol)&quot;
+
+- Instance variables abound: As with most of Rails code the number of instance variables
+in a controller are extreme. This pattern of reference leaked into all other code as well,
+making it nearly impossible with the complex code flow to ascertain proper reference
+patterns that ensured the use of the instance variables, so there were numerous cases
+of instance variable typos that went unnoticed for years. (edited)
+
+- .save and .update: yes again a Rails issue, but use of these &quot;weak&quot; operations showed again
+that although they were traversed, in many cases those method references could be removed
+during mutation and the tests would still pass - a clear indication that save or update was
+silently failing.
+
+I could go on and on, but the mere traversal of a line of code in Ruby is far from an indication
+of anything more than it may be &quot;typed in correctly&quot;.
+
+@atodorov Hope that helps.
+
+LOC test coverage is a place to begin - NOT a place to end.
+
+atodorov 1:01 AM
+@tjchambers: thanks for your answer. It&#39;s too late for me here to read it carefully but
+I&#39;ll do it tomorrow and ping you back
+
+dkubb 1:13 AM
+As a practice mutation testing is less widely used. The tooling is still maturing. Depending on your
+language and environment you might have widely different experiences with mutation testing
+
+I have not watched the video, but it is conceivable that someone could try out mutation testing tools
+for their language and conclude it doesn’t add very much
+
+mbj 1:14 AM
+Yeah, I recall talking with @lminozem here and we identified that the tools she used likely
+show high rates of false positives / false coverage (as the tools likely do not protect against
+certain types of integration errors)
+
+dkubb 1:15 AM
+IME, having done TDD for about 15+ years or so, and mutation testing for about 6 years, I think
+when it is done well it can be far superior to using line coverage as a measurement of test quality
+
+mbj 1:16 AM
+Any talk pro/against mutation testing must, as the tool basis is not very homogeneous, show a non consistent result.
+
+dkubb 1:16 AM
+Like @tjchambers says though, if you have really poor line coverage you’re not going to
+get as much of a benefit from mutation testing, since it’s going to be telling you what
+you already know — that your project is poorly tested and lots of code is never exercised
+
+mbj 1:19 AM
+Thats a good and likely the core point. I consider that mutation testing only makes sense
+when aiming for 100% (and this is to my experience not impractical).
+
+tjchambers 1:20 AM
+I don&#39;t discount the fact that tool quality in any endeavor can bring pro/con judgements
+based on particular outcomes
+
+dkubb 1:20 AM
+What is really interesting for people is to get to 100% line coverage, and then try mutation
+testing. You think you’ve done a good job, but I guarantee mutation testing will find dozens
+if not hundreds of untested cases .. even in something with 100% line coverage
+
+To properly evaluate mutation testing, I think this process is required, because you can’t
+truly understand how little line coverage gives you in comparison
+
+tjchambers 1:22 AM
+But I don&#39;t need a tool to tell me that a 250 character line of conditional code that by
+itself would be an oversized method AND counts more because there are fewer lines in the
+overall percentage contributes to a very foggy sense of coverage.
+
+dkubb 1:22 AM
+It would not be unusual for something with 100% line coverage to undergo mutation testing
+and actually find out that the tests only kill 60-70% of possible mutations
+
+tjchambers 1:22 AM
+@dkubb or less
+
+dkubb 1:23 AM
+usually much less :stuck_out_tongue:
+
+it can be really humbling
+
+mbj 1:23 AM
+In this discussion you miss that many test suites (unless you have noop detection):
+Will show false coverage.
+
+tjchambers 1:23 AM
+When I started with mutant on my own project which I developed I had 95% LOC coverage
+
+mbj 1:23 AM
+Test suites need to be fixed to comply to mutation testing invariants.
+
+tjchambers 1:23 AM
+I had 34% mutation coverage
+
+And that was ignoring the 5% that wasn&#39;t covered at all
+
+mbj 1:24 AM
+Also if the tool you compare MT with line coverage on: Is not very strong,
+the improvement may not be visible.
+
+dkubb 1:24 AM
+another nice benefit is that you will become much better at enumerating all
+the things you need to do when writing tests
+
+tjchambers 1:24 AM
+@dkubb or better yet - when writing code.
+
+The way I look at it - the fewer the alive mutations the better the test,
+the fewer the mutations the better the code.
+
+dkubb 1:29 AM
+yeah, you can infer a kind of cyclomatic complexity by looking at how many mutations there are
+
+tjchambers 1:31 AM
+Even without tests (not recommended) you can judge a lot from the mutations themselves.
+
+I still am an advocate for mutations/LOC metric
+</pre></div>
+
+
+<p>As you can see members in the community are strong supporters of mutation testing, all of them
+having much more experience than I do.</p>
+<p>I'd like to hear more practical examples if you are able to share them since I'm
+collecting conference material on this topic. Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 27 December 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/" rel="bookmark" title="Permalink to How to create auxiliary build jobs in Travis-CI matrix">
                 <h2 class="post-title">
                     How to create auxiliary build jobs in Travis-CI matrix
@@ -1449,126 +1774,6 @@ and I think the email server doesn't follow summer time.</p>
                  on Sun 17 April 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/" rel="bookmark" title="Permalink to How To Hire Software Testers, Pt. 2">
-                <h2 class="post-title">
-                    How To Hire Software Testers, Pt. 2
-                </h2>
-            </a>
-                <p>In my
-<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">previous post</a> I have
-described the process I follow when interviewing candidates for a QA position.
-The first question is designed to expose the applicant's way of thinking.
-My second question is designed to examine their technical understanding
-and to a lesser extent their way of thinking.</p>
-<p><img alt="Sudoku" src="/images/sudoku.png" title="Sudoku" /></p>
-<h2>How do You Test a Sudoku Solving Function</h2>
-<p>You have implementation of a sudoku solver function with the following pseudocode:</p>
-<div class="highlight"><pre>func Sudoku(Array[2]) {
-    ...
-    return Array[2]
-}
-</pre></div>
-
-
-<ul>
-<li>The function solves a sudoku puzzle;</li>
-<li>Input parameter is a two-dimensional array with the known numbers (from 1 to 9) in the Sudoku grid;</li>
-<li>The output is a two-dimensional array with the numbers from the solved puzzle.</li>
-</ul>
-<p>You have 10 minutes to write down a list of all test cases you can think of!</p>
-<h2>Behind The Scenes</h2>
-<p>One set of possible tests is to examine the input and figure out if the
-function has been passed valid data.
-In the real-world programs interact with each other, they are not alone.
-Sometimes it happens that a valid output from one program isn't a
-valid input for the next one. Also we have malicious users who will try to
-break the program.</p>
-<p>If a person manages to test for this case then
-I know they have a bit more clue about how software is used in the real-world.
-This also touches a bit on white-box testing, where the tester has full info
-about the software under test. In this example the implementation is
-intentionally left blank.</p>
-<p>OTOH I've seen answers where the applicant blindly assumes that the input
-is 1-9, because the spec says so, and excludes the entire input testing from
-their scope. I classify this answer as immediate failure, because a tester should
-never assume anything and test to verify their initial conditions are indeed
-as stated in the documentation.</p>
-<p>Another set of possible tests is to verify the correct work of the function.
-That is to verify the proposed Sudoku solution is indeed following the rules
-of the game. This is what we usually refer to black-box testing. The tester
-doesn't know how the SUT works internally, they only know the input data and
-the expected output. </p>
-<p>If a person fails to describe at least one such test case
-they have essentially failed the question. What is the point of a SUT which
-doesn't crash (suppose that all previous tests passed) but doesn't
-produce the desired correct result ?</p>
-<p>Then there are test cases related to the environment in which this Sudoku
-solver function operates. This is where I examine the creativity of the person,
-their familiarity with other platforms and to some extent their thinking out of
-the box. Is the Sudoku solver iterative or recursive ? What if we're on an
-embedded system and recursion is too heavy for it ? How much power does the
-function require, how fast it works, etc.</p>
-<p>A person that provides at least one answer in this category has bonus points
-over the others who didn't. IMO it is very important for a tester to have
-experience with various platforms and environments because this helps them
-see edge cases which others will not be able to see. I also consider a strong
-plus if the person shows they can operate outside their comfort zone.</p>
-<p>If we have time I may ask the applicant to write the tests using a programming
-language they know. This is to verify their coding and automation skills.</p>
-<p>OTOH having the tests as code will show me how much the person knows about testing
-vs. coding. I've seen solutions where people write a for loop, looping over all
-numbers from 1 to 100 and testing if they are a valid input to <code>Sudoku()</code>.
-Obviously this is pointless and they failed the test.</p>
-<p>Last but not least, the question asks for testing a particular Sudoku solver
-implementation. I expect the answers to be designed around the given function.
-However I've seen answers designed around a
-<a href="http://sudoku-solutions.com/">Sudoku solver website</a> or described as
-intermediate states in an interactive Sudoku game (e.g. wrong answers shown in red).
-I consider these invalid because the question is to test a particular
-given function, not anything Sudoku related. If you do this in real-life that
-means you are not testing the SUT directly but maybe touching it indirectly
-(at best). This is not what a QA job is about.</p>
-<h2>What Are The Correct Answers</h2>
-<p>Here are some of the possible tests.</p>
-<ul>
-<li>Test with single dimensional input array - we expect an error;</li>
-<li>Test with 3 dimensional input array - we expect an error;</li>
-<li>Then proceed testing with 2 dimensional array;</li>
-<li>Test with number less than 1 (usually 0) - expect error;</li>
-<li>Test with number greater than 9 (usually 10) - expect error;</li>
-<li>Test how the function handles non-numerical data - chars &amp; symbols
-(essentially the same thing for our function);</li>
-<li>Test with strings which actually represent a number, e.g. "1";</li>
-<li>Test with floating point numbers, e.g. 1.0, 2.0, 3.0 - may or may not
-work depending on how the code is written;</li>
-<li>If floating point numbers are accepted, then test with a different locale.
-Is "1.0" the same as "1,0";</li>
-<li>Test with <code>null</code>, <code>nil</code>, <code>None</code> (whatever the language supports) -
-this should be a valid value for unknown numbers and not cause a crash;</li>
-<li>Test if the function validates that the provided input follows the
-Sudoku rules by passing it duplicate numbers in one row, column or
-square. It should produce an error;</li>
-<li>Test if the input data contains the minimum number of givens, 17
-for a general Sudoku, so that a solution can be found. Otherwise the function
-may go into an
-<a href="http://atodorov.org/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/">endless loop</a>;</li>
-<li>Verify the proposed solution conforms to Sudoku rules;</li>
-<li>Test with a fully solved puzzle as input - output should be exactly the same;</li>
-<li>If on mobile, measure battery consumption for 1 minute of operation. I've
-seen a game which uses 1% battery power for 1 minute of game play;</li>
-<li>Test for buffer overflows;</li>
-<li>Test for speed of execution (performance);</li>
-<li>Test performance on single and multiple (core) CPUs - depending on the
-language and how the function is written this may produce a difference or not;</li>
-</ul>
-<p>I'm sure I'm missing something so please use the comments below to tell me your suggestions.</p>
-<p>Thanks for reading and happy testing!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 16 April 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
