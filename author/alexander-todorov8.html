@@ -97,6 +97,101 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/" rel="bookmark" title="Permalink to How do You Test Fonts">
+                <h2 class="post-title">
+                    How do You Test Fonts
+                </h2>
+            </a>
+                <p><a href="/blog/2014/03/03/last-week-in-fedora-qa/">Previously</a> I mentioned about testing
+fonts but didn't have any idea how this is done. Authors
+Khaled Hosny of <a href="http://www.amirifont.org/">Amiri Font</a> and Steve White of
+<a href="http://www.gnu.org/software/freefont/">GNU FreeFont</a> provided valuable insight
+and material for further reading. I've asked them:</p>
+<ul>
+<li>What is your approach for testing ?</li>
+<li>What kind of problems is your test suite designed for ?</li>
+</ul>
+<p>Here's what they say:</p>
+<blockquote>
+<p>Currently my test suite consists of text strings (or lists of code
+points) and expected output glyph sequences and then use HarfBuzz
+(through its hb-shape command line tool) to check that the fonts always
+output the expected sequence of glyphs, sometimes with the expected
+positioning as well. Amiri is a complex font that have many glyph
+substitution and positioning rules, so the test suite is designed to
+make sure those rules are always executed correctly to catch regressions
+in the font (or in HarfBuzz, which sometimes happens since the things I
+do in my fonts are not always that common).</p>
+<p>I think Lohit project do similar testing for their fonts, and HarfBuzz
+itself has a similar test suite with a bunch of nice scripts (though
+they are not installed when building HarfBuzz, yet[1]).</p>
+<p>Recently I added more kinds of tests, namely checking that OTS[2]
+sanitizes the fonts successfully as this is important for using them on
+the web, and a test for a common mistakes I made in my feature files
+that result in unexpected blank glyphs in the fonts.</p>
+<ol>
+<li><a href="https://github.com/behdad/harfbuzz/pull/12">https://github.com/behdad/harfbuzz/pull/12</a></li>
+<li><a href="https://github.com/khaledhosny/ots">https://github.com/khaledhosny/ots</a></li>
+</ol>
+<p>Khaled Hosny, Amiri Font</p>
+</blockquote>
+<blockquote>
+<p>The answer is complicated.  I'll do what I can to answer.</p>
+<p>First, the FontForge application has a "verification" function which
+can be run from a script, and which identifies numerous technical
+problems.</p>
+<p>FontForge also has a "Find Problems" function that I run by hand.</p>
+<p>The monospaced face has special restrictions, first that all glyphs of
+non-zero width must be of the same width, and second, that all glyphs
+lie within the vertical bounds of the font.</p>
+<p>Beside this, I have several other scripts that check for a few things
+that FontForge doesn't (duplicate names, that glyph slots agree with
+Unicode code within Unicode character blocks).</p>
+<p>Several tests scripts have yet to be uploaded to the version control
+system -- because I'm unsure of them.</p>
+<p>There is a more complicated check of TrueType tables, which attempts
+to find cases of tables that have been "shadowed" by the
+script/language specification of another table.  This is helpful, but
+works imperfectly.</p>
+<p>ALL THAT SAID,</p>
+<p>In the end, every script used in the font has to be visually checked.
+This process takes me weeks, and there's nothing systematic about it,
+except that I look at printout of documents in each language to see if
+things have gone awry.</p>
+<p>For a few documents in a few languages, I have images of how text
+<em>should</em> look, and can compare that visually (especially important for
+complex scripts.)</p>
+<p>A few years back, somebody wrote a clever script that generated images
+of text and compared them pixel-by-pixel.  This was a great idea, and
+I wish I could use it more effectively, but the problem was that it
+was much too sensitive.  A small change to the font (e.g. PostScript
+parameters) would cause a small but global change in the rendering.
+Also the rendering could vary from one version of the rendering
+software to another.  So I don't use this anymore.</p>
+<p>That's all I can think of right now.</p>
+<p>In fact, testing has been a big problem in getting releases out.  In
+the past, each release has taken at least two weeks to test, and then
+another week to fix and bundle...if I was lucky.  And for the past
+couple of years, I just haven't been able to justify the time
+expenditure.  (Besides this, there are still a few serious problems
+with the fonts--once again, a matter of time.)</p>
+<p>Have a look at the bugs pages, to get an idea of work being done.</p>
+<p><a href="http://savannah.gnu.org/bugs/?group=freefont">http://savannah.gnu.org/bugs/?group=freefont</a></p>
+<p>Steve White, GNU FreeFont</p>
+</blockquote>
+<p>I'm not sure if ImageMagic or PIL can help solve the rendering and compare
+problem Steve is talking about. They can definitely be used for
+<a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">image comparison</a>
+so maybe coupled with some rendering library it's worth a quick try.</p>
+<p>If you happen to know more about fonts, please join me in 
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improving overall test coverage in Fedora</a>
+by designing test suites for fonts packages.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 04 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/" rel="bookmark" title="Permalink to Last Week in Fedora QA">
                 <h2 class="post-title">
                     Last Week in Fedora QA
@@ -1539,50 +1634,6 @@ Thanks!</p>
                  on Fri 06 December 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/" rel="bookmark" title="Permalink to Bug in Python URLGrabber/cURL on Fedora and Amazon Linux">
-                <h2 class="post-title">
-                    Bug in Python URLGrabber/cURL on Fedora and Amazon Linux
-                </h2>
-            </a>
-                <p>Accidentally I have discovered a bug for Python's
-URLGrabber module which has to do with change in behavior in libcurl.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
-<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
-    <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
-<span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span>
-</pre></div>
-
-
-<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
-newer. As explained by 
-<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
-the reason is an internal change in libcurl which doesn't accept a value of 1 anymore!</p>
-<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
-from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
-Fedora and Amazon Linux already have the fix.</p>
-<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
-there aren't any updates released on PyPI though!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 29 November 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

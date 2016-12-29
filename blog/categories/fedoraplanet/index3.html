@@ -90,6 +90,75 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/" rel="bookmark" title="Permalink to Bad Stub Design in DNF, Pt.2">
+                <h2 class="post-title">
+                    Bad Stub Design in DNF, Pt.2
+                </h2>
+            </a>
+                <p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn't have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a></p>
+<blockquote>
+<p>Note: the benefit of this patch are quite subtle.
+I've played around with creating a few more tests and the benefit I see affect
+only a few lines of code.</p>
+<p>For #114 there doesn't seem to be any need to test _get_query directly,
+although we call</p>
+<div class="highlight"><pre>   q = self.base.sack.query()
+   q = q.available()
+</pre></div>
+
+
+<p>which will benefit from this PR b/c we're stubbing out the entire Sack object.
+I will work on a test later today/tomorrow to see how it looks.</p>
+<p>OTOH for #113 where we modify _get_query the test can look something like this:</p>
+<div class="highlight"><pre>def test_get_query_with_local_rpm(self):
+    try:
+        (fs, rpm_path) = tempfile.mkstemp(&#39;foobar-99.99-1.x86_64.rpm&#39;)
+        # b/c self.cmd.cli.base is a mock object add_remote_rpm
+        # will not update the available packages while testing.
+        # it is expected to hit an exception
+        with self.assertRaises(dnf.exceptions.PackageNotFoundError):
+            self.cmd._get_query(rpm_path)
+        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)
+    finally:
+        os.remove(rpm_path)
+</pre></div>
+
+
+<p>Note the comment above the with block. If we leave out <code>_get_query</code> as before
+(a simple stub function) we're not going to be able to use <code>assert_called_with</code>
+later.</p>
+</blockquote>
+<p>Now a more practical example. See 
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 23 November 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/" rel="bookmark" title="Permalink to Tip: Running DNF Plugins from git">
                 <h2 class="post-title">
                     Tip: Running DNF Plugins from git
@@ -1318,44 +1387,6 @@ be able to use the <a href="http://amzn.to/1Iqi22v">Thunderbolt adapter</a> inst
                  on Mon 04 May 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/05/04/thunderbolt-to-ethernet-adapter-on-linux/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/" rel="bookmark" title="Permalink to Compiling Twinkle SIP Phone on RHEL 7">
-                <h2 class="post-title">
-                    Compiling Twinkle SIP Phone on RHEL 7
-                </h2>
-            </a>
-                <p>One of the best SIP clients for Linux is <a href="http://twinklephone.com/">Twinkle</a>.
-However upstream is not active (or even maybe dead) and the package is missing from
-latest Fedora releases and fails to build on RHEL 7.</p>
-<p>First you need to build and install a few dependencies in the following order:
-<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=8437">ucommon</a>,
-<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=1443">ccrtp</a>,
-<a href="http://koji.fedoraproject.org/koji/packageinfo?packageID=6408">libzrtpcpp</a>.
-You will also need <a href="https://fedoraproject.org/wiki/EPEL">EPEL 7</a> enabled
-to satisfy build dependencies.</p>
-<p>Then apply the following patch to the original 
-<a href="http://koji.fedoraproject.org/koji/buildinfo?buildID=397914">twinkle.spec</a></p>
-<div class="highlight"><pre><span class="o">---</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span><span class="p">.</span><span class="n">orig</span>   <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">14</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">01.870710147</span> <span class="o">+</span><span class="mo">0300</span>
-<span class="o">+++</span> <span class="n">twinkle</span><span class="p">.</span><span class="n">spec</span>    <span class="mi">2015</span><span class="o">-</span><span class="mo">05</span><span class="o">-</span><span class="mo">01</span> <span class="mi">15</span><span class="o">:</span><span class="mo">07</span><span class="o">:</span><span class="mf">28.734734573</span> <span class="o">+</span><span class="mo">0300</span>
-<span class="err">@@</span> <span class="o">-</span><span class="mi">47</span><span class="p">,</span><span class="mi">6</span> <span class="o">+</span><span class="mi">47</span><span class="p">,</span><span class="mi">8</span> <span class="err">@@</span>
- 
- <span class="nf">%build</span>
- <span class="k">export</span> <span class="n">LDFLAGS</span><span class="o">=-</span><span class="n">lkio</span> 
-<span class="o">+</span><span class="k">export</span> <span class="n">CPPFLAGS</span><span class="o">=</span><span class="s">&quot;$CPPFLAGS -I/usr/include/libzrtpcpp/&quot;</span> 
-<span class="o">+</span><span class="nf">%__autoconf</span>
- <span class="nf">%configure</span>
- <span class="n">make</span> <span class="o">%</span><span class="p">{</span><span class="o">?</span><span class="n">_smp_mflags</span><span class="p">}</span>
-</pre></div>
-
-
-<p>The package now builds, installs and runs successfully on RHEL 7.
-The compiled packages and dependencies are available in my
-<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 01 May 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/05/01/compiling-twinkle-sip-phone-on-rhel-7/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
