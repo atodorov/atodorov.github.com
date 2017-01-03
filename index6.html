@@ -145,6 +145,53 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/" rel="bookmark" title="Permalink to How to Configure targetcli to Listen on IPv4 and IPv6">
+                <h2 class="post-title">
+                    How to Configure targetcli to Listen on IPv4 and IPv6
+                </h2>
+            </a>
+                <p>In order to configure <em>targetcli</em> to listen on both IPv4 and IPv6 one has to
+delete the default IPv4 portal configuration and replace it with IPv6 instead.</p>
+<div class="highlight"><pre># targetcli 
+/&gt;
+/&gt; cd iscsi/iqn.2015-04.com.example:target1/tpg1/portals
+/iscsi/iqn.20.../tpg1/portals&gt; ls
+o- portals ............................................................................................................ [Portals: 1]
+  o- 0.0.0.0:3260 ............................................................................................................. [OK]
+/iscsi/iqn.20.../tpg1/portals&gt; delete 0.0.0.0 3260
+Deleted network portal 0.0.0.0:3260
+/iscsi/iqn.20.../tpg1/portals&gt; create ::0
+Using default IP port 3260
+Created network portal ::0:3260.
+/iscsi/iqn.20.../tpg1/portals&gt; ls
+o- portals ............................................................................................................ [Portals: 1]
+  o- [::0]:3260 ............................................................................................................... [OK]
+/iscsi/iqn.20.../tpg1/portals&gt; exit
+
+# netstat -antp | grep 3260
+tcp6       0      0 :::3260                 :::*                    LISTEN
+</pre></div>
+
+
+<p>It appears the target is listening only on IPv6 but in fact it will
+also accept connections over IPv4. I've tried it. </p>
+<p>This is a bit counter intuitive, however if you try adding the IPv6 address
+without removing the default IPv4 one <em>targetcli</em> will throw an error:</p>
+<div class="highlight"><pre>/iscsi/iqn.20.../tpg1/portals&gt; create ::0
+Using default IP port 3260
+Could not create NetworkPortal in configFS.
+/&gt;
+</pre></div>
+
+
+<p>For more information about <em>targetcli</em> usage see my previous post
+<a href="/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/">How to Configure iSCSI Target on Red Hat Enterprise Linux 7</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 08 April 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/04/08/how-to-configure-targetcli-to-listen-on-ipv4-and-ipv6/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/07/how-to-configure-iscsi-target-on-red-hat-enterprise-linux-7/" rel="bookmark" title="Permalink to How to Configure iSCSI Target on Red Hat Enterprise Linux 7">
                 <h2 class="post-title">
                     How to Configure iSCSI Target on Red Hat Enterprise Linux 7
@@ -1441,84 +1488,6 @@ so stay tuned.</p>
                  on Fri 18 July 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/" rel="bookmark" title="Permalink to Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com">
-                <h2 class="post-title">
-                    Tip: Collecting Emails - Webhooks for UserVoice and WordPress.com
-                </h2>
-            </a>
-                <p>In my practice I like to use webhooks and integrate auxiliary services with
-my internal processes or businesses. One of these is the collection of emails.
-In this short article I'll show you an example of how to collect email addresses
-from the comments of a WordPress.com blog and the UserVoice feedback/ticketing system.</p>
-<h2>WordPress.com</h2>
-<p>For your WordPress.com blog from the Admin Dashboard navigate to 
-Settings -&gt; Webhooks and add a new webhook with action <code>comment_post</code>
-and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
-Django view that handles the input is shown below.</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
-<span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-
-    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-
-    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
-
-    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
-        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">}</span>
-
-    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
-
-<h2>UserVoice</h2>
-<p>For UserVoice navigate to Admin Dashboard -&gt; Settings -&gt; Integrations -&gt; 
-Service Hooks and add a custom web hook for the New Ticket notification.
-Then use a sample code like that:</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
-<span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-
-    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
-
-    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
-    <span class="p">}</span>
-
-    <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
-
-<p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
-possibly adding them to a database or anything else.</p>
-<p>I find webhooks extremely easy to setup and develop and used them whenever they are
-supported by the service provider. What other services do you use webhooks for? Please
-share your story in the comments.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 12 July 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/07/12/tip-collecting-emails-with-webhooks-uservoice-wordpress/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

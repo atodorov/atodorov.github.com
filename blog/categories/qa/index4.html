@@ -90,6 +90,168 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/" rel="bookmark" title="Permalink to Speed Comparison of Web Proxies Written in Python Twisted and Go">
+                <h2 class="post-title">
+                    Speed Comparison of Web Proxies Written in Python Twisted and Go
+                </h2>
+            </a>
+                <p>After I figured out that
+<a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Celery is rather slow</a>
+I moved on to test another part of my environment - a web proxy server.
+The test here compares two proxy 
+<a href="https://gist.github.com/atodorov/666035d270d97d982cd5">implementations</a>
+- one with Python Twisted,
+the other in Go. The backend is a simple web server written in Go, which is
+probably the fastest thing when it comes to serving HTML.</p>
+<p>The test content is a snapshot of the front page of this blog taken few days ago.
+The system is a standard Lenovo X220 laptop, with Intel Core i7 CPU, with 4 cores.
+The measurement instrument is the popular wrk tool with a
+<a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">custom Lua script to redirect the requests through the proxy</a>.</p>
+<p>All tests were repeated several times, only the best results are shown here.
+I've taken time between the tests in order for all open TCP ports to close.
+I've also observed the number of open ports (e.g. sockets) using <code>netstat</code>.</p>
+<h2>Baseline</h2>
+<p>Using wrk against the web server in Go yields around 30000 requests per second
+with an average of 2000 TCP ports in use:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8000/atodorov.html
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   304.43ms  518.27ms   1.47s    82.69%
+    Req/Sec     1.72k     2.45k   17.63k    88.70%
+  <span class="m">1016810</span> requests in 29.97s, 34.73GB <span class="nb">read</span>
+<span class="nb">  </span>Non-2xx or 3xx responses: 685544
+Requests/sec:  33928.41
+Transfer/sec:      1.16GB
+</pre></div>
+
+
+<h2>Python Twisted</h2>
+<p>The <a href="https://gist.github.com/atodorov/666035d270d97d982cd5">Twisted implementation</a>
+performs at little over 1000 reqs/sec with an average TCP port use between 20000 and 30000:</p>
+<div class="highlight"><pre>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s test @ http://127.0.0.1:8080
+  20 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   335.53ms  117.26ms 707.57ms   64.77%
+    Req/Sec   104.14     72.19   335.00     55.94%
+  40449 requests in 30.02s, 3.67GB read
+  Socket errors: connect 0, read 0, write 0, timeout 8542
+  Non-2xx or 3xx responses: 5382
+Requests/sec:   1347.55
+Transfer/sec:    125.12MB
+</pre></div>
+
+
+<h2>Go proxy</h2>
+<p>First I've run several 30 seconds tests and performance was around 8000 req/sec
+with around 20000 ports used (most of them remain in TIME_WAIT state for a while).
+Then I've modified <code>proxy.go</code> to make use of all available CPUs on the system and let
+the test run for 5 minutes.</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d300s http://127.0.0.1:9090 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 5m <span class="nb">test</span> @ http://127.0.0.1:9090
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   137.22ms  437.95ms   4.45s    97.55%
+    Req/Sec   669.54    198.52     1.71k    76.40%
+  <span class="m">3423108</span> requests in 5.00m, 58.27GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>26, write 181, timeout 24268
+  Non-2xx or 3xx responses: 2870522
+Requests/sec:  11404.19
+Transfer/sec:    198.78MB
+</pre></div>
+
+
+<p>Performance peaked at 10000 req/sec. TCP port usage initially rose to around 30000
+but rapidly dropped and stayed around 3000. Both <code>webserver.go</code> and <code>proxy.go</code> were
+printing the following messages on the console:</p>
+<div class="highlight"><pre><span class="nt">2014</span><span class="o">/</span><span class="nt">11</span><span class="o">/</span><span class="nt">18</span> <span class="nt">21</span><span class="nd">:53:06</span> <span class="nt">http</span><span class="o">:</span> <span class="nt">Accept</span> <span class="nt">error</span><span class="o">:</span> <span class="nt">accept</span> <span class="nt">tcp</span> <span class="cp">[</span><span class="p">::</span><span class="cp">]</span><span class="nd">:9090</span><span class="o">:</span> <span class="nt">too</span> <span class="nt">many</span> <span class="nt">open</span> <span class="nt">files</span><span class="o">;</span> <span class="nt">retrying</span> <span class="nt">in</span> <span class="nt">1s</span>
+</pre></div>
+
+
+<h2>Conclusion</h2>
+<p>There's no doubt that Go is blazingly fast compared to Python and I'm most likely to use it
+further in my experiments. Still I didn't expect a 3x difference in performance from webserver vs. proxy.</p>
+<p>Another thing that worries me is the huge number of open TCP ports which then drops and stays
+consistent over time and the error messages from both webserver and proxy (maybe per process sockets limit).</p>
+<p>At the moment I'm not aware of the internal workings of neither wrk, nor
+Go itself, nor the goproxy library to make conclusion if this is a bad thing or expected.
+I'm eager to hear what others think in the comments. Thanks!</p>
+<h2>Update 2015-01-27</h2>
+<p>I have retested with PyPy but on a different system so I'm giving all the test results
+on it as well. <code>/proc/cpuinfo</code> says we have 16 x Intel(R) Xeon(R) CPU E5-2450L 0 @ 1.80GHz
+CPUs. </p>
+<p>Baseline - Go server:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8000/atodorov.html
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    15.57ms   20.38ms 238.93ms   98.11%
+    Req/Sec     3.55k     1.32k   15.91k    82.49%
+  <span class="m">1980738</span> requests in 30.00s, 174.53GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>0, write 0, timeout 602
+  Non-2xx or 3xx responses: 60331
+Requests/sec:  66022.87
+Transfer/sec:      5.82GB
+</pre></div>
+
+
+<p>Go proxy (30 sec):</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:9090 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:9090
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    68.93ms  718.98ms  12.60s    99.58%
+    Req/Sec     1.61k   784.01     4.83k    62.50%
+  <span class="m">942757</span> requests in 30.00s, 32.16GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>26, write 0, timeout 3050
+  Non-2xx or 3xx responses: 589940
+Requests/sec:  31425.47
+Transfer/sec:      1.07GB
+</pre></div>
+
+
+<p>Python proxy with <code>Twisted==14.0.2</code> and <code>pypy-2.2.1-2.el7.x86_64</code>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8080
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   858.75ms    1.47s    6.00s    88.09%
+    Req/Sec   146.39    104.83   341.00     54.18%
+  <span class="m">85645</span> requests in 30.00s, 853.54MB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>289, write 0, timeout 3297
+  Non-2xx or 3xx responses: 76567
+Requests/sec:   2854.45
+Transfer/sec:     28.45MB
+</pre></div>
+
+
+<p><strong>Update 2015-01-27-2</strong></p>
+<p>Python proxy with <code>Twisted==14.0.2</code> and <code>python-2.7.5-16.el7.x86_64</code>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8080
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   739.64ms    1.58s   14.22s    96.18%
+    Req/Sec    84.43     36.61   157.00     67.79%
+  <span class="m">49173</span> requests in 30.01s, 701.77MB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>240, write 0, timeout 2463
+  Non-2xx or 3xx responses: 41683
+Requests/sec:   1638.38
+Transfer/sec:     23.38MB
+</pre></div>
+
+
+<p>As seen Go proxy is slower than the Go server by factor of 2.
+Python proxy is slower by than the Go server by factor of 20.
+These results are similar to previous ones so I don't think PyPy
+makes any significant difference.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/" rel="bookmark" title="Permalink to Proxy Support for wrk HTTP Benchmarking Tool">
                 <h2 class="post-title">
                     Proxy Support for wrk HTTP Benchmarking Tool
@@ -1383,27 +1545,6 @@ when we're going to test GNOME 3.10.</p>
                  on Tue 08 October 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/" rel="bookmark" title="Permalink to Fedora 20 Virtualization & GNOME Test Days at init Lab this week">
-                <h2 class="post-title">
-                    Fedora 20 Virtualization &amp; GNOME Test Days at init Lab this week
-                </h2>
-            </a>
-                <p>Fedora 20 Virtualization and GNOME test days will be tomorrow (8th Oct) and on
-Thursday (10th Oct)! Local community in Sofia will gather at
-<a href="http://initlab.org">init Lab</a>! We start at 10:00 and everybody is welcome.</p>
-<p>If you have no idea what I'm talking about check my
-<a href="/blog/categories/fedora/">previous posts</a> and the announcement at init Lab's website:</p>
-<ul>
-<li><a href="http://initlab.org/event/testing-fedora-20-virtualization-test-day">http://initlab.org/event/testing-fedora-20-virtualization-test-day</a></li>
-<li><a href="http://initlab.org/event/gnome-test-day">http://initlab.org/event/gnome-test-day</a></li>
-</ul>
-<p>See you there!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 07 October 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
