@@ -2,7 +2,7 @@ Title: A 5 year old girl vs. CoderDojo
 Headline: teaching kids to program
 date: 2017-01-13 09:48
 comments: true
-Tags: events, fedora.qa
+Tags: events, fedora.planet
 og_image: images/adi_hello_ruby_twitter.jpg
 twitter_image: images/adi_hello_ruby_twitter.jpg
 
