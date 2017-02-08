@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Overridden let() causes segfault with RSpec</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="easy to happen with shared examples">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="Ruby">
+        <meta name="tags" content="QA">
+        <meta name="tags" content="fedora.planet">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/">
+	<meta property="og:title" content="Overridden let() causes segfault with RSpec">
+	<meta property="article:published_time" content="2016-12-04 22:48:00+02:00">
+            <meta property="og:description" content="easy to happen with shared examples">
+
+                <meta property="og:image" content="http://atodorov.org/images/segfault.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Overridden let() causes segfault with RSpec">
+
+                <meta property="twitter:image" content="http://atodorov.org/images/segfault.jpg">
+
+            <meta name="twitter:description" content="easy to happen with shared examples">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Overridden let() causes segfault with RSpec</h1>
+                            <h3 class="subheading">easy to happen with shared examples</h3>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sun 04 December 2016
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>Last week <a href="https://github.com/syndbg">Anton</a> asked me to take a look at one of
+his RSpec test suites. He was able to consistently reproduce a segfault which
+looked like this:</p>
+<div class="highlight"><pre><span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span><span class="s-Atom">:</span> <span class="p">[</span><span class="nv">BUG</span><span class="p">]</span> <span class="s-Atom">vm_call_cfunc</span> <span class="o">-</span> <span class="s-Atom">cfp</span> <span class="s-Atom">consistency</span> <span class="s-Atom">error</span>
+<span class="s-Atom">ruby</span> <span class="mf">2.3.2</span><span class="nf">p217</span> <span class="p">(</span><span class="mi">2016</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">15</span> <span class="s-Atom">revision</span> <span class="mi">56796</span><span class="p">)</span> <span class="p">[</span><span class="s-Atom">x86_64</span><span class="o">-</span><span class="s-Atom">linux</span><span class="p">]</span>
+
+<span class="s-Atom">--</span> <span class="nv">Control</span> <span class="s-Atom">frame</span> <span class="s-Atom">information</span> <span class="s-Atom">-----------------------------------------------</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0013</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0048</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000047</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:map</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0045</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000044</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0035</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0043</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000042</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">configuration</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">1835</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0040</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000039</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">112</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0009</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0018</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0037</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000036</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">reporter</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">77</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0008</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0022</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0033</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000032</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">111</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0007</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0028</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000027</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">87</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0006</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0085</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0023</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000022</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">71</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0005</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0026</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0016</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000015</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">45</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0004</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000011</span> <span class="nv">TOP</span>    <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">exe</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">4</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0003</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000009</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:load</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0002</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0136</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0006</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">001</span><span class="s-Atom">e10</span> <span class="nv">EVAL</span>   <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">bin</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">22</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0001</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0000</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0002</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">0000</span><span class="nf">a0</span> <span class="p">(</span><span class="s-Atom">none</span><span class="p">)</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+</pre></div>
+
+
+<p>Googling for <code>vm_call_cfunc - cfp consistency error</code> yields
+<a href="https://bugs.ruby-lang.org/issues/10460">Ruby #10460</a>. Comments on the bug and
+particularly this one point towards the error:</p>
+<div class="highlight"><pre>&gt; Ruby is trying to be nice about reporting the error; but in the end,
+&gt; your code is still broken if it overflows stack.
+</pre></div>
+
+
+<p>Somewhere in the test suite was a piece of code that was overflowing the stack.
+It was somewhere along the lines of</p>
+<div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
+  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
+    <span class="n">it_behaves_like</span> <span class="s1">&#39;manager authentication&#39;</span> <span class="k">do</span>
+      <span class="n">include_examples</span> <span class="s1">&#39;active client for user with existing user&#39;</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>Considering the examples in the bug I started looking for patterns where a variable
+was defined and later redefined, possibly circling back to the previous definition.
+Expanding the shared examples by hand transformed the code into</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
+  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span> <span class="ss">:manager</span><span class="p">)</span> <span class="p">}</span>
+    <span class="n">let!</span><span class="p">(</span><span class="ss">:api_user_authentication</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user_authentication</span><span class="p">,</span> <span class="ss">user</span><span class="p">:</span> <span class="n">user</span><span class="p">)</span> <span class="p">}</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">api_user_authentication</span><span class="o">.</span><span class="n">user</span> <span class="p">}</span>
+
+    <span class="n">context</span> <span class="s1">&#39;with an `active_assigned_client`&#39;</span> <span class="k">do</span>
+      <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+    <span class="k">end</span>
+
+    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>Line 5. overrode line 3. When line 4. was executed first because of lazy execution
+and the call execution path became: 4-5-4-5-4-5 ... <strong>NOTE:</strong> I think we need a
+warning about that in RuboCop, see
+<a href="https://github.com/bbatsov/rubocop/issues/3769">RuboCop #3769</a>.
+The fix however is a no brainer:</p>
+<div class="highlight"><pre><span class="gd">-  let(:user) { create(:user, :manager) }</span>
+<span class="gd">-  let!(:api_user_authentication) { create(:user_authentication, user: user) }</span>
+<span class="gi">+  let(:manager) { create(:user, :manager) }</span>
+<span class="gi">+  let!(:api_user_authentication) { create(:user_authentication, user: manager) }</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy testing.</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/ruby/">Ruby</a>, <a href="http://atodorov.org/blog/categories/qa/">QA</a>, <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2016/12/04/overridden-let-causes-segfault-with-rspec/';
+                var disqus_url = 'http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

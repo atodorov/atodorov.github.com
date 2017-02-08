@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Protected RPM repositories with yum and SSL</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="In this article I'm going to describe a simple way to set-up RPM repositories with access control using only standard tools such as yum, ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="RHEL">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2011/09/15/protected-rpm-repositories-with-yum-and-ssl/">
+	<meta property="og:title" content="Protected RPM repositories with yum and SSL">
+	<meta property="article:published_time" content="2011-09-15 19:40:00+03:00">
+            <meta property="og:description" content="In this article I'm going to describe a simple way to set-up RPM repositories with access control using only standard tools such as yum, ...">
+
+            <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Protected RPM repositories with yum and SSL">
+
+            <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+            <meta name="twitter:description" content="In this article I'm going to describe a simple way to set-up RPM repositories with access control using only standard tools such as yum, ...">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Protected RPM repositories with yum and SSL</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Thu 15 September 2011
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>In this article I'm going to describe a simple way to set-up RPM repositories with access control using only standard tools such as yum, SSL and Apache.
+I've been talking about this at one of the monthly conferences of Linux for Bulgarians!</p>
+<p><strong>Objective:</strong><br />
+Create RPM repository with access control. Access is allowed only for some systems and forbidden for the rest. This is a similar to what Red Hat Network does. </p>
+<p><strong>Solution:</strong><br />
+We're going to use yum and Apache capabilities to work with SSL certificates. The client side (yum) will identify itself using SSL certificate and the server (Apache) will use this information to control the access.</p>
+<p><strong>Client side set-up:</strong><br />
+<ol>
+  <li>
+Yum version 3.2.27 or newer supports SSL certificates for client authentication. This version is available in Red Hat Enterprise Linux 6. 
+  </li></p>
+<p><li>
+First you need to generate a private key and certificate using OpenSSL:</p>
+<div class="highlight"><pre><span class="cp"># openssl genrsa -out /var/lib/yum/client.key 1024</span>
+<span class="n">Generating</span> <span class="n">RSA</span> <span class="n">private</span> <span class="n">key</span><span class="p">,</span> <span class="mi">1024</span> <span class="n">bit</span> <span class="kt">long</span> <span class="n">modulus</span>
+<span class="p">....</span><span class="o">++++++</span>
+<span class="p">.......</span><span class="o">++++++</span>
+<span class="n">e</span> <span class="n">is</span> <span class="mi">65537</span> <span class="p">(</span><span class="mh">0x10001</span><span class="p">)</span>
+
+<span class="cp"># openssl req -new -x509 -text -key /var/lib/yum/client.key -out /var/lib/yum/client.cert</span>
+<span class="n">You</span> <span class="n">are</span> <span class="n">about</span> <span class="n">to</span> <span class="n">be</span> <span class="n">asked</span> <span class="n">to</span> <span class="n">enter</span> <span class="n">information</span> <span class="n">that</span> <span class="n">will</span> <span class="n">be</span> <span class="n">incorporated</span>
+<span class="n">into</span> <span class="n">your</span> <span class="n">certificate</span> <span class="n">request</span><span class="p">.</span>
+<span class="n">What</span> <span class="n">you</span> <span class="n">are</span> <span class="n">about</span> <span class="n">to</span> <span class="n">enter</span> <span class="n">is</span> <span class="n">what</span> <span class="n">is</span> <span class="n">called</span> <span class="n">a</span> <span class="n">Distinguished</span> <span class="n">Name</span> <span class="n">or</span> <span class="n">a</span> <span class="n">DN</span><span class="p">.</span>
+<span class="n">There</span> <span class="n">are</span> <span class="n">quite</span> <span class="n">a</span> <span class="n">few</span> <span class="n">fields</span> <span class="n">but</span> <span class="n">you</span> <span class="n">can</span> <span class="n">leave</span> <span class="n">some</span> <span class="n">blank</span>
+<span class="n">For</span> <span class="n">some</span> <span class="n">fields</span> <span class="n">there</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="k">default</span> <span class="n">value</span><span class="p">,</span>
+<span class="n">If</span> <span class="n">you</span> <span class="n">enter</span> <span class="sc">&#39;.&#39;</span><span class="p">,</span> <span class="n">the</span> <span class="n">field</span> <span class="n">will</span> <span class="n">be</span> <span class="n">left</span> <span class="n">blank</span><span class="p">.</span>
+<span class="o">-----</span>
+<span class="n">Country</span> <span class="n">Name</span> <span class="p">(</span><span class="mi">2</span> <span class="n">letter</span> <span class="n">code</span><span class="p">)</span> <span class="p">[</span><span class="n">XX</span><span class="p">]</span><span class="o">:</span><span class="n">BG</span>
+<span class="n">State</span> <span class="n">or</span> <span class="n">Province</span> <span class="n">Name</span> <span class="p">(</span><span class="n">full</span> <span class="n">name</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span><span class="n">Sofia</span>
+<span class="n">Locality</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">city</span><span class="p">)</span> <span class="p">[</span><span class="n">Default</span> <span class="n">City</span><span class="p">]</span><span class="o">:</span><span class="n">Sofia</span>
+<span class="n">Organization</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">company</span><span class="p">)</span> <span class="p">[</span><span class="n">Default</span> <span class="n">Company</span> <span class="n">Ltd</span><span class="p">]</span><span class="o">:</span><span class="n">Open</span> <span class="n">Technologies</span> <span class="n">Bulgaria</span>
+<span class="n">Organizational</span> <span class="n">Unit</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span><span class="n">IT</span>
+<span class="n">Common</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">your</span> <span class="n">name</span> <span class="n">or</span> <span class="n">your</span> <span class="n">server</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">hostname</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span>
+<span class="n">Email</span> <span class="n">Address</span> <span class="p">[]</span><span class="o">:</span><span class="n">no</span><span class="o">-</span><span class="n">spam</span><span class="p">@</span><span class="n">otb</span><span class="p">.</span><span class="n">bg</span>
+</pre></div>
+
+
+</li>
+
+<p><li>
+For better security you can change file permissions of <em>client.key</em>:</p>
+<div class="highlight"><pre># chmod 600 /var/lib/yum/client.key
+</pre></div>
+
+
+</li>
+
+<p><li>
+You need to define the protected repository in a .repo file. It needs to look something like this:</p>
+<div class="highlight"><pre># cat /etc/yum.repos.d/protected.repo
+[protected]
+name=SSL protected repository
+baseurl=https://repos.example.com/protected
+enabled=1
+gpgcheck=1
+gpgkey=https://repos.example.com/RPM-GPG-KEY
+
+sslverify=1
+sslclientcert=/var/lib/yum/client.cert
+sslclientkey=/var/lib/yum/client.key
+</pre></div>
+
+
+</li>
+
+<p><li>
+If you use self-signed server certificate you can specify  <em>sslverify=0</em>, but this is not recommended.
+  </li>
+</ol></p>
+<p>Whenever yum tries to reach the URL of the repository it will identify itself using the specified certificate.</p>
+<p><strong>Server side set-up:</strong><br />
+<ol>
+  <li>
+Install and configure the <em>mod_ssl</em> module for Apache.
+  </li></p>
+<p><li>
+Create a directory for the repository which will be available over HTTPS.
+  </li></p>
+<p><li>
+In the repository directory add <em>.htaccess</em>, which looks something like this:</p>
+<div class="highlight"><pre>Action rpm-protected /cgi-bin/rpm.cgi
+AddHandler rpm-protected .rpm .drpm
+SSLVerifyClient optional_no_ca
+</pre></div>
+
+
+</li>
+
+<p><li>
+The <em>Action</em> and <em>AddHandler</em> directives instruct Apache to run the <em>rpm.cgi</em> CGI script every time someone tries to access files with extension .rpm and .drpm.
+  </li></p>
+<p><li>
+The <em>SSLVerifyClient</em> directive tells Apache that the http client may present a valid certificate but it has not to be (successfully) verifyable.
+For more information on this configuration please see
+<a href="http://www.modssl.org/docs/2.1/ssl_reference.html#ToC13">http://www.modssl.org/docs/2.1/ssl_reference.html#ToC13</a>.
+  </li></p>
+<p><li>
+The simplest form of <em>rpm.cgi</em> script may look like this:</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;</span><span class="nv">$SSL_CLIENT_M_SERIAL</span><span class="s2">&quot;</span> <span class="o">==</span> <span class="s2">&quot;9F938211B53B4F44&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&quot;Content-type: application/x-rpm&quot;</span>
+    <span class="nb">echo</span> <span class="s2">&quot;Content-length: </span><span class="k">$(</span>stat --printf<span class="o">=</span><span class="s1">&#39;%s&#39;</span> <span class="nv">$PATH_TRANSLATED</span><span class="k">)</span><span class="s2">&quot;</span>
+    <span class="nb">echo</span>
+
+<span class="nb">    </span>cat <span class="nv">$PATH_TRANSLATED</span>
+<span class="k">else</span>
+    <span class="nb">echo</span> <span class="s2">&quot;Status: 403&quot;</span>
+    <span class="nb">echo</span>
+<span class="k">fi</span>
+</pre></div>
+</td></tr></table>
+
+</li>
+
+<p><li>
+The script will allow access to a client which uses a certificate with serial number <em>9F938211B53B4F44</em>. Other clients will be denied access and the server will return standard 403 error code.
+  </li>
+</ol></p>
+<p><strong>In practice:</strong><br />
+The above set-up is very basic and only demonstrates the technology behind this. In a real world configuration you will need some more tools to make this really usable. </p>
+<p>My company <a href="http://otb.bg">Open Technologies Bulgaria, Ltd.</a> has developed a custom solution for our customers based on the above example called Voyager. It features a Drupal module, a CGI script and a client side yum plugin. </p>
+<p>The Drupal module acts as web interface to the system and allows some basic tasks. Administrators can define software channels and subscription expiration. Customers can register and entitle their systems to particular channels. The functionality is similar to Red Hat Network but without all the extra features which we don't need.</p>
+<p>The CGI script acts as a glue between the client side and the Drupal backend. It will read information about client credentials and act as first line of defence against non-authorized access. Then it will communicate with the Drupal database and get more information about this customer. If everything is OK then access will be allowed. </p>
+<p>The yum plugin has the task to communicate with the Drupal backend and dynamically update repository definitions based on available subscriptions. Then it will send a request for the RPM file back to the Apache server where the CGI script will handle it.</p>
+<p>The client side also features a tool to generate the client certificate and register the system to the server. </p>
+<p>All communications are entirely over HTTPS. </p>
+<p>This custom solution has the advantage that it is simple and easy to maintain as well as easy to use. It integrates well with other plugins (e.g. yum-presto for delta rpm support and yum-rhnplugin) and can be used via yum or PackageKit which are the standard package management tools on Red Hat Enterprise Linux 6.</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/rhel/">RHEL</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2011/09/15/protected-rpm-repositories-with-yum-and-ssl/';
+                var disqus_url = 'http://atodorov.org/blog/2011/09/15/protected-rpm-repositories-with-yum-and-ssl/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

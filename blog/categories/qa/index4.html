@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>atodorov.org - Tag QA</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:site" content="@atodorov_">
+            <meta name="twitter:title" content="atodorov.org">
+            <meta name="twitter:description" content="you can logoff, but you can never leave">
+                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="page-heading">
+                        <h1>Tag QA</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/" rel="bookmark" title="Permalink to Speed Comparison of Web Proxies Written in Python Twisted and Go">
+                <h2 class="post-title">
+                    Speed Comparison of Web Proxies Written in Python Twisted and Go
+                </h2>
+            </a>
+                <p>After I figured out that
+<a href="/blog/2014/11/11/speeding-up-celery-backends-part-3/">Celery is rather slow</a>
+I moved on to test another part of my environment - a web proxy server.
+The test here compares two proxy 
+<a href="https://gist.github.com/atodorov/666035d270d97d982cd5">implementations</a>
+- one with Python Twisted,
+the other in Go. The backend is a simple web server written in Go, which is
+probably the fastest thing when it comes to serving HTML.</p>
+<p>The test content is a snapshot of the front page of this blog taken few days ago.
+The system is a standard Lenovo X220 laptop, with Intel Core i7 CPU, with 4 cores.
+The measurement instrument is the popular wrk tool with a
+<a href="/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/">custom Lua script to redirect the requests through the proxy</a>.</p>
+<p>All tests were repeated several times, only the best results are shown here.
+I've taken time between the tests in order for all open TCP ports to close.
+I've also observed the number of open ports (e.g. sockets) using <code>netstat</code>.</p>
+<h2>Baseline</h2>
+<p>Using wrk against the web server in Go yields around 30000 requests per second
+with an average of 2000 TCP ports in use:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8000/atodorov.html
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   304.43ms  518.27ms   1.47s    82.69%
+    Req/Sec     1.72k     2.45k   17.63k    88.70%
+  <span class="m">1016810</span> requests in 29.97s, 34.73GB <span class="nb">read</span>
+<span class="nb">  </span>Non-2xx or 3xx responses: 685544
+Requests/sec:  33928.41
+Transfer/sec:      1.16GB
+</pre></div>
+
+
+<h2>Python Twisted</h2>
+<p>The <a href="https://gist.github.com/atodorov/666035d270d97d982cd5">Twisted implementation</a>
+performs at little over 1000 reqs/sec with an average TCP port use between 20000 and 30000:</p>
+<div class="highlight"><pre>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s test @ http://127.0.0.1:8080
+  20 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   335.53ms  117.26ms 707.57ms   64.77%
+    Req/Sec   104.14     72.19   335.00     55.94%
+  40449 requests in 30.02s, 3.67GB read
+  Socket errors: connect 0, read 0, write 0, timeout 8542
+  Non-2xx or 3xx responses: 5382
+Requests/sec:   1347.55
+Transfer/sec:    125.12MB
+</pre></div>
+
+
+<h2>Go proxy</h2>
+<p>First I've run several 30 seconds tests and performance was around 8000 req/sec
+with around 20000 ports used (most of them remain in TIME_WAIT state for a while).
+Then I've modified <code>proxy.go</code> to make use of all available CPUs on the system and let
+the test run for 5 minutes.</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d300s http://127.0.0.1:9090 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 5m <span class="nb">test</span> @ http://127.0.0.1:9090
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   137.22ms  437.95ms   4.45s    97.55%
+    Req/Sec   669.54    198.52     1.71k    76.40%
+  <span class="m">3423108</span> requests in 5.00m, 58.27GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>26, write 181, timeout 24268
+  Non-2xx or 3xx responses: 2870522
+Requests/sec:  11404.19
+Transfer/sec:    198.78MB
+</pre></div>
+
+
+<p>Performance peaked at 10000 req/sec. TCP port usage initially rose to around 30000
+but rapidly dropped and stayed around 3000. Both <code>webserver.go</code> and <code>proxy.go</code> were
+printing the following messages on the console:</p>
+<div class="highlight"><pre><span class="nt">2014</span><span class="o">/</span><span class="nt">11</span><span class="o">/</span><span class="nt">18</span> <span class="nt">21</span><span class="nd">:53:06</span> <span class="nt">http</span><span class="o">:</span> <span class="nt">Accept</span> <span class="nt">error</span><span class="o">:</span> <span class="nt">accept</span> <span class="nt">tcp</span> <span class="cp">[</span><span class="p">::</span><span class="cp">]</span><span class="nd">:9090</span><span class="o">:</span> <span class="nt">too</span> <span class="nt">many</span> <span class="nt">open</span> <span class="nt">files</span><span class="o">;</span> <span class="nt">retrying</span> <span class="nt">in</span> <span class="nt">1s</span>
+</pre></div>
+
+
+<h2>Conclusion</h2>
+<p>There's no doubt that Go is blazingly fast compared to Python and I'm most likely to use it
+further in my experiments. Still I didn't expect a 3x difference in performance from webserver vs. proxy.</p>
+<p>Another thing that worries me is the huge number of open TCP ports which then drops and stays
+consistent over time and the error messages from both webserver and proxy (maybe per process sockets limit).</p>
+<p>At the moment I'm not aware of the internal workings of neither wrk, nor
+Go itself, nor the goproxy library to make conclusion if this is a bad thing or expected.
+I'm eager to hear what others think in the comments. Thanks!</p>
+<h2>Update 2015-01-27</h2>
+<p>I have retested with PyPy but on a different system so I'm giving all the test results
+on it as well. <code>/proc/cpuinfo</code> says we have 16 x Intel(R) Xeon(R) CPU E5-2450L 0 @ 1.80GHz
+CPUs. </p>
+<p>Baseline - Go server:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8000/atodorov.html
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    15.57ms   20.38ms 238.93ms   98.11%
+    Req/Sec     3.55k     1.32k   15.91k    82.49%
+  <span class="m">1980738</span> requests in 30.00s, 174.53GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>0, write 0, timeout 602
+  Non-2xx or 3xx responses: 60331
+Requests/sec:  66022.87
+Transfer/sec:      5.82GB
+</pre></div>
+
+
+<p>Go proxy (30 sec):</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:9090 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:9090
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    68.93ms  718.98ms  12.60s    99.58%
+    Req/Sec     1.61k   784.01     4.83k    62.50%
+  <span class="m">942757</span> requests in 30.00s, 32.16GB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>26, write 0, timeout 3050
+  Non-2xx or 3xx responses: 589940
+Requests/sec:  31425.47
+Transfer/sec:      1.07GB
+</pre></div>
+
+
+<p>Python proxy with <code>Twisted==14.0.2</code> and <code>pypy-2.2.1-2.el7.x86_64</code>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8080
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   858.75ms    1.47s    6.00s    88.09%
+    Req/Sec   146.39    104.83   341.00     54.18%
+  <span class="m">85645</span> requests in 30.00s, 853.54MB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>289, write 0, timeout 3297
+  Non-2xx or 3xx responses: 76567
+Requests/sec:   2854.45
+Transfer/sec:     28.45MB
+</pre></div>
+
+
+<p><strong>Update 2015-01-27-2</strong></p>
+<p>Python proxy with <code>Twisted==14.0.2</code> and <code>python-2.7.5-16.el7.x86_64</code>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./wrk -c1000 -t20 -d30s http://127.0.0.1:8080 -s scripts/proxy.lua -- http://127.0.0.1:8000/atodorov.html
+Running 30s <span class="nb">test</span> @ http://127.0.0.1:8080
+  <span class="m">20</span> threads and <span class="m">1000</span> connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   739.64ms    1.58s   14.22s    96.18%
+    Req/Sec    84.43     36.61   157.00     67.79%
+  <span class="m">49173</span> requests in 30.01s, 701.77MB <span class="nb">read</span>
+<span class="nb">  </span>Socket errors: connect 0, <span class="nb">read </span>240, write 0, timeout 2463
+  Non-2xx or 3xx responses: 41683
+Requests/sec:   1638.38
+Transfer/sec:     23.38MB
+</pre></div>
+
+
+<p>As seen Go proxy is slower than the Go server by factor of 2.
+Python proxy is slower by than the Go server by factor of 20.
+These results are similar to previous ones so I don't think PyPy
+makes any significant difference.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/19/speed-comparison-of-web-proxies-written-in-python-twisted-and-go/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/" rel="bookmark" title="Permalink to Proxy Support for wrk HTTP Benchmarking Tool">
+                <h2 class="post-title">
+                    Proxy Support for wrk HTTP Benchmarking Tool
+                </h2>
+            </a>
+                <p>Few times recently I've seen people using an HTTP benchmarking tool called
+<a href="https://github.com/wg/wrk">wrk</a> and decided to give it a try. It is a very cool
+instrument but didn't fit my use case perfectly. What I needed is to be able to
+redirect the connection through a web proxy and measure how much the proxy
+slows down things compared to hitting the web server directly with wrk.
+In other words - how fast is the proxy server.</p>
+<h2>How does a proxy work</h2>
+<p>I've examined the source code of two proxies (one in Python and another one in Go)
+and what happens is this:</p>
+<ul>
+<li>The proxy server starts listening to a TCP port</li>
+<li>A client (e.g. the browser) sends the request using an absolute URL (GET http://example.com/about.html)</li>
+<li>Instead of connecting directly to the web server behind example.com the client connects to the proxy</li>
+<li>The proxy server does connect to example.com directly, reads the response and delivers it back to 
+the client.</li>
+</ul>
+<h2>Proxy in wrk</h2>
+<p>Luckily wrk supports the execution of Lua scripts so we can make a 
+<a href="https://github.com/wg/wrk/pull/107">simple script</a> like this:</p>
+<div class="highlight"><pre><span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">args</span><span class="p">)</span>
+    <span class="nx">target_url</span> <span class="o">=</span> <span class="nx">args</span><span class="cp">[</span><span class="mi">1</span><span class="cp">]</span> <span class="o">--</span> <span class="nx">proxy</span> <span class="nx">needs</span> <span class="nx">absolute</span> <span class="nx">URL</span>
+<span class="nx">end</span>
+
+<span class="nx">request</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nx">wrk</span><span class="p">.</span><span class="nx">format</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="nx">target_url</span><span class="p">)</span>
+<span class="nx">end</span>
+</pre></div>
+
+
+<p>Then update your command line to something like this:
+    ./wrk [options] http://proxy:port -s proxy.lua -- http://example.com/about.html</p>
+<p>This causes wrk to connect to our proxy server but instead issue GET requests for another URL.
+Depending on how your proxy works you may need to add the <code>Host: example.com</code> header as well.
+Now let's do some testing.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 18 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/18/proxy-support-for-wrk-http-benchmarking-tool/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/" rel="bookmark" title="Permalink to Speeding Up Celery Backends, Part 3">
+                <h2 class="post-title">
+                    Speeding Up Celery Backends, Part 3
+                </h2>
+            </a>
+                <p>In the second part of this article we've seen 
+<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
+Now let's explore what happens inside and see if we can't speed things up.</p>
+<p>I've used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
+call graph visualizations of my application. It has the nice feature to also show
+execution time and use different colors for fast and slow operations.</p>
+<p>Full command line is:</p>
+<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
+</pre></div>
+
+
+<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
+<h2>General findings</h2>
+<p><img alt="call graph" src="/images/celery/general.png" title="call graph" /></p>
+<ul>
+<li>The first four calls is where most of the time is spent as seen on the picture. </li>
+<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
+transport Kombu (not shown on picture)</li>
+<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
+<code>celery.app.base.Celery.send_task</code></li>
+<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
+rewrites the code.</li>
+</ul>
+<h2>More findings</h2>
+<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
+<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
+350             self.backend.on_task_call(P, task_id)
+351             task_id = P.publish_task(
+352                 name, args, kwargs, countdown=countdown, eta=eta,
+353                 task_id=task_id, expires=expires,
+354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
+355                 reply_to=reply_to or self.oid, **options
+356             )
+</pre></div>
+
+
+<p><code>producer</code> is always None because delay() doesn't pass it as argument.
+I've tried passing it explicitly to apply_async() as so:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
+<span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">debug_task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">producer</span><span class="o">=</span><span class="n">producer</span><span class="p">)</span>
+</pre></div>
+
+
+<p>However this doesn't speedup anything. If we replace the above code block like this:</p>
+<div class="highlight"><pre>349         with producer as P:
+</pre></div>
+
+
+<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
+<p>If you are unfamiliar with the with statement in Python please read
+<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
+a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
+<code>self.release()</code> on exit of the with statement.</p>
+<p>I also tried killing the with statement and using producer directly but with limited success. While
+it was not released(was non None) on subsequent iterations the memory usage grew much more and there
+wasn't any performance boost.</p>
+<h2>Conclusion</h2>
+<p>The with statement is used throughout both Celery and Kombu and I'm not at all sure if
+there's a mechanism for keep-alive connections. My time constraints are limited and I'll probably
+not spend anymore time on this problem soon.</p>
+<p>Since my use case involves task producer and consumers on localhost I'll try to workaround the
+current limitations by using Kombu directly 
+(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
+uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 11 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 2">
+                <h2 class="post-title">
+                    Speeding up Celery Backends, Part 2
+                </h2>
+            </a>
+                <p>In the <a href="/blog/2014/11/05/speeding-up-celery-backends/">first part</a> of this
+post I looked at a few celery backends and discovered they didn't meet my needs.
+Why is the Celery stack slow? How slow is it actually?</p>
+<h2>How slow is Celery in practice</h2>
+<ul>
+<li>Queue: 500`000 msg/sec</li>
+<li>Kombu:  14`000 msg/sec</li>
+<li>Celery:  2`000 msg/sec</li>
+</ul>
+<h2>Detailed test description</h2>
+<p>There are three main components of the Celery stack: </p>
+<ul>
+<li>Celery itself</li>
+<li>Kombu which handles the transport layer</li>
+<li>Python Queue()'s underlying everything</li>
+</ul>
+<p>Using the <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">Queue and Kombu tests</a>
+run for 1 000 000 messages I got the following results:</p>
+<ul>
+<li>Raw Python Queue: Msgs per sec: 500`000</li>
+<li>Raw Kombu without Celery where <code>kombu/utils/__init__.py:uuid()</code> is set to return 0<ul>
+<li>with json serializer: Msgs per sec: 5`988</li>
+<li>with pickle serializer: Msgs per sec: 12`820</li>
+<li>with the custom mem_serializer from <a href="/blog/2014/11/05/speeding-up-celery-backends/">part 1</a>:
+Msgs per sec: 14`492</li>
+</ul>
+</li>
+</ul>
+<p><strong>Note:</strong> when the test is executed with 100K messages mem_serializer yielded
+25`000 msg/sec then the performance is saturated. I've observed similar behavior 
+with raw Python Queue()'s. I saw some cache buffers being managed internally to avoid OOM
+exceptions. This is probably the main reason performance becomes saturated over a longer
+execution.</p>
+<ul>
+<li>Using <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a> modified to
+loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
+</ul>
+<p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
+<div class="highlight"><pre>with producers[connection].acquire(block=True) as producer:
+    for j in range(1000000):
+</pre></div>
+
+
+<p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
+Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
+construct which is executed every time a new task is published. Next I will be looking 
+into this to figure out exactly where the slowliness comes from.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 07 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/07/speeding-up-celery-backends-part-2/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/" rel="bookmark" title="Permalink to Speeding up Celery Backends, Part 1">
+                <h2 class="post-title">
+                    Speeding up Celery Backends, Part 1
+                </h2>
+            </a>
+                <p>I'm working on an application which fires a lot of Celery tasks - the more
+the better! Unfortunately Celery backends seem to be rather slow :(.
+Using the <a href="https://gist.github.com/atodorov/0156cc41491a5e1ff953">celery_load_test.py</a>
+command for Django I was able to capture some metrics:</p>
+<ul>
+<li>Amazon SQS backend: 2 or 3 tasks/sec</li>
+<li>Filesystem backend: 2000 - 2500 tasks/sec</li>
+<li>Memory backend: around 3000 tasks/sec</li>
+</ul>
+<p>Not bad but I need in the order of 10000 tasks created per sec!
+The other noticeable thing is that memory backend isn't much faster compared to
+the filesystem one! NB: all of these backends actually come from the kombu package.</p>
+<h2>Why is Celery slow ?</h2>
+<p>Using <code>celery_load_test.py</code> together with 
+<a href="/blog/2014/11/05/performance-profiling-in-python-with-cprofile/">cProfile</a> I
+was able to pin-point some problematic areas:</p>
+<ul>
+<li>
+<p><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
+self.encode_body() into base64 encoded string. Fixed with custom transport backend
+I called fastmemory which redefines the body_encoding property:</p>
+<div class="highlight"><pre><span class="nd">@cached_property</span>
+<span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">None</span>
+</pre></div>
+
+
+</li>
+<li>
+<p>Celery uses json or pickle (or other) serializers to serialize the data.
+While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
+Replacing with a custom serializer which just returns
+the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+
+<span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">s</span>
+
+<span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">s</span>
+
+<span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
+        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+</li>
+<li>
+<p><code>kombu/utils/__init__.py</code>: def uuid() - generates random unique identifiers
+which is a slow operation. Replacing it with <code>return "00000000"</code> boosts performance
+to 7000 tasks/sec.</p>
+</li>
+</ul>
+<p>It's clear that a constant UUID is not of any practical use but serves well to illustrate
+how much does this function affect performance. </p>
+<p><strong>Note:</strong>
+Subsequent executions of <code>celery_load_test</code> seem to report degraded performance even with
+the most optimized transport backend. I'm not sure why is this. One possibility is the random
+UUID usage in other parts of the Celery/Kombu stack which drains entropy on the system and
+generating more random numbers becomes slower. If you know better please tell me!</p>
+<p>I will be looking for a better understanding
+of these IDs in Celery and hope to be able to produce a faster uuid() function. Then I'll be
+exploring the transport stack even more in order to reach the goal of 10000 tasks/sec.
+If you have any suggestions or pointers please share them in the comments.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 05 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/05/speeding-up-celery-backends/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/" rel="bookmark" title="Permalink to Performance Profiling in Python with cProfile">
+                <h2 class="post-title">
+                    Performance Profiling in Python with cProfile
+                </h2>
+            </a>
+                <p>This is a quick reference on profiling Python applications with
+<a href="https://docs.python.org/2/library/profile.html#module-cProfile">cProfile</a>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>python -m cProfile -s <span class="nb">time </span>application.py
+</pre></div>
+
+
+<p>The output is sorted by execution time <code>-s time</code></p>
+<div class="highlight"><pre>     <span class="mi">9072842</span> <span class="kd">function</span> <span class="nx">calls</span> <span class="p">(</span><span class="mi">8882140</span> <span class="nx">primitive</span> <span class="nx">calls</span><span class="p">)</span> <span class="k">in</span> <span class="mf">9.830</span> <span class="nx">CPU</span> <span class="nx">seconds</span>
+
+   <span class="nx">Ordered</span> <span class="nx">by</span><span class="o">:</span> <span class="nx">internal</span> <span class="nx">time</span>
+
+   <span class="nx">ncalls</span>  <span class="nx">tottime</span>  <span class="nx">percall</span>  <span class="nx">cumtime</span>  <span class="nx">percall</span> <span class="nx">filename</span><span class="o">:</span><span class="nx">lineno</span><span class="p">(</span><span class="kd">function</span><span class="p">)</span>
+    <span class="mi">61868</span>    <span class="mf">0.575</span>    <span class="mf">0.000</span>    <span class="mf">0.861</span>    <span class="mf">0.000</span> <span class="kr">abstract</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">28</span><span class="p">(</span><span class="nx">__init__</span><span class="p">)</span>
+    <span class="mi">41250</span>    <span class="mf">0.527</span>    <span class="mf">0.000</span>    <span class="mf">0.660</span>    <span class="mf">0.000</span> <span class="nx">uuid</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">101</span><span class="p">(</span><span class="nx">__init__</span><span class="p">)</span>
+    <span class="mi">61863</span>    <span class="mf">0.405</span>    <span class="mf">0.000</span>    <span class="mf">1.054</span>    <span class="mf">0.000</span> <span class="kr">abstract</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">40</span><span class="p">(</span><span class="nx">as_dict</span><span class="p">)</span>
+    <span class="mi">41243</span>    <span class="mf">0.343</span>    <span class="mf">0.000</span>    <span class="mf">1.131</span>    <span class="mf">0.000</span> <span class="nx">__init__</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">143</span><span class="p">(</span><span class="nx">uuid4</span><span class="p">)</span>
+   <span class="mi">577388</span>    <span class="mf">0.338</span>    <span class="mf">0.000</span>    <span class="mf">0.649</span>    <span class="mf">0.000</span> <span class="kr">abstract</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">46</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">genexpr</span><span class="o">&gt;</span><span class="p">)</span>
+    <span class="mi">20622</span>    <span class="mf">0.289</span>    <span class="mf">0.000</span>    <span class="mf">8.824</span>    <span class="mf">0.000</span> <span class="nx">base</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">331</span><span class="p">(</span><span class="nx">send_task</span><span class="p">)</span>
+    <span class="mi">61907</span>    <span class="mf">0.232</span>    <span class="mf">0.000</span>    <span class="mf">0.477</span>    <span class="mf">0.000</span> <span class="nx">datastructures</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">467</span><span class="p">(</span><span class="nx">__getitem__</span><span class="p">)</span>
+    <span class="mi">20622</span>    <span class="mf">0.225</span>    <span class="mf">0.000</span>    <span class="mf">9.298</span>    <span class="mf">0.000</span> <span class="nx">task</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">455</span><span class="p">(</span><span class="nx">apply_async</span><span class="p">)</span>
+    <span class="mi">61863</span>    <span class="mf">0.218</span>    <span class="mf">0.000</span>    <span class="mf">2.502</span>    <span class="mf">0.000</span> <span class="kr">abstract</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">52</span><span class="p">(</span><span class="nx">__copy__</span><span class="p">)</span>
+    <span class="mi">20621</span>    <span class="mf">0.208</span>    <span class="mf">0.000</span>    <span class="mf">4.766</span>    <span class="mf">0.000</span> <span class="nx">amqp</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">208</span><span class="p">(</span><span class="nx">publish_task</span><span class="p">)</span>
+   <span class="mi">462640</span>    <span class="mf">0.193</span>    <span class="mf">0.000</span>    <span class="mf">0.247</span>    <span class="mf">0.000</span> <span class="p">{</span><span class="nx">isinstance</span><span class="p">}</span>
+   <span class="mi">515525</span>    <span class="mf">0.162</span>    <span class="mf">0.000</span>    <span class="mf">0.193</span>    <span class="mf">0.000</span> <span class="kr">abstract</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">41</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span>
+    <span class="mi">41246</span>    <span class="mf">0.153</span>    <span class="mf">0.000</span>    <span class="mf">0.633</span>    <span class="mf">0.000</span> <span class="nx">entity</span><span class="p">.</span><span class="nx">py</span><span class="o">:</span><span class="mi">143</span><span class="p">(</span><span class="nx">__init__</span><span class="p">)</span>
+</pre></div>
+
+
+<p>In the example above (actual application) first line is kombu's
+<code>abstract.py: class Object(object).__init__()</code>
+and the second one is Python's
+<code>uuid.py: class UUID().__init__()</code>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 05 November 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/11/05/performance-profiling-in-python-with-cprofile/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/" rel="bookmark" title="Permalink to SNAKE is no Longer Needed to Run Installation Tests in Beaker">
+                <h2 class="post-title">
+                    SNAKE is no Longer Needed to Run Installation Tests in Beaker
+                </h2>
+            </a>
+                <p>This is a quick status update for one of the pieces of
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">Fedora QA infrastructure</a>
+and mostly a self-note.</p>
+<p>Previously to control the kickstart configuration used during installation in Beaker one
+had to either modify the job XML in Beaker or use SNAKE (<code>bkr workflow-snake</code>) to render
+a kickstart configuration from a Python template.</p>
+<p>SNAKE presented challenges when deploying and using
+<a href="https://beaker.fedoraproject.org">beaker.fedoraproject.org</a> and is
+virtually unmaintained.</p>
+<p>I present the new <code>bkr workflow-installer-test</code> which uses Jinja2 templates to
+generate a kickstart configuration when provisioning the system. This is already
+available in beaker-client-0.17.1.</p>
+<p>The templates make use of all Jinja2 features (as far as I can tell) so you can create
+very complex ones. You can even include snippets from one template into another if required.
+The standard context that is passed to the template is:</p>
+<ul>
+<li><strong>DISTRO</strong> - if specified, the distro name</li>
+<li><strong>FAMILY</strong> - as returned by Beaker server, e.g. <em>RedHatEnterpriseLinux6</em></li>
+<li><strong>OS_MAJOR</strong> and <strong>OS_MINOR</strong> - also taken from Beaker server. e.g. OS_MAJOR=6 and OS_MINOR=5 for RHEL 6.5</li>
+<li><strong>VARIANT</strong> - if specified</li>
+<li><strong>ARCH</strong> - CPU architecture like x86_64</li>
+<li>any parameters passed to the test job with <code>--taskparam</code>. They are processed last and can override previous values.</li>
+</ul>
+<p>Installation related tests at <a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests">fedora-beaker-tests</a>
+have been updated with a <code>ks.cfg.tmpl</code> templates to use with this new workflow.</p>
+<p>This workflow also has the ability to return boot arguments for the installer if needed. 
+If any, they should be defined in a <code>{% block kernel_options %}{% endblock %}</code>
+block inside the template. A simpler variant is to define a comment line that stars with
+<em>## kernel_options:</em></p>
+<p>There are still a few issues which need to be fixed before beaker.fedoraproject.org
+can be used by the general public though. I will be writing another post about that
+so stay tuned.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 18 July 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/07/18/snake-is-no-longer-needed-to-run-installation-tests-in-beaker/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/" rel="bookmark" title="Permalink to How Do You Test Thai Scalable Fonts">
+                <h2 class="post-title">
+                    How Do You Test Thai Scalable Fonts
+                </h2>
+            </a>
+                <p>Recently I wrote about <a href="/blog/2014/03/04/how-do-you-test-fonts/">testing fonts</a>.
+I finally managed to get an answer from the authors of <em>thai-scalable-fonts</em>.</p>
+<blockquote>
+<blockquote>
+<p>What is your approach for testing Fonts-TLWG?</p>
+</blockquote>
+<p>It's not automated test. What it does is generate PDF with sample
+texts at several sizes (the waterfall), pangrams, and glyph table.
+It needs human eyes to investigate.</p>
+<blockquote>
+<p>What kind of problems is your test suite designed for ?</p>
+</blockquote>
+<ul>
+<li>Shaping</li>
+<li>Glyph coverage</li>
+<li>Metrics</li>
+</ul>
+<p>We also make use of fontforge features to make spotting errors
+easier, such as
+- Show extremas
+- Show almost vertical/horizontal lines/curves</p>
+<p>Theppitak Karoonboonyanan, Fonts-TLWG</p>
+</blockquote>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 17 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/" rel="bookmark" title="Permalink to How do You Test Fonts">
+                <h2 class="post-title">
+                    How do You Test Fonts
+                </h2>
+            </a>
+                <p><a href="/blog/2014/03/03/last-week-in-fedora-qa/">Previously</a> I mentioned about testing
+fonts but didn't have any idea how this is done. Authors
+Khaled Hosny of <a href="http://www.amirifont.org/">Amiri Font</a> and Steve White of
+<a href="http://www.gnu.org/software/freefont/">GNU FreeFont</a> provided valuable insight
+and material for further reading. I've asked them:</p>
+<ul>
+<li>What is your approach for testing ?</li>
+<li>What kind of problems is your test suite designed for ?</li>
+</ul>
+<p>Here's what they say:</p>
+<blockquote>
+<p>Currently my test suite consists of text strings (or lists of code
+points) and expected output glyph sequences and then use HarfBuzz
+(through its hb-shape command line tool) to check that the fonts always
+output the expected sequence of glyphs, sometimes with the expected
+positioning as well. Amiri is a complex font that have many glyph
+substitution and positioning rules, so the test suite is designed to
+make sure those rules are always executed correctly to catch regressions
+in the font (or in HarfBuzz, which sometimes happens since the things I
+do in my fonts are not always that common).</p>
+<p>I think Lohit project do similar testing for their fonts, and HarfBuzz
+itself has a similar test suite with a bunch of nice scripts (though
+they are not installed when building HarfBuzz, yet[1]).</p>
+<p>Recently I added more kinds of tests, namely checking that OTS[2]
+sanitizes the fonts successfully as this is important for using them on
+the web, and a test for a common mistakes I made in my feature files
+that result in unexpected blank glyphs in the fonts.</p>
+<ol>
+<li><a href="https://github.com/behdad/harfbuzz/pull/12">https://github.com/behdad/harfbuzz/pull/12</a></li>
+<li><a href="https://github.com/khaledhosny/ots">https://github.com/khaledhosny/ots</a></li>
+</ol>
+<p>Khaled Hosny, Amiri Font</p>
+</blockquote>
+<blockquote>
+<p>The answer is complicated.  I'll do what I can to answer.</p>
+<p>First, the FontForge application has a "verification" function which
+can be run from a script, and which identifies numerous technical
+problems.</p>
+<p>FontForge also has a "Find Problems" function that I run by hand.</p>
+<p>The monospaced face has special restrictions, first that all glyphs of
+non-zero width must be of the same width, and second, that all glyphs
+lie within the vertical bounds of the font.</p>
+<p>Beside this, I have several other scripts that check for a few things
+that FontForge doesn't (duplicate names, that glyph slots agree with
+Unicode code within Unicode character blocks).</p>
+<p>Several tests scripts have yet to be uploaded to the version control
+system -- because I'm unsure of them.</p>
+<p>There is a more complicated check of TrueType tables, which attempts
+to find cases of tables that have been "shadowed" by the
+script/language specification of another table.  This is helpful, but
+works imperfectly.</p>
+<p>ALL THAT SAID,</p>
+<p>In the end, every script used in the font has to be visually checked.
+This process takes me weeks, and there's nothing systematic about it,
+except that I look at printout of documents in each language to see if
+things have gone awry.</p>
+<p>For a few documents in a few languages, I have images of how text
+<em>should</em> look, and can compare that visually (especially important for
+complex scripts.)</p>
+<p>A few years back, somebody wrote a clever script that generated images
+of text and compared them pixel-by-pixel.  This was a great idea, and
+I wish I could use it more effectively, but the problem was that it
+was much too sensitive.  A small change to the font (e.g. PostScript
+parameters) would cause a small but global change in the rendering.
+Also the rendering could vary from one version of the rendering
+software to another.  So I don't use this anymore.</p>
+<p>That's all I can think of right now.</p>
+<p>In fact, testing has been a big problem in getting releases out.  In
+the past, each release has taken at least two weeks to test, and then
+another week to fix and bundle...if I was lucky.  And for the past
+couple of years, I just haven't been able to justify the time
+expenditure.  (Besides this, there are still a few serious problems
+with the fonts--once again, a matter of time.)</p>
+<p>Have a look at the bugs pages, to get an idea of work being done.</p>
+<p><a href="http://savannah.gnu.org/bugs/?group=freefont">http://savannah.gnu.org/bugs/?group=freefont</a></p>
+<p>Steve White, GNU FreeFont</p>
+</blockquote>
+<p>I'm not sure if ImageMagic or PIL can help solve the rendering and compare
+problem Steve is talking about. They can definitely be used for
+<a href="/blog/2013/05/17/linux-and-python-tools-to-compare-images/">image comparison</a>
+so maybe coupled with some rendering library it's worth a quick try.</p>
+<p>If you happen to know more about fonts, please join me in 
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improving overall test coverage in Fedora</a>
+by designing test suites for fonts packages.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 04 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/04/how-do-you-test-fonts/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/" rel="bookmark" title="Permalink to Last Week in Fedora QA">
+                <h2 class="post-title">
+                    Last Week in Fedora QA
+                </h2>
+            </a>
+                <p>Here are some highlights from the past week discussions in Fedora which I found
+interesting or participated in.</p>
+<h2>Call to Action: Improving Overall Test Coverage in Fedora</h2>
+<p>I can not stress enough how important it is to further
+<a href="/blog/2014/02/28/action-improving-test-coverage-in-fedora/">improve test coverage in Fedora</a>!
+You can help too. Here's how:</p>
+<ul>
+<li>Join upstream and create a test suite for a package you find interesting;</li>
+<li>Provide patches - <a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/196035.html">first patch</a>
+came in less than 30 minutes of initial announcement :);</li>
+<li>Review packages in the wiki and help identify false negatives;</li>
+<li>Forward to people who may be interested to work on these items;</li>
+<li>Share and promote in your local open source and developer communities;</li>
+</ul>
+<h2>Auto BuildRequires</h2>
+<p><a href="http://people.redhat.com/~rjones/auto-buildrequires/">Auto-BuildRequires</a>
+is a simple set of scripts which compliments <code>rpmbuild</code> by
+automatically suggesting BuildRequires lines for the just built package.</p>
+<p>It would be interesting to have this integrated into Koji and/or
+continuous integration environment and compare the output between every two
+consecutive builds (iow older and newer package versions). It sounds like a
+good way to identify newly added or removed dependencies and update the package
+specs accordingly.</p>
+<h2>How To Test Fonts Packages</h2>
+<p>This is exactly what 
+<a href="https://lists.fedoraproject.org/pipermail/test/2014-February/120570.html">Christopher Meng asked</a>
+and frankly I have no idea. </p>
+<p>I've come across a few fonts packages (<em>amiri-fonts</em>, <em>gnu-free-fonts</em> and <em>thai-scalable-fonts</em>)
+which seem to have some sort of test suites but I don't know how they work or
+what type of problems they test for. On top of that all three have a different
+way of doing things (e.g. not using a standardized test framework or a variation of such).</p>
+<p>I'll keep you posted on this once I manage to get more info from upstream developers.</p>
+<h2>Is URL Field in RPM Useless</h2>
+<p>So is it? Opinions here differ from totally useless to "don't remove it, I need it".
+However I run a small test and from 2574 RPMs on the source DVD there is around 
+40% of "something different than HTTP 200 OK". This means <strong>40% potentially broken URLs</strong>!</p>
+<p>The majority are responses in the 3XX range and only less than 10% are 
+actual errors (4XX, 5XX, missing URLs or connection errors).</p>
+<p>It will be interesting to see if this can be removed from <code>rpm</code> altogether.
+I don't think it will happen soon but if we don't use it why have it there? </p>
+<p>My script for the test is
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/test-rpm-url-field.sh">here</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 03 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/02/28/action-improving-test-coverage-in-fedora/" rel="bookmark" title="Permalink to Call to Action: Improving Overall Test Coverage in Fedora">
+                <h2 class="post-title">
+                    Call to Action: Improving Overall Test Coverage in Fedora
+                </h2>
+            </a>
+                <p>Around Christmas 2013
+<a href="/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/">I said</a></p>
+<blockquote>
+<p>... it looks like on average 30% of the packages execute their test suites at
+build time in the %check section and less than 35% have test suites at all!
+There’s definitely room for improvement and I plan to focus on this during 2014!</p>
+</blockquote>
+<p>I've recently started working on this goal by first identifying potential offending
+packages and discussing the idea on Fedora's
+<a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/thread.html">devel</a>,
+<a href="https://lists.fedoraproject.org/pipermail/packaging/2014-February/thread.html">packaging</a>
+and <a href="https://lists.fedoraproject.org/pipermail/test/2014-February/thread.html">test</a>
+mailing lists.</p>
+<p>May I present you nearly <strong>2000 packages</strong> which need your love:</p>
+<ul>
+<li><a href="https://fedoraproject.org/wiki/QA/Testing_in_check">wiki/QA/Testing_in_check</a></li>
+<li><a href="https://fedoraproject.org/wiki/QA/Missing_upstream_test_suites">wiki/QA/Missing_upstream_test_suites</a></li>
+</ul>
+<p>The intent for these pages is to serve as a source of working material for Fedora 
+volunteers.</p>
+<h2>How Can I Help</h2>
+<ul>
+<li>Join upstream and create a test suite for a package you find interesting;</li>
+<li>Provide patches - <a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/196035.html">first patch</a>
+came in less than 30 minutes of initial announcement :);</li>
+<li>Review packages in the wiki and help identify false negatives;</li>
+<li>Forward to people who may be interested to work on these items;</li>
+<li>Share and promote in your local open source and developer communities;</li>
+</ul>
+<h2>Important</h2>
+<p>If you would like to gain some open source practice and QA experience I will
+happily provide mentorship and general help so you can start working on Fedora.
+Just ping me!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 28 February 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/02/28/action-improving-test-coverage-in-fedora/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/" rel="bookmark" title="Permalink to 7 Years and 1400 Bugs Later as Red Hat QA">
+                <h2 class="post-title">
+                    7 Years and 1400 Bugs Later as Red Hat QA
+                </h2>
+            </a>
+                <p>Today I celebrate my 7th year working at Red Hat's Quality Engineering department.
+Here's my story!</p>
+<p><img alt="Platform QE" src="/images/redhat_platform_qe.jpg" title="Platform QE" /></p>
+<p>On a cold winter Friday in 2007 I left my job as a software developer in Sofia,
+packed my stuff together, purchased my <a href="http://amzn.to/1hlPuyr">first laptop</a> and
+on Sunday jumped the train to Brno to join the Release Test Team at Red Hat.
+Little did I know what it was all about. When I was offered the position
+I was on a very noisy bus and had to pick between two positions. I didn't quite understood
+what were the options and just picked the second one.
+Luckily everything turned out great and continues to this day.</p>
+<p>I'm sharing my experience and highlighting some bugs which I've found.
+Hopefully you will find this interesting and amusing. If you are a QA engineer
+I urge you to take a look at <a href="http://red.ht/1gbHElQ">my public bug portfolio</a>,
+dive into details, read the comments and learn as much as you can.</p>
+<h2>What do I do exactly</h2>
+<p>From all QE teams in Red Hat, Release Test Team is the first one and
+last one to test a release. The team has both technical function and a more managerial one.
+Our focus is on the core Red Hat Enterprise Linux product. 
+Unfortunately I can't go into much details because this is not a public facing unit.
+I will limit myself to <strong>public and/or non-sensitive information</strong>.</p>
+<p>We are the first to test a new nightly build or a
+snapshot of the upcoming RHEL release. If the tree is installable other teams take over
+and do their magic. At the end when bits are published live we're the last to
+verify that content is published where it is expected to be. In short this is
+covering the work of the release engineering team which is to build a product and
+publish the contents for consumption.</p>
+<p>The same principles apply to Fedora although the engagement here is less demanding.</p>
+<p>Personally I have been and continue to be responsible for Red Hat Enterprise Linux 5
+family of releases. It's up to me to give the go ahead for further testing or request
+a re-spin. This position
+also has the power to block and delay the GA release if not happy with testing or
+there is a considerable risk of failure until things are sorted out.</p>
+<p>Like in other QA teams I create test plan documents, write test case scenarios,
+implement test automation scripts (and sometimes tools), regularly execute said test
+plans and test cases, find and report any new bugs and verify old ones are fixed. 
+Most importantly make sure RHEL installs and is usable for further testing :).</p>
+<p>Sometimes I have to deal with capacity planning and as RHEL 5 installation 
+test lead I have to organize and manage the entire installation testing campaign
+for that product.</p>
+<p>My favorite testing technique is
+<a href="https://en.wikipedia.org/wiki/Exploratory_testing">exploratory testing</a>.</p>
+<h2>Stats and Numbers</h2>
+<p>It is hard (if not impossible) to <a href="https://github.com/atodorov/qe-metrics">measure QA work</a>
+with numbers alone but here are some interesting facts about my experience so far.</p>
+<ul>
+<li>Nearly 1400 bugs filed (1390 at the time of writing);</li>
+<li>Reported bugs across 32 different products. Top 3 being RHEL 6, RHEL 5 and Fedora (1000+ bugs);</li>
+<li>Top 3 components for reporting bugs against: anaconda, releng, kernel;</li>
+<li>Nearly 100 bugs filed in my first year 2007;</li>
+<li>The 3 most productive years being 2010, 2009, 2011 (800 + bugs); </li>
+<li>Filed 200 bugs/year which is about 1 bug/day considering holidays;</li>
+<li>35th top bug reporter (excluding robot accounts). I was in top 10 a few years back;</li>
+</ul>
+<p>Many of <a href="http://red.ht/1gbHElQ">the bugs I report</a> are private so if you'd like
+to know more stats just ask me and I'll see what I can do.</p>
+<h2>2007</h2>
+<p>My very first bug is <a href="https://bugzilla.redhat.com/show_bug.cgi?id=231860">RHBZ #231860</a>(private)
+which is about the graphical update tool Pup which used to show the wrong number of available
+updates.</p>
+<p>Then I've played with adding <a href="https://fedorahosted.org/dogtail/">Dogtail</a> support to Anaconda.
+While initially this was rejected (Fedora 6/7), it was <a href="https://fedoraproject.org/wiki/Anaconda/Features/Dogtail">implemented</a>
+few years later (Fedora 9) and then removed once again during the big Anaconda rewrite.</p>
+<p>I've spent my time working extensively on RHEL 5 battling with multi-lib issues, SELinux denials and
+generally making the 5 family less rough. Because I was still on-boarding I generally worked
+on everything I could get my hands on and also did some work on RHEL3-U9 (latest release
+before EOL) and some RHEL4-U6 testing.</p>
+<p>With ia64 on RHEL3 I found a corner case
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=240782">kernel bug</a> which flooded the serial
+console with messages and caused a multi-CPU system to freeze.</p>
+<h2>In 2008 Time went backwards</h2>
+<p>My first bug in 2008 is <a href="https://bugzilla.redhat.com/show_bug.cgi?id=428280">RHBZ #428280</a>.
+glibc introduced SHA-256/512 hashes for hashing passwords with crypt but that wasn't documented.</p>
+<p><strong>UPDATE 2014-02-21</strong>
+While testing 5.1 to 5.2 updates I found
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=435475">RHBZ #435475</a> - a severe
+<strong>performance degradation</strong> in the package installation process. Upgrades
+took almost twice as much time to complete, rising <strong>from 4 hours to 7 hours</strong>
+depending on hardware and package set. This was a tough one to test and verify.
+<strong>END UPDATE</strong></p>
+<p>While dogfooding the 5.2 beta in March I hit
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=437252">RHBZ #437252</a> - kernel: Timer ISR/0: Time went backwards.
+To this date this is one of my favorite bugs with a great error message!</p>
+<p>Removal of a hack in RPM led to file conflicts under <code>/usr/share/doc</code> in several packages:
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448905">RHBZ #448905</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448906">RHBZ #448906</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448907">RHBZ #448907</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448909">RHBZ #448909</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448910">RHBZ #448910</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=448911">RHBZ #448911</a>
+which is also the first time I happen to file several bugs in a row.</p>
+<p>ia64 couldn't boot with encrypted partitions -
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=464769">RHBZ #464769</a>,
+RHEL 5 introduced support for ext4 - <a href="https://bugzilla.redhat.com/show_bug.cgi?id=465248">RHBZ #465248</a>
+and I've hit a fontconfig issue during upgrades - <a href="https://bugzilla.redhat.com/show_bug.cgi?id=469190">RHBZ #469190</a>
+which continued to resurface occasionally during the next 5 years.</p>
+<p>This is the year when I took over responsibility for the general installation
+testing of RHEL 5 from James Laska and will continue to do so until it reaches end-of-life!</p>
+<p>I've also worked on RHEL 4, Fedora and even the OLPC project. On the testing side of things
+I've participated in testing
+<a href="https://fedoraproject.org/wiki/QA/TestPlans/Networking">Fedora networking on the XO</a>
+hardware and worked on translation and general issues.</p>
+<h2>2009 - here comes RHEL 6</h2>
+<p>This year starts my 3 most productive years period. </p>
+<p>The second bug reported this
+year is <a href="https://bugzilla.redhat.com/show_bug.cgi?id=481338">RHBZ #481338</a> which
+also mentions one of my hobbies - wrist watches. While browsing a particular
+website Xorg CPU usage rose to 100%. I've seen a number of these through the years
+and I'm still not sure if its Xorg or Firefox or both to blame. And I still see my
+CPU usage go to 100% just like that and drain my battery. I'm open to suggestions how
+to test and debug what's going on as it doesn't happen in a reproducible fashion.</p>
+<p>I happened to work on RHEL 4, RHEL 5, Fedora and the upcoming RHEL 6 releases and
+managed to file bugs in a row not once but twice. 
+I wish I was paid per bug reported back then :).</p>
+<p>The first series was about empty debuginfo packages with both empty packages which
+shouldn't have existed at all
+(e.g. <a href="https://bugzilla.redhat.com/show_bug.cgi?id=500628">redhat-release</a>) 
+and missing debuginfo information for binary packages
+(e.g. <a href="https://bugzilla.redhat.com/show_bug.cgi?id=500612">nmap</a>).</p>
+<p>The second series is around 100 bugs which had to do with the texinfo
+documentation of packages when installed with --excludedocs. The first one
+is <a href="https://bugzilla.redhat.com/show_bug.cgi?id=515909">RHBZ #515909</a> and the
+last one <a href="https://bugzilla.redhat.com/show_bug.cgi?id=516014">RHBZ #516014</a>.
+While this works great for bumping up your bug count it made lots of developers
+unhappy and not all bugs were fixed. Still the use case is valid and these
+were proper software errors. It is also the first time I've used a script to
+file the bugs automatically and not by hand.</p>
+<p>Near the end of the year I've started testing installation on new hardware
+by the likes of Intel and AMD before they hit the market. I had the pleasure to work
+with the latest chipsets and CPUs, even sometime pre-release versions and make sure
+Red Hat Enterprise Linux installed and worked properly on them. I've stopped doing
+this last year to free up time for other tasks.</p>
+<h2>2010 - one bug a day keeps developers at bay :)</h2>
+<p>My most productive year with 1+ bugs per day.</p>
+<p>2010 starts with a bug about file conflicts (private one) and continues with the same
+narrative throughout the year.
+As a matter of fact I did a small experiment and found around <strong>50000</strong>
+(you read that right, fifty thousand) potentially
+conflicting files, mostly between multi-lib packages, which were being ignored by RPM
+due to its multi-lib policies. However these were primarily man pages or documentation
+and most of them didn't get fixed. The proper fix would have been to introduce a
+-docs sub-package and split these files from the actual binaries. Fortunately the world
+migrated to 64bit only and this isn't an issue anymore.</p>
+<p>By that time RHEL 6 development was running at its peak capacity and there were Beta
+versions available. Almost the entire year I've been working on internal RHEL 6 snapshots
+and discovering the many new bugs introduced with tons of new features in the installer.
+Some of the new features included better IPv6 support, dracut and KVM.</p>
+<p>An interesting set of bugs from September are the rpmlint errors and warnings ones,
+for example <a href="https://bugzilla.redhat.com/show_bug.cgi?id=634931">RHBZ #634931</a>. I just
+run the most basic test tool against some packages. It generated lots of false negatives
+but also revealed bugs which were fixed.</p>
+<p>Although there were many bugs filed this year I don't see any particularly interesting ones.
+It's been more like lots of work to improve the overall quality than exploring
+edge cases and finding interesting failures. If you find a bug from this period that you
+think is interesting I will comment on it.</p>
+<h2>2011 - Your system may be seriously compromised</h2>
+<p>This is the last year of my 3 year top cycle. </p>
+<p>It starts with <a href="https://bugzilla.redhat.com/show_bug.cgi?id=666687">RHBZ #666687</a> -
+a patch for my crappy printer-scanner-coffee maker which I've been carrying around
+since <a href="https://bugzilla.redhat.com/show_bug.cgi?id=498228">2009</a> when I bought it.</p>
+<p>I was still working primarily on RHEL 6 but helped test the latest RHEL 4 release
+before it went end-of-life. The interesting thing about it was that unlike other
+released RHEL4-U9 was not available on installation media but only as an update from
+RHEL4-U8. This was a great experience which you happen to see
+<a href="https://access.redhat.com/site/support/policy/updates/errata/">every 4 to 5 years</a> or so.</p>
+<p>Btw I've also led the installation testing effort and RTT team through the last few
+RHEL 4 releases but given the product was approaching EOL there weren't many changes
+and things went smoothly.</p>
+<p>A minor side activity was me playing around with
+<a href="/blog/2011/03/14/usb-multi-seat-on-red-hat-enterprise-linux-6/">USB Multi-seat</a>
+and finding a few bugs here and there along the way.</p>
+<p>Another interesting activity in 2011 was proof-reading the entire product documentation
+before its release which I can now relate to the 
+<a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">Testing Documentation</a>
+talk at FOSDEM 2014.</p>
+<p>In 2011 I've started using the cloud and most notably Red Hat's OpenShift PaaS service.
+First internally as an early adopter and later externally after the product was announced
+to the public. There are a few interesting bugs here but they are private and I'm not
+at liberty to share although they've all been fixed since then.</p>
+<p>An interesting bug with NUMA, Xen and ia64
+(<a href="https://bugzilla.redhat.com/show_bug.cgi?id=696599">RHBZ #696599</a> - private) had
+me and devel banging our heads against the wall until we figured out that on this
+particular system the NUMA configuration was not suitable for running Xen virtualization.</p>
+<p>Can you spot the problem here ?</p>
+<div class="highlight"><pre><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">kickstartGui</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Could not open display because no X server is running.&quot;</span><span class="p">))</span>
+    <span class="k">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Try running &#39;system-config-kickstart --help&#39; for a list of options.&quot;</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Be honest and use the comments form to tell me what you've found. If you struggled
+then see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=703085">RHBZ #703085</a> and come
+back again to comment. I'd love to hear from you.</p>
+<p>What do you do when you see an error message saying: 
+<strong>Your system may be seriously compromised! /usr/sbin/NetworkManager tried to load a kernel module.</strong>
+This is the scariest error message I've ever seen. Luckily its just
+SELinux overreacting, see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=704090">RHBZ #704090</a>.</p>
+<h2>2012 is in the red zone</h2>
+<p>While the number of reported bugs dropped significantly compared to previous
+years this is the year when I've reported almost exclusively high priority and
+urgent bugs, the first one being 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=771901">RHBZ #771901</a>.</p>
+<p><a href="https://bugzilla.redhat.com/show_bug.cgi?id=799384">RHBZ #799384</a>(against Fedora)
+is one of the rare cases when I was able to contribute
+(although just by raising awareness) to localization and improved support for
+Bulgarian and Cyrillic. 
+The other one case was <a href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/">last year</a>.
+Btw I find it strange that although 
+<a href="https://en.wikipedia.org/wiki/Cyrillic_script">Cyrillic was invented by Bulgarians</a>
+we didn't (or still don't) have a native font co-maintainer.
+Somebody please step up!</p>
+<p>The red zone bugs continue to span till the end of the year across RHEL 5, 6 and
+early cuts of RHEL 7 with a pinch of OpenShift and some internal and external test tools.</p>
+<h2>In 2013 Bugzilla hit 1 million bugs</h2>
+<p>The year starts with a very annoying and still not fixed bug against ABRT.
+It's very frustrating when the tool which is supposed to help you file bugs
+doesn't work properly, see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=903591">RHBZ #903591</a>.
+It's a known fact that
+<a href="/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/">ABRT has problems</a>
+and for this scenario I may have a 
+<a href="/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/">tip</a> for you.</p>
+<p><a href="https://bugzilla.redhat.com/show_bug.cgi?id=923416">RHBZ #923416</a> - another one of these
+100% CPU bugs. As I said they happen from time to time and mostly go by unfixed or
+partially fixed because of their nature. Btw as I'm writing this post and have
+a few tabs open in Firefox it keeps using between 15% and 20% CPU and the CPU
+temperature is over 90 degrees C. And all I'm doing is writing text in the console.
+Help!</p>
+<p><a href="https://bugzilla.redhat.com/show_bug.cgi?id=967229">RHBZ #967229</a> - a minor one but
+reveals an important thing - your output (and input for that matter) methods may
+be producing different results. Worth testing if your software supports more than one.</p>
+<p>This year I did some odd jobs working on several of Red Hat's layered products mainly
+Developer Toolset. It wasn't a tough job and was a refreshing break away from the mundane
+installation testing.</p>
+<p>While I stopped working actively on the various RHEL families which are under development
+or still supported I happened to be one of top 10 bug reporters for high/urgent priority bugs
+for RHEL 7. In appreciation Red Hat sent me lots of corporate gifts and the Platform QE hoodie
+pictured at the top of the page. Many thanks!</p>
+<p>In the summer Red Hat's 
+<a href="/blog/2013/08/23/red-hats-bugzilla-hits-one-million-bugs/">Bugzilla hit One Million bugs</a>.
+The closest I come to this milestone is
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=999941">RHBZ #999941</a>.</p>
+<p>I finally managed to transfer most of my responsibilities to co-workers and joined
+the Fedora QA team as a part-time contributor. I had some highs and lows with
+<a href="/blog/2013/10/07/fedora-20-virtualization-and-gnome-test-days-at-init-lab-this-week/">Fedora test days in Sofia</a>
+as well. Good thing is I scored another 15 bugs across the
+<a href="/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/">virtualization stack</a>
+and <a href="/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/">GNOME 3.10</a>.</p>
+<p>The year wraps up with another series of identical bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1024729">RHBZ #1024729</a> and
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025289">RHBZ #1025289</a> for example.
+As it <a href="/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/">turned out</a>
+lots of packages don't have any test suites at all and those
+which do don't always execute them automatically in %check. I've promised myself
+to improve this but still haven't had time to work on it. Hopefully by
+March I will have something in the works.</p>
+<h2>2014 - Fedora QA improvement</h2>
+<p>Last two months I've been working on some internal projects and looking
+a little bit into improving processes, test coverage and QA infrastructure - 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1064895">RHBZ #1064895</a>.
+And Rawhide (upcoming Fedora 21) isn't behaving -
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1063245">RHBZ #1063245</a>.</p>
+<p>My goal for this year is to do more work on improving the overall test coverage
+of Fedora and together with the Fedora QA team bring an
+<a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/">open testing infrastructure</a>
+to the community. </p>
+<p>Let's see how well that plays out!</p>
+<h2>What do I do now</h2>
+<p>During the last year I have gradually changed my responsibilities to work more on Fedora.
+As a volunteer in the Fedora QA I'm regularly testing installation
+of Rawhide trees and try to work closely with the community. I still have to
+manage RHEL 5 test cycles where I don't expect nothing disruptive at this stage in the
+product life-cycle!</p>
+<p>I'm open to any ideas and help which can improve test coverage and quality of software
+in Fedora. If you're just joining the open source world this is an excellent
+opportunity to do some good, get noticed and even maybe get a job. I will definitely
+help you get through the process if you're willing to commit your time to this.</p>
+<p>I hope this long post has been useful and fun to read. Please use the comments form to tell
+me if I'm missing something or you'd like to know more.</p>
+<p><em>Looking forward to the next 7 years!</em></p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 February 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/" rel="bookmark" title="Permalink to FOSDEM 2014 Report - Day #2 Testing and Automation">
+                <h2 class="post-title">
+                    FOSDEM 2014 Report - Day #2 Testing and Automation
+                </h2>
+            </a>
+                <p><img alt="Testing and Automation" src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation" /></p>
+<p>FOSDEM was hosting the
+<a href="https://fosdem.org/2014/schedule/track/testing_and_automation/">Testing and automation devroom</a>
+for the second year and this was the very reason I attended the conference. I managed to get in
+early and stayed until 15:00 when I had to leave to catch my flight (which was late :(). </p>
+<p>There were 3 talks given by Red Hat employees in the testing devroom which was a nice opportunity
+to meet some of the folks I've been working on IRC with. Unfortunately I didn't meet anyone from
+Fedora QA. Not sure if they were attending or not. </p>
+<p>All the talks were interesting so see the official schedule and video for more details. I will
+highlight only the items I saw as particularly interesting or have not heard of before. </p>
+<h2>ANSTE</h2>
+<p>ANSTE - Advanced Network Service Testing Environment is a test infrastructure controller,
+something like our own <a href="http://beaker-project.org/">Beaker</a> but designed to create complex
+networking environments. I think it lacks many of the provisioning features built in Beaker
+and integration with various hypervisors and bare-metal provisioning. What it seems to do better
+(as far as I can tell from the talk) is to deploy virtual systems and create more complex network
+configuration between them. Not something I will need in the near future but definitely worth
+a look at. </p>
+<h2>cwrap</h2>
+<blockquote>
+<p>cwrap is...</p>
+<p>a set of tools to create a fully isolated network environment to test client/server components on a single host.
+It provides synthetic account information, hostname resolution and support for privilege separation.
+The heart of cwrap consists of three libraries you can preload to any executable.</p>
+</blockquote>
+<p>That one was the coolest technology I've seen so far although I may not need to use it at all,
+hmmm maybe testing DHCP fits the case.</p>
+<p>It evolved from the Samba project and takes advantage of the order in which
+libraries are searched when resolving functions. When you preload the project libraries
+to any executable they will override standard libc functions for working with sockets,
+user accounts and privilege escalation.</p>
+<p>The socket_wrapper library redirects networking sockets through local UNIX sockets and
+gives you the ability to test applications which need privileged ports with a local developer
+account. </p>
+<p>The nss_wrapper library provides artificial information for user and group accounts,
+network name resolution using a hosts file and loading and testing of NSS modules.</p>
+<p>The uid_wrapper library allows uid switching as a normal user (e.g. fake root) and
+supports user/group changing in the local thread using the syscalls (like glibc).</p>
+<p>All of these wrapper libraries are controlled via environment variables and definitely
+makes testing of daemons and networking applications easier.</p>
+<h2>Testing Documentation</h2>
+<p>That one was just scratching the surface of an entire branch of testing which I've not
+even considered before. The talk also explains why it is hard to test documentation and
+what possible solutions there are. </p>
+<p>If you write user guides and technical articles which need to
+stay current with the software this is definitely the place to start.</p>
+<h2>Automation in the Foreman Infrastructure</h2>
+<p>The last <a href="http://ftp.osuosl.org/pub/fosdem//2014/previews/fosdem/fosdem_2014/dv/UD2218A/2014-02-02/12_51_36.ogv">talk</a>
+I've listened to. Definitely the best one from a general testing approach
+point of view. Greg talked about starting with Foreman unit tests, then testing the merged PR,
+then integration tests, then moving on to test the package build and then the resulting packages themselves. </p>
+<p>These guys try to even test their own infrastructure (infra as code) and the test suites
+they use to test everything else. It's all about automation and the level of confidence
+you have in the entire process.</p>
+<p>I like the fact that no single testing approach can make you confident enough before shipping
+the code and that they've taken into account changes which get introduced at various places
+(e.g. 3rd party package upgrades, distro specific issues, infrastructure changes and such) </p>
+<p>If I had to attend only one session it would have been this one. There are many things for me
+to take back home and apply to my work on Fedora and RHEL.</p>
+<p>If you find any of these topics remotely interesting I advise you to wait until FOSDEM video
+team uploads the recordings and watch the entire session stream. I'm definitely missing a lot
+of stuff which can't be easily reproduced in text form.</p>
+<p>You can also find my report of the first FOSDEM'14 day on Saturday
+<a href="/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">here</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 03 February 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/" rel="bookmark" title="Permalink to Upstream Test Suite Status of Fedora 20">
+                <h2 class="post-title">
+                    Upstream Test Suite Status of Fedora 20
+                </h2>
+            </a>
+                <p>Last week I've expressed my thoughts about the state of
+<a href="https://lists.fedoraproject.org/pipermail/test/2013-December/119637.html">upstream test suites in Fedora</a>
+along with some other ideas. Following the response on this thread I'm starting
+to analyze all SRPM packages in Fedora 20 in order to establish a baseline. Here are my initial findings.</p>
+<h2>What's Inside</h2>
+<p>I've found two source distributions for Fedora 20:</p>
+<ul>
+<li>The <code>Fedora-20-source-DVD.iso</code> file which to my knowledge contains the sources
+of all packages that comprise the installation media;</li>
+<li>The <code>Everything/source/SRPMS/</code> directory which appears to contain the sources
+of everything else available in the Fedora 20 repositories.</li>
+</ul>
+<p>There are <strong>2574</strong> SRPM packages in Fedora-20 source DVD and <strong>14364</strong> SRPMs
+in the Everything/ directory. 9,2G vs. 41G.</p>
+<h2>Test Suite Execution In %check</h2>
+<p><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Test_Suites">Fedora Packaging Guidelines</a>
+state</p>
+<blockquote>
+<p>If the source code of the package provides a test suite,
+it should be executed in the %check section,
+whenever it is practical to do so.</p>
+</blockquote>
+<p>In my research I found <strong>738</strong> SRPMs on the DVD which have a %check
+section and <strong>4838</strong> such packages under <code>Everything/</code>. This is <strong>28,6%</strong> and <strong>33,6%</strong>
+respectively.</p>
+<h2>Test Suite Existence</h2>
+<p>A quick grep for either <code>test/</code> or <code>tests/</code> directories in the package sources revealed
+<strong>870</strong> SRPM packages in the source DVD which are very likely to have a test suite.
+This is <strong>33,8%</strong>. <strike>I wasn't able to inspect the <code>Everything/</code> directory with this script
+because it takes too long to execute and my system crashed out of memory.
+I will update this post later with that info.</strike></p>
+<p><em>UPDATE 2014-01-02</em>: 
+In the <code>Everything/</code> directory only <strong>4481</strong> (<strong>31,2%</strong>) SRPM packages appear to have
+test suites.</p>
+<p>The scripts and raw output are available at <a href="https://github.com/atodorov/fedora-scripts">https://github.com/atodorov/fedora-scripts</a>.</p>
+<p>So it looks like on average <strong>30%</strong> of the packages execute their test suites at build
+time in the %check section and less than <strong>35%</strong> have test suites at all!
+There's definitely room for improvement and I plan to focus on this during 2014!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 24 December 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/" rel="bookmark" title="Permalink to Can I Use Android Phone as Smart Card Reader">
+                <h2 class="post-title">
+                    Can I Use Android Phone as Smart Card Reader
+                </h2>
+            </a>
+                <p>Today I had troubles with my Omnikey CardMan 6121 smart card reader.
+For some reason it will not detect the card inside and was unusable.
+<code>/var/log/messages</code> was filled with  <em>Card Not Powered</em> messages:</p>
+<div class="highlight"><pre>Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
+Dec 18 11:18:01 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+Dec 18 11:18:02 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
+</pre></div>
+
+
+<p><img src="/images/omnikey_cardman_6121.gif" style="float:right;margin-left:20px;" /></p>
+<p>I've found the solution in 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=531998">RHBZ #531998</a>. </p>
+<blockquote>
+<p>I've found the problem, and it's purely mechanical.
+Omnikey has simply screwed up when they designed this reader.
+When the reader is inserted into the ExpressCard slot, it gets slightly
+compressed. This is enough to trigger the mechanical switch that detects
+insertions. If I jam something in there and force it apart, then pcscd
+starts reporting that the slot is empty.</p>
+<p>Pierre Ossman, https://bugzilla.redhat.com/show_bug.cgi?id=531998#c12</p>
+</blockquote>
+<p>So I tried moving the smart card a millimeter back and forth inside the reader and
+that fixed it for me.</p>
+<p>This smart card is standard SIM size and I wonder if it is possible to use
+<a href="http://amzn.to/1dnl2gN">dual SIM</a> smart phones and <a href="http://amzn.to/18XpWlp">tablets</a>
+as a reader? I will be happy to work on the software side if there is an open source
+project already (e.g. OpenSC + drivers for Android). If not, why not? </p>
+<p>If you happen to have information on the subject please share it in the comments.
+Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 18 December 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/12/18/can-i-use-android-phone-as-smart-card-reader/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/" rel="bookmark" title="Permalink to Bug in Python URLGrabber/cURL on Fedora and Amazon Linux">
+                <h2 class="post-title">
+                    Bug in Python URLGrabber/cURL on Fedora and Amazon Linux
+                </h2>
+            </a>
+                <p>Accidentally I have discovered a bug for Python's
+URLGrabber module which has to do with change in behavior in libcurl.</p>
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
+    <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
+<span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
+newer. As explained by 
+<a href="http://lists.baseurl.org/pipermail/yum-devel/2013-November/010428.html">Zdenek Pavlas</a>
+the reason is an internal change in libcurl which doesn't accept a value of 1 anymore!</p>
+<p>The bug is reproducible with a newer libcurl version and a vanilla urlgrabber==3.9.1
+from PyPI (e.g. inside a virtualenv). The latest python-urlgrabber RPM packages in both
+Fedora and Amazon Linux already have the fix.</p>
+<p>I have tested the patch proposed by Zdenek and it works for me. I still have no idea why
+there aren't any updates released on PyPI though!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 29 November 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/11/29/bug-python-urlgrabber-curl-fedora-amazon-linux/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/" rel="bookmark" title="Permalink to Open Source Quality Assurance Infrastructure for Fedora QA">
+                <h2 class="post-title">
+                    Open Source Quality Assurance Infrastructure for Fedora QA
+                </h2>
+            </a>
+                <p><img alt="&quot;Beaker test lab&quot;" src="/images/fedora/beaker.png" title="Beaker test lab" /></p>
+<p>In the last few weeks I've been working together with 
+<a href="https://fedoraproject.org/wiki/User:Tflink">Tim Flink</a> and
+<a href="https://fedoraproject.org/wiki/User:Kparal">Kamil Paral</a> from the Fedora QA
+team on bringing some installation testing expertise to Fedora and establishing
+an <a href="http://beaker.fedoraproject.org/bkr/">open source test lab</a>
+to perform automated testing in. The infrastructure is
+already in relatively usable condition so I've decided to share this information
+with the community. </p>
+<h2>Beaker is Running Our Test Lab</h2>
+<p><a href="http://beaker-project.org/">Beaker</a> is the software suite that powers the test
+lab infrastructure. It is quite complex, with many components and sometimes not
+very straight-forward to set up. Tim has been working on that with me giving it
+a try and reporting issues as they have been discovered and fixed. </p>
+<p>In the process of working on this I've managed to create
+<a href="http://gerrit.beaker-project.org/#/q/owner:%22Alexander+Todorov%22,n,z">couple of patches</a>
+against Beaker and friends. They are still pending release in a future version
+because of more urgent bug fixes which need to released first.</p>
+<h2>SNAKE is The Kickstart Template Server</h2>
+<p><a href="https://fedorahosted.org/snake/">SNAKE</a> is a client/server Python framework used
+to support Anaconda installations. It supports plain text ks.cfg files, IIRC those
+were static templates, no variable substitution.</p>
+<p>The other possibility is Python templates based on Pykickstart:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">pykickstart.constants</span> <span class="kn">import</span> <span class="n">KS_SCRIPT_POST</span>
+<span class="kn">from</span> <span class="nn">pykickstart.parser</span> <span class="kn">import</span> <span class="n">Script</span>
+<span class="kn">from</span> <span class="nn">installdefaults</span> <span class="kn">import</span> <span class="n">InstallKs</span>
+
+<span class="k">def</span> <span class="nf">ks</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Anaconda autopart&#39;&#39;&#39;</span>
+
+    <span class="n">ks</span><span class="o">=</span><span class="n">InstallKs</span><span class="p">()</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;@base&#39;</span><span class="p">])</span>
+
+    <span class="n">ks</span><span class="o">.</span><span class="n">clearpart</span><span class="p">(</span><span class="n">initAll</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">autopart</span><span class="p">(</span><span class="n">autopart</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">script</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+<span class="s">cp /tmp/ks.cfg /mnt/sysimage/root/ks.cfg || </span><span class="se">\</span>
+<span class="s">cp /run/install/ks.cfg /mnt/sysimage/root/ks.cfg</span>
+<span class="s">&#39;&#39;&#39;</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">Script</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">KS_SCRIPT_POST</span><span class="p">,</span> <span class="n">inChroot</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">ks</span><span class="o">.</span><span class="n">scripts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ks</span>
+</pre></div>
+
+
+<p>At the moment SNAKE is essentially abandoned but feature complete.
+I'm thinking about adopting the project just in case we need to make some fixes.
+Will let you know more about this when it happens. </p>
+<h2>Open Source Test Suite</h2>
+<p>I have been working on opening up several test cases for what we (QE) call
+a tier #1 installation test suite. They can be found in
+<a href="http://taskbot.cloud.fedoraproject.org/cgit/fedora-beaker-tests/">git</a>.
+The tests are base on <a href="https://fedorahosted.org/beakerlib/">beakerlib</a> and
+the legacy RHTS framework which is now part of Beaker.</p>
+<p>This effort has been coordinated with Kamil as part of a pilot
+project he's responsible for. I've been executing the same test suite against
+earlier Fedora 20 snapshots but using an internal environment. Now everything
+is going out in the open.</p>
+<h2>Executing The Tests</h2>
+<p>Well you can't do that - YET! There are command line client tools for Fedora
+but Beaker and SNAKE are not well suited for use outside a restricted network
+like LAN or VPN. There are issues with authentication most notably for SNAKE.</p>
+<p>At the moment I have to ssh through two different systems to get proper access.
+However this is been worked on. I've read about a rewrite which will allow Beaker
+to utilize a custom authentication framework like FAS for example. Hopefully that
+will be implemented soon enough.</p>
+<p>I will also like to see the test systems have direct access to the Internet for
+various reasons but this is not without its risks either. This is still to be
+decided.</p>
+<p>If you are interested anyway see the <code>kick-tests.sh</code> file in the test suite for
+examples and command line options.</p>
+<h2>Test Results</h2>
+<p>The first successfully completed
+<a href="http://beaker.fedoraproject.org/bkr/jobs/">test jobs</a> are jobs 50 to 58.
+There's a failure in one of the test cases, namely SELinux related 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1027148">RHBZ #1027148</a>.</p>
+<p>From what I can tell the lab is now working as expected and we can start doing
+some testing against Fedora development snapshots.</p>
+<p>Ping me or join #fedora-qa on irc.freenode.net if you'd like to join Fedora QA!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 19 November 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/" rel="bookmark" title="Permalink to Keeping Backwards Compatibility for pykickstart">
+                <h2 class="post-title">
+                    Keeping Backwards Compatibility for pykickstart
+                </h2>
+            </a>
+                <p>Consider the following scenario:</p>
+<ul>
+<li>I'm using <a href="https://fedorahosted.org/snake/">SNAKE</a> templates as part of my
+installation testing work;</li>
+<li>SNAKE has a dependency on pykickstart;</li>
+<li>To test the latest and greatest kickstart features in Fedora we need the
+latest version of pykickstart;</li>
+<li>Latest pykickstart needs Python 2.7</li>
+<li>Python 2.7 is not available on RHEL 6 which is used to host the test
+infrastructure.</li>
+</ul>
+<p>Just yesterday I hit an issue with the above setup and figured Fedora QA is
+in a kind of strange situation - we always need the latest but need it
+conservative enough to run on RHEL 6. See the original thread at
+<a href="https://www.redhat.com/archives/kickstart-list/2013-November/msg00001.html">kickstart-list</a>.</p>
+<p>In this particular case the solution will be to remove the offending code
+and implement the same functionality in backward-compatible manner. Also add
+more tests. I will be working on this tomorrow (there's an older patch already).</p>
+<p>The BIG question remains though - how do you manage software evolution and still
+keep it compatible with older execution stacks? Please share your experience in
+the comments section.</p>
+<hr />
+<p>PP: Spoiler - this is part of an ongoing effort to bring open source installation
+testing expertise (my domain) into Fedora world, plus establish a community supported
+test infrastructure. More info TBA soon.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 13 November 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/" rel="bookmark" title="Permalink to Fedora 20 GNOME 3.10 Test Day Post-mortem">
+                <h2 class="post-title">
+                    Fedora 20 GNOME 3.10 Test Day Post-mortem
+                </h2>
+            </a>
+                <p><img alt="&quot;Fedora sausage banner&quot;" src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" /></p>
+<p>Here is my summary of the second Fedora Test Day hosted at
+<a href="http://initlab.org">init Lab</a> yesterday.</p>
+<p>Local attendance was a total disaster, in fact I was testing once again by my own.
+This time
+there were more people in the lab, all busy with their daily routines and tasks.
+There were no people who came for the testing :(. I will have to try different
+venues in the future and see if the situation improves.</p>
+<p>On the testing front I managed to score 5 bugs against
+<a href="https://bugzilla.gnome.org/buglist.cgi?bug_id=709797,709799,709806,709810">GNOME</a>
+and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1017807">Fedora</a>.
+You can see the other test results and bugs on the
+<a href="https://fedoraproject.org/wiki/Test_Day:2013-10-10_Gnome_3.10">wiki</a>.</p>
+<p>There are two things I didn't like in particular</p>
+<ul>
+<li>GNOME 3 as well as its classic mode - simply not the environment I'm used to;</li>
+<li>Having to record test results in the wiki! I'm
+<a href="https://lists.fedoraproject.org/pipermail/test/2013-October/118284.html">writing</a>
+to the Fedora QA mailing list about that as we speak.</li>
+</ul>
+<p>At one time I was engaged in a discussion about which Bulgarian keyboard layout
+should be the default in GNOME simply because of
+<a href="https://bugzilla.gnome.org/show_bug.cgi?id=709799">GNOME #709799</a>. The default
+keyboard layout will be Bulgarian (traditional phonetic) aka bg+phonetic.</p>
+<div class="highlight"><pre>(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
+(16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default
+(16,16,34) atodorov: rtcm: I&#39;m a Bulgarian, however I can&#39;t tell which one. Both Phonetic and standard (BDS) are common
+(16,16,54) atodorov: a safe bet is to go with phonetic I guess. 
+(16,19,46) rtcm: atodorov: can you tell me which one is it in XKB terms? is it &quot;bg&quot;, &quot;bg+bas_phonetic&quot; or &quot;bg+phonetic&quot; ?
+(16,20,51) rtcm: they&#39;re labeled as &quot;Bulgarian&quot;, &quot;Bulgarian (new phonetic)&quot; and &quot;Bulgarian (traditional phonetic)&quot;
+(16,21,30) atodorov: bg+phonetic is the traditional phonetic
+(16,22,04) atodorov: bg labeled as &quot;Bulgarian&quot; is the standard one I guess. Here we call it BDS after the standardization institute
+(16,22,34) atodorov: bg+bas_phonetic is created from the Bulgarian Academy of Science and is not very popular as far as I know. I&#39;ve never seen it in use
+(16,23,15) rtcm: atodorov: all I want to know is what most people would expect? like what does windows do by default? that&#39;s a good bet
+(16,27,46) atodorov: rtcm: I&#39;m just being told that new Windows releases use yet another layout by default, which is like phonetic but with some characters in new places and people don&#39;t like that
+(16,27,53) atodorov: my safe bet goes to bg+phonetic
+(16,29,05) rtcm: ok, thanks
+</pre></div>
+
+
+<p>It is a rare occasion when you get to make a decision that affects a large group
+of people and I hope you don't hate me for that! </p>
+<p>Do you want to see more Fedora Test Days happening in Sofia? Join me and I will
+organize some more!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 11 October 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/" rel="bookmark" title="Permalink to Fedora 20 Virtualization Test Day Post-mortem">
+                <h2 class="post-title">
+                    Fedora 20 Virtualization Test Day Post-mortem
+                </h2>
+            </a>
+                <p><img alt="&quot;Fedora 20 banner&quot;" src="/images/fedora/fedora20-banner.png" title="Fedora 20 banner" /></p>
+<p>Here is a quick summary of the first Fedora Test Day in Sofia I hosted at
+<a href="http://initlab.org">init Lab</a> today.</p>
+<p>Attendance was quite poor, actually nobody else except me participated but
+almost nobody else visited the hackespace as well. I get that it is a
+working day and Test Days conflict with regular business hours but this
+is not going to change anyway. On the other hand where were all the freelancers
+and non-office job workers who usually hang around in the Lab? I have no idea!</p>
+<p>On IRC there was much better activity, 5 or 6 people were testing across
+Asia, Europe and USA time zones. You can see the test results
+<a href="http://209.132.184.192/testdays/show_event?event_id=7">here</a>.
+I've started filing quite a few bugs in the morning and continued well into the
+afternoon. I've managed to file a total of
+<a href="https://bugzilla.redhat.com/buglist.cgi?bug_id=1016435,1016449,1016488,1016530,1016604,1016613,1016648,1016663,1016704,1016715">10 bugs</a>.
+Some of them were not related to virtualization and some of them turned out to be
+duplicates or not a bug. I even managed to file 2 duplicate bugs which likely have the
+same root cause myself :). </p>
+<p>I've also experienced two bugs filed by other people:
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=967371">RHBZ #967371</a> for MATE desktop
+and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1015636">RHBZ #1015636</a> for
+virt-manager's Save/Restore functionality.</p>
+<p>I've tried ARM on x86_64 but that didn't get anywhere near a running system.
+I will make another post about ARM and what I've discovered there.</p>
+<p>The one thing I liked is the 
+<a href="http://209.132.184.192/testdays/show_event?event_id=7">test results application</a>.
+It is not what I'm used to when dealing with RHEL, has far less features but is
+very fast and easy to use and suits the Test Days participants just fine.
+And is definitely much easier to use compared to filing results in the wiki.</p>
+<p>Overall Fedora 20 virtualization status according to me is pretty good.</p>
+<p>I hope to see more attendance <a href="http://initlab.org/event/gnome-test-day">on Thursday</a>
+when we're going to test GNOME 3.10.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 08 October 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/10/08/fedora-20-virtualization-test-day-post-mortem/#disqus_thread">comments</a>.</p>        </div>
+
+    <hr>
+    <!-- Pager -->
+    <ul class="pager">
+        <li class="next">
+                <a href="http://atodorov.org/blog/categories/qa/index5.html">Older Posts &rarr;</a>
+                <a href="http://atodorov.org/blog/categories/qa/index3.html"> &larr; Newest Posts</a>
+        </li>
+    </ul>
+    Page 4 / 5
+    <hr>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

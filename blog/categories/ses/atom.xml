@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ses/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2013-12-06T22:47:00+02:00</updated><entry><title>Duplicate Amazon SQS Messages Cause Multiple Emails</title><link href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/" rel="alternate"></link><updated>2013-12-06T22:47:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-06:blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/</id><summary type="html">&lt;p&gt;Beware if using Amazon Simple Queue Service to send email messages!
+Sometime SQS messages are duplicated which results in multiple copies of
+the messages being sent. This happened today at &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;
+and is really annoying to users. In this post I will explain why there is no easy
+way of fixing it.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Q: Can a deleted message be received again?&lt;/p&gt;
+&lt;p&gt;Yes, under rare circumstances you might receive a previously deleted message again.
+This can occur in the rare situation in which a DeleteMessage operation doesn't
+delete all copies of a message because one of the servers in the distributed
+Amazon SQS system isn't available at the time of the deletion. That message copy
+can then be delivered again. You should design your application so that no errors
+or inconsistencies occur if you receive a deleted message again.&lt;/p&gt;
+&lt;p&gt;Amazon FAQ&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;In my case the cron scheduler logs say:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&amp;gt;&amp;gt;&amp;gt; &amp;lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;While on the worker nodes the logs say:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]&lt;/span&gt;
+&lt;span class="k"&gt;[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This clearly shows the same message (see the UUID) has been processed twice!
+This resulted in hundreds of duplicate emails :(.&lt;/p&gt;
+&lt;h2&gt;Why This Is Hard To Fix&lt;/h2&gt;
+&lt;p&gt;There are two basic approaches to solve this issue:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Check some log files or database for previous record of the message having
+been processed;&lt;/li&gt;
+&lt;li&gt;Use idempotent operations that if you process the message again, you
+get the same results, and that those results don't create duplicate files/records.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The problem with checking for duplicate messages is: &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;There is a race condition between marking the message as processed and the
+second check;&lt;/li&gt;
+&lt;li&gt;You need to use some sort of locking mechanism to safe-guard against the race condition;&lt;/li&gt;
+&lt;li&gt;In the event of an eventual consistency of the log/DB you can't guarantee that
+the previous attempt will show up and so can't guarantee that you won't process
+the message twice.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;All of the above don't seem to work well for distributed applications not to mention
+Difio processes millions of messages per month, per node and the logs are quite big.&lt;/p&gt;
+&lt;p&gt;The second option is to have control of the Message-Id or some other email header
+so that the second message will be discarded either at the server (Amazon SES in my case)
+or at the receiving MUA. I like this better but I don't think it is technically possible
+with the current environment. Need to check though. &lt;/p&gt;
+&lt;p&gt;I've asked AWS support to look into
+&lt;a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782"&gt;this thread&lt;/a&gt; and hopefully
+they will have some more hints. If you have any other ideas please post in the comments!
+Thanks!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="SES"></category></entry><entry><title>Email Logging for Django on RedHat OpenShift with Amazon SES</title><link href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/" rel="alternate"></link><updated>2013-02-28T23:19:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-02-28:blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/</id><summary type="html">&lt;p&gt;Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+&lt;a href="http://aws.amazon.com/ses/"&gt;Amazon SES&lt;/a&gt; as my email backend. Here is how to
+configure &lt;a href="https://www.djangoproject.com/"&gt;Django&lt;/a&gt; to send emails to site admins
+when something goes wrong.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;settings.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;# Valid addresses only.&lt;/span&gt;
+&lt;span class="n"&gt;ADMINS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Alexander Todorov&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;atodorov@example.com&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;LOGGING&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;version&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;disable_existing_loggers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;handlers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;mail_admins&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;level&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ERROR&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;class&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django.utils.log.AdminEmailHandler&amp;#39;&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;},&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;loggers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;django.request&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;handlers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;mail_admins&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;level&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ERROR&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;propagate&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="p"&gt;},&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+ 
+&lt;span class="c"&gt;# Used as the From: address when reporting errors to admins&lt;/span&gt;
+&lt;span class="c"&gt;# Needs to be verified in Amazon SES as a valid sender&lt;/span&gt;
+&lt;span class="n"&gt;SERVER_EMAIL&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django@example.com&amp;#39;&lt;/span&gt;
+
+&lt;span class="c"&gt;# Amazon Simple Email Service settings&lt;/span&gt;
+&lt;span class="n"&gt;AWS_SES_ACCESS_KEY_ID&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;xxxxxxxxxxxx&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;AWS_SES_SECRET_ACCESS_KEY&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;xxxxxxxx&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;EMAIL_BACKEND&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django_ses.SESBackend&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You also need the &lt;a href="https://github.com/hmarr/django-ses"&gt;django-ses&lt;/a&gt;
+dependency.&lt;/p&gt;
+&lt;p&gt;See &lt;a href="http://docs.djangoproject.com/en/dev/topics/logging"&gt;http://docs.djangoproject.com/en/dev/topics/logging&lt;/a&gt; for
+more details on how to customize your logging configuration.&lt;/p&gt;
+&lt;p&gt;I am using this configuration successfully at RedHat's OpenShift PaaS environment.
+Other users have
+&lt;a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django"&gt;reported&lt;/a&gt;
+it works for them too. Should work with any other PaaS provider.&lt;/p&gt;</summary><category term="tips"></category><category term="Django"></category><category term="Amazon"></category><category term="SES"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Click Tracking without MailChimp</title><link href="http://atodorov.org/blog/2013/01/31/click-tracking-without-mailchimp/" rel="alternate"></link><updated>2013-01-31T21:23:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-01-31:blog/2013/01/31/click-tracking-without-mailchimp/</id><summary type="html">&lt;p&gt;Here is a standard notification message that users at &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;
+receive. It is plain text, no HTML crap, short and URLs are clean and
+descriptive. As the project lead developer I wanted to track when people click on
+these links and visit the website but also keep existing functionality.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="&amp;quot;Email with links&amp;quot;" src="/images/email_w_links.png" title="Email with links" /&gt;&lt;/p&gt;
+&lt;h2&gt;Standard approach&lt;/h2&gt;
+&lt;p&gt;A pretty common approach when sending huge volumes of email is to use an external
+service, such as MailChimp. This is one of many email
+marketing services which comes with a lot of features. The most important to me
+was analytics and reports.&lt;/p&gt;
+&lt;p&gt;The downside is that MailChimp (and I guess others) use HTML formatted emails
+extensively. I don't like that and I'm sure my users will not like it as well. 
+They are all developers. Not to mention that MailChimp is much more expensive
+than &lt;a href="http://aws.amazon.com/ses/"&gt;Amazon SES&lt;/a&gt; which I use currently.
+No MailChimp for me!&lt;/p&gt;
+&lt;p&gt;Another common approach, used by Feedburner by the way,
+is to use shortened URLs which redirect to the original ones and measure clicks
+in between. I also didn't like this for two reasons: 1) the shortened URLs look
+ugly and they are not at all descriptive and 2) I need to generate them automatically
+and maintain all the mappings. Why bother ?&lt;/p&gt;
+&lt;h2&gt;How I did it?&lt;/h2&gt;
+&lt;p&gt;So I needed something which will do a redirect to a predefined URL, measure how many
+redirects were there (essentially clicks on the link) and look nice. The solution is
+very simple, if you have not recognized it by now from the picture above. &lt;/p&gt;
+&lt;p&gt;I opted for a custom redirect engine, which will add tracking information to the
+destination URL so I can track it in Google Analytics.&lt;/p&gt;
+&lt;p&gt;Previous URLs were of the form &lt;code&gt;http://www.dif.io/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/&lt;/code&gt;.
+I've added the humble &lt;code&gt;/daily/?&lt;/code&gt; prefix before the URL path so it becomes
+&lt;code&gt;http://www.dif.io/daily/?/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Now &lt;code&gt;/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/&lt;/code&gt; becomes a query string parameter which
+the &lt;code&gt;/daily/index.html&lt;/code&gt; page uses as its destination. Before doing the redirect
+a script adds tracking parameters so that Google Analytics will properly
+report this visit. Here is the code: &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;html&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;head&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;script &lt;/span&gt;&lt;span class="na"&gt;type=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;text/javascript&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="kd"&gt;var&lt;/span&gt; &lt;span class="nx"&gt;uri&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;window&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;location&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;toString&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+&lt;span class="kd"&gt;var&lt;/span&gt; &lt;span class="nx"&gt;question&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;uri&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;indexOf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;?&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="kd"&gt;var&lt;/span&gt; &lt;span class="nx"&gt;param&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;uri&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;substring&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;question&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;uri&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;length&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;question&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nb"&gt;window&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;location&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;href&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;param&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;?utm_source=email&amp;amp;utm_medium=email&amp;amp;utm_campaign=Daily_Notification&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/script&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/head&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;body&amp;gt;&amp;lt;/body&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/html&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Previously Google Analytics was reporting these visits as direct hits while now it lists them under
+campaigns like so:&lt;/p&gt;
+&lt;p&gt;&lt;img alt="&amp;quot;Difio Analytics&amp;quot;" src="/images/analytics_difio_campaigns.png" title="Difio Analytics" /&gt;&lt;/p&gt;
+&lt;p&gt;Because all visitors of &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt; use JavaScript enabled browsers
+I combined this approach with another one, to
+&lt;a href="/blog/2013/01/28/remove-query-string-with-javascript-and-html5/"&gt;remove query string with JavaScript&lt;/a&gt;
+and present clean URLs to the visitor.&lt;/p&gt;
+&lt;h2&gt;Why JavaScript?&lt;/h2&gt;
+&lt;p&gt;You may be asking why the hell I am using JavaScript and not Apache's wonderful mod_rewrite module? 
+This is because the destination URLs are hosted in &lt;a href="http://aws.amazon.com/s3/"&gt;Amazon S3&lt;/a&gt; and I'm
+planning to integrate with &lt;a href="http://aws.amazon.com/cloudfront/"&gt;Amazon CloudFront&lt;/a&gt;. Both of them
+don't support .htaccess rules nor anything else similar to mod_rewrite.&lt;/p&gt;
+&lt;p&gt;As always I'd love to hear your thoughts and feedback. Please use the comment form below.&lt;/p&gt;</summary><category term="JavaScript"></category><category term="Amazon"></category><category term="S3"></category><category term="SES"></category><category term="cloud"></category></entry></feed>

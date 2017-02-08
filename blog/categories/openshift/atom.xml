@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/openshift/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2015-12-02T10:34:00+02:00</updated><entry><title>Automatic Upstream Dependency Testing</title><link href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="alternate"></link><updated>2015-12-02T10:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-02:blog/2015/12/02/automatic-upstream-dependency-testing/</id><summary type="html">&lt;p&gt;Ever since
+&lt;a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/"&gt;RHEL 7.2 python-libs broke s3cmd&lt;/a&gt;
+I've been pondering an age old problem: &lt;em&gt;How do I know if my software works with the
+latest upstream dependencies ? How can I pro-actively monitor for new versions
+and add them to my test matrix ?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Mixing together my previous experience with
+&lt;a href="http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/"&gt;Difio&lt;/a&gt;
+and monitoring upstream sources,
+and &lt;a href="https://twitter.com/ForbesLindesay"&gt;Forbes Lindesay's&lt;/a&gt; &lt;em&gt;GitHub Automation&lt;/em&gt; talk
+at &lt;a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/"&gt;DEVit Conf&lt;/a&gt; I came
+together with a plan:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Make an application which will execute when new upstream version is available;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/"&gt;Automatically update &lt;code&gt;.travis.yml&lt;/code&gt;&lt;/a&gt;
+for the projects I'm interested in;&lt;/li&gt;
+&lt;li&gt;Let Travis-CI execute my test suite for all available upstream versions;&lt;/li&gt;
+&lt;li&gt;Profit!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;How Does It Work&lt;/h2&gt;
+&lt;p&gt;First we need to monitor upstream! RubyGems.org has nice
+&lt;a href="http://guides.rubygems.org/rubygems-org-api/#webhook-methods"&gt;webhooks interface&lt;/a&gt;,
+you can even trigger on individual packages. PyPI however doesn't have anything
+like this :(. My solution is to run a cron job every hour and parse their RSS
+stream for newly released packages. This has been working previously for Difio
+so I re-used one function from the code.&lt;/p&gt;
+&lt;p&gt;After finding anything we're interested in comes the hard part - automatically
+updating &lt;code&gt;.travis.yml&lt;/code&gt; using the GitHub API. I've described this in more detail
+&lt;a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/"&gt;here&lt;/a&gt;. This time
+I've slightly modified the code to update only when needed and accept more
+parameters so it can be reused.&lt;/p&gt;
+&lt;p&gt;Travis-CI has a clean interface to specify environment variables and
+&lt;a href="https://docs.travis-ci.com/user/environment-variables/#Defining-Multiple-Variables-per-Item"&gt;defining several&lt;/a&gt;
+of them crates a test matrix. This is exactly what I'm doing.
+&lt;code&gt;.travis.yml&lt;/code&gt; is updated with a new ENV setting, which determines the upstream
+package version. After commit new build is triggered which includes the expanded
+test matrix.&lt;/p&gt;
+&lt;h2&gt;Example&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="Travis-CI build log" src="http://atodorov.org/images/travisci_matrix.png" title="Travis-CI build log" /&gt;&lt;/p&gt;
+&lt;p&gt;Imagine that our &lt;em&gt;Project 2501&lt;/em&gt; depends on FOO version &lt;em&gt;0.3.1&lt;/em&gt;. The
+&lt;a href="https://travis-ci.org/atodorov/bztest/builds"&gt;build log&lt;/a&gt; illustrates what
+happened:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Build #9 is what we've tested with &lt;em&gt;FOO-0.3.1&lt;/em&gt; and released to production.
+Test result is PASS!&lt;/li&gt;
+&lt;li&gt;Build #10 - meanwhile upstream releases &lt;em&gt;FOO-0.3.2&lt;/em&gt; which causes our project
+to break. We're not aware of this and continue developing new features
+while all test results still PASS! When our customers upgrade their systems
+&lt;em&gt;Project 2501&lt;/em&gt; will break ! Tests didn't catch it because test matrix wasn't
+updated. Please
+ignore the actual commit message in the example! I've used the same repository
+for the dummy dependency package.&lt;/li&gt;
+&lt;li&gt;Build #11 - the monitoring solution finds &lt;em&gt;FOO-0.3.2&lt;/em&gt; and updates the test
+matrix automatically. The build immediately breaks! More precisely the
+&lt;a href="https://travis-ci.org/atodorov/bztest/builds/94263181"&gt;test with version &lt;em&gt;0.3.2&lt;/em&gt; fails&lt;/a&gt;!&lt;/li&gt;
+&lt;li&gt;Build #12 - we've alerted FOO.org about their problem and they've released
+&lt;em&gt;FOO-0.3.3&lt;/em&gt;. Our monitor has found that and updated the test matrix.
+However &lt;a href="https://travis-ci.org/atodorov/bztest/builds/94270592"&gt;the 0.3.2 test job still fails&lt;/a&gt;!&lt;/li&gt;
+&lt;li&gt;Build #13 - we decide to workaround the 0.3.2 failure or simply handle the
+error gracefully. In this example I've removed version 0.3.2 from the test
+matrix to simulate that. In reality I wouldn't touch &lt;code&gt;.travis.yml&lt;/code&gt; but instead
+update my application and tests to check for that particular version.
+All test results are PASS again!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Btw Build #11 above was triggered manually (./monitor.py) while Build #12
+came from OpenShit, my hosting environment.&lt;/p&gt;
+&lt;p&gt;At present I have this monitoring enabled for my
+&lt;a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/"&gt;new Markdown extensions&lt;/a&gt;
+and will also add it to &lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt;
+once it migrates to Travis-CI (it uses drone.io now).&lt;/p&gt;
+&lt;h2&gt;Enough Talk, Show me the Code&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;monitor.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;json&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;base64&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;httplib&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pprint&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;pprint&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;datetime&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;datetime&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;xml.dom.minidom&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parseString&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;post_data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="c"&gt;# GitHub requires a valid UA string&lt;/span&gt;
+    &lt;span class="n"&gt;headers&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;User-Agent&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120601 Firefox/10.0.5&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# shortcut for GitHub API calls&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;://&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;https://api.github.com&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;api.github.com&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;environ&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;has_key&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;GITHUB_TOKEN&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Set the GITHUB_TOKEN variable&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;update&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;Authorization&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;token &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;environ&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;GITHUB_TOKEN&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+            &lt;span class="p"&gt;})&lt;/span&gt;
+
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;proto&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;host_path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;//&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host_port&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;host_path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;path&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;/&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;path&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;startswith&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;https&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;conn&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;httplib&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;HTTPSConnection&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host_port&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;conn&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;httplib&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;HTTPConnection&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host_port&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="n"&gt;method&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;GET&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;post_data&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;method&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;POST&amp;#39;&lt;/span&gt;
+        &lt;span class="n"&gt;post_data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;json&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dumps&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;post_data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;post_data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getresponse&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;status&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;404&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;404 - &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt; not found&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;read&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;decode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UTF-8&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;replace&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;json&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;loads&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="c"&gt;# not a JSON response&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;result&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;post_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;monitor_rss&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Scan the PyPI RSS feeds to look for new packages.&lt;/span&gt;
+&lt;span class="sd"&gt;        If name is found in config then execute the specified callback.&lt;/span&gt;
+
+&lt;span class="sd"&gt;        @config is a dict with keys matching package names and values&lt;/span&gt;
+&lt;span class="sd"&gt;        are lists of dicts&lt;/span&gt;
+&lt;span class="sd"&gt;            {&lt;/span&gt;
+&lt;span class="sd"&gt;                &amp;#39;cb&amp;#39; : a_callback,&lt;/span&gt;
+&lt;span class="sd"&gt;                &amp;#39;args&amp;#39; : dict&lt;/span&gt;
+&lt;span class="sd"&gt;            }&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;rss&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;https://pypi.python.org/pypi?:action=rss&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;dom&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parseString&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rss&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;item&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getElementsByTagName&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;item&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;title&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;item&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getElementsByTagName&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;title&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+            &lt;span class="n"&gt;pub_date&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;item&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getElementsByTagName&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;pubDate&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+            &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;version&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;title&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;firstChild&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wholeText&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;released_on&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;datetime&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pub_date&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;firstChild&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wholeText&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; %b %Y %H:%M:%S GMT&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keys&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+                &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;version&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;found in config&amp;quot;&lt;/span&gt;
+                &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;cfg&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+                    &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                        &lt;span class="n"&gt;args&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;cfg&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;args&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                        &lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;update&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+                            &lt;span class="s"&gt;&amp;#39;name&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                            &lt;span class="s"&gt;&amp;#39;version&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;version&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                            &lt;span class="s"&gt;&amp;#39;released_on&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;released_on&lt;/span&gt;
+                        &lt;span class="p"&gt;})&lt;/span&gt;
+
+                        &lt;span class="c"&gt;# execute the call back&lt;/span&gt;
+                        &lt;span class="n"&gt;cfg&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;cb&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;](&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                    &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;
+                        &lt;span class="k"&gt;continue&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;
+            &lt;span class="k"&gt;continue&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;update_travis&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;new_version&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;travis&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rstrip&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;new_ver_line&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;  - VERSION=&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;new_version&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;travis&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;new_ver_line&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;travis&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;new_ver_line&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;travis&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;update_github&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Update GitHub via API&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;GITHUB_REPO&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;GITHUB_BRANCH&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;GITHUB_BRANCH&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;GITHUB_FILE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;GITHUB_FILE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 1: Get a reference to HEAD&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/repos/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;/git/refs/heads/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;GITHUB_BRANCH&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;object&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;url&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;object&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;url&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 2: Grab the commit that HEAD points to&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;url&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+    &lt;span class="c"&gt;# remove what we don&amp;#39;t need for clarity&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;key&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keys&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;key&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+            &lt;span class="k"&gt;del&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;key&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;commit&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 4: Get a hold of the tree that the commit points to&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;commit&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;url&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# intermediate step: get the latest content from GitHub and make an updated version&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;obj&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;obj&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;path&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;GITHUB_FILE&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;obj&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;url&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt; &lt;span class="c"&gt;# get the blob from the tree&lt;/span&gt;
+            &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;base64&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;b64decode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+            &lt;span class="k"&gt;break&lt;/span&gt;
+
+    &lt;span class="n"&gt;old_travis&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rstrip&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;new_travis&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;update_travis&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;old_travis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;version&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+    &lt;span class="c"&gt;# bail out if nothing changed&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;new_travis&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;old_travis&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;new == old, bailing out&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt;
+
+    &lt;span class="c"&gt;####&lt;/span&gt;
+    &lt;span class="c"&gt;#### WARNING WRITE OPERATIONS BELOW&lt;/span&gt;
+    &lt;span class="c"&gt;####&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 3: Post your new file to the server&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;post_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;quot;/repos/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;/git/blobs&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;content&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;new_travis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;encoding&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 5: Create a tree containing your new file&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;post_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;quot;/repos/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;/git/trees&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;base_tree&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;tree&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[{&lt;/span&gt;
+                        &lt;span class="s"&gt;&amp;quot;path&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;GITHUB_FILE&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                        &lt;span class="s"&gt;&amp;quot;mode&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;100644&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                        &lt;span class="s"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;blob&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                        &lt;span class="s"&gt;&amp;quot;sha&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                    &lt;span class="p"&gt;}]&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 6: Create a new commit&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;post_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;quot;/repos/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;/git/commits&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;message&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;New upstream dependency found! Auto update .travis.yml&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;parents&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;commit&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]],&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;tree&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;commit&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# step 7: Update HEAD, but don&amp;#39;t force it!&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;post_url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;quot;/repos/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;/git/refs/heads/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GITHUB_REPO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;GITHUB_BRANCH&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+                &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;quot;sha&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;HEAD&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;UPDATE&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;commit&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sha&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;has_key&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;object&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt; &lt;span class="c"&gt;# PASS&lt;/span&gt;
+        &lt;span class="k"&gt;pass&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="c"&gt;# FAIL&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;config&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;atodorov-test&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+            &lt;span class="p"&gt;{&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;cb&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;update_github&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;args&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_REPO&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;atodorov/bztest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_BRANCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;master&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_FILE&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.travis.yml&amp;#39;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;],&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;Markdown&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+            &lt;span class="p"&gt;{&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;cb&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;update_github&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;args&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_REPO&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;atodorov/Markdown-Bugzilla-Extension&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_BRANCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;master&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_FILE&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.travis.yml&amp;#39;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;},&lt;/span&gt;
+            &lt;span class="p"&gt;{&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;cb&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;update_github&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;args&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_REPO&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt;  &lt;span class="s"&gt;&amp;#39;atodorov/Markdown-No-Lazy-Code-Extension&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_BRANCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;master&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_FILE&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.travis.yml&amp;#39;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;},&lt;/span&gt;
+            &lt;span class="p"&gt;{&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;cb&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;update_github&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;args&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_REPO&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt;  &lt;span class="s"&gt;&amp;#39;atodorov/Markdown-No-Lazy-BlockQuote-Extension&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_BRANCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;master&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="s"&gt;&amp;#39;GITHUB_FILE&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;.travis.yml&amp;#39;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;},&lt;/span&gt;
+        &lt;span class="p"&gt;],&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c"&gt;# check the RSS to see if we have something new&lt;/span&gt;
+    &lt;span class="n"&gt;monitor_rss&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="OpenShift"></category><category term="Django"></category><category term="QA"></category></entry><entry><title>Hosting Multiple Python WSGI Scripts on OpenShift</title><link href="http://atodorov.org/blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/" rel="alternate"></link><updated>2015-12-01T13:34:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2015-12-01:blog/2015/12/01/hosting-multiple-python-wsgi-scripts-on-openshift/</id><summary type="html">&lt;p&gt;With &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; you can host WSGI Python
+applications. By default the Python cartridge comes with a simple WSGI app
+and the following directory layout&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;./
+./.openshift/
+./requirements.txt
+./setup.py
+./wsgi.py
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I wanted to add my
+&lt;a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/"&gt;GitHub Bugzilla Hook&lt;/a&gt;
+in a subdirectory (git submodule actually) and simply reserve a URL which will
+be served by this app. My intention is also to add other small scripts to the
+same cartridge in order to better utilize the available resources.&lt;/p&gt;
+&lt;p&gt;Using &lt;code&gt;WSGIScriptAlias&lt;/code&gt; inside &lt;code&gt;.htaccess&lt;/code&gt; &lt;strong&gt;DOESN'T WORK&lt;/strong&gt;! OpenShift errors
+out when &lt;code&gt;WSGIScriptAlias&lt;/code&gt; is present. I suspect this to be a known limitation
+and I have an open support case with Red Hat to confirm this.&lt;/p&gt;
+&lt;p&gt;My workaround is to configure the URL paths from the &lt;code&gt;wsgi.py&lt;/code&gt; file in the root
+directory. For example&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/wsgi.py b/wsgi.py&lt;/span&gt;
+&lt;span class="gh"&gt;index c443581..20e2bf5 100644&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/wsgi.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/wsgi.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -12,7 +12,12 @@ except IOError:&lt;/span&gt;
+ # line, it&amp;#39;s possible required libraries won&amp;#39;t be in your searchable path
+ #
+ 
+&lt;span class="gi"&gt;+from github_bugzilla_hook import wsgi as ghbzh&lt;/span&gt;
+&lt;span class="gi"&gt;+&lt;/span&gt;
+ def application(environ, start_response):
+&lt;span class="gi"&gt;+    # custom paths&lt;/span&gt;
+&lt;span class="gi"&gt;+    if environ[&amp;#39;PATH_INFO&amp;#39;] == &amp;#39;/github-bugzilla-hook/&amp;#39;:&lt;/span&gt;
+&lt;span class="gi"&gt;+        return ghbzh.application(environ, start_response)&lt;/span&gt;
+ 
+     ctype = &amp;#39;text/plain&amp;#39;
+     if environ[&amp;#39;PATH_INFO&amp;#39;] == &amp;#39;/health&amp;#39;:
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This does the job and is almost the same as configuring the path in &lt;code&gt;.htaccess&lt;/code&gt;.
+I hope it helps you!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Python"></category><category term="OpenShift"></category></entry><entry><title>This Week: Python Testing, Chris DiBona on Open Source and OpenShift ENV Variables</title><link href="http://atodorov.org/blog/2013/10/11/this-week-python-chris-dibona-openshift/" rel="alternate"></link><updated>2013-10-11T10:45:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-10-11:blog/2013/10/11/this-week-python-chris-dibona-openshift/</id><summary type="html">&lt;p&gt;Here is a random collection of links I came across this week which
+appear interesting to me but I don't have time to blog about in details.&lt;/p&gt;
+&lt;h2&gt;Making a Multi-branch Test Server for Python Apps&lt;/h2&gt;
+&lt;p&gt;If you are wondering how to test different feature branches of your Python
+application but don't have the resources to create separate test servers this
+is for you: 
+&lt;a href="http://depressedoptimism.com/blog/2013/10/8/making-a-multi-branch-test-server"&gt;http://depressedoptimism.com/blog/2013/10/8/making-a-multi-branch-test-server&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Kudos to the python-django-bulgaria Google group for finding this link!&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;OpenSource.com Interview with Chris DiBona&lt;/h2&gt;
+&lt;p&gt;Just read it at
+&lt;a href="http://opensource.com/business/13/10/interview-chris-dibona"&gt;http://opensource.com/business/13/10/interview-chris-dibona&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I particularly like the part where he called open source "brutal".&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;You once called open source “brutal”. What did you mean by that?&lt;/p&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;I think that it is because open source projects are able to only work with the
+productive people and ignore everyone else. That behavior can come across as
+very harsh or exclusionary, and that's because it is that: brutally harsh and
+exclusionary of anyone who isn't contributing.&lt;/p&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;So, I guess what I'm saying is that survival of the fittest as practiced in the
+open source world is a pretty brutal mechanism, but it works very very well for
+producing quality software. Boy is it hard on newcomers though...&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;OpenShift Finally Introduces Environment Variables&lt;/h2&gt;
+&lt;p&gt;Yes! Finally! &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    rhc set-env VARIABLE1=VALUE1 -a myapp
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;No need for 
+&lt;a href="/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/"&gt;my work around&lt;/a&gt;
+anymore! I will give the new feature a go very soon. &lt;/p&gt;
+&lt;p&gt;Read more about it at the OpenShift blog:
+&lt;a href="https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps"&gt;https://www.openshift.com/blogs/taking-advantage-of-environment-variables-in-openshift-php-apps&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Have you found anything interesting this week? Please share in the comments below! Thanks!&lt;/p&gt;</summary><category term="Python"></category><category term="cloud"></category><category term="OpenShift"></category></entry><entry><title>Tip: Setting Secure ENV variables on Red Hat OpenShift</title><link href="http://atodorov.org/blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/" rel="alternate"></link><updated>2013-07-08T21:39:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-07-08:blog/2013/07/08/tip-setting-secure-env-variables-on-red-hat-openshift/</id><summary type="html">&lt;p&gt;OpenShift is
+&lt;a href="https://www.openshift.com/content/custom-environment-variables"&gt;still missing&lt;/a&gt;
+the client side tools to set environment variables without exposing the values
+in source code but there is a way to do it. Here is how.&lt;/p&gt;
+&lt;p&gt;First ssh into your application and navigate to the &lt;code&gt;$OPENSHIFT_DATA_DIR&lt;/code&gt;.
+Create a file to define your environment. &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;rhc ssh -a difio
+Password: ***
+
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com 51d32a854382ecf7a9000116&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;cd&lt;/span&gt; &lt;span class="nv"&gt;$OPENSHIFT_DATA_DIR&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; vi myenv.sh
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; cat myenv.sh
+&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class="nb"&gt;export &lt;/span&gt;&lt;span class="nv"&gt;MYENV&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;hello&amp;quot;&lt;/span&gt;
+
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; chmod a+x myenv.sh 
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt;
+Connection to difio-otb.rhcloud.com closed.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now modify your code and git push to OpenShift. Then ssh into the app once
+again to verify that your configuration is still in place. &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;[&lt;/span&gt;atodorov@redbull difio&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;rhc ssh -a difio
+Password: ***
+
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com 51d32a854382ecf7a9000116&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;cd&lt;/span&gt; &lt;span class="nv"&gt;$OPENSHIFT_DATA_DIR&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt; ls -l
+total 4
+-rwxr-xr-x. &lt;span class="m"&gt;1&lt;/span&gt; 51d32a854382ecf7a9000116 51d32a854382ecf7a9000116 &lt;span class="m"&gt;34&lt;/span&gt;  &lt;span class="m"&gt;8&lt;/span&gt; jul 14,33 myenv.sh
+&lt;span class="o"&gt;[&lt;/span&gt;difio-otb.rhcloud.com data&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Use the defined variables as you wish.&lt;/p&gt;</summary><category term="tips"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>How to Deploy Python Hotfix on RedHat OpenShift Cloud</title><link href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="alternate"></link><updated>2013-04-24T11:58:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-24:blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/</id><summary type="html">&lt;p&gt;In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; PaaS cloud.&lt;/p&gt;
+&lt;h2&gt;Background&lt;/h2&gt;
+&lt;p&gt;You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+&lt;a href="https://github.com/ahupp/python-magic/pull/31"&gt;pull request&lt;/a&gt;.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.&lt;/p&gt;
+&lt;h2&gt;Solution&lt;/h2&gt;
+&lt;p&gt;There are two basic approaches to solving this problem: &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Include the hotfix package source code in your application, i.e.
+add it to your git tree or;&lt;/li&gt;
+&lt;li&gt;Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version. &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.&lt;/p&gt;
+&lt;p&gt;Python applications hosted at &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; don't support
+&lt;code&gt;requirements.txt&lt;/code&gt; which can point to various package sources and even install
+packages directly from GitHub. They support &lt;code&gt;setup.py&lt;/code&gt; which fetches packages
+from &lt;a href="http://pypi.python.org"&gt;http://pypi.python.org&lt;/a&gt; but it is flexible enough to support other locations.&lt;/p&gt;
+&lt;h2&gt;Building the hotfix&lt;/h2&gt;
+&lt;p&gt;First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+&lt;span class="nv"&gt;$ &lt;/span&gt;tar -xzvf python-magic-0.4.3.tar.gz 
+&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;python-magic-0.4.3
+&lt;span class="nv"&gt;$ &lt;/span&gt;curl https://github.com/ahupp/python-magic/pull/31.patch &lt;span class="p"&gt;|&lt;/span&gt; patch
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Verify the patch has been applied correctly and then modify &lt;code&gt;setup.py&lt;/code&gt; to
+increase the version string. In this case I will set it to &lt;code&gt;version='0.4.3.1'&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Then build the new package using &lt;code&gt;python setup.py sdist&lt;/code&gt; and upload it to a web server.&lt;/p&gt;
+&lt;h2&gt;Deploying to OpenShift&lt;/h2&gt;
+&lt;p&gt;Modify &lt;code&gt;setup.py&lt;/code&gt; and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parameter to &lt;code&gt;setup()&lt;/code&gt;. Here's how it looks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/setup.py b/setup.py&lt;/span&gt;
+&lt;span class="gh"&gt;index c6e837c..2daa2a9 100644&lt;/span&gt;
+&lt;span class="gd"&gt;--- a/setup.py&lt;/span&gt;
+&lt;span class="gi"&gt;+++ b/setup.py&lt;/span&gt;
+&lt;span class="gu"&gt;@@ -6,5 +6,6 @@ setup(name=&amp;#39;YourAppName&amp;#39;,&lt;/span&gt;
+       author=&amp;#39;Your Name&amp;#39;,
+       author_email=&amp;#39;example@example.com&amp;#39;,
+       url=&amp;#39;http://www.python.org/sigs/distutils-sig/&amp;#39;,
+&lt;span class="gd"&gt;-      install_requires=[&amp;#39;python-magic==0.4.3&amp;#39;],&lt;/span&gt;
+&lt;span class="gi"&gt;+      dependency_links=[&amp;#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&amp;#39;],&lt;/span&gt;
+&lt;span class="gi"&gt;+      install_requires=[&amp;#39;python-magic==0.4.3.1&amp;#39;],&lt;/span&gt;
+      )
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now just git push to OpenShift and observe the console output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;dependencies&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;YourAppName&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Searching&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Best&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Downloading&lt;/span&gt; &lt;span class="n"&gt;https&lt;/span&gt;&lt;span class="o"&gt;://&lt;/span&gt;&lt;span class="n"&gt;s3&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;amazonaws&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;com&lt;/span&gt;&lt;span class="sr"&gt;/atodorov/blog/&lt;/span&gt;&lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Running&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="sr"&gt;/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/&lt;/span&gt;&lt;span class="n"&gt;egg&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dist&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;tmp&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;R_Nxie&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;zip_safe&lt;/span&gt; &lt;span class="n"&gt;flag&lt;/span&gt; &lt;span class="n"&gt;not&lt;/span&gt; &lt;span class="kd"&gt;set&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt; &lt;span class="n"&gt;analyzing&lt;/span&gt; &lt;span class="n"&gt;archive&lt;/span&gt; &lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Removing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;from&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
+&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Adding&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Congratulations! Your hotfix package has just been deployed.&lt;/p&gt;
+&lt;p&gt;This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.&lt;/p&gt;</summary><category term="tips"></category><category term="Python"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Email Logging for Django on RedHat OpenShift with Amazon SES</title><link href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/" rel="alternate"></link><updated>2013-02-28T23:19:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-02-28:blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/</id><summary type="html">&lt;p&gt;Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+&lt;a href="http://aws.amazon.com/ses/"&gt;Amazon SES&lt;/a&gt; as my email backend. Here is how to
+configure &lt;a href="https://www.djangoproject.com/"&gt;Django&lt;/a&gt; to send emails to site admins
+when something goes wrong.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;settings.py&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;# Valid addresses only.&lt;/span&gt;
+&lt;span class="n"&gt;ADMINS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Alexander Todorov&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;atodorov@example.com&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;LOGGING&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;version&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;disable_existing_loggers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;handlers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;mail_admins&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;level&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ERROR&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;class&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django.utils.log.AdminEmailHandler&amp;#39;&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;},&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;loggers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;django.request&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;handlers&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;mail_admins&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;level&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ERROR&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;propagate&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="p"&gt;},&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+ 
+&lt;span class="c"&gt;# Used as the From: address when reporting errors to admins&lt;/span&gt;
+&lt;span class="c"&gt;# Needs to be verified in Amazon SES as a valid sender&lt;/span&gt;
+&lt;span class="n"&gt;SERVER_EMAIL&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django@example.com&amp;#39;&lt;/span&gt;
+
+&lt;span class="c"&gt;# Amazon Simple Email Service settings&lt;/span&gt;
+&lt;span class="n"&gt;AWS_SES_ACCESS_KEY_ID&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;xxxxxxxxxxxx&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;AWS_SES_SECRET_ACCESS_KEY&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;xxxxxxxx&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;EMAIL_BACKEND&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;django_ses.SESBackend&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You also need the &lt;a href="https://github.com/hmarr/django-ses"&gt;django-ses&lt;/a&gt;
+dependency.&lt;/p&gt;
+&lt;p&gt;See &lt;a href="http://docs.djangoproject.com/en/dev/topics/logging"&gt;http://docs.djangoproject.com/en/dev/topics/logging&lt;/a&gt; for
+more details on how to customize your logging configuration.&lt;/p&gt;
+&lt;p&gt;I am using this configuration successfully at RedHat's OpenShift PaaS environment.
+Other users have
+&lt;a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django"&gt;reported&lt;/a&gt;
+it works for them too. Should work with any other PaaS provider.&lt;/p&gt;</summary><category term="tips"></category><category term="Django"></category><category term="Amazon"></category><category term="SES"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Using OpenShift as Amazon CloudFront Origin Server</title><link href="http://atodorov.org/blog/2012/04/17/using-openshift-as-amazon-cloudfront-origin-server/" rel="alternate"></link><updated>2012-04-17T17:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2012-04-17:blog/2012/04/17/using-openshift-as-amazon-cloudfront-origin-server/</id><summary type="html">&lt;p&gt;It's been several months after the start of &lt;a href="http://www.dif.io"&gt;&lt;em&gt;Difio&lt;/em&gt;&lt;/a&gt; and I started
+migrating various parts of the platform to CDN. The first to go are static files like
+CSS, JavaScript, images and such. In this article I will show you how to get started with 
+&lt;em&gt;Amazon CloudFront&lt;/em&gt; and &lt;em&gt;OpenShift&lt;/em&gt;. It is very easy once you understand how it works.&lt;/p&gt;
+&lt;h2&gt;Why CloudFront and OpenShift&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;Amazon CloudFront&lt;/em&gt; is cheap and easy to setup with virtually no maintenance.
+The most important feature is that it can fetch content from any public website.
+Integrating it together with &lt;em&gt;OpenShift&lt;/em&gt; gives some nice benefits:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;All static assets are managed with Git and stored in the same place where the application
+code and HTML is - easy to develop and deploy;&lt;/li&gt;
+&lt;li&gt;No need for external service to host the static files;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;CloudFront&lt;/em&gt; will be serving the files so network load on &lt;em&gt;OpenShift&lt;/em&gt; is minimal;&lt;/li&gt;
+&lt;li&gt;Easy to manage versioned URLs because HTML and static assets are in the same repo - more on this later;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Object expiration&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;CloudFront&lt;/em&gt; will cache your objects for a certain period and then expire them. Frequently
+used objects are expired less often. Depending on the content you may want to update the cache
+more or less frequently. In my case CSS and JavaScript files change rarely so I wanted to tell
+CloudFront to not expire the files quickly. I did this by telling &lt;em&gt;Apache&lt;/em&gt; to send a custom value for
+the Expires header.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    $ curl http://d71ktrt2emu2j.cloudfront.net/static/v1/css/style.css -D headers.txt
+    $ cat headers.txt 
+    HTTP/1.0 200 OK
+    Date: Mon, 16 Apr 2012 19:02:16 GMT
+    Server: Apache/2.2.15 (Red Hat)
+    Last-Modified: Mon, 16 Apr 2012 19:00:33 GMT
+    ETag: &amp;quot;120577-1b2d-4bdd06fc6f640&amp;quot;
+    Accept-Ranges: bytes
+    Content-Length: 6957
+    Cache-Control: max-age=31536000
+    Expires: Tue, 16 Apr 2013 19:02:16 GMT
+    Content-Type: text/css
+    Strict-Transport-Security: max-age=15768000, includeSubDomains
+    Age: 73090
+    X-Cache: Hit from cloudfront
+    X-Amz-Cf-Id: X558vcEOsQkVQn5V9fbrWNTdo543v8VStxdb7LXIcUWAIbLKuIvp-w==,e8Dipk5FSNej3e0Y7c5ro-9mmn7OK8kWfbaRGwi1ww8ihwVzSab24A==
+    Via: 1.0 d6343f267c91f2f0e78ef0a7d0b7921d.cloudfront.net (CloudFront)
+    Connection: close
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;All headers before Strict-Transport-Security come from the origin server.&lt;/p&gt;
+&lt;h2&gt;Versioning&lt;/h2&gt;
+&lt;p&gt;Sometimes however you need to update the files and force &lt;em&gt;CloudFront&lt;/em&gt; to update the content. 
+The recommended way to do this is to use URL versioning and update the path to the files
+which changed. This will force &lt;em&gt;CloudFront&lt;/em&gt; to cache and serve the content under the new path
+while keeping the old content available until it expires. This way your visitors will not be
+viewing your site with the new CSS and old JavaScript. &lt;/p&gt;
+&lt;p&gt;There are many ways to do this and there are some nice frameworks as well. For Python there is &lt;em&gt;webassets&lt;/em&gt;.
+I don't have many static files so I opted for no additional dependencies. Instead I will be updating the
+versions by hand.&lt;/p&gt;
+&lt;p&gt;What comes to mind is using &lt;em&gt;mod_rewrite&lt;/em&gt; to redirect the versioned URLs back to non versioned ones.
+However there's a catch. If you do this &lt;em&gt;CloudFront&lt;/em&gt; will cache the redirect itself, not the content.
+The next time visitors hit &lt;em&gt;CloudFront&lt;/em&gt; they will receive the cached redirect and follow it back to your
+origin server, which is defeating the purpose of having CDN.&lt;/p&gt;
+&lt;p&gt;To do it properly you have to rewrite the URLs but still return a 200 response code and the
+content which needs to be cached. This is done with &lt;em&gt;mod_proxy&lt;/em&gt;: &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    RewriteEngine on
+    RewriteRule ^VERSION-(\d+)/(.*)$ http://%{ENV:OPENSHIFT_INTERNAL_IP}:%{ENV:OPENSHIFT_INTERNAL_PORT}/static/$2 [P,L]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This .htaccess trick doesn't work on &lt;em&gt;OpenShift&lt;/em&gt; though. &lt;em&gt;mod_proxy&lt;/em&gt; is not enabled at the moment.
+See &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=812389"&gt;bug 812389&lt;/a&gt; for more info.&lt;/p&gt;
+&lt;p&gt;Luckily I was able to use symlinks to point to the content. Here's how it looks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="x"&gt;    $ pwd&lt;/span&gt;
+&lt;span class="x"&gt;    /home/atodorov/difio/wsgi/static&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;
+&lt;span class="x"&gt;    $ cat .htaccess&lt;/span&gt;
+&lt;span class="x"&gt;    ExpiresActive On&lt;/span&gt;
+&lt;span class="x"&gt;    ExpiresDefault &amp;quot;access plus 1 year&amp;quot;&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;
+&lt;span class="x"&gt;    $ ls -l&lt;/span&gt;
+&lt;span class="x"&gt;    drwxrwxr-x. 6 atodorov atodorov 4096 16 Apr 21,31 o&lt;/span&gt;
+&lt;span class="x"&gt;    lrwxrwxrwx. 1 atodorov atodorov    1 16 Apr 21,47 v1 -&amp;gt; o&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;
+&lt;span class="x"&gt;    settings.py:&lt;/span&gt;
+&lt;span class="x"&gt;    STATIC_URL = &amp;#39;//d71ktrt2emu2j.cloudfront.net/static/v1/&amp;#39;&lt;/span&gt;
+&lt;span class="x"&gt;    &lt;/span&gt;
+&lt;span class="x"&gt;    HTML template:&lt;/span&gt;
+&lt;span class="x"&gt;    &amp;lt;link type=&amp;quot;text/css&amp;quot; rel=&amp;quot;stylesheet&amp;quot; media=&amp;quot;screen&amp;quot; href=&amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;STATIC_URL&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;css/style.css&amp;quot; /&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;How to implement it&lt;/h2&gt;
+&lt;p&gt;First you need to split all CSS and JavaScript from your HTML if you haven't done so already. &lt;/p&gt;
+&lt;p&gt;Then place everything under your git repo so that &lt;em&gt;OpenShift&lt;/em&gt; will serve the files. For Python applications
+place the files under wsgi/static/ directory in your git repo.&lt;/p&gt;
+&lt;p&gt;Point all of your HTML templates to the static location on &lt;em&gt;OpenShift&lt;/em&gt; and test if everything works as expected. 
+This is best done if you're using some sort of template language and store the location
+in a single variable which you can change later.
+&lt;em&gt;Difio&lt;/em&gt; uses &lt;em&gt;Django&lt;/em&gt; and the &lt;em&gt;STATIC_URL&lt;/em&gt; variable of course.&lt;/p&gt;
+&lt;p&gt;Create your &lt;em&gt;CloudFront&lt;/em&gt; distribution - don't use &lt;em&gt;Amazon S3&lt;/em&gt;, instead configure a custom origin server. Write down
+your &lt;em&gt;CloudFront&lt;/em&gt; URL. It will be something like &lt;strong&gt;1234xyz.cludfront.net&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Every time a request hits &lt;em&gt;CloudFront&lt;/em&gt; it will check if the object is present in the cache. If not present
+&lt;em&gt;CloudFront&lt;/em&gt; will fetch the object from the origin server and populate the cache. Then the object is sent
+to the user.&lt;/p&gt;
+&lt;p&gt;Update your templates to point to the new cloudfront.net URL and redeploy your website!&lt;/p&gt;</summary><category term="OpenShift"></category><category term="Amazon"></category><category term="cloud"></category></entry><entry><title>OpenShift Cron Takes Over Celerybeat</title><link href="http://atodorov.org/blog/2012/03/14/openshift-cron-takes-over-celerybeat/" rel="alternate"></link><updated>2012-03-14T20:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2012-03-14:blog/2012/03/14/openshift-cron-takes-over-celerybeat/</id><summary type="html">&lt;p&gt;&lt;a href="http://celeryproject.org/"&gt;&lt;em&gt;Celery&lt;/em&gt;&lt;/a&gt; is an asynchronous task queue/job queue
+based on distributed message passing. You can define tasks as Python functions,
+execute them in the background and in a periodic fashion.
+&lt;a href="http://www.dif.io"&gt;&lt;em&gt;Difio&lt;/em&gt;&lt;/a&gt; uses &lt;em&gt;Celery&lt;/em&gt; for virtually everything.
+Some of the tasks are scheduled after some event takes place (like user pressed a button)
+or scheduled periodically.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Celery&lt;/em&gt; provides several components of which &lt;em&gt;celerybeat&lt;/em&gt; is the periodic task scheduler.
+When combined with &lt;a href="http://djangoproject.com"&gt;&lt;em&gt;Django&lt;/em&gt;&lt;/a&gt; it gives you a very nice admin interface
+which allows periodic tasks to be added to the scheduler.&lt;/p&gt;
+&lt;h2&gt;Why change&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;Difio&lt;/em&gt; has relied on &lt;em&gt;celerybeat&lt;/em&gt; for a couple of months. Back then, when &lt;em&gt;Difio&lt;/em&gt; launched,
+there was no cron support for OpenShift so running &lt;em&gt;celerybeat&lt;/em&gt; sounded reasonable.
+It used to run on a dedicated virtual server and for most of the time that was fine. &lt;/p&gt;
+&lt;p&gt;There were a number of issues which &lt;em&gt;Difio&lt;/em&gt; faced during its first months:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;celerybeat&lt;/em&gt; would sometime die due to no free memory on the virtual instance.
+When that happened no new tasks were scheduled and data was left unprocessed.
+Let alone that higher memory instance and the processing power which comes with it
+cost extra money.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Difio&lt;/em&gt; is split into several components which need to have the same code base
+locally - the most important are database settings and the periodic tasks
+code. At least in one occasion &lt;em&gt;celerybeat&lt;/em&gt; failed to start because of a buggy 
+task code. The offending code was fixed in the application server on OpenShift but
+not properly synced to the &lt;em&gt;celerybeat&lt;/em&gt; instance. Keeping code in sync is a priority
+for distributed projects which rely on &lt;em&gt;Celery&lt;/em&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Celery&lt;/em&gt; and &lt;em&gt;django-celery&lt;/em&gt; seem to be updated quite often. This poses a significant risk
+of ending up with different versions on the scheduler, worker nodes and the app server. This will
+bring the whole application to a halt if at some point a backward incompatible change is introduced
+and not properly tested and updated. Keeping infrastructure components in sync can be a big challenge
+and I try to minimize this effort as much as possible.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Having to navigate to the admin pages every time I add a new task or want to change the execution
+frequency doesn't feel very natural for a console user like myself and IMHO is less productive.
+For the record I primarily use &lt;em&gt;mcedit&lt;/em&gt;. I wanted to have something more close to the
+write, commit and push work-flow.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;The take over&lt;/h2&gt;
+&lt;p&gt;It's been some time since OpenShift
+&lt;a href="https://www.redhat.com/openshift/community/blogs/getting-started-with-cron-jobs-on-openshift"&gt;introduced&lt;/a&gt;
+the cron cartridge and I decided to give it a try.&lt;/p&gt;
+&lt;p&gt;The first thing I did is to write a simple script which can execute any task from the difio.tasks module
+by piping it to the Django shell (a Python shell actually).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;run_celery_task&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# Copyright (c) 2012, Alexander Todorov &amp;lt;atodorov@nospam.otb.bg&amp;gt;&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# This script is symlinked to from the hourly/minutely, etc. directories&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# SYNOPSIS&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# ./run_celery_task cron_search_dates&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# OR&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+&lt;span class="c"&gt;# ln -s run_celery_task cron_search_dates&lt;/span&gt;
+&lt;span class="c"&gt;# ./cron_search_dates&lt;/span&gt;
+&lt;span class="c"&gt;#&lt;/span&gt;
+
+&lt;span class="nv"&gt;TASK_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$1&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt; -z &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$TASK_NAME&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="nv"&gt;TASK_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="k"&gt;$(&lt;/span&gt;basename &lt;span class="nv"&gt;$0&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt; -n &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$OPENSHIFT_APP_DIR&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+    &lt;span class="nb"&gt;source&lt;/span&gt; &lt;span class="nv"&gt;$OPENSHIFT_APP_DIR&lt;/span&gt;/virtenv/bin/activate
+    &lt;span class="nb"&gt;export &lt;/span&gt;&lt;span class="nv"&gt;PYTHON_EGG_CACHE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$OPENSHIFT_DATA_DIR&lt;/span&gt;/.python-eggs
+    &lt;span class="nv"&gt;REPO_DIR&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$OPENSHIFT_REPO_DIR&lt;/span&gt;
+&lt;span class="k"&gt;else&lt;/span&gt;
+    &lt;span class="nv"&gt;REPO_DIR&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="k"&gt;$(&lt;/span&gt;dirname &lt;span class="nv"&gt;$0&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;/../../..&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;fi&lt;/span&gt;
+
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;import difio.tasks; difio.tasks.&lt;/span&gt;&lt;span class="nv"&gt;$TASK_NAME&lt;/span&gt;&lt;span class="s2"&gt;.delay()&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;|&lt;/span&gt; &lt;span class="nv"&gt;$REPO_DIR&lt;/span&gt;/wsgi/difio/manage.py shell
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is a multicall script which allows symlinks with different names to point to it. 
+Thus to add a new task to cron I just need to make a symlink to the script from one of the
+hourly/, minutely/, daily/, etc. directories under cron/.&lt;/p&gt;
+&lt;p&gt;The script accepts a parameter as well which allows me to execute it locally for debugging purposes
+or to schedule some tasks out of band.
+This is how it looks like on the file system:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ls -l .openshift/cron/hourly/
+some_task_name -&amp;gt; ../tasks/run_celery_task
+another_task -&amp;gt; ../tasks/run_celery_task
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;After having done these preparations I only had to embed the cron cartridge and git push to OpenShift:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;rhc-ctl-app -a difio -e add-cron-1.4 &amp;amp;&amp;amp; git push
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;What's next&lt;/h2&gt;
+&lt;p&gt;At present OpenShift can schedule your jobs every minute, hour, day, week or month and does so using the
+&lt;em&gt;run-parts&lt;/em&gt; script. You can't schedule a script to execute at 4:30 every Monday or every 45 minutes for example.
+See &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=803485"&gt;rhbz #803485&lt;/a&gt; if you want to follow the
+progress. Luckily &lt;em&gt;Difio&lt;/em&gt; doesn't use this sort of job scheduling for the moment.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Difio&lt;/em&gt; is scheduling periodic tasks from OpenShift cron for a few days already. 
+It seems to work reliably and with no issues. One less component to maintain and worry about.
+More time to write code.&lt;/p&gt;</summary><category term="tips"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Tip: How to Get to the OpenShift Shell</title><link href="http://atodorov.org/blog/2012/03/09/how-to-get-to-the-openshift-shell/" rel="alternate"></link><updated>2012-03-09T21:43:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2012-03-09:blog/2012/03/09/how-to-get-to-the-openshift-shell/</id><summary type="html">&lt;p&gt;I wanted to examine the Perl environment on OpenShift and got tired of making snapshots,
+unzipping the archive and poking through the files. I wanted a shell. Here's how to get one.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Get the application info first&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;rhc-domain-info 
+Password: 
+Application &lt;span class="nv"&gt;Info&lt;/span&gt;
+&lt;span class="o"&gt;================&lt;/span&gt;
+myapp
+    Framework: perl-5.10
+     Creation: 2012-03-08T13:34:46-04:00
+         UUID: 8946b976ad284cf5b2401caf736186bd
+      Git URL: ssh://8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com/~/git/myapp.git/
+   Public URL: http://myapp-mydomain.rhcloud.com/
+
+ Embedded: 
+      None
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The Git URL has your username and host&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Now just ssh into the application&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ssh 8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com
+
+    Welcome to OpenShift shell
+
+    This shell will assist you in managing OpenShift applications.
+
+    !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
+    Shell access is quite powerful and it is possible &lt;span class="k"&gt;for&lt;/span&gt; you to
+    accidentally damage your application.  Proceed with care!
+    If worse comes to worst, destroy your application with &lt;span class="s1"&gt;&amp;#39;rhc app destroy&amp;#39;&lt;/span&gt;
+    and recreate it
+    !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
+
+    Type &lt;span class="s2"&gt;&amp;quot;help&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; more info.
+
+&lt;span class="o"&gt;[&lt;/span&gt;myapp-mydomain.rhcloud.com ~&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="se"&gt;\&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;Voila!&lt;/strong&gt;&lt;/p&gt;</summary><category term="tips"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>How to Update Dependencies on OpenShift</title><link href="http://atodorov.org/blog/2012/02/18/how-to-update-dependencies-on-openshift/" rel="alternate"></link><updated>2012-02-18T01:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2012-02-18:blog/2012/02/18/how-to-update-dependencies-on-openshift/</id><summary type="html">&lt;p&gt;If you are already running some cool application on &lt;a href="http://openshift.redhat.com"&gt;OpenShift&lt;/a&gt;
+it could be the case that you have to update some of the packages installed as dependencies.
+Here is an example for an application using the python-2.6 cartridge.&lt;/p&gt;
+&lt;h2&gt;Pull latest upstream packages&lt;/h2&gt;
+&lt;p&gt;The most simple method is to update everything to the latest upstream versions. &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Backup! Backup! Backup!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;rhc-snapshot -a mycoolapp
+mv mycoolapp.tar.gz mycoolapp-backup-before-update.tar.gz
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;If you haven't specified any particular version in &lt;code&gt;setup.py&lt;/code&gt; it will
+look like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="n"&gt;install_requires&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;difio-openshift-python&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;MySQL-python&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="s"&gt;&amp;#39;Markdown&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+               &lt;span class="p"&gt;],&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;To update simply push to OpenShift instructing it to rebuild your virtualenv:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cd mycoolapp/
+touch .openshift/markers/force_clean_build
+git add .openshift/markers/force_clean_build
+git commit -m &amp;quot;update to latest upstream&amp;quot;
+git push
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Voila! The environment hosting your application is rebuilt from scratch.&lt;/p&gt;
+&lt;h2&gt;Keeping some packages unchanged&lt;/h2&gt;
+&lt;p&gt;Suppose that before the update you have &lt;code&gt;Markdown-2.0.1&lt;/code&gt; and you want to keep it!
+This is easily solved by adding versioned dependency to &lt;code&gt;setup.py&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;-       &amp;#39;Markdown&amp;#39;,&lt;/span&gt;
+&lt;span class="gi"&gt;+       &amp;#39;Markdown==2.0.1&amp;#39;,&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you do that OpenShift will install the same &lt;code&gt;Markdown&lt;/code&gt; version when rebuilding your
+application. Everything else will use the latest available versions.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; after the update it's recommended that you remove the 
+&lt;code&gt;.openshift/markers/force_clean_build&lt;/code&gt; file. This will speed up the push/build process
+and will not surprise you with unwanted changes.&lt;/p&gt;
+&lt;h2&gt;Update only selected packages&lt;/h2&gt;
+&lt;p&gt;Unless your application is really simple or you have tested the updates, I suspect that
+you want to update only selected packages. This can be done without rebuilding the whole
+virtualenv. Use versioned dependencies in &lt;code&gt;setup.py&lt;/code&gt; :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;-       &amp;#39;Markdown==2.0.1&amp;#39;,&lt;/span&gt;
+&lt;span class="gd"&gt;-       &amp;#39;django-countries&amp;#39;,&lt;/span&gt;
+&lt;span class="gi"&gt;+       &amp;#39;Markdown&amp;gt;=2.1&amp;#39;,&lt;/span&gt;
+&lt;span class="gi"&gt;+       &amp;#39;django-countries&amp;gt;=1.1.2&amp;#39;,&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;No need for &lt;code&gt;force_clean_build&lt;/code&gt; this time. Just&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    git commit &amp;amp;&amp;amp; git push
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;At the time of writing my application was using &lt;code&gt;Markdown-2.0.1&lt;/code&gt; and &lt;code&gt;django-countries-1.0.5&lt;/code&gt;.
+Then it updated to &lt;code&gt;Markdown-2.1.1&lt;/code&gt; and &lt;code&gt;django-countires-1.1.2&lt;/code&gt; which also happened to be
+the latest versions.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; this will not work without &lt;code&gt;force_clean_build&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;-       &amp;#39;django-countries==1.0.5&amp;#39;,&lt;/span&gt;
+&lt;span class="gi"&gt;+       &amp;#39;django-countries&amp;#39;,&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Warning&lt;/h2&gt;
+&lt;p&gt;OpenShift uses a local mirror of &lt;a href="http://pypi.python.org"&gt;Python Package Index&lt;/a&gt;.
+It seems to be updated every 24 hours or so. Have this in mind if you want to update
+to a package that was just released. It will not work! See
+&lt;a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/"&gt;How to Deploy Python Hotfix on OpenShift&lt;/a&gt;
+if you wish to work around this limitation.&lt;/p&gt;</summary><category term="tips"></category><category term="OpenShift"></category><category term="cloud"></category></entry><entry><title>Spinning-up a Development Instance on OpenShift</title><link href="http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/" rel="alternate"></link><updated>2012-02-10T21:19:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2012-02-10:blog/2012/02/10/spinning-up-a-development-instance-on-openshift/</id><summary type="html">&lt;p&gt;&lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt; is hosted on &lt;a href="http://openshift.redhat.com"&gt;OpenShift&lt;/a&gt;.
+During development I often need to spin-up another copy of Difio to use for testing and development.
+With OpenShift this is easy and fast. Here's how:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create another application on OpenShift. This will be your development instance.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;rhc-create-app -a myappdevel -t python-2.6
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Find out the git URL for the production application:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;rhc-user-info
+Application &lt;span class="nv"&gt;Info&lt;/span&gt;
+&lt;span class="o"&gt;================&lt;/span&gt;
+myapp
+    Framework: python-2.6
+     Creation: 2012-02-10T12:39:53-05:00
+         UUID: 723f0331e17041e8b34228f87a6cf1f5
+      Git URL: ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
+   Public URL: http://myapp-mydomain.rhcloud.com/
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Push the current code base from the production instance to devel instance:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cd myappdevel
+git remote add production -m master ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
+git pull -s recursive -X theirs production master
+git push
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Now your &lt;code&gt;myappdevel&lt;/code&gt; is the same as your production instance. You will probably want to
+modify your database connection settings at this point and start adding new features.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;</summary><category term="tips"></category><category term="OpenShift"></category><category term="cloud"></category></entry></feed>

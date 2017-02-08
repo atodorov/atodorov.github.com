@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>atodorov.org - Tag QA</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:site" content="@atodorov_">
+            <meta name="twitter:title" content="atodorov.org">
+            <meta name="twitter:description" content="you can logoff, but you can never leave">
+                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="page-heading">
+                        <h1>Tag QA</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="bookmark" title="Permalink to Mismatch in Pyparted Interfaces">
+                <h2 class="post-title">
+                    Mismatch in Pyparted Interfaces
+                </h2>
+            </a>
+                <p>Last week my co-worker Marek Hruscak, from Red Hat, found an interesting case of
+mismatch between the two interfaces provided by pyparted. In this article
+I'm going to give an example, using simplified code and explain what is
+happening. From pyparted's documentation we learn the following</p>
+<blockquote>
+<p>pyparted is a set of native Python bindings for libparted.  libparted is the
+library portion of the GNU parted project.  With pyparted, you can write
+applications that interact with disk partition tables and filesystems.</p>
+<p>The Python bindings are implemented in two layers.  Since libparted itself
+is written in C without any real implementation of objects, a simple 1:1
+mapping of externally accessible libparted functions was written.  This
+mapping is provided in the _ped Python module.  You can use that module if
+you want to, but it's really just meant for the larger parted module.</p>
+<div class="highlight"><pre><span class="nx">_ped</span>       <span class="nx">libparted</span> <span class="nx">Python</span> <span class="nx">bindings</span><span class="p">,</span> <span class="nx">direct</span> <span class="mi">1</span><span class="o">:</span><span class="mi">1</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">mapping</span>
+<span class="nx">parted</span>     <span class="nx">Native</span> <span class="nx">Python</span> <span class="nx">code</span> <span class="nx">building</span> <span class="nx">on</span> <span class="nx">_ped</span><span class="p">,</span> <span class="nx">complete</span> <span class="kd">with</span> <span class="nx">classes</span><span class="p">,</span>
+           <span class="nx">exceptions</span><span class="p">,</span> <span class="nx">and</span> <span class="nx">advanced</span> <span class="nx">functionality</span><span class="p">.</span>
+</pre></div>
+
+
+</blockquote>
+<p>The two interfaces are the <code>_ped</code> and <code>parted</code> modules. As a user I expect them
+to behave exactly the same but they don't. For example some partition properties
+are read-only in libparted and <code>_ped</code> but not in <code>parted</code>. This is the mismatch
+I'm talking about.</p>
+<p>Consider the following tests (also available on
+<a href="https://github.com/atodorov/pyparted/tree/not_read_only_demo">GitHub</a>)</p>
+<div class="highlight"><pre><span class="gh">diff --git a/tests/baseclass.py b/tests/baseclass.py</span>
+<span class="gh">index 4f48b87..30ffc11 100644</span>
+<span class="gd">--- a/tests/baseclass.py</span>
+<span class="gi">+++ b/tests/baseclass.py</span>
+<span class="gu">@@ -168,6 +168,12 @@ class RequiresPartition(RequiresDisk):</span>
+         self._part = _ped.Partition(disk=self._disk, type=_ped.PARTITION_NORMAL,
+         self._part = _ped.Partition(disk=self._disk, type=_ped.PARTITION_NORMAL,
+                                     start=0, end=100, fs_type=_ped.file_system_type_get(&quot;ext2&quot;))
+ 
+<span class="gi">+        geom = parted.Geometry(self.device, start=100, length=100)</span>
+<span class="gi">+        fs = parted.FileSystem(type=&#39;ext2&#39;, geometry=geom)</span>
+<span class="gi">+        self.part = parted.Partition(disk=self.disk, type=parted.PARTITION_NORMAL,</span>
+<span class="gi">+                                    geometry=geom, fs=fs)</span>
+<span class="gi">+</span>
+<span class="gi">+</span>
+ # Base class for any test case that requires a hash table of all
+ # _ped.DiskType objects available
+ class RequiresDiskTypes(unittest.TestCase):
+<span class="gh">diff --git a/tests/test__ped_partition.py b/tests/test__ped_partition.py</span>
+<span class="gh">index 7ef049a..26449b4 100755</span>
+<span class="gd">--- a/tests/test__ped_partition.py</span>
+<span class="gi">+++ b/tests/test__ped_partition.py</span>
+<span class="gu">@@ -62,8 +62,10 @@ class PartitionGetSetTestCase(RequiresPartition):</span>
+         self.assertRaises(exn, setattr, self._part, &quot;num&quot;, 1)
+         self.assertRaises(exn, setattr, self._part, &quot;fs_type&quot;,
+             _ped.file_system_type_get(&quot;fat32&quot;))
+<span class="gd">-        self.assertRaises(exn, setattr, self._part, &quot;geom&quot;,</span>
+<span class="gd">-                                     _ped.Geometry(self._device, 10, 20))</span>
+<span class="gi">+        with self.assertRaises((AttributeError, TypeError)):</span>
+<span class="gi">+#            setattr(self._part, &quot;geom&quot;, _ped.Geometry(self._device, 10, 20))</span>
+<span class="gi">+            self._part.geom = _ped.Geometry(self._device, 10, 20)</span>
+<span class="gi">+</span>
+         self.assertRaises(exn, setattr, self._part, &quot;disk&quot;, self._disk)
+ 
+         # Check that values have the right type.
+<span class="gh">diff --git a/tests/test_parted_partition.py b/tests/test_parted_partition.py</span>
+<span class="gh">index 0a406a0..8d8d0fd 100755</span>
+<span class="gd">--- a/tests/test_parted_partition.py</span>
+<span class="gi">+++ b/tests/test_parted_partition.py</span>
+<span class="gu">@@ -23,7 +23,7 @@</span>
+ import parted
+ import unittest
+ 
+<span class="gd">-from tests.baseclass import RequiresDisk</span>
+<span class="gi">+from tests.baseclass import RequiresDisk, RequiresPartition</span>
+ 
+ # One class per method, multiple tests per class.  For these simple methods,
+ # that seems like good organization.  More complicated methods may require
+<span class="gu">@@ -34,11 +34,11 @@ class PartitionNewTestCase(unittest.TestCase):</span>
+         # TODO
+         self.fail(&quot;Unimplemented test case.&quot;)
+ 
+<span class="gd">-@unittest.skip(&quot;Unimplemented test case.&quot;)</span>
+<span class="gd">-class PartitionGetSetTestCase(unittest.TestCase):</span>
+<span class="gi">+class PartitionGetSetTestCase(RequiresPartition):</span>
+     def runTest(self):
+<span class="gd">-        # TODO</span>
+<span class="gd">-        self.fail(&quot;Unimplemented test case.&quot;)</span>
+<span class="gi">+        with self.assertRaises((AttributeError, TypeError)):</span>
+<span class="gi">+            #setattr(self.part, &quot;geometry&quot;, parted.Geometry(self.device, start=10, length=20))</span>
+<span class="gi">+            self.part.geometry = parted.Geometry(self.device, start=10, length=20)</span>
+ 
+ @unittest.skip(&quot;Unimplemented test case.&quot;)
+ class PartitionGetFlagTestCase(unittest.TestCase):
+</pre></div>
+
+
+<p>The test in <code>test__ped_partition.py</code> works without problems, I've modified it for
+visual reference only. This was also the inspiration behind the test in
+<code>test_parted_partition.py</code>. However the second test fails with</p>
+<div class="highlight"><pre>======================================================================
+FAIL: runTest (tests.test_parted_partition.PartitionGetSetTestCase)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File &quot;/tmp/pyparted/tests/test_parted_partition.py&quot;, line 41, in runTest
+    self.part.geometry = parted.Geometry(self.device, start=10, length=20)
+AssertionError: (&lt;type &#39;exceptions.AttributeError&#39;&gt;, &lt;type &#39;exceptions.TypeError&#39;&gt;) not raised
+
+----------------------------------------------------------------------
+</pre></div>
+
+
+<p>Now it's clear that something isn't quite the same between the two interfaces.
+If we look at <code>src/parted/partition.py</code> we see the following snippet</p>
+<div class="highlight"><pre>137     fileSystem = property(lambda s: s._fileSystem, lambda s, v: setattr(s, &quot;_fileSystem&quot;, v))
+138     geometry = property(lambda s: s._geometry, lambda s, v: setattr(s, &quot;_geometry&quot;, v))
+139     system = property(lambda s: s.__writeOnly(&quot;system&quot;), lambda s, v: s.__partition.set_system(v))
+140     type = property(lambda s: s.__partition.type, lambda s, v: setattr(s.__partition, &quot;type&quot;, v))
+</pre></div>
+
+
+<p>The geometry property is indeed read-write but the system property is write-only.
+<code>git blame</code> leads us to the interesting
+<a href="https://github.com/rhinstaller/pyparted/commit/2fc0ee2b">commit 2fc0ee2b</a>, which changes
+definitions for quite a few properties and removes the <code>_readOnly</code> method which raises
+an exception. Even more interesting is the fact that the <code>Partition.geometry</code> property
+hasn't been changed. If you look closer you will notice that the deleted definition and
+the new one are exactly the same. Looks like the problem existed even before this change.</p>
+<p>Digging down even further we find
+<a href="https://github.com/rhinstaller/pyparted/commit/7599aa1ae505f3784ca4936b58b38b8dffb752ff">commit 7599aa1</a>
+which is the very first implementation of the <code>parted</code> module. There you can see the
+<code>_readOnly</code> method and some properties like <code>path</code> and <code>disk</code> correctly marked as such
+but <code>geometry</code> isn't.</p>
+<p>Shortly after this commit the first test was added (4b9de0e) and a bit
+later the second, empty test class, was added (c85a5e6). This only goes
+to show that every piece of software needs appropriate QA coverage, which
+pyparted was kind of lacking (and I'm trying to change that).</p>
+<p>The reason this bug went unnoticed for so long
+is the limited exposure of pyparted. To my knowledge anaconda, the Fedora installer
+is its biggest (if not single) consumer and maybe it uses only the <code>_ped</code>
+interface (I didn't check) or it doesn't try to do silly things like setting
+a value to a read-only property.</p>
+<p><strong>
+The lesson from this story is to test all of your interfaces and also
+make sure they are behaving in exactly the same manner!
+</strong></p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 26 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/" rel="bookmark" title="Permalink to Capybara's within() Altering expect(page) Scope">
+                <h2 class="post-title">
+                    Capybara's within() Altering expect(page) Scope
+                </h2>
+            </a>
+                <p><strong>
+When making assertions inside a <code>within</code> block the assertion scope
+is limited to the element selected by the <em>within()</em> function, although
+it looks like you are asserting on the entire page!
+</strong></p>
+<div class="highlight"><pre><span class="n">scenario</span> <span class="s1">&#39;Pressing Escape closes autocomplete popup&#39;</span> <span class="k">do</span>
+  <span class="n">within</span><span class="p">(</span><span class="s1">&#39;#new-broadcast&#39;</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">find</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;Hello &#39;</span><span class="p">)</span>
+      <span class="n">start_typing_name</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">,</span> <span class="s1">&#39;@Bret&#39;</span><span class="p">)</span>
+      <span class="c1"># will fail below</span>
+      <span class="n">expect</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_selector</span><span class="p">(</span><span class="s1">&#39;.ui-autocomplete&#39;</span><span class="p">)</span>
+      <span class="n">send_keys</span><span class="p">(</span><span class="s1">&#39;#broadcast_field&#39;</span><span class="p">,</span> <span class="ss">:escape</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">expect</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_no_selector</span><span class="p">(</span><span class="s1">&#39;.ui-autocomplete&#39;</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>The above code failed the first <code>expect()</code> and it took me some time before
+I figured it out. Capybara's test suite itself gives you the answer</p>
+<div class="highlight"><pre><span class="n">it</span> <span class="s2">&quot;should assert content in the given scope&quot;</span> <span class="k">do</span>
+  <span class="vi">@session</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="ss">:css</span><span class="p">,</span> <span class="s2">&quot;#for_foo&quot;</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">expect</span><span class="p">(</span><span class="vi">@session</span><span class="p">)</span><span class="o">.</span><span class="n">not_to</span> <span class="n">have_content</span><span class="p">(</span><span class="s1">&#39;First Name&#39;</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">expect</span><span class="p">(</span><span class="vi">@session</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">have_content</span><span class="p">(</span><span class="s1">&#39;First Name&#39;</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>So know your frameworks and happy testing.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 24 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/24/capybaras-within-altering-expectpage-scope/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/" rel="bookmark" title="Permalink to 3 Bugs in Grajdanite">
+                <h2 class="post-title">
+                    3 Bugs in Grajdanite
+                </h2>
+            </a>
+                <p><a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite">Grajdanite</a>
+is a social app that allows everyone (in Bulgaria) to photograph vehicles in breach of
+traffic rules or misbehaving drivers, upload them online and ask them to
+appologize. They also offer some functionality to report offenses to the
+authorities are are partnering with local municipalities and law enforcement
+agencies to make the process easier. And of course this is one of my
+favorite apps as of latest.</p>
+<h2>Missing Icon in My Profile</h2>
+<p><img alt="Missing icon" src="/images/grajdanite/bug1.png" title="Missing icon bug" /></p>
+<p>The more offenses you report the more points you get.
+Points lead to ranks (e.g. junior officer, senior officer, etc).
+The page showing your points and rank is missing an icon. If I had to guess
+this is the badge which comes with different ranks.</p>
+<h2>Preloading the Very First Form Value</h2>
+<p><img alt="Preloading gone wrong" src="/images/grajdanite/bug2.png" title="Preloading gone wrong" /></p>
+<p>Once you opt for reporting an offence to the authorities you need to specify
+the address where the action took place, your name, phone and e-mail address.
+The app correctly saves your details and pre-loads them later to speed-up
+data entry. However I typed my e-mail wrong the very first time. Now every time
+I want to report something the app pre-loads the wrong address. Even after I
+change it to the correct one, the next time I still see the very first, wrong value.</p>
+<p>In code this is probably something like:</p>
+<div class="highlight"><pre># pre-load
+form.email = store.get(&quot;email&quot;, &quot;&quot;)
+form.show()
+
+# save
+if form.firstTime():
+    store.save(&quot;email&quot;, form.email)
+</pre></div>
+
+
+<p>The fix is to save the form value every time (not expensive operation here)
+or check if the current value is different from the last time and only then save it.</p>
+<h2>DST and Time Sync</h2>
+<p>The last bug is in the app confirmation email. Once an offence is reported the
+user receives an email with the uploaded photo and the information they have
+provided. The email includes a timestamp. However the email timestamp is 
+1 hour off from the actual time. In particular it is 1 hour behind the current time
+and I think the email server doesn't follow summer time.</p>
+<p>The result from this is:</p>
+<ul>
+<li>Report an offense</li>
+<li>Wait 1 minute for the email to be received;</li>
+<li>The email says the offense happened 1 hour ago!</li>
+</ul>
+<p>All of these bugs are in version 3.86.3, which is the latest one.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 17 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/17/3-bugs-in-grajdanite/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/" rel="bookmark" title="Permalink to How To Hire Software Testers, Pt. 2">
+                <h2 class="post-title">
+                    How To Hire Software Testers, Pt. 2
+                </h2>
+            </a>
+                <p>In my
+<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">previous post</a> I have
+described the process I follow when interviewing candidates for a QA position.
+The first question is designed to expose the applicant's way of thinking.
+My second question is designed to examine their technical understanding
+and to a lesser extent their way of thinking.</p>
+<p><img alt="Sudoku" src="/images/sudoku.png" title="Sudoku" /></p>
+<h2>How do You Test a Sudoku Solving Function</h2>
+<p>You have implementation of a sudoku solver function with the following pseudocode:</p>
+<div class="highlight"><pre>func Sudoku(Array[2]) {
+    ...
+    return Array[2]
+}
+</pre></div>
+
+
+<ul>
+<li>The function solves a sudoku puzzle;</li>
+<li>Input parameter is a two-dimensional array with the known numbers (from 1 to 9) in the Sudoku grid;</li>
+<li>The output is a two-dimensional array with the numbers from the solved puzzle.</li>
+</ul>
+<p>You have 10 minutes to write down a list of all test cases you can think of!</p>
+<h2>Behind The Scenes</h2>
+<p>One set of possible tests is to examine the input and figure out if the
+function has been passed valid data.
+In the real-world programs interact with each other, they are not alone.
+Sometimes it happens that a valid output from one program isn't a
+valid input for the next one. Also we have malicious users who will try to
+break the program.</p>
+<p>If a person manages to test for this case then
+I know they have a bit more clue about how software is used in the real-world.
+This also touches a bit on white-box testing, where the tester has full info
+about the software under test. In this example the implementation is
+intentionally left blank.</p>
+<p>OTOH I've seen answers where the applicant blindly assumes that the input
+is 1-9, because the spec says so, and excludes the entire input testing from
+their scope. I classify this answer as immediate failure, because a tester should
+never assume anything and test to verify their initial conditions are indeed
+as stated in the documentation.</p>
+<p>Another set of possible tests is to verify the correct work of the function.
+That is to verify the proposed Sudoku solution is indeed following the rules
+of the game. This is what we usually refer to black-box testing. The tester
+doesn't know how the SUT works internally, they only know the input data and
+the expected output. </p>
+<p>If a person fails to describe at least one such test case
+they have essentially failed the question. What is the point of a SUT which
+doesn't crash (suppose that all previous tests passed) but doesn't
+produce the desired correct result ?</p>
+<p>Then there are test cases related to the environment in which this Sudoku
+solver function operates. This is where I examine the creativity of the person,
+their familiarity with other platforms and to some extent their thinking out of
+the box. Is the Sudoku solver iterative or recursive ? What if we're on an
+embedded system and recursion is too heavy for it ? How much power does the
+function require, how fast it works, etc.</p>
+<p>A person that provides at least one answer in this category has bonus points
+over the others who didn't. IMO it is very important for a tester to have
+experience with various platforms and environments because this helps them
+see edge cases which others will not be able to see. I also consider a strong
+plus if the person shows they can operate outside their comfort zone.</p>
+<p>If we have time I may ask the applicant to write the tests using a programming
+language they know. This is to verify their coding and automation skills.</p>
+<p>OTOH having the tests as code will show me how much the person knows about testing
+vs. coding. I've seen solutions where people write a for loop, looping over all
+numbers from 1 to 100 and testing if they are a valid input to <code>Sudoku()</code>.
+Obviously this is pointless and they failed the test.</p>
+<p>Last but not least, the question asks for testing a particular Sudoku solver
+implementation. I expect the answers to be designed around the given function.
+However I've seen answers designed around a
+<a href="http://sudoku-solutions.com/">Sudoku solver website</a> or described as
+intermediate states in an interactive Sudoku game (e.g. wrong answers shown in red).
+I consider these invalid because the question is to test a particular
+given function, not anything Sudoku related. If you do this in real-life that
+means you are not testing the SUT directly but maybe touching it indirectly
+(at best). This is not what a QA job is about.</p>
+<h2>What Are The Correct Answers</h2>
+<p>Here are some of the possible tests.</p>
+<ul>
+<li>Test with single dimensional input array - we expect an error;</li>
+<li>Test with 3 dimensional input array - we expect an error;</li>
+<li>Then proceed testing with 2 dimensional array;</li>
+<li>Test with number less than 1 (usually 0) - expect error;</li>
+<li>Test with number greater than 9 (usually 10) - expect error;</li>
+<li>Test how the function handles non-numerical data - chars &amp; symbols
+(essentially the same thing for our function);</li>
+<li>Test with strings which actually represent a number, e.g. "1";</li>
+<li>Test with floating point numbers, e.g. 1.0, 2.0, 3.0 - may or may not
+work depending on how the code is written;</li>
+<li>If floating point numbers are accepted, then test with a different locale.
+Is "1.0" the same as "1,0";</li>
+<li>Test with <code>null</code>, <code>nil</code>, <code>None</code> (whatever the language supports) -
+this should be a valid value for unknown numbers and not cause a crash;</li>
+<li>Test if the function validates that the provided input follows the
+Sudoku rules by passing it duplicate numbers in one row, column or
+square. It should produce an error;</li>
+<li>Test if the input data contains the minimum number of givens, 17
+for a general Sudoku, so that a solution can be found. Otherwise the function
+may go into an
+<a href="http://atodorov.org/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/">endless loop</a>;</li>
+<li>Verify the proposed solution conforms to Sudoku rules;</li>
+<li>Test with a fully solved puzzle as input - output should be exactly the same;</li>
+<li>If on mobile, measure battery consumption for 1 minute of operation. I've
+seen a game which uses 1% battery power for 1 minute of game play;</li>
+<li>Test for buffer overflows;</li>
+<li>Test for speed of execution (performance);</li>
+<li>Test performance on single and multiple (core) CPUs - depending on the
+language and how the function is written this may produce a difference or not;</li>
+</ul>
+<p>I'm sure I'm missing something so please use the comments below to tell me your suggestions.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 16 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/" rel="bookmark" title="Permalink to How To Hire Software Testers, Pt. 1">
+                <h2 class="post-title">
+                    How To Hire Software Testers, Pt. 1
+                </h2>
+            </a>
+                <p>Many people have asked me how do I make sure a person who applies for a
+QA/software tester position is a good fit ? On the opposite side people
+have asked online how do they give correct answers on test related questions
+at job interviews. I have two general questions to help me decide if a
+person knows about testing and if they are a good fit for the team or not.</p>
+<p><img alt="Login form" src="/images/login_form_wireframe.jpg" title="Login form" /></p>
+<h2>How do You Test a Login Form</h2>
+<p>You are given the login form above and the following constraints:</p>
+<ul>
+<li>Log in is possible with username and password or through the social networks;</li>
+<li>After successful registration an email with the following content is sent to the user:</li>
+</ul>
+<p><code>Helo and welcome to atodorov.org! Click _here_ to confirm your emeil address.</code></p>
+<p>You have 10 minutes to write down a list of all test cases you can think of!</p>
+<h2>Behind The Scenes</h2>
+<p>The question looks trivial but isn't as easy to answer as you may think.
+If you haven't spent the last 20 years of your life in a cave, chances are
+that you will give technically correct answers but this is not the only
+thing I'm looking for.</p>
+<p>The question is designed to simulate a real-world scenario, where the QA
+person is given a piece of software, or requirements document and tasked with
+creating a test plan for it. The question is intentionally vague because that's
+how real-world works, most often testers don't have all the requirements and
+specifications available beforehand.</p>
+<p>The time constrain, especially when the interview is performed in person,
+simulates work under pressure - get the job done as soon as possible.</p>
+<p>While I review the answers I'm trying to figure out how does the person think,
+not how much about technology they know. I'm trying to figure out what are their
+strong areas and where they need to improve. IMO being able to think as a tester
+and having attention to details, being able to easily spot corner cases and
+look at the problem from different angles is much more important than
+technical knowledge in a particular domain.</p>
+<p>As long as a person is suited to think like a tester they can learn to
+apply their critical thinking to any software under test and use various
+testing techniques to discover or safeguard against problems.</p>
+<ul>
+<li>
+<p>A person that answers quickly and intuitively is better than a person who
+takes a long time to figure out what to test. I can see they are active
+thinkers and can work without micro-management and hand-holding.</p>
+</li>
+<li>
+<p>A person that goes on and on
+describing different test cases is better than one who limits themselves to
+the most obvious cases. I can see they have an exploratory passion, which
+is the key to finding many bugs and making the software better;</p>
+</li>
+<li>
+<p>A person that goes to explore the system in breadth is better than one who
+keeps banging on the same test case with more and more variations. I can see
+they are noticing the various aspects of the software (e.g. social login,
+email confirmation, etc) but also to some extent, not investing all of their
+resources (the remaining time to answer) into a single direction. Also in
+real-world testing, testing the crap out of something is useful up to a point.
+Afterwards we don't really see any significant value from additional testing
+efforts.</p>
+</li>
+<li>
+<p>A person that is quick to figure out one or two corner cases is better
+than a person who can't. This tells me they are thinking about what goes
+on under the hood and trying to predict unpredictable behavior - for example
+what happens if you try to register with already registered username or email?</p>
+</li>
+<li>
+<p>A person that asks questions in order to minimize uncertainty and vagueness
+is better than the one who doesn't. In real-world if the tester doesn't know
+something they have to ask. Quite often even developers and product managers
+don't know the answer. Then how are we developing software if we don't know
+what it is supposed to do ?</p>
+</li>
+<li>
+<p>If given more time (writing interview), a person that organizes their answers
+into steps (1, 2, 3) is a bit better than one who simply throws at you random
+answers without context. Similar thought applies to people who write down their
+test pre-conditions before writing down scenarios. From this I can see that
+the person is well organized and will have no trouble writing detailed test cases,
+with pre-conditions, steps to execute and expected results. This is what QAs do.
+Also we have the, sometimes tedious, task of organizing all test results into
+a test case management system (aka test book) for further reference.</p>
+</li>
+<li>
+<p>The question intentionally includes some mistakes. In this example 2 spelling
+errors in the email text. Whoever manages to spot them and tell me about it is
+better than others who don't spot the errors or assume that's how it is. QAs job
+is to always question everything and never blindly trust that the state of the
+system is the way it is. Also simple errors like typos can be
+<a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/">embarrassing</a> or generate
+unnecessary support calls.</p>
+</li>
+<li>
+<p>Bravo if you tested not only the outgoing email but also social login. This
+shows attention to details, not to mention social is 1/3rd of our example system.
+It also shows that QA's job doesn't end with testing
+the core, perceived functionality of the system. QA tests everything,
+even interactions with external systems if that is necessary.</p>
+</li>
+</ul>
+<h2>What Are The Correct Answers</h2>
+<p>I will document some of the possible answers as I recall them from memory.
+I will update the list with other interesting answers given by students who
+applied to my
+<a href="https://github.com/HackBulgaria/QA-and-Automation-101">QA and Automation 101</a>
+course, answering this very same question.</p>
+<ul>
+<li>Test if users can register using valid username, email and password;</li>
+<li>Test if SUT gives an error message when email or password (or username)
+format doesn't follow a particular format (e.g. no special symbols);</li>
+<li>After registration, test that the user can login successfully;</li>
+<li>Depending on requirements test if the user can login before they have
+confirmed their email address;</li>
+<li>Test that upon registration a confirmation email is actually sent;</li>
+<li>Spell-check the email text;</li>
+<li>Test if the <em>click here</em> piece of text is a hyperlink;</li>
+<li>Verify that when clicked, the hyperlink successfully confirmed email/activates the account
+(depending on what confirmed/activated means per requirements);</li>
+<li>Test what happens if the link is clicked a second time;</li>
+<li>Test what happens if the link is clicked after 24 or 48 hrs;</li>
+<li>Test that the social network icons, actually link to the desired SN and
+not someplace else;</li>
+<li>Test if new user accounts can be created via all specified social networks;</li>
+<li>Test what happens if there is an existing user, who registered with a password
+and they (or somebody else) tries to register via social with an account that has
+the same email address, aka account hijacking;</li>
+<li>Same as previous test but try to register a new user, using email address that
+was previously used with social login;</li>
+<li>Test what happens if users forget their password - intentionally we don't have
+the '[] Forgot my password' checkbox. This is both usability feature and missing
+requirements;</li>
+<li>Test for simple SQL injections like
+<a href="http://php.net/manual/en/images/fa7c5b5f326e3c4a6cc9db19e7edbaf0-xkcd-bobby-tables.png">Bobby Tables</a>.
+<em>btw I was given this image as an answer which scored high on the geek-o-meter</em>;</li>
+<li>Test for XSS - <a href="https://twitter.com/dergeruhn/status/476764918763749376">Tweetdeck didn't</a>;</li>
+<li>Test if non-activated/non-confirmed usernames expire after some time and can be used again;</li>
+<li>Test of fields tab order - something I haven't done in 15 or more years
+but still valid and I've seen sites getting it wrong quite often;</li>
+<li>When trying to login test what happens when username/password is wrong or empty;</li>
+<li>Test if email is required for login - this isn't clear from the requirements
+so it is a valid answer. Better answer is to clarify that;</li>
+<li>Test if username/email or password is case sensitive. Valid test and indeed I
+recently saw a problem where upon registration users entered their emails using
+some capital letters but they were lower-cased before saving to the DB. Later this
+broke a piece of code which forgot to apply the lowercase on the input data. The code
+was handling account reactivation;</li>
+<li>Test if the password field shows the actual password or not. I haven't seen this
+in person but I'm certain there is some site which maybe used CSS and nice images
+instead of the default ugly password field and that didn't work on all browsers;</li>
+<li>Test if you can copy&amp;paste the masked password, probably trying to steal somebody
+else's password. Last time I saw this was on early Windows 95 with the modem connection
+dialog. Very briefly it allowed you to copy the text from the field and paste it into
+Notepad to reveal the actual password;</li>
+<li>If we're on mobile (intentionally not specified) test for buffer overflows;
+Actually test that everywhere and see what happens;</li>
+<li>Test if the social network buttons use the same action verb. In the example
+we have <em>Log in</em>, <em>Connect</em> and <em>Sign in</em>. This is sort of usability testing
+and helping have a unified look and feel of the product;</li>
+<li>Test which of the <em>Log in</em> and <em>Sign up</em> tabs is active at the moment.
+The example is intentionally left to look like a wireframe but it is important
+for the user to easily tell where they are. Otherwise they'll call support or
+even worse, simply give up on us;</li>
+<li>Test if all static files (images) will load if they are deployed onto CDN.
+Not surprisingly I've seen <a href="https://github.com/Nitrate/Nitrate/pull/80">this bug</a>;</li>
+<li>In case we have a "[] Remember me" checkbox, test if it actually remembers
+the user credentials. Yesterday I saw this same functionality not working on
+a specialized desktop app in the corner case where you supply a different
+connection endpoint (server) instead of the ones already provided. The user
+defined value is accepted but not saved automatically;</li>
+<li>Test if the "Remember me" functionality actually saves your last credentials
+or only the first ones you provided. There is a similar bug in 
+<a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite">Grajdanite</a>,
+where once you enter a wrong email, it is remembered and every time the form is
+pre-filled with the previous value (which is wrong). I'm yet to report it though;</li>
+<li>Cross-browser testing - hmm, login and registration should work on all browsers
+you say. It's not browser dependent, is it? Well yeah, login isn't browser dependent
+unless we did something stupid like pre-handling the form submit via non-cross-platform
+JavaScript or even
+<a href="https://github.com/gilsondev/pelican-clean-blog/pull/6">accidentally doing so</a>;</li>
+<li>Test with Unicode characters, especially non Latin ones. It's been many years
+since we had Unicode but quite a few apps haven't learned how to deal with Unicode
+text properly.</li>
+</ul>
+<p>I'm certain there are more answers and I will update the list as I figure them out.
+You can always post in the comments and tell me something I've missed.</p>
+<h2>How to Pass The Job Interview</h2>
+<p>This is a question I often see on <a href="https://www.quora.com/profile/Alexander-Todorov">Quora</a>.
+<em>I have a job interview tomorrow. How do I test a login form (or whatever) ?</em></p>
+<p>If this section is what you're after I suspect you are a junior or wanna-be
+software tester. As you've seen the interviewer isn't really interested in what you know already,
+at least not as much. We're interested in getting to know how you
+think in the course of 30-60 minutes.</p>
+<p>If you ever find yourself being asked a similar question just start thinking and
+answering and don't stop. Vocalize your thoughts, even if you don't know what will
+happen when testing a certain condition. Then keep going on and on. Look at the problem
+from all angles, explain how you'd test various aspects and features of the SUT.
+Then move on to the next bit. Always think about what you may have forgotten and
+revisit your answers - this is what real QAs do - learn from mistakes.
+Ask questions, don't ever assume anything. If something is unclear ask to be
+clarified. For example I've seen a person who doesn't use social networks and
+didn't know how social login/registration worked. They did good by asking me to
+describe how that works.</p>
+<p>Your goal is to make the interviewer ask you to stop answering. Then tell them
+a few more answers.</p>
+<p>However beware of cheating. You may cheat a little bit by
+saying you will test this and that or design scenarios you have no clue about.
+Maybe you read them in my blog or elsewhere. If the interviewer knows their job
+(which they should) they will instantly ask you another question to verify what
+you say. Don't forget the interviewer is probably an experienced tester and validating
+assumptions is what they do every day.</p>
+<p>For example, if you told me something about security testing or SQL injection
+or XSS I will ask you to explain that in more details. If you forgot to mention,
+one of them, say XSS but only heard about SQL injection I will ask you about the
+other one. This will immediately tell me if you have a clue what you are talking
+about.</p>
+<p>Feel free to send me suggestions and answers in the comments below. You can find
+the second part of this post at
+<a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/">How do you test a Sudoku solving function</a>.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 12 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/31/time-calculation-bug-in-blackberry-z10/" rel="bookmark" title="Permalink to Time Calculation bug in BlackBerry Z10">
+                <h2 class="post-title">
+                    Time Calculation bug in BlackBerry Z10
+                </h2>
+            </a>
+                <p><img alt="BlackBerry Z10 bug" src="/images/bbz10_calls_bug.png" title="BlackBerry Z10 bug" /></p>
+<p>I thought BlackBerry 10 is dead but apparently they still provide updates
+and introduce new bugs :). This one happened a few days ago with
+Software Release 10.3.2.2474. As you can see the time calculations are totally
+wrong!</p>
+<p>The current
+time is 12:45, March 28th. The last call is reported as <em>5 minutes ago</em>
+but its time stamp is 3 and a half hours ago!</p>
+<p>The second call is reported as <em>11 minutes ago</em> but in reality it is
+3 days ago. I'm not sure about the time stamp but that is probably wrong
+as well.</p>
+<p>The reason for this IMO is their design to have a fixed start of the epoch
+for every OS release - probably the build time of the release. When the OS
+is fully booted and connected to network it synchronizes with time servers
+and updates the local time. This of course fails in case of no WiFi, no
+cellular data or if automatic time synchronization is turned off!</p>
+<p>The result is that every object (calls, images, etc) which has a time stamp
+attached to it gets an incorrect value. Maybe some of these are recalculated
+back to the current time, once it is synchronized, and others probably not.
+Otherwise I'd expect all calls to be reported way back in time!</p>
+<p>For more information about time related bugs checkout
+<a href="https://www.youtube.com/watch?v=MVI87HzfskQ">Tom Scott's Why 1/1/1970 Bricks Your iPhone</a>
+video and read my article
+<a href="http://atodorov.org/blog/2016/03/08/floating-point-precision-error-with-ruby/">Floating-point precision error with Ruby</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 31 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/31/time-calculation-bug-in-blackberry-z10/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/31/beware-of-double-stubs-in-rspec/" rel="bookmark" title="Permalink to Beware of Double Stubs in RSpec">
+                <h2 class="post-title">
+                    Beware of Double Stubs in RSpec
+                </h2>
+            </a>
+                <p>I've been re-factoring some RSpec tests and encountered a method which has been
+stubbed-out 2 times in a row. This of course led to problems when I tried to delete
+some of the code, which I deemed unnecessary. Using
+<a href="http://blog.teamtreehouse.com/an-introduction-to-rspec">Treehouse's burger example</a>
+I've recreated my use-case. Comments are in the code below:</p>
+<div class="highlight"><span class="filename">burger_spec.rb</span><pre><span class="k">class</span> <span class="nc">Burger</span>
+  <span class="kp">attr_reader</span> <span class="ss">:options</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="p">{})</span>
+    <span class="vi">@options</span> <span class="o">=</span> <span class="n">options</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">apply_ketchup</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="vi">@ketchup</span> <span class="o">=</span> <span class="vi">@options</span><span class="o">[</span><span class="ss">:ketchup</span><span class="o">]</span>
+    <span class="c1"># the number is passed from the tests below to make it easier to</span>
+    <span class="c1"># monitor execution of this method.</span>
+    <span class="nb">printf</span> <span class="s2">&quot;Ketchup applied %d times</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">number</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">apply_mayo_and_ketchup</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="vi">@options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="n">apply_ketchup</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">has_ketchup_on_it?</span>
+    <span class="vi">@ketchup</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">describe</span> <span class="no">Burger</span> <span class="k">do</span>
+  <span class="n">describe</span> <span class="s2">&quot;#apply_mayo_and_ketchup&quot;</span> <span class="k">do</span>
+    <span class="n">context</span> <span class="s2">&quot;with ketchup and single stubs&quot;</span> <span class="k">do</span>
+      <span class="n">let</span><span class="p">(</span><span class="ss">:burger</span><span class="p">)</span> <span class="p">{</span> <span class="no">Burger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:ketchup</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">)</span> <span class="p">}</span>
+
+      <span class="n">it</span> <span class="s2">&quot;1: sets the mayo flag to true, ketchup is nil&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line stubs-out the apply_ketchup method</span>
+        <span class="c1"># and @ketchup will remain nil b/c the original</span>
+        <span class="c1"># method is not executed at all</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="n">it</span> <span class="s2">&quot;2: sets the mayo and ketchup flags to true&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line stubs-out the apply_ketchup method</span>
+        <span class="c1"># but in the end calls the non-stubbed out version as well</span>
+        <span class="c1"># so that has_ketchup_on_it? will return true !</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span><span class="o">.</span><span class="n">and_call_original</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">context</span> <span class="s2">&quot;with ketchup and double stubs&quot;</span> <span class="k">do</span>
+      <span class="n">let</span><span class="p">(</span><span class="ss">:burger</span><span class="p">)</span> <span class="p">{</span> <span class="no">Burger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:ketchup</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">)</span> <span class="p">}</span>
+      <span class="n">before</span> <span class="p">{</span>
+        <span class="c1"># this line creates a stub for the apply_ketchup method</span>
+        <span class="n">allow</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+      <span class="p">}</span>
+
+      <span class="n">it</span> <span class="s2">&quot;3: sets the mayo flag to true, ketchup is nil&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line creates a second stub for the fake apply_ketchup method</span>
+        <span class="c1"># @ketchup will remain nil b/c the original method which sets its value</span>
+        <span class="c1"># isn&#39;t actually executed. we may as well comment out this line and</span>
+        <span class="c1"># this will not affect the test at all</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="n">it</span> <span class="s2">&quot;4: sets the mayo and ketchup flags to true&quot;</span> <span class="k">do</span>
+        <span class="c1"># this line creates a second stub for the fake apply_ketchup method.</span>
+        <span class="c1"># .and_call_original will traverse up the stubs and call the original</span>
+        <span class="c1"># method. If we don&#39;t want to assert that the method has been called</span>
+        <span class="c1"># or we don&#39;t care about its parameters, but only the end result</span>
+        <span class="c1"># that system state has been changed then this line is redundant!</span>
+        <span class="c1"># Don&#39;t stub &amp; call the original, just call the original method, right?</span>
+        <span class="c1"># Commenting out this line will cause a failure due to the first stub</span>
+        <span class="c1"># in before() above. The first stub will execute and @ketchup will remain</span>
+        <span class="c1"># nil! To set things straight also comment out the allow() line in</span>
+        <span class="c1"># before()!</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:apply_ketchup</span><span class="p">)</span><span class="o">.</span><span class="n">and_call_original</span>
+        <span class="n">burger</span><span class="o">.</span><span class="n">apply_mayo_and_ketchup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:mayo</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+        <span class="n">expect</span><span class="p">(</span><span class="n">burger</span><span class="o">.</span><span class="n">has_ketchup_on_it?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>When I see a <code>.and_call_original</code> method
+after a stub I immediately delete it because in most of the cases this isn't
+necessary. Why stub out something just to call it again later ? See my comments
+above. Also the <code>expect to receive &amp;&amp; do action</code>
+sequence is a bit counter intuitive. I prefer the <code>do action &amp; assert results</code>
+sequence instead.</p>
+<p>The problem here comes from the fact that RSpec has very flexible syntax for
+creating stubs which makes it very easy to abuse them, especially when you
+have no idea what you're doing. If you write tests with RSpec please make a
+note of this and try to avoid this mistake.</p>
+<p>If you'd like to learn more about stubs see
+<a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/">Bad Stub Design in DNF</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 31 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/31/beware-of-double-stubs-in-rspec/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/" rel="bookmark" title="Permalink to Hello World QA Challenge">
+                <h2 class="post-title">
+                    Hello World QA Challenge
+                </h2>
+            </a>
+                <p>Recently I've been asked on Quora
+"Do simple programs like hello world have any bugs" ? In particular if the
+computer hardware and OS are healthy, will there be any bugs in a simple
+hello-world program?</p>
+<p>I'm challenging you to tell me what
+kinds of bugs have you seen which would easily apply to a very simple program!
+Below are some I was able to think about.</p>
+<h2>Localization</h2>
+<p>Once we add a requirement to our system to work in environment which supports
+multiple languages and input methods, not supporting them immediately becomes a bug,
+although the SUT still functions correctly. For example, if using a French locale
+I would expect the program to print "Bonjour le monde". Same for German, Spanish,
+Italian, etc. It even becomes trickier with languages using non-latin script like
+Bulgarian and Japanese for example. Depending on your environment you may not be
+able to display non-latin script at all.
+See also
+<a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How do you test fonts</a>!</p>
+<h2>Packaging and distribution</h2>
+<p>This is an entire class of problems not directly related to the SUT but to the way
+it is packaged and distributed to its target customers. For a Linux system it makes
+sense to have an RPM or DEB packages. Dependency resolution and proper installation
+and upgrade for these packages need to be tested and ensured.</p>
+<p>A famous example of a high impact packaging bug is
+<a href="https://code.djangoproject.com/ticket/19858">Django #19858</a>. During an urgent
+security release it was discovered that the source package was shipping byte-compiled
+<code>*.pyc</code> files made with a newer version of Python (2.7). Even worse there were
+byte-compiled files without the corresponding source files.</p>
+<p>Being a security release everyone
+rushed to upgrade immediately. Everyone who had Python 2.6 saw their website
+produce <code>ImportError: Bad magic number</code> and crash immediately after the upgrade!</p>
+<p><strong>NOTE:</strong> byte-compiled files between different versions of Python are
+incompatible!</p>
+<p>Another one is
+<a href="https://github.com/tschellenbach/Django-facebook/issues/262">django-facebook #262</a>
+in which version 4.3.0 suddenly grew from 200KiB to 23MiB in size, shipping a ton
+of extra JPEG images.</p>
+<h2>Portability</h2>
+<p>There are so many different portability issues which may affect an otherwise
+working program. You only need to add a requirement to build/execute on another
+OS or CPU architecture - for example aarch64 (64-bit ARM).
+This resulted in hundreds of bugs
+reported by Dennis Gilmore, for example <a href="https://bugzilla.redhat.com/show_bug.cgi?id=926850">RHBZ#926850</a> which is also related to
+packaging and the build chain.</p>
+<p>Then we have possibility for big endian vs. little endian issues especially if
+we run on Power 8 CPU which supports both modes.</p>
+<p>Another one could be 16bit vs. 32bit vs 64bit memory addressing. For example
+on platforms like IBM mainframe (s390) they reserved the most significant bit
+to easily support applications expecting 24-bit addressing, as well as to
+sidestep a problem with extending two instructions to handle 32-bit unsigned
+addresses, which made the address space 31-bits!</p>
+<h2>Performance</h2>
+<p>Not all processors are created equal! Both Intel (x86_64), ARM and PowerPC
+have different instruction sets and numbers of registers. Depending on what
+sort of calculations you perform one of the architectures may be more suitable
+than the other.</p>
+<h2>Typos</h2>
+<p>It not uncommon to mistype even common words like
+"hello" and "world" and I've rarely seen QAs and developers running spell
+checkers on all of their source strings. We do this for documentation and
+occasionally for man pages but for the actual program output or widget labels -
+almost never.</p>
+<h2>Challenge</h2>
+<p>I find the original question very interesting and a good metal exercise for
+IT professionals. I will be going through Bugzilla
+to find examples which illustrate the above points and even more possible problems
+with a program as simple as hello world and will update this blog accordingly!</p>
+<p>Tell me what kinds of bugs have you seen which would easily apply to a very simple program!
+It's best if you can post links to public bugs and/or detailed explanation.
+Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/11/qa-switch-from-waterfall-to-bdd/" rel="bookmark" title="Permalink to QA Switch from Waterfall to BDD">
+                <h2 class="post-title">
+                    QA Switch from Waterfall to BDD
+                </h2>
+            </a>
+                <p>For the last two weeks I've been experimenting with Behavior-Driven Development
+(BDD) in order to find out what it takes for the Quality Assurance department
+to switch from using the Waterfall method to BDD. Here are my initial
+observations and thoughts for further investigation.</p>
+<h2>Background</h2>
+<p>Developing an entire Linux distribution (or any large product for that matter)
+is a very complicated task. Traditionally QA has been involved in writing the
+test plans for the proposed technology updates, then execute and maintain them
+during the entire product life-cycle reporting and verifying tons of bugs
+along the way. From the point of view of the entire product the process is
+very close to the traditional waterfall development method. I will be using
+the term waterfall to describe the old way of doing things and BDD the new one.
+In particular I'm referring to the process of analyzing the proposed feature set
+for the next major version of the product (e.g. Fedora) and designing the
+necessary test plans documents and test cases.</p>
+<p>To get an idea about where does QA join the process see the
+<a href="https://fedoraproject.org/wiki/Releases/24/ChangeSet">Fedora 24 Change set</a>.
+When the planning phase starts we are given these "feature pages" from which
+QA needs to distill test plans and test cases. The challenges with the
+waterfall model are that QA joins the planning process rather late and there
+is not enough time to iron out all the necessary details. Add to this the fact
+that feature pages are often incomplete and vaguely described and sometimes
+looking for the right answers is the hardest part of the job.</p>
+<h2>QA and BDD</h2>
+<p>Right now I'm focusing on using the
+<a href="https://github.com/cucumber/cucumber/wiki/Gherkin">Gherkin</a>
+<em>Given-When-Then</em> language to
+prepare feature descriptions and test scenarios from the above feature pages.
+You can follow my work on <a href="https://github.com/atodorov/bdd/">GitHub</a> and
+I will be using them as examples below. Also see examples from my
+co-workers <a href="https://github.com/tlamer/bdd">1</a>,
+<a href="https://github.com/hroncok/BDD">2</a>.</p>
+<p>With this experiment I want to verify how hard/easy it is for QA to write
+test cases using BDD style documents and how is that different from the
+traditional method. Since I don't have any experience (nor bias) towards BDD
+I'm documenting my notes and items of interest.</p>
+<h2>Getting Started</h2>
+<p>It took me about 2 hours to get started. The essence of Gherkin is the
+<em>Action &amp; Response</em> mechanism. <strong>Given</strong> the system under test (SUT) is in a
+known state and <strong>when</strong> an action is taken <strong>then</strong> we expect something
+to happen in response to the action. This syntax made me think from the
+point of view of the user. This way it was very easy to identify different
+user roles and actions which will be attempted with the SUT. This also made
+my test scenarios more explicit compared to what is described in the wiki pages.
+IMO being explicit when designing tests is a good thing. I like it that way.</p>
+<p>OTOH the same explicitness can be achieved with the waterfall method as well.
+The trouble is that this is often overlooked because
+we're not in the mindset to analyze the various user roles and scenarios.
+When writing test cases with waterfall the mindset is more focused on the
+technical features, e.g. how the SUT exactly works and we end up missing
+important interactions between the user and the system. At least I can recall
+a few times that I've made that mistake.</p>
+<p>Tagging the scenarios is a good way of indicating
+which scenario covers which roles. Depending on the tools you use it should
+be possible to execute test scenarios for different roles (tags). In waterfall
+we need to have a separate test plan for each user role, possibly duplicating
+some of the test cases across test plans. A bit redundant
+but more importantly easier to forget the bigger picture.</p>
+<h2>Big, Small &amp; Undefined</h2>
+<p>BDD originates from TDD which in turn relies heavily on unit testing and
+automation. This makes it very easy to use BDD 
+test development (and even automate)
+for self contained changes, especially ones which affect
+only a single component (e.g. a single program). From the Fedora 24 changes
+such are for example the systemd and system-python split.</p>
+<p>I happen to work in a team where we deal with large changes, which affect
+multiple components and infrastructure. Both the
+<a href="https://fedoraproject.org/wiki/Releases/24/ChangeSet#Pungi_Refactor">Pungi Refactor</a>
+and
+<a href="https://fedoraproject.org/wiki/Releases/24/ChangeSet#Layered_Docker_Image_Build_Service">Layered Docker Image Build Service</a>
+for which I've written BDD style test scenarios are of this nature. This leads
+to the following issues:</p>
+<ul>
+<li>QA doesn't always have the entire infrastructure stack in a
+staging environment for testing so we need to test on the live infra;</li>
+<li>QA doesn't always have the necessary access permissions to execute
+the tests and in some cases never will. For example it is very unlikely
+that QA will be able to build a test release and push that for syncing
+to the mirrors infrastructure to verify that there are no files left behind;</li>
+<li>Not being able to test independently means QA has to wait for something to happen
+then verify the results (e.g. rel-eng builds new Docker images and pushes
+them live). When something breaks this testing is often too late.</li>
+</ul>
+<p>Complex changes are often not described into detail. As they affect multiple
+infrastructure layers and components sometimes it is not known what the required
+changes need to be. That's why we implement them in stages and have contingency
+plans. However this makes it harder for QA to write the tests. 
+Btw this is the same regardless of which development method is used.
+The good thing is that by forcing you to think from the POV of the user and
+in terms of action &amp; response BDD helps identify these missing bits faster.</p>
+<p>For example, with Pungi (Fedora distro build tool),
+the feature pages says that the produced directory
+structure will be different from previous releases but it doesn't say what
+is going to be different so we can't really test that. I know from
+experience that this may break tools which rely on this structure like
+virt-manager and anaconda and have added simple sanity tests for them.</p>
+<p>In the Docker feature page we have functional requirement for automatic
+image rebuilds if one of the underlying components (e.g. RPM package) changes.
+This is not described in details and so is the test scenario. I can easily
+write a separate BDD feature document for this functionality alone.</p>
+<p>With the waterfall model when a feature isn't well defined QA often waits
+for the devel team to implement the basic features and then writes test cases
+based on the existing behavior. This is only good for regression testing
+the next version but it can't show you something that is missing because
+we're never going to look for it. BDD makes it easier to spot when we need
+better definitions of scope and roles, even better functional requirements.</p>
+<h2>Automation and Integration</h2>
+<p>Having a small SUT is nice. For example we can easily write a
+test script to install, upgrade and query RPM packages and verify the
+systemd package split. We can easily prepare a test system and execute
+the scripts to verify the expected results.</p>
+<p>OTOH complex features are hard to integrate with BDD automation tools.
+For the Docker Image Build Service the straight forward script would
+be to start building a new image, then change an underlying component
+and see if it gets rebuilt, then ensure all the content comes from
+the existing RPM repos, then push the image to the Docker registry
+and verify it can be used by the user, etc, etc. 
+All of these steps take a non-trivial amount of time. Sometimes hours.
+You can also execute them in parallel to save time but how do you sync
+back the results ?</p>
+<p>My preference for the moment is to kick-off individual
+test suites for a particular BDD scenario and then aggregate the results back.
+This also has a side benefit - for complex changes we can have layered
+BDD feature documents, each one referencing another feature document.
+Repeat this over and over until we get down to purely technical scenarios
+which can be tested easily. Once the result are in go back the chain
+and fill-in the rest. This way we can traverse all testing activities
+from the unit testing level up to the infrastructure level.</p>
+<p>I actually like the back &amp; forth traversing idea very much. I've always
+wanted to know how does each individual testing effort relate to the
+general product development strategy and in which areas the product is
+doing well or not. You can construct the same chain of events with waterfall
+as well. IMO BDD just makes it a bit more easier to think about it.</p>
+<p>Another problem I faced is how do I mark the scenarios as out of scope
+for the current release ? I can tag them or split them into separate files
+or maybe something else? I don't know which one is the best practice. In
+waterfall I'll just disable the test cases or move them into a separate
+test plan.</p>
+<h2>TODO</h2>
+<p>I will be writing more BDD test definitions in the upcoming 2 weeks to get
+more experience with them. I still don't have a clear idea how to approach
+BDD test writing when given a particular feature to work on. So far I've
+used the functional requirements and items of concern (when present), in the
+feature pages, as a starting point for my BDD test scenarios.</p>
+<p>I also want to get more feedback from the development teams and product
+management folks.</p>
+<h2>Summary</h2>
+<p>BDD style test writing puts the tester into a mind set where it is easier
+to see the big picture by visualizing different user roles and scenarios.
+It makes it easier to define explicit test cases and highlights missing
+details. It is easier for QA to join early in the planning process by
+defining roles and thinking about all the possible interactions with the SUT.
+This is the biggest benefit for me!</p>
+<p>Self-contained changes are easier to describe and test automatically.</p>
+<p>Bigger and complex features are harder to describe and even harder to
+automate in one piece. Divide and conqueror is our best friend here!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 11 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/11/qa-switch-from-waterfall-to-bdd/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/08/floating-point-precision-error-with-ruby/" rel="bookmark" title="Permalink to Floating-point precision error with Ruby">
+                <h2 class="post-title">
+                    Floating-point precision error with Ruby
+                </h2>
+            </a>
+                <p>One of my tests was faiing and it turned out this was caused by a
+floating-point precision error. The functionality in question was a "Load more"
+button with pagination which loads records from the database and the front-end displays them.</p>
+<p>Ruby and JavaScript were passing around a parameter
+which was only used as part of the SQL queries.
+Now the problem is that JavaScript doesn't have a <code>Time</code> class and the parameter
+was passed as string, then converted back to <code>Time</code> in Ruby. The problem
+comes from the intermediate conversion to <code>float</code> which was used.</p>
+<p>Here's a little code snippet to demonstrate the problem:</p>
+<div class="highlight"><pre><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">06</span><span class="mi">8</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="n">now</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+<span class="o">=&gt;</span> <span class="mi">2016</span><span class="o">-</span><span class="mo">03</span><span class="o">-</span><span class="mi">08</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">26</span> <span class="o">+</span><span class="mo">0200</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">06</span><span class="mi">9</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">070</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="no">Time</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">now</span><span class="p">)</span> <span class="o">==</span> <span class="n">now</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">071</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">072</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="no">Time</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">to_f</span><span class="p">)</span> <span class="o">==</span> <span class="n">now</span>
+<span class="o">=&gt;</span> <span class="kp">false</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">073</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">074</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="n">now</span><span class="o">.</span><span class="n">to_f</span>
+<span class="o">=&gt;</span> <span class="mi">1457427266</span><span class="o">.</span><span class="mi">7206197</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">075</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">076</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S.%9N&#39;</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;2016-03-08 10:54:26.720619705&quot;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">077</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">07</span><span class="mi">9</span><span class="p">:</span><span class="mi">0</span><span class="o">*</span> <span class="no">Time</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">to_f</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S.%9N&#39;</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;2016-03-08 10:54:26.720619678&quot;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mi">080</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span>
+</pre></div>
+
+
+<p>As you can see the conversion to float and back to Time is off by a few
+nano-seconds and the database either didn't return any records or was
+returning the same set of records.
+This isn't something you can usually see in production, right ? Unless you
+have huge traffic and happen to have records created exactly at the same moment.</p>
+<p>The solution is to simply send <code>Time.now.strftime</code> to the JavaScript and then
+use <code>Time.parse</code> to reconstruct the value.</p>
+<div class="highlight"><pre><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">077</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> 
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">001</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="nb">require</span> <span class="s1">&#39;time&#39;</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">002</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S.%9N&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S.%9N&#39;</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;2016-03-08 10:54:26.720619705&quot;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">003</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span>
+</pre></div>
+
+
+<p>If you'd like to read more about floating point arithmetics please see
+<a href="http://floating-point-gui.de">http://floating-point-gui.de</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 08 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/08/floating-point-precision-error-with-ruby/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/02/23/ruby-time-based-testing/" rel="bookmark" title="Permalink to Ruby & Time-based Testing">
+                <h2 class="post-title">
+                    Ruby & Time-based Testing
+                </h2>
+            </a>
+                <p>Publishing this mostly for self reference.
+Here are two blog posts on the topic of testing time
+dependent code in Ruby applications:</p>
+<p><a href="http://metaskills.net/2012/08/07/synchronized-times-in-ruby-and-javascript-acceptance-tests-using-capybara-timecop-and-sinon-js/">Synchronized Times In Ruby &amp; JavaScript Acceptance Tests Using Capybara, Timecop &amp; Sinon.JS</a></p>
+<p><a href="https://blog.pivotal.io/labs/labs/goodbye-timecop-hello-timehelpers">Move Over Timecop…Hello ActiveSupport::Testing::TimeHelpers</a></p>
+<p>I haven't seen a module similar to timecop in Python, but frankly I've never needed one either.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 23 February 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/02/23/ruby-time-based-testing/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/" rel="bookmark" title="Permalink to FOSDEM 2016 Report">
+                <h2 class="post-title">
+                    FOSDEM 2016 Report
+                </h2>
+            </a>
+                <p>Hello everyone, this year I've been to FOSDEM again. Here is a quick report
+of what I did, saw and liked during the event.</p>
+<h2>Day 0 - Elixir &amp; Erlang</h2>
+<p>Friday started with an unexpected shopping trip. The airline broke
+my luggage and I had to buy a replacement. The irony is that just before taking off
+I saw a guy with an
+<a rel="nofollow" href="http://www.amazon.com/gp/product/B006P65P1W/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B006P65P1W&linkCode=as2&tag=atodorovorg-20&linkId=4VNFFQEDPY5JXCLP">Osprey Meridian</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B006P65P1W" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+and thought how cool that was. The next day I was running around Brussels to
+find the exact same model! I also searched to buy the book
+<a rel="nofollow" href="http://www.amazon.com/gp/product/0140238301/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0140238301&linkCode=as2&tag=atodorovorg-20&linkId=3I6DMH5CC6ZGNX5A">Teach Your Child How to Think</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0140238301" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+by Edward De Bono but all 4 bookstores I checked were out of stock.</p>
+<p>With the luggage problem solved I headed to
+<a href="http://betacowork.com">BetaCowork</a> for
+<a href="http://www.erlang-factory.com/brussels2016/">Brussels Erlang Factory Lite</a>
+where I learned a bit about Erlang and Elixir. I also managed to squeeze a meeting
+with <a href="http://www.betacowork.com/profile/122/gilbert-west/">Gilbert West</a> talking about
+open source bugs.</p>
+<p>I found particularly interesting the Elixir workshop and the talk
+<a href="http://www.erlang-factory.com/brussels2016/pieterjan-montens">Erlang In The Wild: A Governmental Web Application</a>
+by Pieterjan Montens. Later I've managed to get a hold of him and talk some more
+about his experiences working for the government. As I figured out later we
+are likely to have mutual friends.</p>
+<p>BetaCowork was hosting FOSDEM related events during the entire week.
+There was a GNOME event and the Libre Office Italian team was there as well.
+Next time definitely worth a longer visit.</p>
+<p>Friday night was reserved for a dinner with the Red Hat Eclipse team and
+a fair amount of beer at Delirium afterwards where I've met my friend
+<a href="https://fedoraproject.org/wiki/User:Giannisk">Giannis Konstantinidis</a>
+and the new Fedora Ambassador for Albania -
+<a href="https://fedoraproject.org/wiki/User:Jonatoni">Jona Azizai</a>.</p>
+<p>All-in-all pretty good Friday!</p>
+<h2>Day 1 - Testing and Automation</h2>
+<p><img alt="Testing and Automation" src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation" /></p>
+<p>FOSDEM was hosting the
+<a href="https://fosdem.org/2016/schedule/track/testing_and_automation/">Testing and automation devroom</a>
+again. I've spent the entire Saturday there.</p>
+<p>Definitely the most interesting talk was
+<a href="https://fosdem.org/2016/schedule/event/closed_source_interop/">Testing interoperability with closed-source software through scriptable diplomacy</a>
+which introduced <a href="http://frida.re">Frida</a>. Frida is a testing tool which injects
+a JavaScript VM into your process and you can write scripts driving the
+application automatically. It was designed as means to control closed source
+software but can definitely be used for open source apps as well.</p>
+<p>I've talked to both Karl and Ole about Frida and my use-case for
+<a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/">testing interactive terminal programs</a>.
+That should be easy to do with Frida - just hook into the read and write
+functions and write some JavaScript or Python to run the test.
+Later we talked about how exactly Frida attaches to the running process
+and what external dependencies are needed if I'm to inject Frida
+into the Fedora installation environment.</p>
+<p>In <em>Testing embedded systems</em> Itamar Hassin talked about testing medical devices
+and made a point about regulation, security and compliance. Basically you are not
+allowed to ship non-application code on production system. However that code
+is necessary instrumentation to allow external integration testing. I suspect most
+developers and QA engineers will never have to deal with so strict
+regulations but that is something to have in mind if you test software
+in a heavily regulated industry.</p>
+<p><em>Testing complex software in CI</em> was essentially a presentation about <em>cwrap</em> which
+I've seen at
+<a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014</a>.
+It touched the topic from a slightly different angle though. Tests in any open source
+project should have the following properties</p>
+<ul>
+<li>Be able to execute without the need of a complex environment;</li>
+<li>Enable full CI during code review (dependent on previous property);</li>
+<li>Be able to create complete integration tests.</li>
+</ul>
+<p>The demo showed how you can execute Samba's test suite locally without
+preparing a domain controller for example. This helps both devel and external
+contributors. Now contrast this with how Red Hat QE will do the testing - 
+they will create a bunch of virtual and bare metal machines, configure all
+related services and then execute the same test scripts to verify that indeed
+Samba works as expected.</p>
+<p>Btw I've been thinking what if I patch <em>cwrap</em> to overwrite read and write ?
+That will also make it possible to test interactive console programs,
+wouldn't it?</p>
+<p><em>Jenkins as Code</em> by Marcin and Lukasz was a blast. I think there were
+people standing alongside the walls. The guys shared their experience
+with <a href="https://github.com/jenkinsci/job-dsl-plugin">Jenkins Job DSL</a>
+plugin. The plugin is very flexible and powerful,
+using Groovy as its programming language. The only drawback is that it is
+sometimes too complex to use and requires a steep learning curve. Maybe
+<a href="http://docs.openstack.org/infra/jenkins-job-builder/">Jenkins Job Builder</a>
+is better suited if you don't need all that flexibility
+and complexity. I've met both of them afterwards and talked a bit more
+about open source bugs.</p>
+<p>At Saturday evening I've visited a panel discussion about
+<a href="https://www.eventbrite.com/e/startupbusaccelerate-the-impact-of-open-source-software-on-the-tech-industry-tickets-20869395925">the impact of open source on the tech industry</a>
+at <a href="http://co-station.com">Co.Station</a> organized by <a href="http://europe.startupbus.com">The Startup Bus</a>.
+There was beer, pizza, entrepreneur networking and talking about startups
+and open source. Do I need to say more? I will post a separate blog post
+about the interesting start-ups I've found so stay tuned.</p>
+<h2>Day 2 - Ping-pong with BBC Open Source</h2>
+<p><img alt="ping-pong" src="/images/bbc_ping_pong.jpg" title="ping-pong" /></p>
+<p>Sunday was my lazy day. I've attended a few talks but nothing too interesting.
+I've managed to go around the project stands, 
+<a href="https://fedorahosted.org/fedora-infrastructure/ticket/5085">filed a bug against FAS</a>
+and scored the highest ping-pong score for the day at the BBC Open Source stand.</p>
+<p>BBC has a long history of being involved with education in the UK and the
+<a href="https://www.microbit.co.uk">micro:bit</a> is their latest project. I will love to
+see this (or similar) delivered by the thousands here in Bulgaria so if you
+think about sponsoring let me know.</p>
+<p>Accidentally I met
+<a href="https://fedoraproject.org/wiki/User:Msivak">Martin Sivak</a> - a former
+Anaconda developer whom I've worked with in the past. He is now at the
+Virtualization Development team at Red Hat and we briefly talked about
+the need for more oVirt testing. I have something in mind about this
+which will be announced in the next 2 months so stay tuned.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 02 February 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/01/21/how-to-get-started-on-a-new-qa-project/" rel="bookmark" title="Permalink to How to Get Started on a New QA Project">
+                <h2 class="post-title">
+                    How to Get Started on a New QA Project
+                </h2>
+            </a>
+                <p>Every time I have to look at a new software project and use my QA powers
+to help them I follow a standard process of getting involved. Usually my
+job is to reveal which areas are lacking adequate test coverage and propose
+and implement improvements. Here's what it looks like.</p>
+<h2>Obtain Domain Knowledge</h2>
+<p>Whatever the software does I don't start looking into the technical details
+before I have domain knowledge about the subject. If the domain is purely
+outside my expertise my first reading materials have
+nothing to do with the product itself. My goal is to learn how the domain
+works, what language it uses, any particular specifics that may exists, etc.</p>
+<p>Then I start asking general questions about the software, how it works and
+what it does. At this stage I'm not trying to go into details but rather
+cover as much angles as possible. I want to know the big picture of how
+things are supposed to work and what the team is trying to do. This also
+starts to reveal the architecture behind the project.</p>
+<p>Then I start using the software as if I'm the intended target audience while
+taking notes about everything that seems odd or I simply don't understand.
+Being with limited knowledge about the domain and the product helps a lot
+because I haven't developed any bias yet. This initial hands-on introduction
+is best done with a peer who is better familiar with the
+product. It is not necessary for the peer to be a technical person, although
+that helps when implementation related questions arise.</p>
+<h2>RTFM</h2>
+<p>I make a point to read any available documents, wikis, READMEs, etc. They can
+fill the gaps with often used terms, explain processes and workflows or
+reveal that such are missing and document existing infrastructure.
+Quite often I'm able to see some areas for
+improvements directly from reading the documentation.</p>
+<p>At this stage I'm just collecting notes and impressions which will be validated
+later. I don't try to remember all of the docs because I can always go back
+and read them again. Instead I try to remember the topics these documents
+talk about and possibly collect links for future reference.</p>
+<h2>Get to Know the Devel Team</h2>
+<p>One thing I hate the most, except not knowing what a piece of code does is
+not knowing who to ask. Quite often team structure follows the application
+structure - front-end, back-end, mobile, etc. While getting to know who does
+what I also use this as opportunity to gain deeper knowledge about the
+product. I will talk to team leads and individual developers asking them to
+explain the chosen architecture and also tell me what are the most annoying
+problems according to them.</p>
+<p>Later this knowledge makes it easier to see trends and suggest changes that
+will improve the overall product quality. Having good working relationship
+with developers also makes it easy for these changes to get through.</p>
+<h2>Get to Know the QA Team</h2>
+<p>Similar to the previous step but with a deeper focus on details. This is my
+personal domain so I'm trying to figure out who does what in terms of software
+testing for the project in question. When I'm working with less experienced
+QA teams I focus on what are the individual tasks at hand, how often are they
+executed, what is the general workflow and how are we dealing with bugs.</p>
+<p>Behind the scenes what this accomplishes is that I'm able to find what the
+bug reporting, testing and verification process is. How are new bugs discovered
+and what are the general test strategies without confronting people
+directly. I also find what tools are used and get familiar with them in the
+process and discover the level of technical abilities of individual team members.</p>
+<h2>Get to Know the App</h2>
+<p>Armed with the previous knowledge I set off to explore the entire application.
+Again this is best done with a peer. This time I look at every screen, widget
+and button there is. I try using all the available features which also doubles
+as an exploratory testing session.</p>
+<p>For backend services which are usually harder to test I opt for a more
+detailed explanation session with the developers. Here's the time when I'm
+asking the question "How do you test .... ?" multiple times.</p>
+<h2>Deploy to Production</h2>
+<p>If possible I like to keep an eye on how things are deployed to production.
+It is not uncommon for software to experience problems due to problems with
+the deployment procedure or the production environment itself.</p>
+<p>Also with agile teams it is common to deploy more often. This in turn may
+generate additional work for QA. Knowing how software is deployed to
+production and what the workflow in the team is helps later with planning
+test activities and resources.</p>
+<h2>Read All Bugs</h2>
+<p>Unless there are millions of them I try to go through all the bugs reported
+in the bug tracker. If the project has some age to it earlier reports may not
+be relevant anymore. In this case my marker is an important event like big
+refactoring, important or big new features, changes in teams and organization
+or similar. The thinking behind this is that every big change introduces lots
+of risks from software quality stand point. Also large changes invalidate
+previous conditions and may render existing problems obsolete, replacing them
+with newer set of problems instead!</p>
+<p>From reading bug reports I'm able to discover failure trends, which in turn
+indicate areas for improvement. For example: lots of translation related bugs
+indicate problems with the translation workflow, lots of broken existing
+functionality means poor regression testing, probably also lack of unit tests,
+lots of partially(poorly) implemented features shows chaotic planning and
+unclear feature specifications, etc.</p>
+<p>At this stage I try to classify problems both by technical component and
+by type of issue. Later this will be my starting reference for creating
+test strategies and test plans!</p>
+<p>If possible and practical I talk to support and read all the support tickets
+as well. This gives me an idea which problems are most visible to
+customers which aren't necessary the biggest technical issues but may consume
+man power dealing with them.</p>
+<h2>Summarize, Divide and Conquer</h2>
+<p>Depending on the project and team size these initial steps will take anywhere 
+from a full week to a month or even more. After they are complete I'm
+feeling comfortable talking about the software at hand and have a list of
+possible problems and areas of improvements.</p>
+<p>After talking to people in charge (e.g. PMs, Project Leads, etc) my initial
+list is transformed into tasks. I strive to keep the tasks as independent
+as possible. Then these tasks are prioritized and it's time to start executing
+them one by one.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 21 January 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/01/21/how-to-get-started-on-a-new-qa-project/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/" rel="bookmark" title="Permalink to Tesla Needs More QA">
+                <h2 class="post-title">
+                    Tesla Needs More QA
+                </h2>
+            </a>
+                <p><img alt="Tesla email" src="/images/tesla_qa_bug.png" title="Tesla email" /></p>
+<p>A nice way for Tesla Motors to tell me they won't consider my interest in their
+QA positions - by sending me an email with a bug! It only goes to show that
+everything coming out of an IT system needs to be tested.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 15 January 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/" rel="bookmark" title="Permalink to Controlling Interactive Terminal Programs">
+                <h2 class="post-title">
+                    Controlling Interactive Terminal Programs
+                </h2>
+            </a>
+                <p>Building on my previous experience about
+<a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/">capturing terminal output from other processes</a>
+I wanted to create an automated test case for the initial-setup-text service
+which would control <code>stdin</code>. Something like
+<a href="https://fedorahosted.org/dogtail/">Dogtail</a> but for text mode applications.</p>
+<p>What you have to do is attach <code>gdb</code> to the process. Then you can <code>write</code> to
+any file descriptor that is already opened. <strong>WARNING:</strong> writing directly to
+stdin didn't quite work! Because (I assume) stdin is a tty the text was shown on
+the console but the return character wasn't interpreted and the application wasn't
+accepting the input string. What I had to do is replace the tty with a pipe and
+it worked. However the input is not duplicated on the console this way!</p>
+<p>Another drawback is that I couldn't use <code>strace</code> to log the output in combination
+with <code>gdb</code>. Once a process is under trace you can't trace it a second time! For this
+simple test I was able to live with this by not inspecting the actual text printed
+by initial-setup. Instead I'm validating the state of the system after setup is
+complete. I've tried to <code>read</code> from <code>stdout</code> in gdb but that didn't work either.
+If there's a way to make this happen I can convert this script to a mini-framework.</p>
+<p>Another unknown is interacting with <code>passwd</code>. Probably for security reasons
+it doesn't allow to mess around with its stdin but I didn't investigate deeper.</p>
+<p>I've used the
+<a href="https://github.com/ticpu/tools/blob/master/fdmanage.py">fdmanage.py</a>
+script which does most of the work for me. I've removed the extra bits
+that I didn't need, added the <code>write()</code> method and removed the original call to
+<code>fcntl</code> which puts gdb.stdout into non-blocking mode (that didn't work for me).</p>
+<div class="highlight"><span class="filename">initial_setup_driver.py</span><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">#</span>
+<span class="c"># fdmanage.py is a program to manage file descriptors of running programs</span>
+<span class="c"># by using GDB to modify the running program.</span>
+<span class="c"># https://github.com/ticpu/tools/blob/master/fdmanage.py</span>
+<span class="c"># Copyright (C) 2015 Jérôme Poulin &lt;jeromepoulin@gmail.com&gt;</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c">#</span>
+<span class="c"># Copyright (c) 2016 Alexander Todorov &lt;atodorov@redhat.com&gt;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">select</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<span class="k">class</span> <span class="nc">Gdb</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+            <span class="p">[</span><span class="s">&quot;gdb&quot;</span><span class="p">,</span> <span class="s">&quot;-q&quot;</span><span class="p">,</span> <span class="s">&quot;-p&quot;</span><span class="p">,</span> <span class="n">pid</span><span class="p">],</span>
+            <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+            <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+            <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
+            <span class="n">close_fds</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">pid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">del</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;detach&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;quit&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Program terminated.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">send_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;utf8&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">send_command_expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf8&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s">&quot; = &quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">gdb</span><span class="o">.</span><span class="n">stdout</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close_fd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;call close(</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">dup2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_fd</span><span class="p">,</span> <span class="n">new_fd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;call dup2(</span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">old_fd</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_fd</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">open_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">66</span><span class="p">):</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_command_expect</span><span class="p">(</span><span class="s">&#39;call open(&quot;</span><span class="si">%s</span><span class="s">&quot;, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">fd</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">txt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&#39;call write(</span><span class="si">%d</span><span class="s">, &quot;</span><span class="si">%s</span><span class="s">&quot;, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">txt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">import</span> <span class="nn">tempfile</span>
+
+    <span class="c"># these are specific to initial-setup-text</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&quot;1</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># License information</span>
+        <span class="s">&quot;2</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Accept license</span>
+        <span class="s">&quot;c</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Continue back to the main hub</span>
+
+        <span class="s">&quot;3</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span>  <span class="c"># Timezone settings</span>
+        <span class="s">&quot;8</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span>  <span class="c"># Europe</span>
+        <span class="s">&quot;43</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Sofia</span>
+
+<span class="c"># passwd doesn&#39;t allow us to overwrite its file descriptors</span>
+<span class="c"># either aborts or simply doesn&#39;t work</span>
+<span class="c">#        &quot;4\\n&quot;,      # Root password</span>
+<span class="c">#        &quot;redhat\\n&quot;,</span>
+<span class="c">#        &quot;redhat\\n&quot;,</span>
+<span class="c">#        &quot;no\\n&quot;,     # password is weak</span>
+<span class="c">#        &quot;123\\n&quot;,</span>
+<span class="c">#        &quot;123\\n&quot;,</span>
+<span class="c">#        &quot;no\\n&quot;,     # password is too short</span>
+<span class="c">#        &quot;Th1s-Is-a-Str0ng-Password!\\n&quot;,</span>
+<span class="c">#        &quot;Th1s-Is-a-Str0ng-Password!\\n&quot;,</span>
+
+        <span class="s">&quot;c</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">,</span> <span class="c"># Continue to exit</span>
+    <span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;USAGE: </span><span class="si">%s</span><span class="s"> &lt;PID&gt;&quot;</span> <span class="o">%</span> <span class="n">__file__</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="n">pipe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="s">&quot;pipe&quot;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkfifo</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">Gdb</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">gdb</span><span class="p">:</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">gdb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># O_RDWR</span>
+        <span class="n">gdb</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># replace STDIN with a PIPE</span>
+        <span class="n">gdb</span><span class="o">.</span><span class="n">close_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+
+        <span class="c"># set a breakpoint before continuing</span>
+        <span class="n">break_point_num</span> <span class="o">=</span> <span class="n">gdb</span><span class="o">.</span><span class="n">send_command_expect</span><span class="p">(</span><span class="s">&quot;break read&quot;</span><span class="p">)</span>
+
+        <span class="c"># now execute the process step-by-step</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">len_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">txt</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+            <span class="n">gdb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">len_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">gdb</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;delete </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">break_point_num</span><span class="p">)</span>
+            <span class="n">gdb</span><span class="o">.</span><span class="n">send_command</span><span class="p">(</span><span class="s">&quot;continue&quot;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c"># clean up</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">)</span>
+</pre></div>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 14 January 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/" rel="bookmark" title="Permalink to Capture Terminal Output From Other Processes">
+                <h2 class="post-title">
+                    Capture Terminal Output From Other Processes
+                </h2>
+            </a>
+                <p>I've been working on a test case to verify that Anaconda will print its EULA
+notice at the end of a text mode installation. The problem is how do you capture
+all the text which is printed to the terminal from processes outside your control ?
+The answer is surprisingly simple - using strace! </p>
+<div class="highlight"><pre><span class="nf">%post</span> <span class="o">--</span><span class="n">nochroot</span>
+<span class="n">PID</span><span class="o">=</span><span class="err">`</span><span class="n">ps</span> <span class="n">aux</span> <span class="o">|</span> <span class="n">grep</span> <span class="s">&quot;/usr/bin/python /sbin/anaconda&quot;</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">v</span> <span class="s">&quot;grep&quot;</span> <span class="o">|</span> <span class="n">tr</span> <span class="o">-</span><span class="n">s</span> <span class="sc">&#39; &#39;</span> <span class="o">|</span> <span class="n">cut</span> <span class="o">-</span><span class="n">f2</span> <span class="o">-</span><span class="n">d</span><span class="sc">&#39; &#39;</span><span class="err">`</span>
+<span class="n">STRACE_LOG</span><span class="o">=</span><span class="s">&quot;/mnt/sysimage/root/anaconda.strace&quot;</span>
+
+<span class="cp"># see https:</span><span class="c1">//fedoraproject.org/wiki/Features/SELinuxDenyPtrace</span>
+<span class="n">setsebool</span> <span class="n">deny_ptrace</span> <span class="mi">0</span>
+
+<span class="cp"># EULA notice is printed after post-scripts are run</span>
+<span class="n">strace</span> <span class="o">-</span><span class="n">e</span> <span class="n">read</span><span class="p">,</span><span class="n">write</span> <span class="o">-</span><span class="n">s16384</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">x</span> <span class="o">-</span><span class="n">o</span> <span class="n">$STRACE_LOG</span> <span class="o">-</span><span class="n">p</span> <span class="n">$PID</span> <span class="o">-</span><span class="n">f</span> <span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">&amp;</span>
+</pre></div>
+
+
+<p>strace is tracing only read and write events (we really only need write) and
+extending the maximum string size printed in the log file. For a simple grep
+this is sufficient. If you need to pretty-print the strace output have a look
+at the <a href="http://search.cpan.org/~bbb/ttylog/ttylog">ttylog</a> utility.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/17/facebook-is-bugging-me/" rel="bookmark" title="Permalink to Facebook is Bugging me">
+                <h2 class="post-title">
+                    Facebook is Bugging me
+                </h2>
+            </a>
+                <p><img alt="Facebook icon" src="/images/facebook_android_icon_small.png" title="Facebook icon" /></p>
+<p>Facebook for Android version 55.0.0.18.66 broke the home screen icon title.
+It reads <code>false</code> instead of <code>Facebook</code>. This is now fixed in version 58.0.0.28.70.
+I wonder how they managed to get this slip through. Also isn't Google
+supposed to review the apps coming into the Play Store and not publish them
+if there are such visible issues ? I guess this wasn't the case here.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 17 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/17/facebook-is-bugging-me/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/" rel="bookmark" title="Permalink to Automatic Upstream Dependency Testing">
+                <h2 class="post-title">
+                    Automatic Upstream Dependency Testing
+                </h2>
+            </a>
+                <p>Ever since
+<a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">RHEL 7.2 python-libs broke s3cmd</a>
+I've been pondering an age old problem: <em>How do I know if my software works with the
+latest upstream dependencies ? How can I pro-actively monitor for new versions
+and add them to my test matrix ?</em></p>
+<p>Mixing together my previous experience with
+<a href="http://atodorov.org/blog/2014/05/06/opensource-dot-com-article-10-steps-to-migrate-your-closed-software-to-open-source/">Difio</a>
+and monitoring upstream sources,
+and <a href="https://twitter.com/ForbesLindesay">Forbes Lindesay's</a> <em>GitHub Automation</em> talk
+at <a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/">DEVit Conf</a> I came
+together with a plan:</p>
+<ul>
+<li>Make an application which will execute when new upstream version is available;</li>
+<li><a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/">Automatically update <code>.travis.yml</code></a>
+for the projects I'm interested in;</li>
+<li>Let Travis-CI execute my test suite for all available upstream versions;</li>
+<li>Profit!</li>
+</ul>
+<h2>How Does It Work</h2>
+<p>First we need to monitor upstream! RubyGems.org has nice
+<a href="http://guides.rubygems.org/rubygems-org-api/#webhook-methods">webhooks interface</a>,
+you can even trigger on individual packages. PyPI however doesn't have anything
+like this :(. My solution is to run a cron job every hour and parse their RSS
+stream for newly released packages. This has been working previously for Difio
+so I re-used one function from the code.</p>
+<p>After finding anything we're interested in comes the hard part - automatically
+updating <code>.travis.yml</code> using the GitHub API. I've described this in more detail
+<a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/">here</a>. This time
+I've slightly modified the code to update only when needed and accept more
+parameters so it can be reused.</p>
+<p>Travis-CI has a clean interface to specify environment variables and
+<a href="https://docs.travis-ci.com/user/environment-variables/#Defining-Multiple-Variables-per-Item">defining several</a>
+of them crates a test matrix. This is exactly what I'm doing.
+<code>.travis.yml</code> is updated with a new ENV setting, which determines the upstream
+package version. After commit new build is triggered which includes the expanded
+test matrix.</p>
+<h2>Example</h2>
+<p><img alt="Travis-CI build log" src="http://atodorov.org/images/travisci_matrix.png" title="Travis-CI build log" /></p>
+<p>Imagine that our <em>Project 2501</em> depends on FOO version <em>0.3.1</em>. The
+<a href="https://travis-ci.org/atodorov/bztest/builds">build log</a> illustrates what
+happened:</p>
+<ul>
+<li>Build #9 is what we've tested with <em>FOO-0.3.1</em> and released to production.
+Test result is PASS!</li>
+<li>Build #10 - meanwhile upstream releases <em>FOO-0.3.2</em> which causes our project
+to break. We're not aware of this and continue developing new features
+while all test results still PASS! When our customers upgrade their systems
+<em>Project 2501</em> will break ! Tests didn't catch it because test matrix wasn't
+updated. Please
+ignore the actual commit message in the example! I've used the same repository
+for the dummy dependency package.</li>
+<li>Build #11 - the monitoring solution finds <em>FOO-0.3.2</em> and updates the test
+matrix automatically. The build immediately breaks! More precisely the
+<a href="https://travis-ci.org/atodorov/bztest/builds/94263181">test with version <em>0.3.2</em> fails</a>!</li>
+<li>Build #12 - we've alerted FOO.org about their problem and they've released
+<em>FOO-0.3.3</em>. Our monitor has found that and updated the test matrix.
+However <a href="https://travis-ci.org/atodorov/bztest/builds/94270592">the 0.3.2 test job still fails</a>!</li>
+<li>Build #13 - we decide to workaround the 0.3.2 failure or simply handle the
+error gracefully. In this example I've removed version 0.3.2 from the test
+matrix to simulate that. In reality I wouldn't touch <code>.travis.yml</code> but instead
+update my application and tests to check for that particular version.
+All test results are PASS again!</li>
+</ul>
+<p>Btw Build #11 above was triggered manually (./monitor.py) while Build #12
+came from OpenShit, my hosting environment.</p>
+<p>At present I have this monitoring enabled for my
+<a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/">new Markdown extensions</a>
+and will also add it to <a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>
+once it migrates to Travis-CI (it uses drone.io now).</p>
+<h2>Enough Talk, Show me the Code</h2>
+<div class="highlight"><span class="filename">monitor.py</span><pre><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">httplib</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">xml.dom.minidom</span> <span class="kn">import</span> <span class="n">parseString</span>
+
+<span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">post_data</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="c"># GitHub requires a valid UA string</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;User-Agent&#39;</span> <span class="p">:</span> <span class="s">&#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120601 Firefox/10.0.5&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c"># shortcut for GitHub API calls</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">&quot;https://api.github.com</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">url</span>
+
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;api.github.com&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&quot;GITHUB_TOKEN&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Set the GITHUB_TOKEN variable&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s">&#39;token </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;GITHUB_TOKEN&#39;</span><span class="p">]</span>
+            <span class="p">})</span>
+
+    <span class="p">(</span><span class="n">proto</span><span class="p">,</span> <span class="n">host_path</span><span class="p">)</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;//&#39;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">host_port</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">=</span> <span class="n">host_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">path</span>
+
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;https&#39;</span><span class="p">):</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPSConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
+
+
+    <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;GET&#39;</span>
+    <span class="k">if</span> <span class="n">post_data</span><span class="p">:</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;POST&#39;</span>
+        <span class="n">post_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_data</span><span class="p">)</span>
+
+    <span class="n">conn</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">post_data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">getresponse</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;404 - </span><span class="si">%s</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="s">&#39;replace&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="c"># not a JSON response</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">post_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scan the PyPI RSS feeds to look for new packages.</span>
+<span class="sd">        If name is found in config then execute the specified callback.</span>
+
+<span class="sd">        @config is a dict with keys matching package names and values</span>
+<span class="sd">        are lists of dicts</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;cb&#39; : a_callback,</span>
+<span class="sd">                &#39;args&#39; : dict</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rss</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;https://pypi.python.org/pypi?:action=rss&quot;</span><span class="p">)</span>
+    <span class="n">dom</span> <span class="o">=</span> <span class="n">parseString</span><span class="p">(</span><span class="n">rss</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pub_date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;pubDate&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">=</span> <span class="n">title</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">released_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">pub_date</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">print</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="s">&quot;found in config&quot;</span>
+                <span class="k">for</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">args</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;args&#39;</span><span class="p">]</span>
+                        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                            <span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                            <span class="s">&#39;version&#39;</span> <span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                            <span class="s">&#39;released_on&#39;</span> <span class="p">:</span> <span class="n">released_on</span>
+                        <span class="p">})</span>
+
+                        <span class="c"># execute the call back</span>
+                        <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;cb&#39;</span><span class="p">](</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="n">e</span>
+                        <span class="k">continue</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">e</span>
+            <span class="k">continue</span>
+
+<span class="k">def</span> <span class="nf">update_travis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">new_version</span><span class="p">):</span>
+    <span class="n">travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="n">new_ver_line</span> <span class="o">=</span> <span class="s">&quot;  - VERSION=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">new_version</span>
+    <span class="k">if</span> <span class="n">travis</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">new_ver_line</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">travis</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="n">new_ver_line</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">return</span> <span class="n">travis</span>
+
+
+<span class="k">def</span> <span class="nf">update_github</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update GitHub via API</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">GITHUB_REPO</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_REPO&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_BRANCH</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_BRANCH&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_FILE</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_FILE&#39;</span><span class="p">)</span>
+
+    <span class="c"># step 1: Get a reference to HEAD</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">))</span>
+    <span class="n">HEAD</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
+        <span class="s">&#39;url&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="c"># step 2: Grab the commit that HEAD points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
+    <span class="c"># remove what we don&#39;t need for clarity</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">,</span> <span class="s">&#39;tree&#39;</span><span class="p">]:</span>
+            <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="c"># step 4: Get a hold of the tree that the commit points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># intermediate step: get the latest content from GitHub and make an updated version</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">GITHUB_FILE</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span> <span class="c"># get the blob from the tree</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;content&#39;</span><span class="p">])</span>
+            <span class="k">break</span>
+
+    <span class="n">old_travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="n">new_travis</span> <span class="o">=</span> <span class="n">update_travis</span><span class="p">(</span><span class="n">old_travis</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;version&#39;</span><span class="p">))</span>
+
+    <span class="c"># bail out if nothing changed</span>
+    <span class="k">if</span> <span class="n">new_travis</span> <span class="o">==</span> <span class="n">old_travis</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;new == old, bailing out&quot;</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="k">return</span>
+
+    <span class="c">####</span>
+    <span class="c">#### WARNING WRITE OPERATIONS BELOW</span>
+    <span class="c">####</span>
+
+    <span class="c"># step 3: Post your new file to the server</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/blobs&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&#39;content&#39;</span> <span class="p">:</span> <span class="n">new_travis</span><span class="p">,</span>
+                    <span class="s">&#39;encoding&#39;</span> <span class="p">:</span> <span class="s">&#39;utf-8&#39;</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 5: Create a tree containing your new file</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/trees&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;base_tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
+                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="n">GITHUB_FILE</span><span class="p">,</span>
+                        <span class="s">&quot;mode&quot;</span><span class="p">:</span> <span class="s">&quot;100644&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;blob&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                    <span class="p">}]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 6: Create a new commit</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/commits&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;message&quot;</span><span class="p">:</span> <span class="s">&quot;New upstream dependency found! Auto update .travis.yml&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;parents&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]],</span>
+                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="c"># step 7: Update HEAD, but don&#39;t force it!</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
+                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">),</span>
+                <span class="p">{</span>
+                    <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">):</span> <span class="c"># PASS</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c"># FAIL</span>
+        <span class="k">print</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">]</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;atodorov-test&quot;</span> <span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/bztest&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s">&quot;Markdown&quot;</span> <span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/Markdown-Bugzilla-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-Code-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-BlockQuote-Extension&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="c"># check the RSS to see if we have something new</span>
+    <span class="n">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 02 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/02/automatic-upstream-dependency-testing/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/" rel="bookmark" title="Permalink to python-libs in RHEL 7.2 broke SSL verification in s3cmd">
+                <h2 class="post-title">
+                    python-libs in RHEL 7.2 broke SSL verification in s3cmd
+                </h2>
+            </a>
+                <p>Today started with <a href="http://planet.sofiavalley.com">Planet Sofia Valley</a> being
+broken again. Indeed it's been broken since last Friday when I've upgraded to
+the latest RHEL 7.2. I quickly identified that I was hitting
+<a href="https://github.com/s3tools/s3cmd/issues/647">Issue #647</a>. Then I tried the
+git checkout without any luck. This is when I started to suspect that python-libs
+has been updated in an incompatible way.</p>
+<p>After series of reported bugs,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284916">rhbz#1284916</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1284930">rhbz#1284930</a>,
+<a href="http://bugs.python.org/issue25722">Python#25722</a>, it was clear that
+<code>ssl.py</code> was working according to RFC6125, that Amazon S3 was not playing
+nicely with this same RFC and that my patch proposal was wrong.
+This immediately had me looking upper in the stack at <code>httplib.py</code> and <code>s3cmd</code>.</p>
+<p>Indeed there was a change in <code>httplib.py</code> which introduced two parameters,
+<em>context</em> and <em>check_hostname</em>, to <code>HTTPSConnection.__init__</code>. The change
+also supplied the logic which performs SSL hostname validation.</p>
+<div class="highlight"><pre>if not self._context.check_hostname and self._check_hostname:
+    try:
+        ssl.match_hostname(self.sock.getpeercert(), server_hostname)
+    except Exception:
+        self.sock.shutdown(socket.SHUT_RDWR)
+        self.sock.close()
+        raise
+</pre></div>
+
+
+<p>This looks a bit doggy as I don't quite understand the intention behind
+<em>not PREDICATE and PREDICATE</em>. Anyway to disable the validation you need
+both parameters set to False, which is
+<a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a>.</p>
+<p>Notice the two try-except blocks. This is in case we're running with a
+version that has a context but not the check_hostname parameter. I've found
+the <em>inspect.getmembers</em> function which can be used to figure out what
+parameters are there for the init method but a solution based on it
+doesn't appear to be more elegant. I will describe this in more details in
+my next post.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 24 November 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/" rel="bookmark" title="Permalink to GitHub Bugzilla Hook">
+                <h2 class="post-title">
+                    GitHub Bugzilla Hook
+                </h2>
+            </a>
+                <p>Last month I've created a tool which adds comments to Bugzilla when a commit
+message references a bug number. It was done as a proof of concept and didn't
+receive much attention at the time. Today I'm happy to announce the existence
+of <a href="https://github.com/atodorov/github-bugzilla-hook">GitHub Bugzilla Hook</a>.</p>
+<p>I've used David Shea's
+<a href="https://github.com/rhinstaller/github-email-hook/">GitHub Email Hook</a> as my
+starting template and only modified it where needed. GitHub Bugzilla Hook will
+examine push data and post comments for every unique bug+branch combination.
+Once a comment for that particular bug+branch combination is made, new ones
+will not be posted, even if later commits reference the same bug.
+My main assumption is commits which are related to a bug will be pushed together
+most of the times so there shouldn't be lots of noise in Bugzilla.</p>
+<p>See <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1274703">rhbz#1274703</a> for
+example of how the comments look. The parser behavior is taken from anaconda
+and conforms to the style the Red Hat Installer Engineering Team uses.
+Hopefully you find it useful as well.</p>
+<p>My next step is to find a hosting place for this script and hook it up
+with the rhinstaller GitHub repos!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 24 November 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/#disqus_thread">comments</a>.</p>        </div>
+
+    <hr>
+    <!-- Pager -->
+    <ul class="pager">
+        <li class="next">
+                <a href="http://atodorov.org/blog/categories/qa/index3.html">Older Posts &rarr;</a>
+                <a href="http://atodorov.org/blog/categories/qa/index.html"> &larr; Newest Posts</a>
+        </li>
+    </ul>
+    Page 2 / 5
+    <hr>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

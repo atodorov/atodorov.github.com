@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ec2/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2013-07-29T12:32:00+03:00</updated><entry><title>What Runs Your Start-up - Imagga</title><link href="http://atodorov.org/blog/2013/07/29/what-runs-your-startup-imagga/" rel="alternate"></link><updated>2013-07-29T12:32:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-07-29:blog/2013/07/29/what-runs-your-startup-imagga/</id><summary type="html">&lt;p&gt;&lt;img src="/images/startup/imagga.png" alt="Imagga" style="float:left; margin-right:10px;" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://imagga.com/"&gt;Imagga&lt;/a&gt; is a cloud platform that helps businesses and 
+individuals organize their images in a fast and cost-effective way. They 
+develop a range of advanced proprietary image recognition and image processing
+technologies, which are built into several services such as smart image
+cropping, color extraction and multi-color search, visual similarity search and
+auto-tagging.&lt;/p&gt;
+&lt;p&gt;During 
+&lt;a href="/blog/2013/05/23/balkan-venture-forum-sofia-post-mortem/"&gt;Balkan Venture Forum&lt;/a&gt;
+in Sofia I sat down with Georgi Kadrev to talk about technology.
+Surprisingly this hi-tech service is built on top of standard low-tech components
+and lots of hard work.&lt;/p&gt;
+&lt;h2&gt;Main Technologies&lt;/h2&gt;
+&lt;p&gt;Core functionality is developed in C and C++ with the OpenCV library. 
+Imagga relies heavily on own image processing algorithms for their core
+features. These were built as a combination of their own research activities
+and publications from other researchers.&lt;/p&gt;
+&lt;p&gt;Image processing is executed by worker nodes configured with their own
+software stack. Nodes are distributed among Amazon EC2 and other data centers.&lt;/p&gt;
+&lt;p&gt;Client libraries to access Imagga API are available in PHP, Ruby and Java.&lt;/p&gt;
+&lt;p&gt;Imagga has built several websites to showcase their technology.
+&lt;a href="http://cropp.me/"&gt;Cropp.me&lt;/a&gt;, &lt;a href="http://colorslike.me/"&gt;ColorsLike.me&lt;/a&gt;,
+&lt;a href="http://www.stockpodium.com"&gt;StockPodium&lt;/a&gt; and &lt;a href="http://autotag.me/"&gt;AutoTag.me&lt;/a&gt;
+were built with PHP, JavaScript and jQuery above a standard LAMP stack.&lt;/p&gt;
+&lt;p&gt;Recently Imagga also started using GPU computing with nVidia Tesla cards.
+They use C++ and Python bindings for
+&lt;a href="https://developer.nvidia.com/what-cuda"&gt;CUDA&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Why Not Something Else?&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;As an initially bootstrapping start-up we chose something that is basically free,
+reliable and popular - that's why started with the LAMP stack. It proved to be
+stable and convenient for our web needs and we preserved it.
+The use of C++ is a natural choice for computational intensive tasks that we
+need to perform for the purpose of our core expertise - image processing. 
+Though we initially wrote the whole core technology code from scratch, we later
+switched to OpenCV for some of the building blocks as it is very well optimized
+and continuously extended image processing library.&lt;/p&gt;
+&lt;p&gt;With the raise of affordable high-performance GPU processors and their availability
+in server instances, we decided it's time to take advantage of this highly parallel
+architecture, perfectly suitable for image processing tasks.&lt;/p&gt;
+&lt;p&gt;Georgi Kadrev&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Want More Info?&lt;/h2&gt;
+&lt;p&gt;If you’d like to hear more from Imagga please comment below.
+I will ask them to follow this thread and reply to your questions.&lt;/p&gt;</summary><category term="what runs"></category><category term="start-up"></category><category term="Amazon"></category><category term="EC2"></category></entry><entry><title>Performance Test: Amazon EBS vs. Instance Storage, Pt.1</title><link href="http://atodorov.org/blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/" rel="alternate"></link><updated>2013-02-26T23:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-02-26:blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/</id><summary type="html">&lt;p&gt;I'm exploring the possibility to speed-up my cloud database so I've run some
+basic tests against storage options available to Amazon EC2 instances.
+The instance was &lt;a href="http://aws.amazon.com/ec2/instance-types/"&gt;m1.large&lt;/a&gt;
+with High I/O performance and two additional disks with the same size:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;/dev/xvdb - type EBS&lt;/li&gt;
+&lt;li&gt;/dev/xvdc - type instance storage&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Both are Xen para-virtual disks. The difference is that EBS is persistent
+across reboots while instance storage is ephemeral.&lt;/p&gt;
+&lt;h2&gt;hdparm&lt;/h2&gt;
+&lt;p&gt;For a quick test I used &lt;code&gt;hdparm&lt;/code&gt;. The manual says:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;-T  Perform timings of cache reads for benchmark and comparison purposes.
+    This displays the speed of reading directly from the Linux buffer cache
+    without disk access. This measurement is essentially an indication of
+    the throughput of the processor, cache, and memory of the system under test.
+
+-t  Perform timings of device reads for benchmark and comparison purposes.
+    This displays the speed of reading through the buffer cache to the disk
+    without any prior caching of data. This measurement is an indication of how
+    fast the drive can sustain sequential data reads under Linux, without any
+    filesystem overhead.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The results of 3 runs of hdparm are shown below:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;# hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11984 MB in  1.98 seconds = 6038.36 MB/sec
+ Timing buffered disk reads:  158 MB in  3.01 seconds =  52.52 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   11988 MB in  1.98 seconds = 6040.01 MB/sec
+ Timing buffered disk reads:  1810 MB in  3.00 seconds = 603.12 MB/sec
+
+
+# hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11892 MB in  1.98 seconds = 5991.51 MB/sec
+ Timing buffered disk reads:  172 MB in  3.00 seconds =  57.33 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   12056 MB in  1.98 seconds = 6075.29 MB/sec
+ Timing buffered disk reads:  1972 MB in  3.00 seconds = 657.11 MB/sec
+
+
+# hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11994 MB in  1.98 seconds = 6042.39 MB/sec
+ Timing buffered disk reads:  254 MB in  3.02 seconds =  84.14 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   11890 MB in  1.99 seconds = 5989.70 MB/sec
+ Timing buffered disk reads:  1962 MB in  3.00 seconds = 653.65 MB/sec
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;Result:&lt;/strong&gt;
+Sequential reads from instance storage are 10x faster compared to EBS on average.&lt;/p&gt;
+&lt;h2&gt;IOzone&lt;/h2&gt;
+&lt;p&gt;I'm running MySQL and sequential data reads are probably over idealistic scenario.
+So I found another benchmark suite, called &lt;a href="http://iozone.org"&gt;IOzone&lt;/a&gt;.
+I used the 3-414 version built from the official SRPM.&lt;/p&gt;
+&lt;p&gt;IOzone performs multiple tests. I'm interested in read/re-read, random-read/write,
+read-backwards and stride-read.&lt;/p&gt;
+&lt;p&gt;For this round of testing I've tested with ext4 filesystem with and without journal
+on both types of disks. I also experimented running Iozone inside a ramfs mounted
+directory. However I didn't have the time to run the test suite multiple times.&lt;/p&gt;
+&lt;p&gt;Then I used
+&lt;a href="http://code.google.com/p/iozone-results-comparator/"&gt;iozone-results-comparator&lt;/a&gt; to
+visualize the results. (I had to do a minor fix to the code to run inside virtualenv
+and install all missing dependencies).&lt;/p&gt;
+&lt;p&gt;Raw IOzone output, data visualization and the modified tools are available in the
+&lt;a href="http://s3.amazonaws.com/atodorov/blog/aws_disk_benchmark_w_iozone.tar.bz2"&gt;aws_disk_benchmark_w_iozone.tar.bz2&lt;/a&gt;
+file (size 51M).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Graphics&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;EBS without journal(Baseline) vs. Instance Storage without journal(Set1)
+&lt;img alt="EBS vs. Instance Storage" src="/images/aws_iozone/ebs_woj_vs_is_woj.png" title="EBS vs. Instance Storage" /&gt;&lt;/p&gt;
+&lt;p&gt;Instance Storage without journal(Baseline) vs. Ramfs(Set1)
+&lt;img alt="IS vs. Ramfs" src="/images/aws_iozone/is_woj_vs_ramfs.png" title="IS vs. Ramfs" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Results&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ext4 journal has no effect on reads, causes slow down when writing to disk. This
+is expected;&lt;/li&gt;
+&lt;li&gt;Instance storage is faster compared to EBS but not much.
+If I understand the results correctly, read performance is similar in some cases;&lt;/li&gt;
+&lt;li&gt;Ramfs is definitely the fastest but read performance compared to instance storage
+is not two-fold (or more) as I expected;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Conclusion&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Instance storage appears to be faster (and this is expected) but I'm still not sure if
+my application will gain any speed improvement or how much if migrated to read from
+instance storage (or ramfs) instead of EBS. I will be performing more real-world
+test next time, by comparing execution time for some of my largest SQL queries.&lt;/p&gt;
+&lt;p&gt;If you have other ideas how to adequately measure I/O performance in the AWS cloud,
+please use the comments below.&lt;/p&gt;</summary><category term="performance testing"></category><category term="QA"></category><category term="Amazon"></category><category term="EC2"></category><category term="cloud"></category></entry></feed>

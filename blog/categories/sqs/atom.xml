@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/sqs/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2013-12-11T23:29:00+02:00</updated><entry><title>Idempotent Django Email Sender with Amazon SQS and Memcache</title><link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/" rel="alternate"></link><updated>2013-12-11T23:29:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-11:blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/</id><summary type="html">&lt;p&gt;Recently I wrote about my problem with
+&lt;a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/"&gt;duplicate Amazon SQS messages causing multiple emails&lt;/a&gt;
+for &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;. After considering several options and
+feedback from 
+&lt;a href="https://twitter.com/atodorov_/status/409429840820199424"&gt;@Answers4AWS&lt;/a&gt;
+I wrote a small decorator to fix this.&lt;/p&gt;
+&lt;p&gt;It uses the cache backend to prevent the task from executing twice
+during the specified time frame. The code is available at
+&lt;a href="https://djangosnippets.org/snippets/3010/"&gt;https://djangosnippets.org/snippets/3010/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;As stated on Twitter you should use Memcache (or ElastiCache) for this.
+If using Amazon S3 with my
+&lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt; don't use the
+&lt;code&gt;us-east-1&lt;/code&gt; region because it is eventually consistent.&lt;/p&gt;
+&lt;p&gt;The solution is fast and simple on the development side and uses my existing
+cache infrastructure so it doesn't cost anything more!&lt;/p&gt;
+&lt;p&gt;There is still a race condition between marking the message as processed
+and the second check but nevertheless this should minimize the possibility of
+receiving duplicate emails to an accepted level. Only time will tell though!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="Django"></category><category term="Python"></category></entry><entry><title>Duplicate Amazon SQS Messages Cause Multiple Emails</title><link href="http://atodorov.org/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/" rel="alternate"></link><updated>2013-12-06T22:47:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-06:blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/</id><summary type="html">&lt;p&gt;Beware if using Amazon Simple Queue Service to send email messages!
+Sometime SQS messages are duplicated which results in multiple copies of
+the messages being sent. This happened today at &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;
+and is really annoying to users. In this post I will explain why there is no easy
+way of fixing it.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Q: Can a deleted message be received again?&lt;/p&gt;
+&lt;p&gt;Yes, under rare circumstances you might receive a previously deleted message again.
+This can occur in the rare situation in which a DeleteMessage operation doesn't
+delete all copies of a message because one of the servers in the distributed
+Amazon SQS system isn't available at the time of the deletion. That message copy
+can then be delivered again. You should design your application so that no errors
+or inconsistencies occur if you receive a deleted message again.&lt;/p&gt;
+&lt;p&gt;Amazon FAQ&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;In my case the cron scheduler logs say:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&amp;gt;&amp;gt;&amp;gt; &amp;lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;While on the worker nodes the logs say:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]&lt;/span&gt;
+&lt;span class="k"&gt;[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This clearly shows the same message (see the UUID) has been processed twice!
+This resulted in hundreds of duplicate emails :(.&lt;/p&gt;
+&lt;h2&gt;Why This Is Hard To Fix&lt;/h2&gt;
+&lt;p&gt;There are two basic approaches to solve this issue:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Check some log files or database for previous record of the message having
+been processed;&lt;/li&gt;
+&lt;li&gt;Use idempotent operations that if you process the message again, you
+get the same results, and that those results don't create duplicate files/records.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The problem with checking for duplicate messages is: &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;There is a race condition between marking the message as processed and the
+second check;&lt;/li&gt;
+&lt;li&gt;You need to use some sort of locking mechanism to safe-guard against the race condition;&lt;/li&gt;
+&lt;li&gt;In the event of an eventual consistency of the log/DB you can't guarantee that
+the previous attempt will show up and so can't guarantee that you won't process
+the message twice.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;All of the above don't seem to work well for distributed applications not to mention
+Difio processes millions of messages per month, per node and the logs are quite big.&lt;/p&gt;
+&lt;p&gt;The second option is to have control of the Message-Id or some other email header
+so that the second message will be discarded either at the server (Amazon SES in my case)
+or at the receiving MUA. I like this better but I don't think it is technically possible
+with the current environment. Need to check though. &lt;/p&gt;
+&lt;p&gt;I've asked AWS support to look into
+&lt;a href="https://forums.aws.amazon.com/thread.jspa?threadID=140782"&gt;this thread&lt;/a&gt; and hopefully
+they will have some more hints. If you have any other ideas please post in the comments!
+Thanks!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="SES"></category></entry><entry><title>Tip: Caching Large Objects for Celery and Amazon SQS</title><link href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/" rel="alternate"></link><updated>2013-06-19T14:29:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-06-19:blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/</id><summary type="html">&lt;p&gt;Some time ago a guy called Matt
+&lt;a href="https://groups.google.com/forum/?fromgroups=#!topic/celery-users/RFAuGjZwtmg"&gt;asked&lt;/a&gt;
+about passing large objects through their messaging queue. They were switching from
+RabbitMQ to Amazon SQS which has a limit of 64K total message size.&lt;/p&gt;
+&lt;p&gt;Recently I've made some changes in &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt; which require passing
+larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
+same problem. Here is the solution using a cache back-end: &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;celery.task&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.core&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;cache&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;cache_module&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;some_method&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;skip&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
+
+    &lt;span class="n"&gt;task_cache&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;cache_module&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_cache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;taskq&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;task_cache&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;set&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3600&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;handle_data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delay&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;skip&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
+
+&lt;span class="nd"&gt;@task&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;handle_data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;task_cache&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;cache_module&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_cache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;taskq&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;task_cache&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt;
+
+    &lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="n"&gt;do&lt;/span&gt; &lt;span class="n"&gt;stuff&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Objects are persisted in a secondary cache back-end, not the default one, to avoid
+accidental destruction. &lt;code&gt;uuid&lt;/code&gt; parameter is a string.&lt;/p&gt;
+&lt;p&gt;Although the objects passed are smaller than 64K I haven't seen any issues
+with this solution so far. Let me know if you are using something similar in your code
+and how it works for you. &lt;/p&gt;</summary><category term="tips"></category><category term="Amazon"></category><category term="SQS"></category><category term="cloud"></category></entry></feed>

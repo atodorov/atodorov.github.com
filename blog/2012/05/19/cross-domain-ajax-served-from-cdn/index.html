@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Cross-domain AJAX Served From CDN</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="This week Amazon announced support for dynamic content in their CDN solution Amazon CloudFront. The announce coincided with my efforts ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="Amazon">
+        <meta name="tags" content="CloudFront">
+        <meta name="tags" content="cloud">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2012/05/19/cross-domain-ajax-served-from-cdn/">
+	<meta property="og:title" content="Cross-domain AJAX Served From CDN">
+	<meta property="article:published_time" content="2012-05-19 16:58:00+03:00">
+            <meta property="og:description" content="This week Amazon announced support for dynamic content in their CDN solution Amazon CloudFront. The announce coincided with my efforts ...">
+
+            <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Cross-domain AJAX Served From CDN">
+
+            <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+            <meta name="twitter:description" content="This week Amazon announced support for dynamic content in their CDN solution Amazon CloudFront. The announce coincided with my efforts ...">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Cross-domain AJAX Served From CDN</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sat 19 May 2012
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>This week Amazon <a href="http://aws.typepad.com/aws/2012/05/amazon-cloudfront-support-for-dynamic-content.html">announced</a>
+support for dynamic content in their CDN solution <a href="http://aws.amazon.com/cloudfront/"><em>Amazon CloudFront</em></a>.
+The announce coincided with my efforts to migrate more pieces of <em>Difio</em>'s <a href="http://www.dif.io">website</a> to <em>CloudFront</em>.</p>
+<p>In this article I will not talk about hosting static files on CDN. This is easy and I've already written
+about it <a href="/blog/2012/04/17/using-openshift-as-amazon-cloudfront-origin-server/">here</a>. I will show how to
+cache AJAX(JSONP actually) responses and serve them directly from <em>Amazon CloudFront</em>.</p>
+<h2>Background</h2>
+<p>For those of you who may not be familiar (are there any) CDN stands for
+<a href="https://en.wikipedia.org/wiki/Content_delivery_network">Content Delivery Network</a>. In short
+this employs numerous servers with identical content. The requests from the browser are served
+from the location which gives best performance for the user. This is used by all major websites
+to speed-up static content like images, video, CSS and JavaScript files.</p>
+<p>AJAX means <a href="https://en.wikipedia.org/wiki/Ajax_%28programming%29">Asynchronous JavaScript and XML</a>.
+This is what Google uses to create dynamic user interface which doesn't require to reload the page.</p>
+<h2>Architecture</h2>
+<p><em>Difio</em> has two web interfaces. The primary one is a static HTML website
+which employs JavaScript for the dynamic areas. It is hosted on the dif.io domain.
+The other one is powered by Django and provides the same interface plus the
+<a href="https://difio-otb.rhcloud.com/dashboard/">applications dashboard</a> and several API functions
+which don't have a visible user interface. This is under the *.rhcloud.com domain b/c it is hosted on
+<a href="http://openshift.redhat.com"><em>OpenShift</em></a>.</p>
+<p>The present state of the website is the result of rapid development using conventional methods - 
+HTML templates and server-side processing. This is migrating to modern web technology like static HTML
+and JavaScript while the server side will remain pure API service.</p>
+<p>For this migration to happen I need the HTML pages at dif.io to execute JavaScript and load information
+which comes from the rhcloud.com domain. Unfortunately this is not easily doable with AJAX because
+of the <a href="https://en.wikipedia.org/wiki/Same_origin_policy">Same origin policy</a> in browsers.</p>
+<p>I'm using the <a href="http://dojotoolkit.org/"><em>Dojo Toolkit</em></a> JavaScript framework which has a solution.
+It's called <a href="https://en.wikipedia.org/wiki/JSONP">JSONP</a>. Here's how it works:</p>
+<div class="highlight"><pre>     dif.io ------ JSONP request --&gt; abc.rhcloud.com --v
+        ^                                              |
+        |                                              |
+    JavaScript processing                              |
+        |                                              |
+        +------------------ JSONP response ------------+
+</pre></div>
+
+
+<p>This is pretty standard configuration for a web service.</p>
+<h2>Going to the clouds</h2>
+<p>The way <em>Dojo</em> implements JSONP is through the
+<a href="http://dojotoolkit.org/reference-guide/1.7/dojo/io/script.html">dojo.io.script</a> module.
+It works by appending a query string parameter of the form <em>?callback=funcName</em> which the server uses
+to generate the JSONP response. This callback name is dynamically generated by <em>Dojo</em> based on the order
+in which your call to <em>dojo.io.script</em> is executed.</p>
+<p>Until recently <em>Amazon CloudFront</em> ignored all query string parameters when requesting the content from
+the origin server. Without the query string it was not possible to generate the JSONP response.
+Luckily Amazon resolved the issue only one day after I asked about it on their forums.</p>
+<p>Now <em>Amazon CloudFront</em> will use the URL path and the query string parameters to identify the objects in cache.
+To enable this edit the CloudFront distribution <em>behavior(s)</em> and set <em>Forward Query Strings</em> to Yes.</p>
+<p>When a visitor of the website requests the data <em>Amazon CloudFront</em> will use exactly the same url path and query strings
+to fetch the content from the origin server. All that I had to do is switch the domain of the JSONP service
+to point to the cloudfront.net domain. It became like this:</p>
+<div class="highlight"><pre>                                                        | Everything on this side is handled by Amazon.
+                                                        | No code required!
+                                                        |
+     dif.io ------ JSONP request --&gt; xyz.cloudfront.net -- JSONP request if cache miss --&gt; abc.rhcloud.com --v
+        ^                              |                ^                                                    |
+        |                              |                |                                                    |
+    JavaScript processing              |                +---------- JSONP response --------------------------+
+        |                              |
+        +---- cached JSONP response ---+
+</pre></div>
+
+
+<p>As you can see the website structure and code didn't change at all. All that changed was a single domain name.</p>
+<h2>Controlling the cache</h2>
+<p><em>Amazon CloudFront</em> will keep the contents in cache based on the origin headers if present or the manual configuration
+from the AWS Console. To work around frequent requests to the origin server it is considered best practice to set the
+Expires header to a value far in the future, like 1 year.
+However if the content changes you need some way to tell <em>CloudFront</em> about it. The most commonly used method is through
+using different URLs to access the same content. This will cause <em>CloudFront</em> to cache the content under the new location
+while keeping the old content until it expires.</p>
+<p><em>Dojo</em> makes this very easy:</p>
+<div class="highlight"><pre><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo/io/script&quot;</span><span class="p">],</span>
+    <span class="kd">function</span><span class="p">(</span><span class="nx">script</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">script</span><span class="p">.</span><span class="nx">get</span><span class="p">({</span>
+                <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;https://xyz.cloudfront.net/api/json/updates/1234&quot;</span><span class="p">,</span>
+                <span class="nx">callbackParamName</span><span class="o">:</span> <span class="s2">&quot;callback&quot;</span><span class="p">,</span>
+                <span class="nx">content</span><span class="o">:</span> <span class="p">{</span><span class="nx">t</span><span class="o">:</span> <span class="nx">timeStamp</span><span class="p">},</span>
+                <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">jsonData</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">....</span>
+                <span class="p">},</span>
+</pre></div>
+
+
+<p>The <em>content</em> property allows additional key/value pairs to be sent in the query string. The
+<em>timeStamp</em> parameter serves only to control <em>Amazon CloudFront</em> cache. It's not processed server side.</p>
+<p>On the server-side we have:</p>
+<div class="highlight"><pre><span class="n">response</span><span class="p">[</span><span class="s">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;max-age=31536000&#39;</span>
+<span class="n">response</span><span class="p">[</span><span class="s">&#39;Expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">+</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">31536000</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>Benefits</h2>
+<p>There were two immediate benefits:</p>
+<ul>
+<li>Reduced page load time. Combined with serving static files from CDN this greatly improves the user experience;</li>
+<li>Reduced server load. Content is requested only once if it is missing from the cache and then served from CloudFront.
+The server isn't so busy serving content so it can be used to do more computations or simply reduce the bill.</li>
+</ul>
+<p>The presented method works well for <em>Difio</em> because of two things:</p>
+<ul>
+<li>The content which <em>Difio</em> serves usually doesn't change at all once made public. In rare occasions, for example an error
+has been published, we have to regenerate new content and publish it under the same URL.</li>
+<li>Before content is made public it is inspected for errors and this also preseeds the cache.</li>
+</ul>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/amazon/">Amazon</a>, <a href="http://atodorov.org/blog/categories/cloudfront/">CloudFront</a>, <a href="http://atodorov.org/blog/categories/cloud/">cloud</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2012/05/19/cross-domain-ajax-served-from-cdn/';
+                var disqus_url = 'http://atodorov.org/blog/2012/05/19/cross-domain-ajax-served-from-cdn/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>
