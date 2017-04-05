@@ -1,5 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-04-01T01:08:00+03:00</updated><entry><title>Building cardboard robots</title><link href="http://atodorov.org/blog/2017/04/01/building-cardboard-robots/" rel="alternate"></link><updated>2017-04-01T01:08:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-01:blog/2017/04/01/building-cardboard-robots/</id><summary type="html">&lt;p&gt;&lt;img alt="Adi with robots" src="/images/adi_robots.jpg" title="Adi and her robots" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-04-05T09:18:00+03:00</updated><entry><title>Mutation Testing vs. Coverage, Pt. 2</title><link href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="alternate"></link><updated>2017-04-05T09:18:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-05:blog/2017/04/05/mutation-testing-vs-coverage-pt-2/</id><summary type="html">&lt;p&gt;In a &lt;a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/"&gt;previous post&lt;/a&gt; I
+have shown an example of real world bugs which we were not able to detect
+despite having 100% mutation and test coverage. I am going to show you another
+example here.&lt;/p&gt;
+&lt;p&gt;This example comes from one of my training courses. The task is to write a
+class which represents a bank account with methods to deposit, withdraw and
+transfer money. The solution looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;bank.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;balance&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;balance&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_history&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Deposit amount must be positive!&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Withdraw amount must be positive!&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_history&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Withdraw for &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; failed&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;amount&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;transfer_to&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;other_account&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;other_account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Notice that if withdrawal is not possible then the function returns &lt;code&gt;False&lt;/code&gt;. The tests
+look like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;unittest&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;solution&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;TestBankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unittest&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Rado&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_deposit_positive_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_deposit_negative_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;with&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertRaises&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_deposit_zero_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;with&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertRaises&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_withdraw_positive_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;99&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_withdraw_maximum_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_withdraw_from_empty_account&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertIsNotNone&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertFalse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;assert&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Withdraw for 50 failed&amp;quot;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_history&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_withdraw_non_positive_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;with&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertRaises&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;with&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertRaises&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_transfer_negative_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;account_1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;For testing&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;account_2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;In dollars&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;with&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertRaises&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;ValueError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;transfer_to&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_transfer_positive_amount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;account_1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;For testing&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;account_2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;In dollars&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;transfer_to&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;60&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;unittest&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Try the following commands to verify that you have 100% coverage&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;coverage run test.py
+coverage report
+
+cosmic-ray run --test-runner nose --baseline 10 example.json bank.py -- test.py`
+cosmic-ray report example.json
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Can you tell where the bug is ? How about I try to transfer more money than is
+available from one account to the other&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_transfer_more_than_available_balance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;account_1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;For testing&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;account_2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BankAccount&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;In dollars&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c"&gt;# transfer more than available&lt;/span&gt;
+    &lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;transfer_to&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;150&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_balance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you execute the above test it will fail&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;FAIL&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;test_transfer_more_than_available_balance&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;__main__&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;TestBankAccount&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;----------------------------------------------------------------------&lt;/span&gt;
+&lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;):&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;79&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;test_transfer_more_than_available_balance&lt;/span&gt;
+    &lt;span class="n"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;assertEqual&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;account_2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;_balance&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;AssertionError&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;160&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;
+
+&lt;span class="o"&gt;----------------------------------------------------------------------&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The problem is that when &lt;code&gt;self.withdraw(how_much)&lt;/code&gt; fails &lt;code&gt;transfer_to()&lt;/code&gt; ignores
+the result and tries to deposit the money into the other account! A better
+implementation would be&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;transfer_to&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;other_account&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;withdraw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;other_account&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;deposit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;how_much&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Transfer failed!&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In my earlier article the bugs were caused by external environment
+and tools/metrics like code coverage and mutation score are not affected by it.
+In fact the jinja-ab example falls into the category of data coverage testing.&lt;/p&gt;
+&lt;p&gt;The current example on the other hand is ignoring the return value of the &lt;code&gt;withdraw()&lt;/code&gt;
+function and that's why it fails when we add the appropriate test.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; some mutation test tools support the &lt;em&gt;removing/modifying return value&lt;/em&gt;
+mutation. Cosmic Ray doesn't support this at the moment (I should add it). Even if it did
+that would not help us find the bug because we would kill the mutation using
+the &lt;code&gt;test_withdraw...()&lt;/code&gt; test methods, which already assert on the return value!&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Article about Nitrate in Methods &amp; Tools</title><link href="http://atodorov.org/blog/2017/04/04/article-about-nitrate-in-methods-tools/" rel="alternate"></link><updated>2017-04-04T14:08:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-04:blog/2017/04/04/article-about-nitrate-in-methods-tools/</id><summary type="html">&lt;p&gt;&lt;img alt="Nitrate" src="/images/nitrate3.png" title="Nitrate" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/MrSenko/Nitrate"&gt;Nitrate&lt;/a&gt; is an open source test plan,
+test run and test case management system I have been working on for a while now.
+I have been maintaining a custom fork over at &lt;a href="http://MrSenko.com"&gt;Mr. Senko&lt;/a&gt;
+which includes various bug fixes and enhancements which are not yet upstream.&lt;/p&gt;
+&lt;p&gt;Recently the Methods &amp;amp; Tools QA portal published an article about Nitrate.
+You can find it &lt;a href="http://www.methodsandtools.com/tools/nitrate.php"&gt;here&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;Happy reading!&lt;/p&gt;</summary><category term="fedora.planet"></category></entry><entry><title>Building cardboard robots</title><link href="http://atodorov.org/blog/2017/04/01/building-cardboard-robots/" rel="alternate"></link><updated>2017-04-01T01:08:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-01:blog/2017/04/01/building-cardboard-robots/</id><summary type="html">&lt;p&gt;&lt;img alt="Adi with robots" src="/images/adi_robots.jpg" title="Adi and her robots" /&gt;&lt;/p&gt;
 &lt;p&gt;My &lt;a href="http://atodorov.org/blog/2017/01/13/a-5-year-old-girl-vs-coderdojo/"&gt;previous blog post&lt;/a&gt; was about
 the &lt;em&gt;Hello Ruby&lt;/em&gt; book, &lt;em&gt;Coder Dojo&lt;/em&gt; and making computers out of paper - all cool
 things for a 5 year old girl. This week I have discovered the
@@ -1953,149 +2128,4 @@ testing and pointing them to the right tools and videos on the subject. I wish
 them good luck and happy testing.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; I will be speaking about mutation testing at
 several different events in Bulgaria in the next 2 months so make sure to find
-me if you want to chat.&lt;/p&gt;</summary><category term="events"></category></entry><entry><title>What Ivan Learned from Organizing Internships</title><link href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/" rel="alternate"></link><updated>2016-09-25T11:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-09-25:blog/2016/09/25/what-ivan-learned-from-organizing-internships/</id><summary type="html">&lt;p&gt;This is a summary of &lt;a href="http://inem.at/"&gt;Ivan Nemytchenko&lt;/a&gt;'s talk at
-EuRuKo yesterday
-(slides &lt;a href="http://www.slideshare.net/creatop/my-experiense-of-remote-internship-for-junior-ruby-developers"&gt;here&lt;/a&gt;).
-I'm writing this because that was the best talk both
-in terms of content and visual presentation I saw at the conference and because
-it is closely related to my work with &lt;a href="http://hackbulgaria.com"&gt;HackBulgaria&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;The short story is that at some point Ivan was mentoring several junior developers
-and saw the need to scale this effort so he did a call for interns and got back 60 replies.&lt;/p&gt;
-&lt;h2&gt;What an Intern Gets&lt;/h2&gt;
-&lt;ol&gt;
-&lt;li&gt;Projects in their portfolio&lt;/li&gt;
-&lt;li&gt;Working experience, including team work&lt;/li&gt;
-&lt;li&gt;Developing an entire product from idea to production&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;Ivan wanted to find suitable interns who have basic Ruby on Rails knowledge
-and who could invest a minimum of 20 hours per week of their time so he devised
-an aptitude test of 3 parts. &lt;/p&gt;
-&lt;blockquote class="twitter-tweet" data-lang="en"&gt;
-&lt;p lang="en" dir="ltr"&gt;The three part test &lt;a href="https://twitter.com/inem"&gt;@inem&lt;/a&gt; used to challenge 60 candidates for a Ruby internship. Pretty cool. &lt;a href="https://twitter.com/hashtag/euruko?src=hash"&gt;#euruko&lt;/a&gt; &lt;a href="https://t.co/OsnN03pXkf"&gt;pic.twitter.com/OsnN03pXkf&lt;/a&gt;&lt;/p&gt;&amp;mdash; Tatiana Stantonian (@binaryberry) &lt;a href="https://twitter.com/binaryberry/status/779664766394564608"&gt;September 24, 2016&lt;/a&gt;&lt;/blockquote&gt;
-
-&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-
-&lt;p&gt;Part 1 is developing basic functionality of the product.
-Part 2 was adding different user types which require different validation logic, etc.
-Part 3 was adding "purchasing" logic via external APIs. In Part 3 intentionally
-there was no code review!&lt;/p&gt;
-&lt;p&gt;The final result was shit! That was the purpose of the test. The reasoning being that
-there is no right or wrong way to solve the problems he presented to the interns. Instead
-he wanted to make them think and decide on a solution. Then feel the pain of their decision.
-Ivan argues that what made us senior developers are these pains we have experienced at some
-point in our careers, those fuck-ups that we did in some old project. All of them made us
-better in our job because we could learn from the mistakes we've made and more importantly
-understand the consequence of our decisions.&lt;/p&gt;
-&lt;p&gt;The common mistakes Ivan saw were:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Ignoring levels of abstraction;&lt;/li&gt;
-&lt;li&gt;Using too many gems without knowing or understanding their limitations;&lt;/li&gt;
-&lt;li&gt;Gems were treated as the only way to solve a problem. More importantly changing
-this way was out of the question;&lt;/li&gt;
-&lt;li&gt;Interns didn't know about &lt;a href="http://stevelorek.com/service-objects.html"&gt;service objects&lt;/a&gt;,
-well even some experienced developers seem to not know that;&lt;/li&gt;
-&lt;li&gt;Business logic was all around the place;&lt;/li&gt;
-&lt;li&gt;Bad naming all around&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The next thing Ivan did was a group hangout code review followed by a short lecture about
-design patterns, a refactoring session and finally cross code review. At the end the
-product was delivered as expected.&lt;/p&gt;
-&lt;p&gt;Following these initial efforts Ivan continued (with even more interns, or the next group of them I think)
-by asking interns to develop internship automatization, that is a means for the system to
-distribute tasks based on git commits, tags, etc so it can scale. They've added an admin
-dashboard and started working on an open source alternative to NewRelic (if I got that correctly).
-He was also able to enlist 2 more mentors to help him.&lt;/p&gt;
-&lt;p&gt;Problems Ivan found:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Not enough mentors and external projects to work on for all of the interns;&lt;/li&gt;
-&lt;li&gt;Treating a project as not real (e.g. not a real world product) is a mistake;&lt;/li&gt;
-&lt;li&gt;A training project has the same management issues that a real product will have
-and they need to be resolved in pretty much the same way;&lt;/li&gt;
-&lt;li&gt;There was collective irresponsibility from the group of interns. They didn't do
-what they said they will do;&lt;/li&gt;
-&lt;li&gt;There were communication issues between the interns and the lack of enough mentors
-was an obvious problem.&lt;/li&gt;
-&lt;li&gt;There was also lack of motivation.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;I'd say these are the typical problems one also sees in almost any teams. It doesn't
-matter if these are teams of students or teams of developers inside some company.&lt;/p&gt;
-&lt;h2&gt;What a Junior Needs&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;A real project to work on;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;A business context, a reason why something should be done and why it needs to be
-done in a particular way&lt;/strong&gt;;&lt;/li&gt;
-&lt;li&gt;Some visible achievement for their portfolio;&lt;/li&gt;
-&lt;li&gt;Team work experience;&lt;/li&gt;
-&lt;li&gt;Whole cycle development experience.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Ivan thinks that &lt;strong&gt;the aptitude test worked great&lt;/strong&gt; because his interns were able to find
-good jobs afterwards but he will change a few things. There will be even more tests
-and he will reject unfit/bad interns. He will also do call for mentors not only for interns.
-And he wants to turn mentors' experience into tests as well.&lt;/p&gt;
-&lt;p&gt;I particularly like the "business context" item. IMO even seasoned developers need to have this
-if they are expected to create a great product for their company. We're not just coders but
-sometimes companies forget that!&lt;/p&gt;
-&lt;p&gt;I am also wondering how can I apply a similar aptitude test in my work (both mentoring at
-HackBulgaria and otherwise).&lt;/p&gt;
-&lt;h2&gt;How about Senior Developers&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;They all have routine tasks;&lt;/li&gt;
-&lt;li&gt;and research tasks;&lt;/li&gt;
-&lt;li&gt;Nice to have features and&lt;/li&gt;
-&lt;li&gt;Low priority features;&lt;/li&gt;
-&lt;li&gt;Side project ideas&lt;/li&gt;
-&lt;li&gt;Missing features in their favorite open source projects&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Senior developers' tasks and desires will have to align with what a junior needs in order
-for the mentorship to work. As senior devs we often make a mistake and expect everyone else
-to think the same way we do and act as fast as we do. &lt;strong&gt;Ideally senior developers want to have multiple clones
-of ourselves to work with!&lt;/strong&gt; I myself have been guilty of that and trying to change.&lt;/p&gt;
-&lt;p&gt;In the context of a for-profit company the above findings should be taken into deep consideration
-if you are about to have interns.&lt;/p&gt;
-&lt;p&gt;After the talk I was lucky to talk to Ivan and tell him more about the training sessions
-at HackBulgaria. I also proposed to him the sponsorship model which he hasn't considered.
-He then made a counter offer: ask interns for high payment upfront and let them recoup that
-based on their progress towards the end.&lt;/p&gt;
-&lt;p&gt;I am really happy to have heard this presentation and being able to talk to Ivan in person. I also have
-my notes about my "QA and Automation 101" training at HackBulgaria and I now
-have a better idea how to go about organizing and summarizing them (will try to publish that soon).&lt;/p&gt;
-&lt;p&gt;Last but not least, Ivan works at GitLab and promised to look at an issue I personally have
-so here it is &lt;a href="https://gitlab.com/gitlab-org/gitlab-ce/issues/7953"&gt;GitLab #7953&lt;/a&gt; :).&lt;/p&gt;
-&lt;h2&gt;Related reading&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;My &lt;em&gt;How to hire Software Testers&lt;/em&gt; series: parts
-&lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;One&lt;/a&gt;,
-&lt;a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/"&gt;Two&lt;/a&gt; and
-&lt;a href="http://atodorov.org/blog/2016/06/03/how-to-hire-software-testers-pt-3/"&gt;Three&lt;/a&gt;;&lt;/li&gt;
-&lt;li&gt;RadoRado's &lt;a href="http://radorado.me/kak_stanah_po_dobar_programist/"&gt;How I Became a Better Developer&lt;/a&gt;
-in Bulgarian but please use Google translate;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://twitter.com/sidonath"&gt;Damir Zekic&lt;/a&gt;'s The Importance of Teaching and Mentoring (from the
-pov of the mentor) lightning talk at EuRuKo (will link video soon), similar to what Rado says;&lt;/li&gt;
-&lt;li&gt;Alex Moldovan's &lt;a href="https://medium.com/@alexnm/how-outsourcing-is-killing-cluj-345a4cbbcb6c#.nutpdfftu"&gt;How Outsourcing is Killing Cluj&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;</summary><category term="events"></category></entry><entry><title>Questers Beer'n'Code Day 2.0</title><link href="http://atodorov.org/blog/2016/08/30/questers-beerncode-day-20/" rel="alternate"></link><updated>2016-08-30T17:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-08-30:blog/2016/08/30/questers-beerncode-day-20/</id><summary type="html">&lt;p&gt;Last weekend I've visited
-&lt;a href="https://www.facebook.com/events/617994718381217/"&gt;Questers Beer'n'Code Day&lt;/a&gt;
-which was an open air mini-conference held at the terrace of their office.
-As to organization the only drawback was the summer sun which made it impossible
-to see anything on the screen. Most speakers were OK with that although they
-wanted to show some code examples.&lt;/p&gt;
-&lt;p&gt;I have recorded all talks and they are available in my
-&lt;a href="https://www.youtube.com/watch?v=IX2ILL8Xq5s&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=1"&gt;TECH TALKS&lt;/a&gt;
-YouTube play list. You can also hear me asking some questions from behind
-the camera. All of the talks are in Bulgarian though, so sorry for my
-English speaking readers.&lt;/p&gt;
-&lt;p&gt;The afternoon started with Lidiya Georgieva and her talk about clean code
-and code smells. I find the topic particularly interesting but she didn't
-go into more details. She said she had used SonarCube but couldn't recommend
-any other tools, except for the standard lint style ones. I have been using
-&lt;a href="https://landscape.io/github/MrSenko/pelican-ab/"&gt;LandScape.io&lt;/a&gt; for all
-Python based code I've been working on recently and I think it is great.&lt;/p&gt;
-&lt;p&gt;Another talk I found interesting was by my fellow QA Petar Sabev on reporting
-bugs. It was more of an entry level talk, but still very informative for both
-less experienced QAs and other technical folks so I definitely recommend it.&lt;/p&gt;
-&lt;p&gt;The last one, and most interesting, was Bogoi Bogdanov with Scaling Agile.
-Despite the name
-he covered some basics about Agile and what it actually is. Afterwards we've stayed
-and talked for a good 2 hours more. I definitely would like to hear more from
-him in the future.&lt;/p&gt;
-&lt;p&gt;A big thanks to Questers for hosting this event and allowing me to record it.
-Happy &lt;a href="https://www.youtube.com/watch?v=IX2ILL8Xq5s&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=1"&gt;watching&lt;/a&gt;.&lt;/p&gt;</summary><category term="events"></category></entry></feed>
+me if you want to chat.&lt;/p&gt;</summary><category term="events"></category></entry></feed>

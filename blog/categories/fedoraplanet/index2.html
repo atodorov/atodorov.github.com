@@ -90,6 +90,353 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/" rel="bookmark" title="Permalink to How To Hire Software Testers, Pt. 2">
+                <h2 class="post-title">
+                    How To Hire Software Testers, Pt. 2
+                </h2>
+            </a>
+                <p>In my
+<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">previous post</a> I have
+described the process I follow when interviewing candidates for a QA position.
+The first question is designed to expose the applicant's way of thinking.
+My second question is designed to examine their technical understanding
+and to a lesser extent their way of thinking.</p>
+<p><img alt="Sudoku" src="/images/sudoku.png" title="Sudoku" /></p>
+<h2>How do You Test a Sudoku Solving Function</h2>
+<p>You have implementation of a sudoku solver function with the following pseudocode:</p>
+<div class="highlight"><pre>func Sudoku(Array[2]) {
+    ...
+    return Array[2]
+}
+</pre></div>
+
+
+<ul>
+<li>The function solves a sudoku puzzle;</li>
+<li>Input parameter is a two-dimensional array with the known numbers (from 1 to 9) in the Sudoku grid;</li>
+<li>The output is a two-dimensional array with the numbers from the solved puzzle.</li>
+</ul>
+<p>You have 10 minutes to write down a list of all test cases you can think of!</p>
+<h2>Behind The Scenes</h2>
+<p>One set of possible tests is to examine the input and figure out if the
+function has been passed valid data.
+In the real-world programs interact with each other, they are not alone.
+Sometimes it happens that a valid output from one program isn't a
+valid input for the next one. Also we have malicious users who will try to
+break the program.</p>
+<p>If a person manages to test for this case then
+I know they have a bit more clue about how software is used in the real-world.
+This also touches a bit on white-box testing, where the tester has full info
+about the software under test. In this example the implementation is
+intentionally left blank.</p>
+<p>OTOH I've seen answers where the applicant blindly assumes that the input
+is 1-9, because the spec says so, and excludes the entire input testing from
+their scope. I classify this answer as immediate failure, because a tester should
+never assume anything and test to verify their initial conditions are indeed
+as stated in the documentation.</p>
+<p>Another set of possible tests is to verify the correct work of the function.
+That is to verify the proposed Sudoku solution is indeed following the rules
+of the game. This is what we usually refer to black-box testing. The tester
+doesn't know how the SUT works internally, they only know the input data and
+the expected output. </p>
+<p>If a person fails to describe at least one such test case
+they have essentially failed the question. What is the point of a SUT which
+doesn't crash (suppose that all previous tests passed) but doesn't
+produce the desired correct result ?</p>
+<p>Then there are test cases related to the environment in which this Sudoku
+solver function operates. This is where I examine the creativity of the person,
+their familiarity with other platforms and to some extent their thinking out of
+the box. Is the Sudoku solver iterative or recursive ? What if we're on an
+embedded system and recursion is too heavy for it ? How much power does the
+function require, how fast it works, etc.</p>
+<p>A person that provides at least one answer in this category has bonus points
+over the others who didn't. IMO it is very important for a tester to have
+experience with various platforms and environments because this helps them
+see edge cases which others will not be able to see. I also consider a strong
+plus if the person shows they can operate outside their comfort zone.</p>
+<p>If we have time I may ask the applicant to write the tests using a programming
+language they know. This is to verify their coding and automation skills.</p>
+<p>OTOH having the tests as code will show me how much the person knows about testing
+vs. coding. I've seen solutions where people write a for loop, looping over all
+numbers from 1 to 100 and testing if they are a valid input to <code>Sudoku()</code>.
+Obviously this is pointless and they failed the test.</p>
+<p>Last but not least, the question asks for testing a particular Sudoku solver
+implementation. I expect the answers to be designed around the given function.
+However I've seen answers designed around a
+<a href="http://sudoku-solutions.com/">Sudoku solver website</a> or described as
+intermediate states in an interactive Sudoku game (e.g. wrong answers shown in red).
+I consider these invalid because the question is to test a particular
+given function, not anything Sudoku related. If you do this in real-life that
+means you are not testing the SUT directly but maybe touching it indirectly
+(at best). This is not what a QA job is about.</p>
+<h2>What Are The Correct Answers</h2>
+<p>Here are some of the possible tests.</p>
+<ul>
+<li>Test with single dimensional input array - we expect an error;</li>
+<li>Test with 3 dimensional input array - we expect an error;</li>
+<li>Then proceed testing with 2 dimensional array;</li>
+<li>Test with number less than 1 (usually 0) - expect error;</li>
+<li>Test with number greater than 9 (usually 10) - expect error;</li>
+<li>Test how the function handles non-numerical data - chars &amp; symbols
+(essentially the same thing for our function);</li>
+<li>Test with strings which actually represent a number, e.g. "1";</li>
+<li>Test with floating point numbers, e.g. 1.0, 2.0, 3.0 - may or may not
+work depending on how the code is written;</li>
+<li>If floating point numbers are accepted, then test with a different locale.
+Is "1.0" the same as "1,0";</li>
+<li>Test with <code>null</code>, <code>nil</code>, <code>None</code> (whatever the language supports) -
+this should be a valid value for unknown numbers and not cause a crash;</li>
+<li>Test if the function validates that the provided input follows the
+Sudoku rules by passing it duplicate numbers in one row, column or
+square. It should produce an error;</li>
+<li>Test if the input data contains the minimum number of givens, 17
+for a general Sudoku, so that a solution can be found. Otherwise the function
+may go into an
+<a href="http://atodorov.org/blog/2015/01/05/endless-loop-bug-candy-crush-saga-level-80/">endless loop</a>;</li>
+<li>Verify the proposed solution conforms to Sudoku rules;</li>
+<li>Test with a fully solved puzzle as input - output should be exactly the same;</li>
+<li>If on mobile, measure battery consumption for 1 minute of operation. I've
+seen a game which uses 1% battery power for 1 minute of game play;</li>
+<li>Test for buffer overflows;</li>
+<li>Test for speed of execution (performance);</li>
+<li>Test performance on single and multiple (core) CPUs - depending on the
+language and how the function is written this may produce a difference or not;</li>
+</ul>
+<p>I'm sure I'm missing something so please use the comments below to tell me your suggestions.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 16 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/" rel="bookmark" title="Permalink to How To Hire Software Testers, Pt. 1">
+                <h2 class="post-title">
+                    How To Hire Software Testers, Pt. 1
+                </h2>
+            </a>
+                <p>Many people have asked me how do I make sure a person who applies for a
+QA/software tester position is a good fit ? On the opposite side people
+have asked online how do they give correct answers on test related questions
+at job interviews. I have two general questions to help me decide if a
+person knows about testing and if they are a good fit for the team or not.</p>
+<p><img alt="Login form" src="/images/login_form_wireframe.jpg" title="Login form" /></p>
+<h2>How do You Test a Login Form</h2>
+<p>You are given the login form above and the following constraints:</p>
+<ul>
+<li>Log in is possible with username and password or through the social networks;</li>
+<li>After successful registration an email with the following content is sent to the user:</li>
+</ul>
+<p><code>Helo and welcome to atodorov.org! Click _here_ to confirm your emeil address.</code></p>
+<p>You have 10 minutes to write down a list of all test cases you can think of!</p>
+<h2>Behind The Scenes</h2>
+<p>The question looks trivial but isn't as easy to answer as you may think.
+If you haven't spent the last 20 years of your life in a cave, chances are
+that you will give technically correct answers but this is not the only
+thing I'm looking for.</p>
+<p>The question is designed to simulate a real-world scenario, where the QA
+person is given a piece of software, or requirements document and tasked with
+creating a test plan for it. The question is intentionally vague because that's
+how real-world works, most often testers don't have all the requirements and
+specifications available beforehand.</p>
+<p>The time constrain, especially when the interview is performed in person,
+simulates work under pressure - get the job done as soon as possible.</p>
+<p>While I review the answers I'm trying to figure out how does the person think,
+not how much about technology they know. I'm trying to figure out what are their
+strong areas and where they need to improve. IMO being able to think as a tester
+and having attention to details, being able to easily spot corner cases and
+look at the problem from different angles is much more important than
+technical knowledge in a particular domain.</p>
+<p>As long as a person is suited to think like a tester they can learn to
+apply their critical thinking to any software under test and use various
+testing techniques to discover or safeguard against problems.</p>
+<ul>
+<li>
+<p>A person that answers quickly and intuitively is better than a person who
+takes a long time to figure out what to test. I can see they are active
+thinkers and can work without micro-management and hand-holding.</p>
+</li>
+<li>
+<p>A person that goes on and on
+describing different test cases is better than one who limits themselves to
+the most obvious cases. I can see they have an exploratory passion, which
+is the key to finding many bugs and making the software better;</p>
+</li>
+<li>
+<p>A person that goes to explore the system in breadth is better than one who
+keeps banging on the same test case with more and more variations. I can see
+they are noticing the various aspects of the software (e.g. social login,
+email confirmation, etc) but also to some extent, not investing all of their
+resources (the remaining time to answer) into a single direction. Also in
+real-world testing, testing the crap out of something is useful up to a point.
+Afterwards we don't really see any significant value from additional testing
+efforts.</p>
+</li>
+<li>
+<p>A person that is quick to figure out one or two corner cases is better
+than a person who can't. This tells me they are thinking about what goes
+on under the hood and trying to predict unpredictable behavior - for example
+what happens if you try to register with already registered username or email?</p>
+</li>
+<li>
+<p>A person that asks questions in order to minimize uncertainty and vagueness
+is better than the one who doesn't. In real-world if the tester doesn't know
+something they have to ask. Quite often even developers and product managers
+don't know the answer. Then how are we developing software if we don't know
+what it is supposed to do ?</p>
+</li>
+<li>
+<p>If given more time (writing interview), a person that organizes their answers
+into steps (1, 2, 3) is a bit better than one who simply throws at you random
+answers without context. Similar thought applies to people who write down their
+test pre-conditions before writing down scenarios. From this I can see that
+the person is well organized and will have no trouble writing detailed test cases,
+with pre-conditions, steps to execute and expected results. This is what QAs do.
+Also we have the, sometimes tedious, task of organizing all test results into
+a test case management system (aka test book) for further reference.</p>
+</li>
+<li>
+<p>The question intentionally includes some mistakes. In this example 2 spelling
+errors in the email text. Whoever manages to spot them and tell me about it is
+better than others who don't spot the errors or assume that's how it is. QAs job
+is to always question everything and never blindly trust that the state of the
+system is the way it is. Also simple errors like typos can be
+<a href="http://atodorov.org/blog/2016/01/15/tesla-needs-more-qa/">embarrassing</a> or generate
+unnecessary support calls.</p>
+</li>
+<li>
+<p>Bravo if you tested not only the outgoing email but also social login. This
+shows attention to details, not to mention social is 1/3rd of our example system.
+It also shows that QA's job doesn't end with testing
+the core, perceived functionality of the system. QA tests everything,
+even interactions with external systems if that is necessary.</p>
+</li>
+</ul>
+<h2>What Are The Correct Answers</h2>
+<p>I will document some of the possible answers as I recall them from memory.
+I will update the list with other interesting answers given by students who
+applied to my
+<a href="https://github.com/HackBulgaria/QA-and-Automation-101">QA and Automation 101</a>
+course, answering this very same question.</p>
+<ul>
+<li>Test if users can register using valid username, email and password;</li>
+<li>Test if SUT gives an error message when email or password (or username)
+format doesn't follow a particular format (e.g. no special symbols);</li>
+<li>After registration, test that the user can login successfully;</li>
+<li>Depending on requirements test if the user can login before they have
+confirmed their email address;</li>
+<li>Test that upon registration a confirmation email is actually sent;</li>
+<li>Spell-check the email text;</li>
+<li>Test if the <em>click here</em> piece of text is a hyperlink;</li>
+<li>Verify that when clicked, the hyperlink successfully confirmed email/activates the account
+(depending on what confirmed/activated means per requirements);</li>
+<li>Test what happens if the link is clicked a second time;</li>
+<li>Test what happens if the link is clicked after 24 or 48 hrs;</li>
+<li>Test that the social network icons, actually link to the desired SN and
+not someplace else;</li>
+<li>Test if new user accounts can be created via all specified social networks;</li>
+<li>Test what happens if there is an existing user, who registered with a password
+and they (or somebody else) tries to register via social with an account that has
+the same email address, aka account hijacking;</li>
+<li>Same as previous test but try to register a new user, using email address that
+was previously used with social login;</li>
+<li>Test what happens if users forget their password - intentionally we don't have
+the '[] Forgot my password' checkbox. This is both usability feature and missing
+requirements;</li>
+<li>Test for simple SQL injections like
+<a href="http://php.net/manual/en/images/fa7c5b5f326e3c4a6cc9db19e7edbaf0-xkcd-bobby-tables.png">Bobby Tables</a>.
+<em>btw I was given this image as an answer which scored high on the geek-o-meter</em>;</li>
+<li>Test for XSS - <a href="https://twitter.com/dergeruhn/status/476764918763749376">Tweetdeck didn't</a>;</li>
+<li>Test if non-activated/non-confirmed usernames expire after some time and can be used again;</li>
+<li>Test of fields tab order - something I haven't done in 15 or more years
+but still valid and I've seen sites getting it wrong quite often;</li>
+<li>When trying to login test what happens when username/password is wrong or empty;</li>
+<li>Test if email is required for login - this isn't clear from the requirements
+so it is a valid answer. Better answer is to clarify that;</li>
+<li>Test if username/email or password is case sensitive. Valid test and indeed I
+recently saw a problem where upon registration users entered their emails using
+some capital letters but they were lower-cased before saving to the DB. Later this
+broke a piece of code which forgot to apply the lowercase on the input data. The code
+was handling account reactivation;</li>
+<li>Test if the password field shows the actual password or not. I haven't seen this
+in person but I'm certain there is some site which maybe used CSS and nice images
+instead of the default ugly password field and that didn't work on all browsers;</li>
+<li>Test if you can copy&amp;paste the masked password, probably trying to steal somebody
+else's password. Last time I saw this was on early Windows 95 with the modem connection
+dialog. Very briefly it allowed you to copy the text from the field and paste it into
+Notepad to reveal the actual password;</li>
+<li>If we're on mobile (intentionally not specified) test for buffer overflows;
+Actually test that everywhere and see what happens;</li>
+<li>Test if the social network buttons use the same action verb. In the example
+we have <em>Log in</em>, <em>Connect</em> and <em>Sign in</em>. This is sort of usability testing
+and helping have a unified look and feel of the product;</li>
+<li>Test which of the <em>Log in</em> and <em>Sign up</em> tabs is active at the moment.
+The example is intentionally left to look like a wireframe but it is important
+for the user to easily tell where they are. Otherwise they'll call support or
+even worse, simply give up on us;</li>
+<li>Test if all static files (images) will load if they are deployed onto CDN.
+Not surprisingly I've seen <a href="https://github.com/Nitrate/Nitrate/pull/80">this bug</a>;</li>
+<li>In case we have a "[] Remember me" checkbox, test if it actually remembers
+the user credentials. Yesterday I saw this same functionality not working on
+a specialized desktop app in the corner case where you supply a different
+connection endpoint (server) instead of the ones already provided. The user
+defined value is accepted but not saved automatically;</li>
+<li>Test if the "Remember me" functionality actually saves your last credentials
+or only the first ones you provided. There is a similar bug in 
+<a href="https://play.google.com/store/apps/details?id=com.xevica.grajdanite">Grajdanite</a>,
+where once you enter a wrong email, it is remembered and every time the form is
+pre-filled with the previous value (which is wrong). I'm yet to report it though;</li>
+<li>Cross-browser testing - hmm, login and registration should work on all browsers
+you say. It's not browser dependent, is it? Well yeah, login isn't browser dependent
+unless we did something stupid like pre-handling the form submit via non-cross-platform
+JavaScript or even
+<a href="https://github.com/gilsondev/pelican-clean-blog/pull/6">accidentally doing so</a>;</li>
+<li>Test with Unicode characters, especially non Latin ones. It's been many years
+since we had Unicode but quite a few apps haven't learned how to deal with Unicode
+text properly.</li>
+</ul>
+<p>I'm certain there are more answers and I will update the list as I figure them out.
+You can always post in the comments and tell me something I've missed.</p>
+<h2>How to Pass The Job Interview</h2>
+<p>This is a question I often see on <a href="https://www.quora.com/profile/Alexander-Todorov">Quora</a>.
+<em>I have a job interview tomorrow. How do I test a login form (or whatever) ?</em></p>
+<p>If this section is what you're after I suspect you are a junior or wanna-be
+software tester. As you've seen the interviewer isn't really interested in what you know already,
+at least not as much. We're interested in getting to know how you
+think in the course of 30-60 minutes.</p>
+<p>If you ever find yourself being asked a similar question just start thinking and
+answering and don't stop. Vocalize your thoughts, even if you don't know what will
+happen when testing a certain condition. Then keep going on and on. Look at the problem
+from all angles, explain how you'd test various aspects and features of the SUT.
+Then move on to the next bit. Always think about what you may have forgotten and
+revisit your answers - this is what real QAs do - learn from mistakes.
+Ask questions, don't ever assume anything. If something is unclear ask to be
+clarified. For example I've seen a person who doesn't use social networks and
+didn't know how social login/registration worked. They did good by asking me to
+describe how that works.</p>
+<p>Your goal is to make the interviewer ask you to stop answering. Then tell them
+a few more answers.</p>
+<p>However beware of cheating. You may cheat a little bit by
+saying you will test this and that or design scenarios you have no clue about.
+Maybe you read them in my blog or elsewhere. If the interviewer knows their job
+(which they should) they will instantly ask you another question to verify what
+you say. Don't forget the interviewer is probably an experienced tester and validating
+assumptions is what they do every day.</p>
+<p>For example, if you told me something about security testing or SQL injection
+or XSS I will ask you to explain that in more details. If you forgot to mention,
+one of them, say XSS but only heard about SQL injection I will ask you about the
+other one. This will immediately tell me if you have a clue what you are talking
+about.</p>
+<p>Feel free to send me suggestions and answers in the comments below. You can find
+the second part of this post at
+<a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/">How do you test a Sudoku solving function</a>.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 12 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/03/31/beware-of-double-stubs-in-rspec/" rel="bookmark" title="Permalink to Beware of Double Stubs in RSpec">
                 <h2 class="post-title">
                     Beware of Double Stubs in RSpec
@@ -1684,178 +2031,6 @@ permission and that works for me.</p>
                  on Tue 01 December 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="bookmark" title="Permalink to Inspecting Method Arguments in Python">
-                <h2 class="post-title">
-                    Inspecting Method Arguments in Python
-                </h2>
-            </a>
-                <p>How do you execute methods from 3rd party classes in a backward compatible
-manner when these methods change their arguments ?</p>
-<p>s3cmd's <a href="https://github.com/s3tools/s3cmd/pull/668">PR #668</a> is an example
-of this behavior, where python-libs's <code>httplib.py</code> added a new parameter
-to disable hostname checks. As a result of this
-<a href="/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/">s3cmd broke</a>.</p>
-<p>One solution is to use try-except and nest as much blocks as you need to cover
-all of the argument variations. In s3cmd's case we needed two nested try-except
-blocks.</p>
-<p>Another possibility is to use the
-<a href="https://docs.python.org/3/library/inspect.html">inspect</a> module and create the argument
-list passed to the method dynamically, based on what parameters are supported.
-Depending on the number of parameters this may or may not be more elegant than
-using try-except blocks although it looks to me a bit more human readable.</p>
-<p>The argument list is a member named <em>co_varnames</em> of the code object. If you
-want to get the members for a function then</p>
-<div class="highlight"><pre><span class="nx">inspect</span><span class="p">.</span><span class="nx">getmembers</span><span class="p">(</span><span class="nx">my_function</span><span class="p">.</span><span class="nx">__code__</span><span class="p">)</span>
-</pre></div>
-
-
-<p>if you want to get the members for a class method then</p>
-<div class="highlight"><pre>inspect.getmembers(MyClass.my_method.__func__.__code__)
-</pre></div>
-
-
-<p>Consider the following example</p>
-<div class="highlight"><span class="filename">test.py</span><pre><span class="kn">import</span> <span class="nn">inspect</span>
-
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">):</span>
-    <span class="k">print</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
-
-<span class="k">class</span> <span class="nc">V1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Hello World&quot;</span>
-
-    <span class="k">def</span> <span class="nf">do_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
-
-<span class="k">class</span> <span class="nc">V2</span><span class="p">(</span><span class="n">V1</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Hello&quot;</span><span class="p">):</span>
-        <span class="n">V1</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;Hello&#39;</span><span class="p">,</span> <span class="n">greeting</span><span class="p">)</span>
-
-<span class="k">class</span> <span class="nc">V3</span><span class="p">(</span><span class="n">V2</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;World&quot;</span><span class="p">):</span>
-        <span class="n">V2</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">print</span> <span class="s">&quot;=== Example: call the class directly ===&quot;</span>
-    <span class="n">v1</span> <span class="o">=</span> <span class="n">V1</span><span class="p">()</span>
-    <span class="n">v1</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">v2</span> <span class="o">=</span> <span class="n">V2</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good day&quot;</span><span class="p">)</span>
-    <span class="n">v2</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">v3</span> <span class="o">=</span> <span class="n">V3</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;everyone&quot;</span><span class="p">)</span>
-    <span class="n">v3</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
-
-    <span class="c"># uncomment to see the error raised</span>
-    <span class="c">#v4 = V1(greeting=&quot;Good evening&quot;, who=&quot;everyone&quot;)</span>
-    <span class="c">#v4.do_print()</span>
-
-    <span class="k">print</span> <span class="s">&quot;=== Example: use try-except ===&quot;</span>
-    <span class="k">for</span> <span class="n">C</span> <span class="ow">in</span> <span class="p">[</span><span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">V3</span><span class="p">]:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;everyone&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&quot;    error: nested-try-except-1&quot;</span>
-                <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="s">&quot;Good evening&quot;</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&quot;    error: nested-try-except-2&quot;</span>
-                <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">()</span>
-
-        <span class="n">c</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
-
-
-    <span class="k">print</span> <span class="s">&quot;=== Example: using inspect ===&quot;</span>
-    <span class="k">for</span> <span class="n">C</span> <span class="ow">in</span> <span class="p">[</span><span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">V3</span><span class="p">]:</span>
-        <span class="n">members</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">__func__</span><span class="o">.</span><span class="n">__code__</span><span class="p">))</span>
-        <span class="n">var_names</span> <span class="o">=</span> <span class="n">members</span><span class="p">[</span><span class="s">&#39;co_varnames&#39;</span><span class="p">]</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">if</span> <span class="s">&#39;greeting&#39;</span> <span class="ow">in</span> <span class="n">var_names</span><span class="p">:</span>
-            <span class="n">args</span><span class="p">[</span><span class="s">&#39;greeting&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Good morning&#39;</span>
-
-        <span class="k">if</span> <span class="s">&#39;who&#39;</span> <span class="ow">in</span> <span class="n">var_names</span><span class="p">:</span>
-            <span class="n">args</span><span class="p">[</span><span class="s">&#39;who&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;children&#39;</span>
-
-        <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
-        <span class="n">c</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
-
-<p>The output of the example above is as follows</p>
-<div class="highlight"><pre>=== Example: call the class directly ===
-Hello World
-Good day World
-Good evening everyone
-=== Example: use try-except ===
-    error: nested-try-except-1
-    error: nested-try-except-2
-Hello World
-    error: nested-try-except-1
-Good evening World
-Good evening everyone
-=== Example: using inspect ===
-Hello World
-Good morning World
-Good morning children
-</pre></div>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 29 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/" rel="bookmark" title="Permalink to 3 New Python Markdown extensions">
-                <h2 class="post-title">
-                    3 New Python Markdown extensions
-                </h2>
-            </a>
-                <p>I've managed to resolve several of my issues with Python-Markdown behaving not
-quite as I expect. I have the pleasure to announce three new extensions which
-now power this blog.</p>
-<h2>No Lazy BlockQuote Extension</h2>
-<p><a href="https://github.com/atodorov/Markdown-No-Lazy-BlockQuote-Extension">Markdown-No-Lazy-BlockQuote-Extension</a>
-makes it possible blockquotes separated by newline to be rendered separately.
-If you want to include empty lines in your blockquotes make sure to prefix
-each line with <code>&gt;</code>. The standard behavior can be seen in
-<a href="https://github.com/atodorov/atodorov.github.com/blob/source/content/_posts/2014-03-04-how-do-you-test-fonts.markdown">GitHub</a>
-while the changed behavior is visible
-<a href="/blog/2014/03/04/how-do-you-test-fonts/">in this article</a>. Notice how on
-GitHub both quotes are rendered as one big block, while here they are two separate
-blocks.</p>
-<h2>No Lazy Code Extension</h2>
-<p><a href="https://github.com/atodorov/Markdown-No-Lazy-Code-Extension">Markdown-No-Lazy-Code-Extension</a>
-allows code blocks separated by newline to be rendered separately. If you want to
-include empty lines in your code blocks make sure to
-<a href="https://github.com/atodorov/atodorov.github.com/commit/9684875920c6c7926951ce99b6588a9a7007e6f0">indent them as well</a>.
-The standard behavior can be seen on
-<a href="https://github.com/atodorov/atodorov.github.com/blob/source/content/_posts/2013-02-13-secure-vnc-installation-red-hat-enterprise-linux.markdown">GitHub</a>
-while the improved one in this
-<a href="/blog/2013/02/13/secure-vnc-installation-red-hat-enterprise-linux/">post</a>.
-Notice how GitHub renders the code in the <strong>Warning Bugs Present</strong> section
-as one block while in reality these are two separate blocks from two different files.</p>
-<h2>Bugzilla Extension</h2>
-<p><a href="https://github.com/atodorov/Markdown-Bugzilla-Extension">Markdown-Bugzilla-Extension</a>
-allows for easy references to bugs. Strings like <code>[bz#123]</code> and <code>[rhbz#456]</code> will
-be converted into links.</p>
-<p>All three extensions are available on PyPI!</p>
-<h2>Bonus: Codehilite with filenames in Markdown</h2>
-<p>The standard Markdown codehilite extension doesn't allow to specify filename
-on the <code>:::python</code> shebang line while Octopress did and I've used the syntax
-on this blog in a number of articles. The fix is simple, but requires changes in
-both Markdown and Pygments. See
-<a href="https://github.com/waylan/Python-Markdown/pull/445">PR #445</a> for the initial
-version and ongoing discussion. Example of the new <code>:::python settings.py</code> syntax
-can be seen
-<a href="/blog/2013/03/07/python-twitter-django-social-auth-hello-new-user/">here</a>.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 26 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/26/3-new-python-markdown-extensions/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -90,6 +90,60 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="bookmark" title="Permalink to Changing Rails consider_all_requests_local in RSpec fails">
+                <h2 class="post-title">
+                    Changing Rails consider_all_requests_local in RSpec fails
+                </h2>
+            </a>
+                <p>As many others I've been trying to change
+<code>Rails.application.config.consider_all_requests_local</code> and
+<code>Rails.application.config.action_dispatch.show_exceptions</code> inside my
+RSpec tests in order to test custom error pages in a Rails app. However this
+doesn't work. My code looked like this</p>
+<div class="highlight"><pre><span class="n">feature</span> <span class="s1">&#39;Exceptions&#39;</span> <span class="k">do</span>
+  <span class="n">before</span> <span class="k">do</span>
+    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">action_dispatch</span><span class="o">.</span><span class="n">show_exceptions</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">consider_all_requests_local</span> <span class="o">=</span> <span class="kp">false</span>
+  <span class="k">end</span>
+</pre></div>
+
+
+<p>This works only if I execute <code>exceptions_spec.rb</code> alone. However when something
+else executes before that it fails. The config values are
+correctly updated but that doesn't seem to have effect.</p>
+<p>The answer and solution comes from
+<a href="http://thepugautomatic.com/2014/08/404-with-rails-4/#comment-1714338343">Henrik N</a>.</p>
+<blockquote>
+<p>action_dispatch.show_exceptions gets copied and cached in
+Rails.application.env_config, so even if you change
+Rails.application.config.action_dispatch.show_exceptions in this
+before block the value isn't what you expect when it's used in
+ActionDispatch::DebugExceptions.</p>
+</blockquote>
+<p>In fact <code>DebugExceptions</code> uses <code>env['action_dispatch.show_exceptions']</code>. The
+correct code should look like this</p>
+<div class="highlight"><pre><span class="n">before</span> <span class="k">do</span>
+  <span class="nb">method</span> <span class="o">=</span> <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span>
+  <span class="n">expect</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span><span class="o">.</span><span class="n">with</span><span class="p">(</span><span class="n">no_args</span><span class="p">)</span> <span class="k">do</span>
+    <span class="nb">method</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+      <span class="s1">&#39;action_dispatch.show_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
+      <span class="s1">&#39;action_dispatch.show_detailed_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
+      <span class="s1">&#39;consider_all_requests_local&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span>
+    <span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>This allows the test to work regardless of the order of execution
+of spec files. I don't know why but I also had to leave
+<code>show_detailed_exceptions</code> otherwise I wasn't getting the desired results.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 27 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="bookmark" title="Permalink to Mismatch in Pyparted Interfaces">
                 <h2 class="post-title">
                     Mismatch in Pyparted Interfaces
@@ -2026,35 +2080,6 @@ my next post.</p>
                  on Tue 24 November 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/11/24/python-libs-in-rhel-7.2-broke-ssl-verification-in-s3cmd/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/" rel="bookmark" title="Permalink to GitHub Bugzilla Hook">
-                <h2 class="post-title">
-                    GitHub Bugzilla Hook
-                </h2>
-            </a>
-                <p>Last month I've created a tool which adds comments to Bugzilla when a commit
-message references a bug number. It was done as a proof of concept and didn't
-receive much attention at the time. Today I'm happy to announce the existence
-of <a href="https://github.com/atodorov/github-bugzilla-hook">GitHub Bugzilla Hook</a>.</p>
-<p>I've used David Shea's
-<a href="https://github.com/rhinstaller/github-email-hook/">GitHub Email Hook</a> as my
-starting template and only modified it where needed. GitHub Bugzilla Hook will
-examine push data and post comments for every unique bug+branch combination.
-Once a comment for that particular bug+branch combination is made, new ones
-will not be posted, even if later commits reference the same bug.
-My main assumption is commits which are related to a bug will be pushed together
-most of the times so there shouldn't be lots of noise in Bugzilla.</p>
-<p>See <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1274703">rhbz#1274703</a> for
-example of how the comments look. The parser behavior is taken from anaconda
-and conforms to the style the Red Hat Installer Engineering Team uses.
-Hopefully you find it useful as well.</p>
-<p>My next step is to find a hosting place for this script and hook it up
-with the rhinstaller GitHub repos!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 24 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/24/github-bugzilla-hook/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
