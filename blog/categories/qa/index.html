@@ -90,6 +90,96 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/" rel="bookmark" title="Permalink to Automatic cargo update & pull requests for Rust projects">
+                <h2 class="post-title">
+                    Automatic cargo update & pull requests for Rust projects
+                </h2>
+            </a>
+                <p>If you follow my blog you are aware that I use automated tools to do some
+boring tasks instead of me. For example they can detect when new versions of
+dependencies I'm using are available and then schedule testing against them on the fly.</p>
+<p>One of these tools is
+<a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/">Strazar</a>
+which I use heavily for my Django based packages.
+Example: <a href="https://travis-ci.org/atodorov/django-s3-cache/builds/218758538">django-s3-cache build job</a>.</p>
+<p>Recently I've made a slightly different proof-of-concept for a Rust project.
+Because rustc and various dependencies (called crates) are updated very often
+we didn't want to expand the test matrix like Strazar does. Instead we wanted to
+always build &amp; test against the latest crates versions and if that passes
+create a pull request for the update (in <code>Cargo.lock</code>). All of this unattended
+of course!</p>
+<p>To start create a cron job in Travis CI which will execute once per day and call your
+test script. The script looks like this:</p>
+<div class="highlight"><span class="filename">cargo-update-and-pr</span><pre><span class="c">#!/bin/bash</span>
+
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;</span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&quot;GITHUB_TOKEN is not defined&quot;</span>
+    <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="nv">BRANCH_NAME</span><span class="o">=</span><span class="s2">&quot;automated_cargo_update&quot;</span>
+
+git checkout -b <span class="nv">$BRANCH_NAME</span>
+cargo update <span class="o">&amp;&amp;</span> cargo <span class="nb">test</span>
+
+<span class="nv">DIFF</span><span class="o">=</span><span class="sb">`</span>git diff<span class="sb">`</span>
+<span class="c"># NOTE: we don&#39;t really check the result from testing here. Only that</span>
+<span class="c"># something has been changed, e.g. Cargo.lock</span>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;</span><span class="nv">$DIFF</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="c"># configure git authorship</span>
+    git config --global user.email <span class="s2">&quot;atodorov@MrSenko.com&quot;</span>
+    git config --global user.name <span class="s2">&quot;Alexander Todorov&quot;</span>
+
+    <span class="c"># add a remote with read/write permissions!</span>
+    <span class="c"># use token authentication instead of password</span>
+    git remote add authenticated https://atodorov:<span class="nv">$GITHUB_TOKEN</span>@github.com/atodorov/bdcs-api-rs.git
+
+    <span class="c"># commit the changes to Cargo.lock</span>
+    git commit -a -m <span class="s2">&quot;Auto-update cargo crates&quot;</span>
+
+    <span class="c"># push the changes so that PR API has something to compare against</span>
+    git push authenticated <span class="nv">$BRANCH_NAME</span>
+
+    <span class="c"># finally create the PR</span>
+    curl -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> -H <span class="s2">&quot;Authorization: token </span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+         --data <span class="s1">&#39;{&quot;title&quot;:&quot;Auto-update cargo crates&quot;,&quot;head&quot;:&quot;automated_cargo_update&quot;,&quot;base&quot;:&quot;master&quot;, &quot;body&quot;:&quot;@atodorov review&quot;}&#39;</span> <span class="se">\</span>
+         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
+<span class="k">fi</span>
+</pre></div>
+
+
+<p>A few notes here:</p>
+<ul>
+<li>You need to define a secret <code>GITHUB_TOKEN</code> variable for authentication;</li>
+<li>The script doesn't force push, but in practice that may be useful (e.g. updating the PR);</li>
+<li>The script doesn't have any error handling;</li>
+<li>If PR is still open GitHub will tell us about it but we ignore the result here;</li>
+<li><strong>DON'T</strong> paste this into your <code>Makefile</code> because the <code>GITHUB_TOKEN</code> variable will be
+  expanded into the logs and your secrets go away! Always call the script from your
+  <code>Makefile</code> to avoid revealing secrets.</li>
+<li>I am using topic branches because this is a POC. Switch to <em>master</em> and maybe move
+  all URLs as variables at the top of the script!</li>
+<li>I run this cron build against a fork of the project because the team doesn't feel
+  comfortable having automated commits/pushes. I also create the pull requests against
+  my own fork. You will have to adjust the targets if you want your PR to go to the
+  original repository.</li>
+</ul>
+<p>Here is the PR which was created by this script:
+<a href="https://github.com/atodorov/bdcs-api-rs/pull/5">https://github.com/atodorov/bdcs-api-rs/pull/5</a></p>
+<p>Notice that it includes previous commits b/c they have not been merged to the master branch!</p>
+<p>Here's the test job (#77) which generated this PR:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916">https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916</a></p>
+<p>Here's a test job (#87) which bails out miserably because the PR already exists:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269">https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269</a></p>
+<p>This post is part of my <em>Quality Assurance According to Einstein</em> series - a detailed description
+of useful techniques I will be presenting very soon.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 15 April 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="bookmark" title="Permalink to Mutation Testing vs. Coverage, Pt. 2">
                 <h2 class="post-title">
                     Mutation Testing vs. Coverage, Pt. 2
@@ -2267,49 +2357,6 @@ read my other posts on the topic:</p>
                  on Fri 03 June 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/06/03/how-to-hire-software-testers-pt-3/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/" rel="bookmark" title="Permalink to Capybara's find().click doesn't always fire onClick">
-                <h2 class="post-title">
-                    Capybara's find().click doesn't always fire onClick
-                </h2>
-            </a>
-                <p>Recently I've observed a strange behavior in one of the test suites I'm
-working with - a test which submits a web form appeared to fail at a rate
-between 10% and 30%. This immediately made me think there is some kind of
-race-condition but it turned out that Capybara's <code>find().click</code> method
-doesn't always fire the onClick event in the browser!</p>
-<p>The test suite uses Capybara, Poltergeist and PhantomJS. The element we
-click on is an image, coupled to a hidden check-box underneath. When the image
-is clicked onClick is fired and the check-box is updated accordingly. In the
-failed cases the underlying check-box wasn't updated!
-Searching the web reveals a similar problem described by
-<a href="http://aokolish.me/blog/2012/01/22/testing-hover-events-with-capybara/">Alex Okolish</a>
-so we've tried his solution:</p>
-<div class="highlight"><pre><span class="n">div</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.replacement&#39;</span><span class="p">,</span> <span class="ss">visible</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span><span class="o">.</span><span class="n">trigger</span><span class="p">(</span><span class="ss">:click</span><span class="p">)</span>
-</pre></div>
-
-
-<h2>How to Test</h2>
-<p>The failure behavior being somewhat flaky I've opted for running the
-test multiple times and see what happens when it fails. Initially I've
-executed the test in batches of 10 and 20 repetitions to get a feeling
-of how often does it fail before proceeding with debugging. Debugging
-was done by logging variables and state on the console and repeating
-multiple times. Once a possible solution was
-proposed we've run the tests in batches of 100 repetitions and counted
-how often they failed.</p>
-<p>At the end, when Alex's solution was discovered we've repeated the
-testing around 1000 times just to make sure it works reliably.
-So far this has been working without issues!</p>
-<p>I've spent around a week working on this together with a co-worker
-and we didn't really want to spend more time trying to figure out
-what was going wrong with our tools. Once we saw that <code>trigger</code> does
-the job we didn't continue debugging Capybara or PhantomJS.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 31 May 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/05/31/capybaras-findclick-doesnt-always-fire-onclick/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -2318,7 +2365,7 @@ the job we didn't continue debugging Capybara or PhantomJS.</p>
                 <a href="http://atodorov.org/blog/categories/qa/index2.html">Older Posts &rarr;</a>
         </li>
     </ul>
-    Page 1 / 5
+    Page 1 / 6
     <hr>
             </div>
         </div>

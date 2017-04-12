@@ -97,6 +97,96 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/" rel="bookmark" title="Permalink to Automatic cargo update & pull requests for Rust projects">
+                <h2 class="post-title">
+                    Automatic cargo update & pull requests for Rust projects
+                </h2>
+            </a>
+                <p>If you follow my blog you are aware that I use automated tools to do some
+boring tasks instead of me. For example they can detect when new versions of
+dependencies I'm using are available and then schedule testing against them on the fly.</p>
+<p>One of these tools is
+<a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/">Strazar</a>
+which I use heavily for my Django based packages.
+Example: <a href="https://travis-ci.org/atodorov/django-s3-cache/builds/218758538">django-s3-cache build job</a>.</p>
+<p>Recently I've made a slightly different proof-of-concept for a Rust project.
+Because rustc and various dependencies (called crates) are updated very often
+we didn't want to expand the test matrix like Strazar does. Instead we wanted to
+always build &amp; test against the latest crates versions and if that passes
+create a pull request for the update (in <code>Cargo.lock</code>). All of this unattended
+of course!</p>
+<p>To start create a cron job in Travis CI which will execute once per day and call your
+test script. The script looks like this:</p>
+<div class="highlight"><span class="filename">cargo-update-and-pr</span><pre><span class="c">#!/bin/bash</span>
+
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;</span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&quot;GITHUB_TOKEN is not defined&quot;</span>
+    <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="nv">BRANCH_NAME</span><span class="o">=</span><span class="s2">&quot;automated_cargo_update&quot;</span>
+
+git checkout -b <span class="nv">$BRANCH_NAME</span>
+cargo update <span class="o">&amp;&amp;</span> cargo <span class="nb">test</span>
+
+<span class="nv">DIFF</span><span class="o">=</span><span class="sb">`</span>git diff<span class="sb">`</span>
+<span class="c"># NOTE: we don&#39;t really check the result from testing here. Only that</span>
+<span class="c"># something has been changed, e.g. Cargo.lock</span>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;</span><span class="nv">$DIFF</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="c"># configure git authorship</span>
+    git config --global user.email <span class="s2">&quot;atodorov@MrSenko.com&quot;</span>
+    git config --global user.name <span class="s2">&quot;Alexander Todorov&quot;</span>
+
+    <span class="c"># add a remote with read/write permissions!</span>
+    <span class="c"># use token authentication instead of password</span>
+    git remote add authenticated https://atodorov:<span class="nv">$GITHUB_TOKEN</span>@github.com/atodorov/bdcs-api-rs.git
+
+    <span class="c"># commit the changes to Cargo.lock</span>
+    git commit -a -m <span class="s2">&quot;Auto-update cargo crates&quot;</span>
+
+    <span class="c"># push the changes so that PR API has something to compare against</span>
+    git push authenticated <span class="nv">$BRANCH_NAME</span>
+
+    <span class="c"># finally create the PR</span>
+    curl -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> -H <span class="s2">&quot;Authorization: token </span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+         --data <span class="s1">&#39;{&quot;title&quot;:&quot;Auto-update cargo crates&quot;,&quot;head&quot;:&quot;automated_cargo_update&quot;,&quot;base&quot;:&quot;master&quot;, &quot;body&quot;:&quot;@atodorov review&quot;}&#39;</span> <span class="se">\</span>
+         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
+<span class="k">fi</span>
+</pre></div>
+
+
+<p>A few notes here:</p>
+<ul>
+<li>You need to define a secret <code>GITHUB_TOKEN</code> variable for authentication;</li>
+<li>The script doesn't force push, but in practice that may be useful (e.g. updating the PR);</li>
+<li>The script doesn't have any error handling;</li>
+<li>If PR is still open GitHub will tell us about it but we ignore the result here;</li>
+<li><strong>DON'T</strong> paste this into your <code>Makefile</code> because the <code>GITHUB_TOKEN</code> variable will be
+  expanded into the logs and your secrets go away! Always call the script from your
+  <code>Makefile</code> to avoid revealing secrets.</li>
+<li>I am using topic branches because this is a POC. Switch to <em>master</em> and maybe move
+  all URLs as variables at the top of the script!</li>
+<li>I run this cron build against a fork of the project because the team doesn't feel
+  comfortable having automated commits/pushes. I also create the pull requests against
+  my own fork. You will have to adjust the targets if you want your PR to go to the
+  original repository.</li>
+</ul>
+<p>Here is the PR which was created by this script:
+<a href="https://github.com/atodorov/bdcs-api-rs/pull/5">https://github.com/atodorov/bdcs-api-rs/pull/5</a></p>
+<p>Notice that it includes previous commits b/c they have not been merged to the master branch!</p>
+<p>Here's the test job (#77) which generated this PR:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916">https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916</a></p>
+<p>Here's a test job (#87) which bails out miserably because the PR already exists:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269">https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269</a></p>
+<p>This post is part of my <em>Quality Assurance According to Einstein</em> series - a detailed description
+of useful techniques I will be presenting very soon.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 15 April 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="bookmark" title="Permalink to Mutation Testing vs. Coverage, Pt. 2">
                 <h2 class="post-title">
                     Mutation Testing vs. Coverage, Pt. 2
@@ -2342,129 +2432,6 @@ We are going to host a discussion on October 18th so stay tuned!</p>
                  on Fri 07 October 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/10/07/petar-sabev-on-test-automation/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/09/26/what-i-learned-from-euruko-2016/" rel="bookmark" title="Permalink to What I Learned from EuRuKo 2016">
-                <h2 class="post-title">
-                    What I Learned from EuRuKo 2016
-                </h2>
-            </a>
-                <p><img alt="EuRuKo 2016" src="/images/euruko2016.jpg" title="EuRuKo 2016" /></p>
-<p>As my frequent readers may know I try to summarize all the conferences
-and events I go to. This year's EuRuKo inspired me to take a different
-approach and instead of quickly summarizing the event I will try to
-highlight what I have learned from it! My intention is to use this as a
-tool to improve my skills and the work I do. It will probably be a long
-post so here we go.</p>
-<p>Let me say that I don't consider myself a Ruby developer although I do
-write a small amount of Ruby code. I also don't really consider myself a
-developer although I have a formal degree in software engineering and do
-my fair share of open source contributions.</p>
-<p>Being different and thinking differently has always been helpful to me in
-Quality Assurance and this time was no exception. Attending a conference
-I knew nothing about and meeting with people whose job is totally different
-than mine turned out to be my greatest experience on the conference circuit
-this year.</p>
-<h2>Lesson 1</h2>
-<p><strong>Get out of the comfort zone, meet new
-people, exchange ideas and learn!</strong> The very fact that I am writing this post
-not following my usual summary style proves this is working.</p>
-<p>Very early during the event I started to notice a recurring theme which grew
-stronger by the minute. The Ruby community is very open and inclusive to newcomers
-and they seem to be doing a very good job about on-boarding everyone who wants to
-learn. I already wrote about Ivan Nemitchenko's
-<a href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/">experience of organizing remote internships</a>
-and there are also the Rails Girls local communities, the 
-<a href="http://railsgirlssummerofcode.org/">Rails Girls Summer of Code</a> (didn't know about it)
-and the various local Ruby communities who pitched their cities to host the next
-EuRuKo. I really loved this feeling of community. In the broader Linux, Python and
-QA world I have not seen this being so pronounced.</p>
-<h2>Lesson 2</h2>
-<p><strong>Open up (the open source) community even more. Make it easier for newcomers to join!
-Treat them as human and don't expect them to be like yourself. Do teach and mentor
-both to help newcomers but also to help yourself become better!</strong></p>
-<p>This is mostly on par with my community work but I think I can do better. I will take
-the time to evaluate what I've been doing in the past and identify areas for improvements.
-I also encourage my readers and students to send me feedback as well.</p>
-<p>I've also learned that junior developers can make meaningful
-contributions to production grade code when they are given the appropriate set of tasks
-and guidance. Stephanie Nemeth argued that companies should hire (more) enthusiastic
-career changers as junior developers because they have very strong motivation for
-success.</p>
-<h2>Lesson 3</h2>
-<p><strong>Re-evaluate how we look at junior developers, especially how we examine and hire them
-and how we on-board them</strong>.</p>
-<p>Both lessons 2 and 3 are valid in the open source world and even more so in the
-corporate world.</p>
-<p>I also liked the fact that some of the lightning talks were given by people who
-had no previous experience in Ruby. @TeamJoda2016 talked about what they did and
-learn throughout the summer and really cracked the room with their
-"oh and btw we are looking for a job" as their final slide!</p>
-<h2>Lesson 4</h2>
-<p><strong>If you are new/inexperienced at something don't be afraid to try it out. Give it
-the best you've got and see how it goes. Worst case .... well nothing bad really happens,
-best case you end up doing the best job in your life.</strong> That's also been my
-<a href="http://atodorov.org/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">personal experience with software testing</a>.</p>
-<p>Carina C. Zona's <em>Consequences Of An Insightful Algorithm</em>
-(old video <a href="https://www.youtube.com/watch?v=NheE6udjfGI&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;index=28">here</a>)
-dealt with the ethical
-responsibilities of us as developers and this is becoming more common with deep learning neural networks.</p>
-<h2>Lesson 5</h2>
-<p><strong>We’re able to extract remarkably precise
-intuitions about an individual. But do we have a right to know what they didn’t
-consent to share, even when they willingly shared the data that leads us there?</strong></p>
-<p>Krissy's <em>The HTT(Pancake) Request</em> made a great analogy of consuming APIs with
-your customer experience when visiting a restaurant.</p>
-<h2>Lesson 6</h2>
-<p><strong>Design APIs (software in general) as if that was a physical product where your
-customers happiness matters</strong>. We see this all the time in our daily jobs and we're
-guilty of doing it as well. Btw at the moment I'm in the middle of huge refactoring
-of <a href="https://github.com/chartit/django-chartit">django-chartit</a> which breaks all
-backwards compatibility. I guess I will have to re-evaluate my design and approach.</p>
-<p>By accident I've made good friends with Alex Georgiev and the folks at Fyber.
-I liked the fact that at the conference they had couple of people
-working in QA and we managed to have a nice talk about QA vs developers and the transformation
-between the two. That also touched on the bigger subject of testers not being able to
-code and testers not being available for hire.</p>
-<h2>Lesson 7</h2>
-<p><strong>Driving people to improve their skills (learn to code, write tests, etc) is possible
-but needs to come from management, needs clear direction and also a little bit of peer pressure.</strong></p>
-<p>After all isn't that what an agile team is supposed to be ?</p>
-<p>Now being the able to code, not entirely Ruby ignorant QA guy that I am I was
-immediately offered several positions in London and Berlin (and no I'm still staying
-in Sofia). As it turned out good QA engineers with good development skills are
-in greater demand than developers not only in Sofia but all around the world!</p>
-<h2>Lesson 8</h2>
-<p><strong>Fellow QA guys, please do learn to program. Dear developers, please try thinking
-more like a tester the next time you write code</strong> (me included).</p>
-<p>Hiring a barista and furnishing your company stand with the best coffee machine
-you can afford while having an ugly hand written sign saying "MAIN CONFERENCE COFFEE -&gt;"
-is a marketing stunt that I really love. I'm not sure how well that worked for their
-hiring but it got them visibility. I'm definitely stealing this one!</p>
-<h2>Lesson 9</h2>
-<p><strong>Conference coffee sucks. Provide better one and developers will queue at your stand.
-To a greater extent - research your target and their needs and provide a product
-that solves their problem.</strong></p>
-<h2>What we gave back</h2>
-<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr"><a href="https://twitter.com/hashtag/banitsa?src=hash">#banitsa</a> is a blessing for hang over <a href="https://twitter.com/hashtag/euruko?src=hash">#euruko</a></p>&mdash; Monica (@KFMolli) <a href="https://twitter.com/KFMolli/status/779582699291934720">September 24, 2016</a></blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-<p>indeed Monica it is. Here's the secret sauce</p>
-<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Thanks a lot <a href="https://twitter.com/euruko">@euruko</a> to share the recipes for <a href="https://twitter.com/hashtag/boza?src=hash">#boza</a> and <a href="https://twitter.com/hashtag/banitsa?src=hash">#banitsa</a> <a href="https://twitter.com/hashtag/euruko?src=hash">#euruko</a> <a href="https://twitter.com/hashtag/bulgary?src=hash">#bulgary</a> <a href="https://t.co/MrkpD4jxve">pic.twitter.com/MrkpD4jxve</a></p>&mdash; Matteo Piotto (@c1p8) <a href="https://twitter.com/c1p8/status/779323219765592066">September 23, 2016</a></blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-<p>My personal contribution back was telling Yammer and Deliveroo about mutation
-testing and pointing them to the right tools and videos on the subject. I wish
-them good luck and happy testing.</p>
-<p><strong>NOTE:</strong> I will be speaking about mutation testing at
-several different events in Bulgaria in the next 2 months so make sure to find
-me if you want to chat.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 26 September 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/09/26/what-i-learned-from-euruko-2016/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

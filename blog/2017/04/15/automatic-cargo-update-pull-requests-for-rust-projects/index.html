@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-        <meta charset="utf-8">
+            <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
             <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
 
-        <title>atodorov.org - Authors</title>
+        <title>Automatic cargo update & pull requests for Rust projects</title>
 
         <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
         <!-- Bootstrap Core CSS -->
@@ -35,14 +35,34 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-                <meta property="fb:admins" content="1616937247" >
+
+
+        <meta name="description" content="If you follow my blog you are aware that I use automated tools to do some boring tasks instead of me. For example they can detect when ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="QA">
+        <meta name="tags" content="fedora.planet">
+
+	                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-            <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:site" content="@atodorov_">
-            <meta name="twitter:title" content="atodorov.org">
-            <meta name="twitter:description" content="you can logoff, but you can never leave">
-                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/">
+	<meta property="og:title" content="Automatic cargo update & pull requests for Rust projects">
+	<meta property="article:published_time" content="2017-04-15 23:18:00+03:00">
+            <meta property="og:description" content="If you follow my blog you are aware that I use automated tools to do some boring tasks instead of me. For example they can detect when ...">
+
+            <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Automatic cargo update & pull requests for Rust projects">
+
+            <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+            <meta name="twitter:description" content="If you follow my blog you are aware that I use automated tools to do some boring tasks instead of me. For example they can detect when ...">
 </head>
 
 <body>
@@ -79,7 +99,12 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>Articles by </h1>
+                        <h1>Automatic cargo update & pull requests for Rust projects</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sat 15 April 2017
+                        </span>
+                        
                     </div>
                 </div>
             </div>
@@ -90,14 +115,143 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-preview">
-            <a href="http://atodorov.org/author/alexander-todorov.html" rel="bookmark">
-                <h2 class="post-title">
-                    Alexander Todorov (275)
-                </h2>
-            </a>
+    <!-- Post Content -->
+    <article>
+        <p>If you follow my blog you are aware that I use automated tools to do some
+boring tasks instead of me. For example they can detect when new versions of
+dependencies I'm using are available and then schedule testing against them on the fly.</p>
+<p>One of these tools is
+<a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/">Strazar</a>
+which I use heavily for my Django based packages.
+Example: <a href="https://travis-ci.org/atodorov/django-s3-cache/builds/218758538">django-s3-cache build job</a>.</p>
+<p>Recently I've made a slightly different proof-of-concept for a Rust project.
+Because rustc and various dependencies (called crates) are updated very often
+we didn't want to expand the test matrix like Strazar does. Instead we wanted to
+always build &amp; test against the latest crates versions and if that passes
+create a pull request for the update (in <code>Cargo.lock</code>). All of this unattended
+of course!</p>
+<p>To start create a cron job in Travis CI which will execute once per day and call your
+test script. The script looks like this:</p>
+<div class="highlight"><span class="filename">cargo-update-and-pr</span><pre><span class="c">#!/bin/bash</span>
+
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;</span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&quot;GITHUB_TOKEN is not defined&quot;</span>
+    <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="nv">BRANCH_NAME</span><span class="o">=</span><span class="s2">&quot;automated_cargo_update&quot;</span>
+
+git checkout -b <span class="nv">$BRANCH_NAME</span>
+cargo update <span class="o">&amp;&amp;</span> cargo <span class="nb">test</span>
+
+<span class="nv">DIFF</span><span class="o">=</span><span class="sb">`</span>git diff<span class="sb">`</span>
+<span class="c"># NOTE: we don&#39;t really check the result from testing here. Only that</span>
+<span class="c"># something has been changed, e.g. Cargo.lock</span>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;</span><span class="nv">$DIFF</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="c"># configure git authorship</span>
+    git config --global user.email <span class="s2">&quot;atodorov@MrSenko.com&quot;</span>
+    git config --global user.name <span class="s2">&quot;Alexander Todorov&quot;</span>
+
+    <span class="c"># add a remote with read/write permissions!</span>
+    <span class="c"># use token authentication instead of password</span>
+    git remote add authenticated https://atodorov:<span class="nv">$GITHUB_TOKEN</span>@github.com/atodorov/bdcs-api-rs.git
+
+    <span class="c"># commit the changes to Cargo.lock</span>
+    git commit -a -m <span class="s2">&quot;Auto-update cargo crates&quot;</span>
+
+    <span class="c"># push the changes so that PR API has something to compare against</span>
+    git push authenticated <span class="nv">$BRANCH_NAME</span>
+
+    <span class="c"># finally create the PR</span>
+    curl -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> -H <span class="s2">&quot;Authorization: token </span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+         --data <span class="s1">&#39;{&quot;title&quot;:&quot;Auto-update cargo crates&quot;,&quot;head&quot;:&quot;automated_cargo_update&quot;,&quot;base&quot;:&quot;master&quot;, &quot;body&quot;:&quot;@atodorov review&quot;}&#39;</span> <span class="se">\</span>
+         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
+<span class="k">fi</span>
+</pre></div>
+
+
+<p>A few notes here:</p>
+<ul>
+<li>You need to define a secret <code>GITHUB_TOKEN</code> variable for authentication;</li>
+<li>The script doesn't force push, but in practice that may be useful (e.g. updating the PR);</li>
+<li>The script doesn't have any error handling;</li>
+<li>If PR is still open GitHub will tell us about it but we ignore the result here;</li>
+<li><strong>DON'T</strong> paste this into your <code>Makefile</code> because the <code>GITHUB_TOKEN</code> variable will be
+  expanded into the logs and your secrets go away! Always call the script from your
+  <code>Makefile</code> to avoid revealing secrets.</li>
+<li>I am using topic branches because this is a POC. Switch to <em>master</em> and maybe move
+  all URLs as variables at the top of the script!</li>
+<li>I run this cron build against a fork of the project because the team doesn't feel
+  comfortable having automated commits/pushes. I also create the pull requests against
+  my own fork. You will have to adjust the targets if you want your PR to go to the
+  original repository.</li>
+</ul>
+<p>Here is the PR which was created by this script:
+<a href="https://github.com/atodorov/bdcs-api-rs/pull/5">https://github.com/atodorov/bdcs-api-rs/pull/5</a></p>
+<p>Notice that it includes previous commits b/c they have not been merged to the master branch!</p>
+<p>Here's the test job (#77) which generated this PR:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916">https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916</a></p>
+<p>Here's a test job (#87) which bails out miserably because the PR already exists:
+<a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269">https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269</a></p>
+<p>This post is part of my <em>Quality Assurance According to Einstein</em> series - a detailed description
+of useful techniques I will be presenting very soon.</p>
+<p>Thanks for reading and happy testing!</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/qa/">QA</a>, <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a></p>
         </div>
-        <hr>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/';
+                var disqus_url = 'http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
             </div>
         </div>
     </div>

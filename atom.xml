@@ -1,5 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-04-05T09:18:00+03:00</updated><entry><title>Mutation Testing vs. Coverage, Pt. 2</title><link href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="alternate"></link><updated>2017-04-05T09:18:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-05:blog/2017/04/05/mutation-testing-vs-coverage-pt-2/</id><summary type="html">&lt;p&gt;In a &lt;a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/"&gt;previous post&lt;/a&gt; I
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-04-15T23:18:00+03:00</updated><entry><title>Automatic cargo update &amp; pull requests for Rust projects</title><link href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/" rel="alternate"></link><updated>2017-04-15T23:18:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-15:blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/</id><summary type="html">&lt;p&gt;If you follow my blog you are aware that I use automated tools to do some
+boring tasks instead of me. For example they can detect when new versions of
+dependencies I'm using are available and then schedule testing against them on the fly.&lt;/p&gt;
+&lt;p&gt;One of these tools is
+&lt;a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/"&gt;Strazar&lt;/a&gt;
+which I use heavily for my Django based packages.
+Example: &lt;a href="https://travis-ci.org/atodorov/django-s3-cache/builds/218758538"&gt;django-s3-cache build job&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Recently I've made a slightly different proof-of-concept for a Rust project.
+Because rustc and various dependencies (called crates) are updated very often
+we didn't want to expand the test matrix like Strazar does. Instead we wanted to
+always build &amp;amp; test against the latest crates versions and if that passes
+create a pull request for the update (in &lt;code&gt;Cargo.lock&lt;/code&gt;). All of this unattended
+of course!&lt;/p&gt;
+&lt;p&gt;To start create a cron job in Travis CI which will execute once per day and call your
+test script. The script looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;cargo-update-and-pr&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt; -z &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+    &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;GITHUB_TOKEN is not defined&amp;quot;&lt;/span&gt;
+    &lt;span class="nb"&gt;exit &lt;/span&gt;1
+&lt;span class="k"&gt;fi&lt;/span&gt;
+
+&lt;span class="nv"&gt;BRANCH_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;automated_cargo_update&amp;quot;&lt;/span&gt;
+
+git checkout -b &lt;span class="nv"&gt;$BRANCH_NAME&lt;/span&gt;
+cargo update &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; cargo &lt;span class="nb"&gt;test&lt;/span&gt;
+
+&lt;span class="nv"&gt;DIFF&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;git diff&lt;span class="sb"&gt;`&lt;/span&gt;
+&lt;span class="c"&gt;# NOTE: we don&amp;#39;t really check the result from testing here. Only that&lt;/span&gt;
+&lt;span class="c"&gt;# something has been changed, e.g. Cargo.lock&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt; -n &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$DIFF&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+    &lt;span class="c"&gt;# configure git authorship&lt;/span&gt;
+    git config --global user.email &lt;span class="s2"&gt;&amp;quot;atodorov@MrSenko.com&amp;quot;&lt;/span&gt;
+    git config --global user.name &lt;span class="s2"&gt;&amp;quot;Alexander Todorov&amp;quot;&lt;/span&gt;
+
+    &lt;span class="c"&gt;# add a remote with read/write permissions!&lt;/span&gt;
+    &lt;span class="c"&gt;# use token authentication instead of password&lt;/span&gt;
+    git remote add authenticated https://atodorov:&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;@github.com/atodorov/bdcs-api-rs.git
+
+    &lt;span class="c"&gt;# commit the changes to Cargo.lock&lt;/span&gt;
+    git commit -a -m &lt;span class="s2"&gt;&amp;quot;Auto-update cargo crates&amp;quot;&lt;/span&gt;
+
+    &lt;span class="c"&gt;# push the changes so that PR API has something to compare against&lt;/span&gt;
+    git push authenticated &lt;span class="nv"&gt;$BRANCH_NAME&lt;/span&gt;
+
+    &lt;span class="c"&gt;# finally create the PR&lt;/span&gt;
+    curl -X POST -H &lt;span class="s2"&gt;&amp;quot;Content-Type: application/json&amp;quot;&lt;/span&gt; -H &lt;span class="s2"&gt;&amp;quot;Authorization: token &lt;/span&gt;&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+         --data &lt;span class="s1"&gt;&amp;#39;{&amp;quot;title&amp;quot;:&amp;quot;Auto-update cargo crates&amp;quot;,&amp;quot;head&amp;quot;:&amp;quot;automated_cargo_update&amp;quot;,&amp;quot;base&amp;quot;:&amp;quot;master&amp;quot;, &amp;quot;body&amp;quot;:&amp;quot;@atodorov review&amp;quot;}&amp;#39;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
+&lt;span class="k"&gt;fi&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;A few notes here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You need to define a secret &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; variable for authentication;&lt;/li&gt;
+&lt;li&gt;The script doesn't force push, but in practice that may be useful (e.g. updating the PR);&lt;/li&gt;
+&lt;li&gt;The script doesn't have any error handling;&lt;/li&gt;
+&lt;li&gt;If PR is still open GitHub will tell us about it but we ignore the result here;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;DON'T&lt;/strong&gt; paste this into your &lt;code&gt;Makefile&lt;/code&gt; because the &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; variable will be
+  expanded into the logs and your secrets go away! Always call the script from your
+  &lt;code&gt;Makefile&lt;/code&gt; to avoid revealing secrets.&lt;/li&gt;
+&lt;li&gt;I am using topic branches because this is a POC. Switch to &lt;em&gt;master&lt;/em&gt; and maybe move
+  all URLs as variables at the top of the script!&lt;/li&gt;
+&lt;li&gt;I run this cron build against a fork of the project because the team doesn't feel
+  comfortable having automated commits/pushes. I also create the pull requests against
+  my own fork. You will have to adjust the targets if you want your PR to go to the
+  original repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Here is the PR which was created by this script:
+&lt;a href="https://github.com/atodorov/bdcs-api-rs/pull/5"&gt;https://github.com/atodorov/bdcs-api-rs/pull/5&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Notice that it includes previous commits b/c they have not been merged to the master branch!&lt;/p&gt;
+&lt;p&gt;Here's the test job (#77) which generated this PR:
+&lt;a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916"&gt;https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Here's a test job (#87) which bails out miserably because the PR already exists:
+&lt;a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269"&gt;https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This post is part of my &lt;em&gt;Quality Assurance According to Einstein&lt;/em&gt; series - a detailed description
+of useful techniques I will be presenting very soon.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Mutation Testing vs. Coverage, Pt. 2</title><link href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="alternate"></link><updated>2017-04-05T09:18:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-05:blog/2017/04/05/mutation-testing-vs-coverage-pt-2/</id><summary type="html">&lt;p&gt;In a &lt;a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/"&gt;previous post&lt;/a&gt; I
 have shown an example of real world bugs which we were not able to detect
 despite having 100% mutation and test coverage. I am going to show you another
 example here.&lt;/p&gt;
@@ -2017,115 +2095,4 @@ I'm also in favor of using the snake chart as a tool to distribute
 automation tasks within the team.&lt;/p&gt;
 &lt;p&gt;If you'd like to hear more about Peter's and mine views on manual vs. automated
 testing be sure to follow &lt;a href="http://dev.bg"&gt;DEV.bg&lt;/a&gt;.
-We are going to host a discussion on October 18th so stay tuned!&lt;/p&gt;</summary></entry><entry><title>What I Learned from EuRuKo 2016</title><link href="http://atodorov.org/blog/2016/09/26/what-i-learned-from-euruko-2016/" rel="alternate"></link><updated>2016-09-26T01:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-09-26:blog/2016/09/26/what-i-learned-from-euruko-2016/</id><summary type="html">&lt;p&gt;&lt;img alt="EuRuKo 2016" src="/images/euruko2016.jpg" title="EuRuKo 2016" /&gt;&lt;/p&gt;
-&lt;p&gt;As my frequent readers may know I try to summarize all the conferences
-and events I go to. This year's EuRuKo inspired me to take a different
-approach and instead of quickly summarizing the event I will try to
-highlight what I have learned from it! My intention is to use this as a
-tool to improve my skills and the work I do. It will probably be a long
-post so here we go.&lt;/p&gt;
-&lt;p&gt;Let me say that I don't consider myself a Ruby developer although I do
-write a small amount of Ruby code. I also don't really consider myself a
-developer although I have a formal degree in software engineering and do
-my fair share of open source contributions.&lt;/p&gt;
-&lt;p&gt;Being different and thinking differently has always been helpful to me in
-Quality Assurance and this time was no exception. Attending a conference
-I knew nothing about and meeting with people whose job is totally different
-than mine turned out to be my greatest experience on the conference circuit
-this year.&lt;/p&gt;
-&lt;h2&gt;Lesson 1&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Get out of the comfort zone, meet new
-people, exchange ideas and learn!&lt;/strong&gt; The very fact that I am writing this post
-not following my usual summary style proves this is working.&lt;/p&gt;
-&lt;p&gt;Very early during the event I started to notice a recurring theme which grew
-stronger by the minute. The Ruby community is very open and inclusive to newcomers
-and they seem to be doing a very good job about on-boarding everyone who wants to
-learn. I already wrote about Ivan Nemitchenko's
-&lt;a href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/"&gt;experience of organizing remote internships&lt;/a&gt;
-and there are also the Rails Girls local communities, the 
-&lt;a href="http://railsgirlssummerofcode.org/"&gt;Rails Girls Summer of Code&lt;/a&gt; (didn't know about it)
-and the various local Ruby communities who pitched their cities to host the next
-EuRuKo. I really loved this feeling of community. In the broader Linux, Python and
-QA world I have not seen this being so pronounced.&lt;/p&gt;
-&lt;h2&gt;Lesson 2&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Open up (the open source) community even more. Make it easier for newcomers to join!
-Treat them as human and don't expect them to be like yourself. Do teach and mentor
-both to help newcomers but also to help yourself become better!&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;This is mostly on par with my community work but I think I can do better. I will take
-the time to evaluate what I've been doing in the past and identify areas for improvements.
-I also encourage my readers and students to send me feedback as well.&lt;/p&gt;
-&lt;p&gt;I've also learned that junior developers can make meaningful
-contributions to production grade code when they are given the appropriate set of tasks
-and guidance. Stephanie Nemeth argued that companies should hire (more) enthusiastic
-career changers as junior developers because they have very strong motivation for
-success.&lt;/p&gt;
-&lt;h2&gt;Lesson 3&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Re-evaluate how we look at junior developers, especially how we examine and hire them
-and how we on-board them&lt;/strong&gt;.&lt;/p&gt;
-&lt;p&gt;Both lessons 2 and 3 are valid in the open source world and even more so in the
-corporate world.&lt;/p&gt;
-&lt;p&gt;I also liked the fact that some of the lightning talks were given by people who
-had no previous experience in Ruby. @TeamJoda2016 talked about what they did and
-learn throughout the summer and really cracked the room with their
-"oh and btw we are looking for a job" as their final slide!&lt;/p&gt;
-&lt;h2&gt;Lesson 4&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;If you are new/inexperienced at something don't be afraid to try it out. Give it
-the best you've got and see how it goes. Worst case .... well nothing bad really happens,
-best case you end up doing the best job in your life.&lt;/strong&gt; That's also been my
-&lt;a href="http://atodorov.org/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/"&gt;personal experience with software testing&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Carina C. Zona's &lt;em&gt;Consequences Of An Insightful Algorithm&lt;/em&gt;
-(old video &lt;a href="https://www.youtube.com/watch?v=NheE6udjfGI&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=28"&gt;here&lt;/a&gt;)
-dealt with the ethical
-responsibilities of us as developers and this is becoming more common with deep learning neural networks.&lt;/p&gt;
-&lt;h2&gt;Lesson 5&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;We’re able to extract remarkably precise
-intuitions about an individual. But do we have a right to know what they didn’t
-consent to share, even when they willingly shared the data that leads us there?&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;Krissy's &lt;em&gt;The HTT(Pancake) Request&lt;/em&gt; made a great analogy of consuming APIs with
-your customer experience when visiting a restaurant.&lt;/p&gt;
-&lt;h2&gt;Lesson 6&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Design APIs (software in general) as if that was a physical product where your
-customers happiness matters&lt;/strong&gt;. We see this all the time in our daily jobs and we're
-guilty of doing it as well. Btw at the moment I'm in the middle of huge refactoring
-of &lt;a href="https://github.com/chartit/django-chartit"&gt;django-chartit&lt;/a&gt; which breaks all
-backwards compatibility. I guess I will have to re-evaluate my design and approach.&lt;/p&gt;
-&lt;p&gt;By accident I've made good friends with Alex Georgiev and the folks at Fyber.
-I liked the fact that at the conference they had couple of people
-working in QA and we managed to have a nice talk about QA vs developers and the transformation
-between the two. That also touched on the bigger subject of testers not being able to
-code and testers not being available for hire.&lt;/p&gt;
-&lt;h2&gt;Lesson 7&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Driving people to improve their skills (learn to code, write tests, etc) is possible
-but needs to come from management, needs clear direction and also a little bit of peer pressure.&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;After all isn't that what an agile team is supposed to be ?&lt;/p&gt;
-&lt;p&gt;Now being the able to code, not entirely Ruby ignorant QA guy that I am I was
-immediately offered several positions in London and Berlin (and no I'm still staying
-in Sofia). As it turned out good QA engineers with good development skills are
-in greater demand than developers not only in Sofia but all around the world!&lt;/p&gt;
-&lt;h2&gt;Lesson 8&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Fellow QA guys, please do learn to program. Dear developers, please try thinking
-more like a tester the next time you write code&lt;/strong&gt; (me included).&lt;/p&gt;
-&lt;p&gt;Hiring a barista and furnishing your company stand with the best coffee machine
-you can afford while having an ugly hand written sign saying "MAIN CONFERENCE COFFEE -&amp;gt;"
-is a marketing stunt that I really love. I'm not sure how well that worked for their
-hiring but it got them visibility. I'm definitely stealing this one!&lt;/p&gt;
-&lt;h2&gt;Lesson 9&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Conference coffee sucks. Provide better one and developers will queue at your stand.
-To a greater extent - research your target and their needs and provide a product
-that solves their problem.&lt;/strong&gt;&lt;/p&gt;
-&lt;h2&gt;What we gave back&lt;/h2&gt;
-&lt;blockquote class="twitter-tweet" data-lang="en"&gt;&lt;p lang="en" dir="ltr"&gt;&lt;a href="https://twitter.com/hashtag/banitsa?src=hash"&gt;#banitsa&lt;/a&gt; is a blessing for hang over &lt;a href="https://twitter.com/hashtag/euruko?src=hash"&gt;#euruko&lt;/a&gt;&lt;/p&gt;&amp;mdash; Monica (@KFMolli) &lt;a href="https://twitter.com/KFMolli/status/779582699291934720"&gt;September 24, 2016&lt;/a&gt;&lt;/blockquote&gt;
-
-&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-
-&lt;p&gt;indeed Monica it is. Here's the secret sauce&lt;/p&gt;
-&lt;blockquote class="twitter-tweet" data-lang="en"&gt;&lt;p lang="en" dir="ltr"&gt;Thanks a lot &lt;a href="https://twitter.com/euruko"&gt;@euruko&lt;/a&gt; to share the recipes for &lt;a href="https://twitter.com/hashtag/boza?src=hash"&gt;#boza&lt;/a&gt; and &lt;a href="https://twitter.com/hashtag/banitsa?src=hash"&gt;#banitsa&lt;/a&gt; &lt;a href="https://twitter.com/hashtag/euruko?src=hash"&gt;#euruko&lt;/a&gt; &lt;a href="https://twitter.com/hashtag/bulgary?src=hash"&gt;#bulgary&lt;/a&gt; &lt;a href="https://t.co/MrkpD4jxve"&gt;pic.twitter.com/MrkpD4jxve&lt;/a&gt;&lt;/p&gt;&amp;mdash; Matteo Piotto (@c1p8) &lt;a href="https://twitter.com/c1p8/status/779323219765592066"&gt;September 23, 2016&lt;/a&gt;&lt;/blockquote&gt;
-
-&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-
-&lt;p&gt;My personal contribution back was telling Yammer and Deliveroo about mutation
-testing and pointing them to the right tools and videos on the subject. I wish
-them good luck and happy testing.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; I will be speaking about mutation testing at
-several different events in Bulgaria in the next 2 months so make sure to find
-me if you want to chat.&lt;/p&gt;</summary><category term="events"></category></entry></feed>
+We are going to host a discussion on October 18th so stay tuned!&lt;/p&gt;</summary></entry></feed>
