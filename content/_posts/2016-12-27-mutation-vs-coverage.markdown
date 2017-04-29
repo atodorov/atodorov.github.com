@@ -353,4 +353,8 @@ collect enough information and present the findings at
 [GTAC 2017](https://developers.google.com/google-test-automation-conference/)
 which will be held in London.
 
+**UPDATE:** I have written
+[Mutation testing vs. coverage, Pt.2]({filename}2017-04-05-mutation-vs-coverage-pt2.markdown)
+with another example.
+
 Thanks for reading and happy testing!
