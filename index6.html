@@ -145,6 +145,37 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/" rel="bookmark" title="Permalink to Fixing Tilde and Function Keys Mapping for MacBook Air on Linux">
+                <h2 class="post-title">
+                    Fixing Tilde and Function Keys Mapping for MacBook Air on Linux
+                </h2>
+            </a>
+                <p>Thera are two problems with the <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> keyboard on Linux:</p>
+<p>Function keys and media keys are switched and by default you have to
+press Fn+F5 in order to refresh a browser page. The 
+<a href="https://chaidarun.com/fedora-mbp">solution</a> is</p>
+<div class="highlight"><pre>echo 2 &gt; /sys/module/hid_apple/parameters/fnmode
+</pre></div>
+
+
+<p>The tilde key is mapped improperly, see 
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1025041#c2">RHBZ #1025041</a>.
+To fix it</p>
+<div class="highlight"><pre>echo 0 &gt; /sys/module/hid_apple/parameters/iso_layout
+</pre></div>
+
+
+<h2>Permanent fix</h2>
+<p>Either you have to add the above commands in a boot script or you can
+<code>yum install mba-kbd-fix</code> from my
+<a href="/blog/2015/04/29/rhel-7-repository-for-macbook-air/">Macbook Air RHEL 7 repository</a>.
+The RPM source can be found <a href="https://github.com/atodorov/mba-kbd-fix">here</a>.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 30 April 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/04/30/fixing-tilde-and-function-keys-mapping-for-macbook-air-on-linux/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/" rel="bookmark" title="Permalink to Red Hat Enterprise Linux 7 Repository for MacBook Air">
                 <h2 class="post-title">
                     Red Hat Enterprise Linux 7 Repository for MacBook Air
@@ -2191,84 +2222,6 @@ HackFMI team used two accounts to send the messages - one using the provided
                  on Mon 17 November 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/11/17/hackfmi-sms-delivery-powered-by-twilio/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/" rel="bookmark" title="Permalink to Speeding Up Celery Backends, Part 3">
-                <h2 class="post-title">
-                    Speeding Up Celery Backends, Part 3
-                </h2>
-            </a>
-                <p>In the second part of this article we've seen 
-<a href="/blog/2014/11/07/speeding-up-celery-backends-part-2/">how slow Celery actually is</a>.
-Now let's explore what happens inside and see if we can't speed things up.</p>
-<p>I've used <a href="http://pycallgraph.slowchop.com/en/latest/">pycallgraph</a> to create
-call graph visualizations of my application. It has the nice feature to also show
-execution time and use different colors for fast and slow operations.</p>
-<p>Full command line is:</p>
-<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
-</pre></div>
-
-
-<p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
-<h2>General findings</h2>
-<p><img alt="call graph" src="/images/celery/general.png" title="call graph" /></p>
-<ul>
-<li>The first four calls is where most of the time is spent as seen on the picture. </li>
-<li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
-transport Kombu (not shown on picture)</li>
-<li><code>celery.app.amqp.TaskProducer.publish_task</code> takes half of the execution time of
-<code>celery.app.base.Celery.send_task</code></li>
-<li><code>celery.app.task.Task.delay</code> directly executes <code>.apply_async</code> and can be skipped if one
-rewrites the code.</li>
-</ul>
-<h2>More findings</h2>
-<p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
-350             self.backend.on_task_call(P, task_id)
-351             task_id = P.publish_task(
-352                 name, args, kwargs, countdown=countdown, eta=eta,
-353                 task_id=task_id, expires=expires,
-354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
-355                 reply_to=reply_to or self.oid, **options
-356             )
-</pre></div>
-
-
-<p><code>producer</code> is always None because delay() doesn't pass it as argument.
-I've tried passing it explicitly to apply_async() as so:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
-
-<span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
-<span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="n">debug_task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">producer</span><span class="o">=</span><span class="n">producer</span><span class="p">)</span>
-</pre></div>
-
-
-<p>However this doesn't speedup anything. If we replace the above code block like this:</p>
-<div class="highlight"><pre>349         with producer as P:
-</pre></div>
-
-
-<p>it blows up on the second iteration because producer and its channel is already None !?!</p>
-<p>If you are unfamiliar with the with statement in Python please read
-<a href="http://effbot.org/zone/python-with-statement.htm">this article</a>. In short the with statement is
-a compact way of writing try/finally. The underlying <code>kombu.messaging.Producer</code> class does a
-<code>self.release()</code> on exit of the with statement.</p>
-<p>I also tried killing the with statement and using producer directly but with limited success. While
-it was not released(was non None) on subsequent iterations the memory usage grew much more and there
-wasn't any performance boost.</p>
-<h2>Conclusion</h2>
-<p>The with statement is used throughout both Celery and Kombu and I'm not at all sure if
-there's a mechanism for keep-alive connections. My time constraints are limited and I'll probably
-not spend anymore time on this problem soon.</p>
-<p>Since my use case involves task producer and consumers on localhost I'll try to workaround the
-current limitations by using Kombu directly 
-(see <a href="https://gist.github.com/atodorov/2bc1fcd34531ad260ed7">this gist</a>) with a transport that
-uses either a UNIX domain socket or a name pipe (FIFO) file.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 11 November 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/11/11/speeding-up-celery-backends-part-3/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
