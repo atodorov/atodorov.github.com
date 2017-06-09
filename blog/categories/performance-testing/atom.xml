@@ -291,4 +291,62 @@ SHA512  18.339390993118286, 18.11187481880188,  18.085782051086426
 I will stick with SHA1 for the time being.&lt;/p&gt;
 &lt;p&gt;If you are interested in Performance Testing checkout the
 &lt;a target="_blank" href="http://www.amazon.com/s/ref=as_li_ss_tl?_encoding=UTF8&amp;camp=1789&amp;creative=390957&amp;field-keywords=performance%20testing&amp;linkCode=ur2&amp;rh=n%3A283155%2Ck%3Aperformance%20testing&amp;sprefix=performance%20testing%2Caps%2C270&amp;tag=atodorovorg-20&amp;url=search-alias%3Dstripbooks&amp;linkId=UVEZLZJOVYOCVGOT"&gt;performance testing books on Amazon&lt;/a&gt;&lt;img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&amp;l=ur2&amp;o=1" width="1" height="1" border="0" style="border:none !important; margin:0px !important;" /&gt;.&lt;/p&gt;
-&lt;p&gt;As always I’d love to hear your thoughts and feedback. Please use the comment form below.&lt;/p&gt;</summary><category term="Python"></category><category term="performance testing"></category><category term="QA"></category></entry></feed>
+&lt;p&gt;As always I’d love to hear your thoughts and feedback. Please use the comment form below.&lt;/p&gt;
+&lt;h2&gt;Python 2.7 vs. 3.6 and BLAKE2&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE: added on June 9th 2017&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;After request from my reader &lt;em&gt;refi64&lt;/em&gt; I've tested this again between different
+versions of Python and included a few more hash functions. The test data is the same,
+the test script was slightly modified for Python 3:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;test3.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
+
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;import hashlib&lt;/span&gt;
+&lt;span class="sd"&gt;for line in url_paths:&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.md5(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha1(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha256(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.sha512(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;#    h = hashlib.blake2b(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;    h = hashlib.blake2s(line).hexdigest()&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;url_paths = [l.encode(&amp;#39;utf8&amp;#39;) for l in open(&amp;#39;urls.txt&amp;#39;, &amp;#39;r&amp;#39;).readlines()]&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Test was repeated 3 times for each hash function and the best time was taken into account.
+The test was performed on a recent Fedora 26 system. The results are as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Python 2.7.13
+
+MD5     [13.94771409034729, 13.931367874145508, 13.908519983291626]
+SHA1    [15.20741891860962, 15.241390943527222, 15.198163986206055]
+SHA256  [17.22162389755249, 17.229840993881226, 17.23402190208435]
+SHA512  [21.557533979415894, 21.51376700401306, 21.522911071777344]
+
+
+Python 3.6.1
+
+MD5     [11.770181038000146, 11.778772834999927, 11.774679265000032]
+SHA1    [11.5838599839999, 11.580340686999989, 11.585769942999832]
+SHA256  [14.836309305999976, 14.847088003999943, 14.834776135999846]
+SHA512  [19.820048629999746, 19.77282728099999, 19.778471210000134]
+
+BLAKE2b [12.665497404000234, 12.668979115000184, 12.667314543999964]
+BLAKE2s [11.024885618000098, 11.117366972000127, 10.966767880999669]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;Python 3 is faster than Python 2&lt;/li&gt;
+&lt;li&gt;SHA1 is a bit faster than MD5, maybe there's been some optimization&lt;/li&gt;
+&lt;li&gt;BLAKE2b is faster than SHA256 and SHA512&lt;/li&gt;
+&lt;li&gt;BLAKE2s is the fastest of all functions&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; BLAKE2b is optimized for 64-bit platforms, like mine and I thought it
+will be faster than BLAKE2s (optimized for 8- to 32-bit platforms) but that's
+not the case. I'm not sure why is that though. If you do, please let me know
+in the comments below!&lt;/p&gt;</summary><category term="Python"></category><category term="performance testing"></category><category term="QA"></category></entry></feed>
