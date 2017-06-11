@@ -90,6 +90,97 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/" rel="bookmark" title="Permalink to Speeding up RSpec and PostgreSQL tests">
+                <h2 class="post-title">
+                    Speeding up RSpec and PostgreSQL tests
+                </h2>
+            </a>
+                <p>I've been working with <a class="wikilink" href="http://tradeo.com">Tradeo</a> on testing one of their applications. The app
+is standard Ruby on Rails application with over 1200 tests written with RSpec.
+And they were horribly slow. On my <a class="wikilink" href="http://amzn.to/1RdviyD">MacBook Air</a> the entire test suite
+took 27 minutes to execute. On the Jenkins slaves it took over an hour.
+After a few changes Jenkins now takes 15 minutes to execute the test suite.
+Locally it takes around 11 minutes!</p>
+<h2>The Problem</h2>
+<p>I've measured the speed (with Time.now) at which individual examples execute
+and it was quickly apparent they were taking a lot of time cleaning the DB. The
+offending code in question was:</p>
+<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>This is truncating the tables quite often but it turns out this is a very
+expensive operation on tables with small number of records. I've measured it
+locally around 2.5 seconds. Check out this
+<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/">SO thread</a>
+which describes pretty much the same symptoms:</p>
+<div class="highlight"><pre>Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
+Tailing the logs on our CI server (Ubuntu 10.04 LTS) .... a build takes 84 minutes.
+</pre></div>
+
+
+<p>This
+<a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/11423886#11423886">excellent answer</a>
+explains why this is happening:</p>
+<div class="highlight"><pre>(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
+    Different fsync configuration or the use of rotational media instead of
+    SSDs could also be at fault.
+
+(b) TRUNCATE has a fixed cost, but not necessarily slower than DELETE,
+    plus it does more work.
+</pre></div>
+
+
+<h2>The Fix</h2>
+<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<span class="k">end</span>
+
+<span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:deletion</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p><code>before(:suite)</code> will truncate tables every time we run rspec, which is when we
+launch the entire test suite. This is to account for the possible side effects
+of DELETE in the future (see the SO thread). Then <code>before(:all)</code> aka
+<code>before(:context)</code> simply deletes the records which is significantly faster!</p>
+<p>Also updated the CI servers <code>postgresql.conf</code> to</p>
+<div class="highlight"><pre>fsync=off
+full_page_writes=off
+</pre></div>
+
+
+<p>The entire build/test process now takes only 15 minutes! Only one test broke
+due to PostgreSQL returning records in a different order, but it's the test
+case fault not handling this in the first place!</p>
+<p><strong>NOTE:</strong> Using fsync=off with rotational media pretty much hides any improvements
+introduced by updating the DatabaseCleaner strategy.</p>
+<h2>What's Next</h2>
+<p>There are several other things worth trying:</p>
+<ul>
+<li>Use UNIX domain sockets instead of TCP/IP (localhost) to connect to PostgreSQL;</li>
+<li>Load the entire
+<a href="http://magazine.redhat.com/2007/12/12/tip-from-an-rhce-memory-storage-on-postgresql/">PostgreSQL partition in memory</a>;</li>
+<li>Don't delete anything from the database, except once in <code>before(:suite)</code>.
+If any tests need a particular DB state they have to set this up on their own
+instead of relying on a global cleanup process. I expect this to break quite
+a few examples.</li>
+</ul>
+<p>After the changes and with my crude measurements I have individual examples
+taking 0.31 seconds to execute. Interestingly before and after take less than
+a second while the example code takes around 0.15 seconds. I have no idea where
+the rest 0.15 seconds are spent. My current speculation is probably RSpec.
+This is 50% of the execution time and is also worth looking into!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 23 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/17/logging-vm-installation-to-stdout/" rel="bookmark" title="Permalink to Logging VM installation to stdout">
                 <h2 class="post-title">
                     Logging VM installation to stdout
@@ -1679,89 +1770,6 @@ analysis against coverage data from the various test methods and test cases!</p>
                  on Thu 15 October 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/" rel="bookmark" title="Permalink to Anaconda & coverage.py - Pt.1 - Introduction">
-                <h2 class="post-title">
-                    Anaconda &amp; coverage.py - Pt.1 - Introduction
-                </h2>
-            </a>
-                <p>Since early 2015 I've been working on testing installation related
-components in Rawhide. I'm interested in the code produced by the
-<a href="https://github.com/rhinstaller/">Red Hat Installer Engineering Team</a> and in
-particular in <em>anaconda</em>, <em>blivet</em>, <em>pyparted</em> and <em>pykickstart</em>. The goal of
-this effort is to improve the overall testing of these components and also
-have Red Hat QE contribute some of our knowledge back to the community. The benefit
-of course will be better software for everyone. In the next
-several posts I'll summarize what has been done so far and what's to be expected
-in the future.</p>
-<h2>Test Documentation Matters</h2>
-<p>Do you want others to contribute tests? I certainly do! When I started looking
-at the code it was obviously clear there was no documentation related to testing.
-Everyone needs to know how to write and execute these tests! Currently we have
-basic README files describing how to install necessary dependencies for development
-and test execution, how to execute the tests (and what can be tested) and most
-importantly what is the test architecture. There is description of how the file
-structure is organized and which are the base classes to inherit from when adding
-new tests. Most of the times each component goes through a <em>pylint</em> check and
-a standard PyUnit test suite.</p>
-<p>Test documentation is usually in a <code>tests/README</code> file. For example:</p>
-<ul>
-<li><a href="https://github.com/rhinstaller/anaconda/blob/master/tests/README.rst">anaconda</a></li>
-<li><a href="https://github.com/rhinstaller/blivet/blob/master/tests/README.rst">blivet</a></li>
-<li><a href="https://github.com/rhinstaller/pykickstart/blob/master/tests/README.rst">pykickstart</a></li>
-<li><a href="https://github.com/rhinstaller/pyparted/blob/master/tests/README.rst">pyparted</a></li>
-</ul>
-<p>I've tried to explain as much as possible without bloating the files and going into
-unnecessary details. If you spot something missing please send a pull request.</p>
-<h2>Continuous Integration</h2>
-<p>This has been largely an effort driven by Chris Lumens from the devel team.
-All the components I'm interested in are tested regularly in a CI environment.
-There is a <code>make ci</code> Makefile target for those of you interested in what exactly
-gets executed.</p>
-<h2>Test Coverage</h2>
-<p>In order to <strong>improve</strong> something you need to know where you stand. We'll I didn't.
-That's why the first step was to integrate the
-<a href="https://bitbucket.org/ned/coveragepy">coverage.py</a> tool with all of these components.</p>
-<p>With the exception of blivet (written in C) all of the other
-components integrate well with coverage.py and produce good statistics. pykickstart is
-the champ here with 90% coverage, while anaconda is somewhere between 10% and 50%.
-Full test coverage measurement for anaconda isn't straight forward and will be the
-subject of my next post. For the C based code we have to hook up with
-<a href="https://gcc.gnu.org/onlinedocs/gcc/Gcov.html">Gcov</a> which shouldn't be too difficult.</p>
-<p>At the moment there are several open pull requests to integrate the coverage test
-targets with <code>make ci</code> and also report the results in human readable form. I will be
-collecting these for historical references.</p>
-<h2>Tools</h2>
-<p>I've created some basic text-mode
-<a href="https://github.com/atodorov/coverage-tools">coverage-tools</a> to help me combine and
-compare data from different executions. These are only the start of it and I'm expanding
-them as my needs for reporting and analytics evolve. I'm also looking into
-<a href="/blog/2015/07/27/call-for-ideas-graphical-test-coverage-reports/">more detailed coverage reports</a>
-but I don't have enough data and use cases to work on this front at the moment.</p>
-<p>Some ideas currently in mind:</p>
-<ul>
-<li>map code changes (git commits) to existing test coverage to get a feeling where to
-invest in more testing;</li>
-<li>map bugs to code areas and to existing test coverage to see if we aren't
-missing tests in areas where the bugs are happening;</li>
-</ul>
-<h2>Bugs</h2>
-<p>coverage.py is a very nice tool indeed but I guess most people use it in a very
-limited way. Shortly after I started working with it I've found several places which
-need improvements. These have to do with combining and reporting on multiple files.</p>
-<p>Some of the interesting issues I've found and still open are:</p>
-<ul>
-<li><a href="https://bitbucket.org/ned/coveragepy/pull-requests/63/">PR #63 - New option --dont-remove when combining coverage data</a></li>
-<li><a href="https://bitbucket.org/ned/coveragepy/issues/425">#425 - source parameter not including files which are explicitly specified</a></li>
-<li><a href="https://bitbucket.org/ned/coveragepy/issues/426">#426 - Difference between coverage results with source specifies full dir instead of module name</a></li>
-</ul>
-<p>In my next post I will talk about anaconda code coverage and what I want to do with it.
-In the mean time please use the comments to share your feedback.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 14 October 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/10/14/anaconda-coverage.py-introduction/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

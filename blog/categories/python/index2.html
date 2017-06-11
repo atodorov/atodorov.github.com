@@ -90,6 +90,89 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="bookmark" title="Permalink to How to Deploy Python Hotfix on RedHat OpenShift Cloud">
+                <h2 class="post-title">
+                    How to Deploy Python Hotfix on RedHat OpenShift Cloud
+                </h2>
+            </a>
+                <p>In this article I will show you how to deploy hotfix versions for
+Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
+<h2>Background</h2>
+<p>You are already running a Python application on your OpenShift instance.
+You are using some 3rd party dependencies when you find a bug in one of them.
+You go forward, fix the bug and submit a
+<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
+You don't want to wait for upstream to release a new version but rather
+build a hotfix package yourself and deploy to production immediately.</p>
+<h2>Solution</h2>
+<p>There are two basic approaches to solving this problem: </p>
+<ol>
+<li>Include the hotfix package source code in your application, i.e.
+add it to your git tree or;</li>
+<li>Build the hotfix separately and deploy as a dependency. Don't
+include it in your git tree, just add a requirement on the hotfix version. </li>
+</ol>
+<p>I will talk about the later. The tricky part here is to instruct the cloud environment
+to use your package (including the proper location) and not upstream or their local
+mirror.</p>
+<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
+<code>requirements.txt</code> which can point to various package sources and even install
+packages directly from GitHub. They support <code>setup.py</code> which fetches packages
+from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
+<h2>Building the hotfix</h2>
+<p>First of all we'd like to build a hotfix package. This will be the upstream
+version that we are currently using plus the patch for our critical issue:</p>
+<div class="highlight"><pre><span class="nv">$ </span>wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+<span class="nv">$ </span>tar -xzvf python-magic-0.4.3.tar.gz 
+<span class="nv">$ </span><span class="nb">cd </span>python-magic-0.4.3
+<span class="nv">$ </span>curl https://github.com/ahupp/python-magic/pull/31.patch <span class="p">|</span> patch
+</pre></div>
+
+
+<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
+increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
+<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
+<h2>Deploying to OpenShift</h2>
+<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
+and will not be on OpenShift's local mirror you need to provide the location where it can
+be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
+<div class="highlight"><pre><span class="gh">diff --git a/setup.py b/setup.py</span>
+<span class="gh">index c6e837c..2daa2a9 100644</span>
+<span class="gd">--- a/setup.py</span>
+<span class="gi">+++ b/setup.py</span>
+<span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
+       author=&#39;Your Name&#39;,
+       author_email=&#39;example@example.com&#39;,
+       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+<span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
+<span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
+<span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
+      )
+</pre></div>
+
+
+<p>Now just git push to OpenShift and observe the console output:</p>
+<div class="highlight"><pre><span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">dependencies</span> <span class="k">for</span> <span class="n">YourAppName</span><span class="o">==</span><span class="mf">1.0</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Searching</span> <span class="k">for</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">==</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Best</span> <span class="n">match</span><span class="o">:</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Downloading</span> <span class="n">https</span><span class="o">://</span><span class="n">s3</span><span class="o">.</span><span class="na">amazonaws</span><span class="o">.</span><span class="na">com</span><span class="sr">/atodorov/blog/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Running</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="sr">/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/</span><span class="n">egg</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="n">tmp</span><span class="o">-</span><span class="n">R_Nxie</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">zip_safe</span> <span class="n">flag</span> <span class="n">not</span> <span class="kd">set</span><span class="o">;</span> <span class="n">analyzing</span> <span class="n">archive</span> <span class="n">contents</span><span class="o">...</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Removing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mi">3</span> <span class="n">from</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
+<span class="n">remote</span><span class="o">:</span> <span class="n">Adding</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span> <span class="n">to</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
+</pre></div>
+
+
+<p>Congratulations! Your hotfix package has just been deployed.</p>
+<p>This approach should work for other cloud providers and other programming languages
+as well. Let me know if you have any experience with that.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 24 April 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/04/06/using-django-built-in-template-tags-and-filters-in-code/" rel="bookmark" title="Permalink to Using Django built-in template tags and filters in code">
                 <h2 class="post-title">
                     Using Django built-in template tags and filters in code

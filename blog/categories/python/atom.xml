@@ -1,5 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-08-05T10:30:00+03:00</updated><entry><title>Python 2 vs. Python 3 List Sort Causes Bugs</title><link href="http://atodorov.org/blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/" rel="alternate"></link><updated>2016-08-05T10:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-08-05:blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/</id><summary type="html">&lt;p&gt;Can sorting a list of values crash your software? Apparently it can and is
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-11T23:00:00+03:00</updated><entry><title>Can a nested function assign to variables from the parent function</title><link href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="alternate"></link><updated>2017-06-11T23:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-11:blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/</id><summary type="html">&lt;p&gt;While working on a
+&lt;a href="https://github.com/getpelican/pelican/pull/1909"&gt;new feature for Pelican&lt;/a&gt;
+I've put myself in a situation where I have two functions, one nested inside
+the other and I want the nested function to assign to variable from the
+parent function. Turns out this isn't so easy in Python!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The example above is a recursive &lt;em&gt;Hello World&lt;/em&gt;. Notice the &lt;code&gt;i += 1&lt;/code&gt; line!
+This line causes &lt;code&gt;i&lt;/code&gt; to be considered local to &lt;code&gt;do_print()&lt;/code&gt; and the result
+is that we get the following failure on Python 2.7:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;module&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;hello&lt;/span&gt;
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;do_print&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="ne"&gt;UnboundLocalError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;local&lt;/span&gt; &lt;span class="n"&gt;variable&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;i&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;referenced&lt;/span&gt; &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="n"&gt;assignment&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We can workaround by using a global variable like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using global variable&lt;/span&gt;&lt;pre&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;However I prefer not to expose internal state outside the &lt;code&gt;hello()&lt;/code&gt;
+function. Only if there was a keyword similar to &lt;strong&gt;global&lt;/strong&gt;. In Python 3
+there is &lt;strong&gt;nonlocal&lt;/strong&gt;!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using nonlocal, Python 3&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="n"&gt;nonlocal&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;nonlocal&lt;/strong&gt; is nice but it doesn't exist in Python 2! The workaround is to
+not assign state to the variable itself, but instead use a mutable container.
+That is instead of a scalar use a list or a dictionary like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py where i is a list, Python 2&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Thanks for reading and happy coding!&lt;/p&gt;</summary><category term="Python"></category><category term="fedora.planet"></category></entry><entry><title>Python 2 vs. Python 3 List Sort Causes Bugs</title><link href="http://atodorov.org/blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/" rel="alternate"></link><updated>2016-08-05T10:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-08-05:blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/</id><summary type="html">&lt;p&gt;Can sorting a list of values crash your software? Apparently it can and is
 another example of my
 &lt;a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/"&gt;Hello World Bugs&lt;/a&gt;.
 Python 3 has simplified the
@@ -1337,75 +1434,4 @@ lame CAPTCHA recognition by comparing regions to a pre-defined baseline. Let me 
 if you come up with a cool idea or actually used this in code. &lt;/p&gt;
 &lt;p&gt;I'd love to hear
 about interesting projects which didn't get too complicated because of image
-recognition.&lt;/p&gt;</summary><category term="Python"></category><category term="QA"></category></entry><entry><title>How to Deploy Python Hotfix on RedHat OpenShift Cloud</title><link href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="alternate"></link><updated>2013-04-24T11:58:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-04-24:blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/</id><summary type="html">&lt;p&gt;In this article I will show you how to deploy hotfix versions for
-Python packages on the RedHat &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; PaaS cloud.&lt;/p&gt;
-&lt;h2&gt;Background&lt;/h2&gt;
-&lt;p&gt;You are already running a Python application on your OpenShift instance.
-You are using some 3rd party dependencies when you find a bug in one of them.
-You go forward, fix the bug and submit a
-&lt;a href="https://github.com/ahupp/python-magic/pull/31"&gt;pull request&lt;/a&gt;.
-You don't want to wait for upstream to release a new version but rather
-build a hotfix package yourself and deploy to production immediately.&lt;/p&gt;
-&lt;h2&gt;Solution&lt;/h2&gt;
-&lt;p&gt;There are two basic approaches to solving this problem: &lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Include the hotfix package source code in your application, i.e.
-add it to your git tree or;&lt;/li&gt;
-&lt;li&gt;Build the hotfix separately and deploy as a dependency. Don't
-include it in your git tree, just add a requirement on the hotfix version. &lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;I will talk about the later. The tricky part here is to instruct the cloud environment
-to use your package (including the proper location) and not upstream or their local
-mirror.&lt;/p&gt;
-&lt;p&gt;Python applications hosted at &lt;a href="http://openshift.com"&gt;OpenShift&lt;/a&gt; don't support
-&lt;code&gt;requirements.txt&lt;/code&gt; which can point to various package sources and even install
-packages directly from GitHub. They support &lt;code&gt;setup.py&lt;/code&gt; which fetches packages
-from &lt;a href="http://pypi.python.org"&gt;http://pypi.python.org&lt;/a&gt; but it is flexible enough to support other locations.&lt;/p&gt;
-&lt;h2&gt;Building the hotfix&lt;/h2&gt;
-&lt;p&gt;First of all we'd like to build a hotfix package. This will be the upstream
-version that we are currently using plus the patch for our critical issue:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
-&lt;span class="nv"&gt;$ &lt;/span&gt;tar -xzvf python-magic-0.4.3.tar.gz 
-&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;python-magic-0.4.3
-&lt;span class="nv"&gt;$ &lt;/span&gt;curl https://github.com/ahupp/python-magic/pull/31.patch &lt;span class="p"&gt;|&lt;/span&gt; patch
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Verify the patch has been applied correctly and then modify &lt;code&gt;setup.py&lt;/code&gt; to
-increase the version string. In this case I will set it to &lt;code&gt;version='0.4.3.1'&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Then build the new package using &lt;code&gt;python setup.py sdist&lt;/code&gt; and upload it to a web server.&lt;/p&gt;
-&lt;h2&gt;Deploying to OpenShift&lt;/h2&gt;
-&lt;p&gt;Modify &lt;code&gt;setup.py&lt;/code&gt; and specify the hotfix version. Because this version is not on PyPI
-and will not be on OpenShift's local mirror you need to provide the location where it can
-be found. This is done with the &lt;code&gt;dependency_links&lt;/code&gt; parameter to &lt;code&gt;setup()&lt;/code&gt;. Here's how it looks:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/setup.py b/setup.py&lt;/span&gt;
-&lt;span class="gh"&gt;index c6e837c..2daa2a9 100644&lt;/span&gt;
-&lt;span class="gd"&gt;--- a/setup.py&lt;/span&gt;
-&lt;span class="gi"&gt;+++ b/setup.py&lt;/span&gt;
-&lt;span class="gu"&gt;@@ -6,5 +6,6 @@ setup(name=&amp;#39;YourAppName&amp;#39;,&lt;/span&gt;
-       author=&amp;#39;Your Name&amp;#39;,
-       author_email=&amp;#39;example@example.com&amp;#39;,
-       url=&amp;#39;http://www.python.org/sigs/distutils-sig/&amp;#39;,
-&lt;span class="gd"&gt;-      install_requires=[&amp;#39;python-magic==0.4.3&amp;#39;],&lt;/span&gt;
-&lt;span class="gi"&gt;+      dependency_links=[&amp;#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&amp;#39;],&lt;/span&gt;
-&lt;span class="gi"&gt;+      install_requires=[&amp;#39;python-magic==0.4.3.1&amp;#39;],&lt;/span&gt;
-      )
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Now just git push to OpenShift and observe the console output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;dependencies&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;YourAppName&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Searching&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Best&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Downloading&lt;/span&gt; &lt;span class="n"&gt;https&lt;/span&gt;&lt;span class="o"&gt;://&lt;/span&gt;&lt;span class="n"&gt;s3&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;amazonaws&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;com&lt;/span&gt;&lt;span class="sr"&gt;/atodorov/blog/&lt;/span&gt;&lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Processing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;tar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;gz&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Running&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt;&lt;span class="sr"&gt;/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/&lt;/span&gt;&lt;span class="n"&gt;egg&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;dist&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;tmp&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;R_Nxie&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;zip_safe&lt;/span&gt; &lt;span class="n"&gt;flag&lt;/span&gt; &lt;span class="n"&gt;not&lt;/span&gt; &lt;span class="kd"&gt;set&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt; &lt;span class="n"&gt;analyzing&lt;/span&gt; &lt;span class="n"&gt;archive&lt;/span&gt; &lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Removing&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;from&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
-&lt;span class="n"&gt;remote&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Adding&lt;/span&gt; &lt;span class="n"&gt;python&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="mf"&gt;0.4&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mf"&gt;3.1&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;install&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;pth&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Congratulations! Your hotfix package has just been deployed.&lt;/p&gt;
-&lt;p&gt;This approach should work for other cloud providers and other programming languages
-as well. Let me know if you have any experience with that.&lt;/p&gt;</summary><category term="tips"></category><category term="Python"></category><category term="OpenShift"></category><category term="cloud"></category></entry></feed>
+recognition.&lt;/p&gt;</summary><category term="Python"></category><category term="QA"></category></entry></feed>

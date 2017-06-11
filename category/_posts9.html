@@ -91,6 +91,89 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/" rel="bookmark" title="Permalink to Tip: How to Build updates.img for Fedora">
+                <h2 class="post-title">
+                    Tip: How to Build updates.img for Fedora
+                </h2>
+            </a>
+                <p>Anaconda the Fedora, CentOS and Red Hat Enterprise Linux installer has the
+capability to incorporate
+<a href="https://fedoraproject.org/wiki/Anaconda/Updates">updates at runtime</a>.
+These updates are generally distributed as an <code>updates.img</code> file. Here is how
+to easily build one from a working installation tree.</p>
+<p>Instead of using the git sources to build an updates.img I prefer using the SRPM
+from the tree which I am installing. <strike>This way the resulting updates image will be
+more consistent with the anaconda version already available in the tree. And in theory
+everything you need to build it should already be available as well.</strike>
+<strong>UPDATE 2014-02-08:</strong> You can also build the <code>updates.img</code> from the git source tree
+which is shown at the bottom of this article. </p>
+<p>The following steps work for me on a Fedora 20 system. </p>
+<ul>
+<li>
+<p>Download the source RPM for anaconda from the tree and extract the sources to a working
+directory. Then;</p>
+<div class="highlight"><pre><span class="nb">cd </span>anaconda-20.25.16-1
+git init
+git add .
+git commit -m <span class="s2">&quot;initial import&quot;</span>
+git tag anaconda-20.25.16-1
+</pre></div>
+
+
+</li>
+<li>
+<p>The above steps will create a local git repository and tag the initial contents before
+modification. The tag is required later by the script which creates the updates image;</p>
+</li>
+<li>
+<p>After making your changes commit them and from the top anaconda directory execute:</p>
+<div class="highlight"><pre>./scripts/makeupdates -t anaconda-20.25.16-1
+</pre></div>
+
+
+</li>
+</ul>
+<p>You can also add RPM contents to the updates.img but you need to download the packages first:</p>
+<div class="highlight"><pre>yumdownloader python-coverage python-setuptools
+
+./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
+BUILDDIR /home/atodorov/anaconda-20.25.16-1
+Including anaconda
+<span class="m">2</span> RPMs added manually:
+python-setuptools-1.4.2-1.fc20.noarch.rpm
+python-coverage-3.7-1.fc20.x86_64.rpm
+<span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates <span class="o">&amp;&amp;</span> rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm <span class="p">|</span> cpio -dium
+<span class="m">3534</span> blocks
+<span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates <span class="o">&amp;&amp;</span> rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm <span class="p">|</span> cpio -dium
+<span class="m">1214</span> blocks
+&lt;stdin&gt; to &lt;stdout&gt; <span class="m">4831</span> blocks
+
+updates.img ready
+</pre></div>
+
+
+<p>In the above example I have only modified the top level anaconda file (<code>/usr/sbin/anaconda</code>
+inside the installation environment) experimenting with
+<a href="http://nedbatchelder.com/code/coverage/">python-coverage</a> integration.</p>
+<p>You are done! Make the <code>updates.img</code> available to Anaconda and start using it!</p>
+<p><strong>UPDATE 2014-02-08:</strong> If you prefer working with the anaconda source tree here's
+how to do it:</p>
+<div class="highlight"><pre>git clone git://git.fedorahosted.org/git/anaconda.git
+<span class="nb">cd </span>anaconda/
+git checkout anaconda-20.25.16-1 -b my_feature-branch
+
+... make changes ...
+
+git commit -a -m <span class="s2">&quot;Fixed something&quot;</span>
+
+./scripts/makeupdates -t anaconda-20.25.16-1
+</pre></div>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 07 February 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/02/07/tip-how-to-build-updates.img-for-fedora/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/02/07/aws-tip-shrinking-ebs-root-volume-size/" rel="bookmark" title="Permalink to AWS Tip: Shrinking EBS Root Volume Size">
                 <h2 class="post-title">
                     AWS Tip: Shrinking EBS Root Volume Size
@@ -1226,61 +1309,6 @@ directory. Then use this one liner to install the missing debuginfo packages.</p
                  on Sat 12 October 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/10/12/tip-installing-missing-debuginfo-packages-for-abrt/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/" rel="bookmark" title="Permalink to Fedora 20 GNOME 3.10 Test Day Post-mortem">
-                <h2 class="post-title">
-                    Fedora 20 GNOME 3.10 Test Day Post-mortem
-                </h2>
-            </a>
-                <p><img alt="&quot;Fedora sausage banner&quot;" src="/images/fedora/sausage-banner.png" title="Fedora sausage banner" /></p>
-<p>Here is my summary of the second Fedora Test Day hosted at
-<a href="http://initlab.org">init Lab</a> yesterday.</p>
-<p>Local attendance was a total disaster, in fact I was testing once again by my own.
-This time
-there were more people in the lab, all busy with their daily routines and tasks.
-There were no people who came for the testing :(. I will have to try different
-venues in the future and see if the situation improves.</p>
-<p>On the testing front I managed to score 5 bugs against
-<a href="https://bugzilla.gnome.org/buglist.cgi?bug_id=709797,709799,709806,709810">GNOME</a>
-and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1017807">Fedora</a>.
-You can see the other test results and bugs on the
-<a href="https://fedoraproject.org/wiki/Test_Day:2013-10-10_Gnome_3.10">wiki</a>.</p>
-<p>There are two things I didn't like in particular</p>
-<ul>
-<li>GNOME 3 as well as its classic mode - simply not the environment I'm used to;</li>
-<li>Having to record test results in the wiki! I'm
-<a href="https://lists.fedoraproject.org/pipermail/test/2013-October/118284.html">writing</a>
-to the Fedora QA mailing list about that as we speak.</li>
-</ul>
-<p>At one time I was engaged in a discussion about which Bulgarian keyboard layout
-should be the default in GNOME simply because of
-<a href="https://bugzilla.gnome.org/show_bug.cgi?id=709799">GNOME #709799</a>. The default
-keyboard layout will be Bulgarian (traditional phonetic) aka bg+phonetic.</p>
-<div class="highlight"><pre>(16,13,26) rtcm: atodorov: are you bulgarian and/or live in bulgaria?
-(16,14,20) rtcm: atodorov: if yes, I wanted to know which keyboard layout most people expect there to be the default
-(16,16,34) atodorov: rtcm: I&#39;m a Bulgarian, however I can&#39;t tell which one. Both Phonetic and standard (BDS) are common
-(16,16,54) atodorov: a safe bet is to go with phonetic I guess. 
-(16,19,46) rtcm: atodorov: can you tell me which one is it in XKB terms? is it &quot;bg&quot;, &quot;bg+bas_phonetic&quot; or &quot;bg+phonetic&quot; ?
-(16,20,51) rtcm: they&#39;re labeled as &quot;Bulgarian&quot;, &quot;Bulgarian (new phonetic)&quot; and &quot;Bulgarian (traditional phonetic)&quot;
-(16,21,30) atodorov: bg+phonetic is the traditional phonetic
-(16,22,04) atodorov: bg labeled as &quot;Bulgarian&quot; is the standard one I guess. Here we call it BDS after the standardization institute
-(16,22,34) atodorov: bg+bas_phonetic is created from the Bulgarian Academy of Science and is not very popular as far as I know. I&#39;ve never seen it in use
-(16,23,15) rtcm: atodorov: all I want to know is what most people would expect? like what does windows do by default? that&#39;s a good bet
-(16,27,46) atodorov: rtcm: I&#39;m just being told that new Windows releases use yet another layout by default, which is like phonetic but with some characters in new places and people don&#39;t like that
-(16,27,53) atodorov: my safe bet goes to bg+phonetic
-(16,29,05) rtcm: ok, thanks
-</pre></div>
-
-
-<p>It is a rare occasion when you get to make a decision that affects a large group
-of people and I hope you don't hate me for that! </p>
-<p>Do you want to see more Fedora Test Days happening in Sofia? Join me and I will
-organize some more!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 11 October 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/10/11/fedora-20-gnome-3-dot-10-test-day-post-mortem/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -1290,7 +1318,7 @@ organize some more!</p>
                 <a href="http://atodorov.org/category/_posts8.html"> &larr; Newest Posts</a>
         </li>
     </ul>
-    Page 9 / 14
+    Page 9 / 15
     <hr>
             </div>
         </div>

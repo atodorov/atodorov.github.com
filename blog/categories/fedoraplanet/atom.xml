@@ -1,5 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-10T22:00:00+03:00</updated><entry><title>Semantically Invalid Input</title><link href="http://atodorov.org/blog/2017/06/10/semantically-invalid-input/" rel="alternate"></link><updated>2017-06-10T22:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-10:blog/2017/06/10/semantically-invalid-input/</id><summary type="html">&lt;div class="highlight"&gt;&lt;span class="filename"&gt;Unsolvable Square example&lt;/span&gt;&lt;pre&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="mi"&gt;7&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-11T23:00:00+03:00</updated><entry><title>Can a nested function assign to variables from the parent function</title><link href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="alternate"></link><updated>2017-06-11T23:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-11:blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/</id><summary type="html">&lt;p&gt;While working on a
+&lt;a href="https://github.com/getpelican/pelican/pull/1909"&gt;new feature for Pelican&lt;/a&gt;
+I've put myself in a situation where I have two functions, one nested inside
+the other and I want the nested function to assign to variable from the
+parent function. Turns out this isn't so easy in Python!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The example above is a recursive &lt;em&gt;Hello World&lt;/em&gt;. Notice the &lt;code&gt;i += 1&lt;/code&gt; line!
+This line causes &lt;code&gt;i&lt;/code&gt; to be considered local to &lt;code&gt;do_print()&lt;/code&gt; and the result
+is that we get the following failure on Python 2.7:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;module&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;hello&lt;/span&gt;
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;do_print&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="ne"&gt;UnboundLocalError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;local&lt;/span&gt; &lt;span class="n"&gt;variable&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;i&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;referenced&lt;/span&gt; &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="n"&gt;assignment&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We can workaround by using a global variable like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using global variable&lt;/span&gt;&lt;pre&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;However I prefer not to expose internal state outside the &lt;code&gt;hello()&lt;/code&gt;
+function. Only if there was a keyword similar to &lt;strong&gt;global&lt;/strong&gt;. In Python 3
+there is &lt;strong&gt;nonlocal&lt;/strong&gt;!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using nonlocal, Python 3&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="n"&gt;nonlocal&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;nonlocal&lt;/strong&gt; is nice but it doesn't exist in Python 2! The workaround is to
+not assign state to the variable itself, but instead use a mutable container.
+That is instead of a scalar use a list or a dictionary like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py where i is a list, Python 2&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
+        &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Thanks for reading and happy coding!&lt;/p&gt;</summary><category term="Python"></category><category term="fedora.planet"></category></entry><entry><title>Semantically Invalid Input</title><link href="http://atodorov.org/blog/2017/06/10/semantically-invalid-input/" rel="alternate"></link><updated>2017-06-10T22:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-10:blog/2017/06/10/semantically-invalid-input/</id><summary type="html">&lt;div class="highlight"&gt;&lt;span class="filename"&gt;Unsolvable Square example&lt;/span&gt;&lt;pre&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="mi"&gt;7&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;
 &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;
 &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;
 &lt;span class="o"&gt;------+-------+------&lt;/span&gt;
@@ -2388,50 +2485,4 @@ vanilla QtWebKit doesn't have. That's why we use custom version.&lt;/p&gt;
 &lt;p&gt;At the moment of this writing Vitaly's qtwebkit fork is 28 commits ahead and
 39 commits behind qt:dev. I'm surprised Ubuntu's PhantomJS even works.&lt;/p&gt;
 &lt;p&gt;The solution IMO is to bundle the additional sources into the src.deb package
-and use the same building procedure as upstream.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Testing the 8-bit computer Puldin</title><link href="http://atodorov.org/blog/2016/07/12/testing-the-8-bit-computer-puldin/" rel="alternate"></link><updated>2016-07-12T14:10:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-12:blog/2016/07/12/testing-the-8-bit-computer-puldin/</id><summary type="html">&lt;p&gt;&lt;img alt="Puldin creators" src="/images/puldin_creators.jpg" title="Puldin creators" /&gt;&lt;/p&gt;
-&lt;p&gt;Last weekend I visited &lt;a href="http://tuxcon.mobi"&gt;TuxCon&lt;/a&gt; in Plovdiv and
-was very happy to meet and talk to some of the creators of the Puldin
-computer! On the picture above are (left to right) Dimitar Georgiev
-- wrote the text editor, Ivo Nenov - BIOS, DOS and core OS developer,
-Nedyalko Todorov - director of the vendor company and Orlin Shopov -
-BIOS, DOS, compiler and core OS developer.&lt;/p&gt;
-&lt;p&gt;Puldin is 100% pure Bulgarian development, while the “Pravetz” brand
-was copy of Apple ][ (Pravetz 8A, 8C, 8M), Oric (Pravets 8D) and IBM-PC
-(Pravetz 16). The Puldin computers were build from scratch both hardware
-and software and were produced in Plovdiv in the late 80s and early 90s.
-50000 pieces were made, at least 35000 of them have been exported to Russia
-and paid for. A typical configuration in a Russian class room consisted of
-several Puldin computers and a single Pravetz 16. According to Russian sources
-the last usage of these computers was in 2003 serving as Linux terminals
-and being maintained without any support from the vendor
-(b/c it ceased to exist).&lt;/p&gt;
-&lt;p&gt;&lt;img alt="Puldin 601" src="/images/puldin601.jpg" title="Puldin 601" /&gt;&lt;/p&gt;
-&lt;p&gt;One of the main objectives of Puldin was full compatibility with IBM-PC.
-At the time IBM had been releasing extensive documentation about how their
-software and hardware works which has been used by Puldin's creators as
-their software specs. Despite IBM-PC using faster CPU the Puldin 601 had
-a comparable performance due to aggressive software and compiler optimizations.&lt;/p&gt;
-&lt;p&gt;Testing wise the guys used to compare Puldin's functionality with that of IBM-PC.
-It was a hard requirement to have full compatibility on the file storage layer,
-that means floppy disks written on Puldin had to be readable on IBM-PC and vice
-versa. Same goes for programs compiled on Puldin - they had to execute on IBM-PC.&lt;/p&gt;
-&lt;p&gt;Everything of course had been tested manually and on top of that all the software
-had to be burned to ROM before you can do anything with it. As you can imagine the
-testing process had been quite slow and painful compared to today's standards.
-I've asked the guys if they'd happened to find a bug in IBM-PC which wasn't present
-in their code but they couldn't remember.&lt;/p&gt;
-&lt;p&gt;What was interesting for me on the hardware side was the fact that you can plug
-the computer directly to a cheap TV set and that it's been one of the first computers
-which could operate on 12V DC, powered directly from a car battery.&lt;/p&gt;
-&lt;p&gt;&lt;img alt="Pravetz 8" src="/images/pravetz16.jpg" title="Pravetz 8" /&gt;&lt;/p&gt;
-&lt;p&gt;There was also a fully functional Pravetz 8 with an additional VGA port to
-connect it to the LCD monitor as well as a SD card reader wired to function as a
-floppy disk reader (the small black dot behind the joystick).&lt;/p&gt;
-&lt;p&gt;For those who missed it (and understand Bulgarian) I have a
-&lt;a href="https://www.youtube.com/watch?v=uFGnrqa2RSY&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=1"&gt;video recording on YouTube&lt;/a&gt;.
-For more info about the history and the hardware please check-out
-&lt;a href="https://olimex.wordpress.com/2015/01/12/retro-computer-puldin-the-only-bulgarian-8-bit-computer-developed-from-scratch/"&gt;Olimex post on Puldin&lt;/a&gt;
-(in English). For more info on Puldin and Pravetz please visit
-&lt;a href="http://pyldin.info"&gt;pyldin.info&lt;/a&gt; (in Russian) and
-&lt;a href="http://pravetz8.com"&gt;pravetz8.com&lt;/a&gt; (in Bulgarian)
-using Google translate if need be.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category><category term="events"></category></entry></feed>
+and use the same building procedure as upstream.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
