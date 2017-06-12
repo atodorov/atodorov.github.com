@@ -97,6 +97,37 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/" rel="bookmark" title="Permalink to Capture Terminal Output From Other Processes">
+                <h2 class="post-title">
+                    Capture Terminal Output From Other Processes
+                </h2>
+            </a>
+                <p>I've been working on a test case to verify that Anaconda will print its EULA
+notice at the end of a text mode installation. The problem is how do you capture
+all the text which is printed to the terminal from processes outside your control ?
+The answer is surprisingly simple - using strace! </p>
+<div class="highlight"><pre><span class="nf">%post</span> <span class="o">--</span><span class="n">nochroot</span>
+<span class="n">PID</span><span class="o">=</span><span class="err">`</span><span class="n">ps</span> <span class="n">aux</span> <span class="o">|</span> <span class="n">grep</span> <span class="s">&quot;/usr/bin/python /sbin/anaconda&quot;</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">v</span> <span class="s">&quot;grep&quot;</span> <span class="o">|</span> <span class="n">tr</span> <span class="o">-</span><span class="n">s</span> <span class="sc">&#39; &#39;</span> <span class="o">|</span> <span class="n">cut</span> <span class="o">-</span><span class="n">f2</span> <span class="o">-</span><span class="n">d</span><span class="sc">&#39; &#39;</span><span class="err">`</span>
+<span class="n">STRACE_LOG</span><span class="o">=</span><span class="s">&quot;/mnt/sysimage/root/anaconda.strace&quot;</span>
+
+<span class="cp"># see https:</span><span class="c1">//fedoraproject.org/wiki/Features/SELinuxDenyPtrace</span>
+<span class="n">setsebool</span> <span class="n">deny_ptrace</span> <span class="mi">0</span>
+
+<span class="cp"># EULA notice is printed after post-scripts are run</span>
+<span class="n">strace</span> <span class="o">-</span><span class="n">e</span> <span class="n">read</span><span class="p">,</span><span class="n">write</span> <span class="o">-</span><span class="n">s16384</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">x</span> <span class="o">-</span><span class="n">o</span> <span class="n">$STRACE_LOG</span> <span class="o">-</span><span class="n">p</span> <span class="n">$PID</span> <span class="o">-</span><span class="n">f</span> <span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">&amp;</span>
+</pre></div>
+
+
+<p>strace is tracing only read and write events (we really only need write) and
+extending the maximum string size printed in the log file. For a simple grep
+this is sufficient. If you need to pretty-print the strace output have a look
+at the <a href="http://search.cpan.org/~bbb/ttylog/ttylog">ttylog</a> utility.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/12/23/insert-key-on-macbook-keyboard/" rel="bookmark" title="Permalink to Insert Key on MacBook Keyboard">
                 <h2 class="post-title">
                     Insert Key on MacBook Keyboard
@@ -1253,34 +1284,6 @@ more details.</p>
                  on Fri 13 November 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/11/13/running-anaconda-from-git/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/" rel="bookmark" title="Permalink to How Krasi Tsonev Broke Planet.SofiaValley.com">
-                <h2 class="post-title">
-                    How Krasi Tsonev Broke Planet.SofiaValley.com
-                </h2>
-            </a>
-                <p>Yesterday I've added <a href="http://krasimirtsonev.com/blog/">Krasimir Tsonev's blog</a> to
-<a href="http://planet.sofiavalley.com">http://planet.sofiavalley.com</a> and the planet broke. Suddenly it started showing
-only Krasi's articles and all of them with the same date. The problem was the RSS
-feed didn't have any timestamps. The fix is trivial:</p>
-<div class="highlight"><pre><span class="gd">--- rss.xml.orig    2015-11-13 10:12:35.348625718 +0200</span>
-<span class="gi">+++ rss.xml 2015-11-13 10:12:45.157932304 +0200</span>
-<span class="gu">@@ -9,120 +9,160 @@</span>
-                             &lt;title&gt;&lt;![CDATA[A modern React starter pack based on webpack]]&gt;&lt;/title&gt;
-                             &lt;link&gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&lt;/link&gt;
-                             &lt;description&gt;&lt;![CDATA[&lt;p&gt;&lt;i&gt;Checkout React webpack starter in &lt;a href=\&quot;https://github.com/krasimir/react-web&lt;br /&gt;&lt;p&gt;You know how crazy is the JavaScript world nowadays. There are new frameworks, libraries and tools coming every day. Frequently I’m exploring some of these goodies. I got a week long holiday. I promised to myself that I’ll not code, read or watch about code. Well, it’s stronger than me. &lt;a href=\&quot;https://github.com/krasimir/react-webpack-starter\&quot;&gt;React werbpack starter&lt;/a&gt; is the result of my no-programming week.&lt;/p&gt;]]&gt;&lt;/description&gt;
-<span class="gi">+                            &lt;pubDate&gt;Thu, 01 Oct 2015 00:00:00 +0300&lt;/pubDate&gt;</span>
-<span class="gi">+                            &lt;guid&gt;http://krasimirtsonev.com/blog/article/a-modern-react-starter-pack-based-on-webpack&lt;/guid&gt;</span>
-                         &lt;/item&gt;
-</pre></div>
-
-
-<p>Thanks to Krasi for fixing this quickly and happy reading!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 13 November 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/11/13/how-krasi-tsonev-broke-planet.sofiavalley.com/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -90,6 +90,65 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/" rel="bookmark" title="Permalink to PhantomJS 2.1.1 in Ubuntu different from upstream">
+                <h2 class="post-title">
+                    PhantomJS 2.1.1 in Ubuntu different from upstream
+                </h2>
+            </a>
+                <p>For some time now I've been hitting
+<a href="https://github.com/ariya/phantomjs/issues/12506">PhantomJS #12506</a> with the
+latest 2.1.1 version. The problem is supposedly fixed in 2.1.0 but this is not
+always the case. If you use a .deb package from the latest Ubuntu then the problem
+still exists, see
+<a href="https://bugs.launchpad.net/ubuntu/+source/phantomjs/+bug/1605628">Ubuntu #1605628</a>.</p>
+<p>It turns out the root cause of this, and probably other problems, is the way
+PhantomJS packages are built. Ubuntu builds the package against their stock
+Qt5WebKit libraries which leads to</p>
+<div class="highlight"><pre><span class="nv">$ </span>ldd usr/lib/phantomjs/phantomjs <span class="p">|</span> grep -i qt
+    libQt5WebKitWidgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKitWidgets.so.5 <span class="o">(</span>0x00007f5173ebf000<span class="o">)</span>
+    libQt5PrintSupport.so.5 <span class="o">=</span>&gt; /lib64/libQt5PrintSupport.so.5 <span class="o">(</span>0x00007f5173e4d000<span class="o">)</span>
+    libQt5Widgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5Widgets.so.5 <span class="o">(</span>0x00007f51737b6000<span class="o">)</span>
+    libQt5WebKit.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKit.so.5 <span class="o">(</span>0x00007f5171342000<span class="o">)</span>
+    libQt5Gui.so.5 <span class="o">=</span>&gt; /lib64/libQt5Gui.so.5 <span class="o">(</span>0x00007f5170df8000<span class="o">)</span>
+    libQt5Network.so.5 <span class="o">=</span>&gt; /lib64/libQt5Network.so.5 <span class="o">(</span>0x00007f5170c9a000<span class="o">)</span>
+    libQt5Core.so.5 <span class="o">=</span>&gt; /lib64/libQt5Core.so.5 <span class="o">(</span>0x00007f517080d000<span class="o">)</span>
+    libQt5Sensors.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sensors.so.5 <span class="o">(</span>0x00007f516b218000<span class="o">)</span>
+    libQt5Positioning.so.5 <span class="o">=</span>&gt; /lib64/libQt5Positioning.so.5 <span class="o">(</span>0x00007f516b1d7000<span class="o">)</span>
+    libQt5OpenGL.so.5 <span class="o">=</span>&gt; /lib64/libQt5OpenGL.so.5 <span class="o">(</span>0x00007f516b17c000<span class="o">)</span>
+    libQt5Sql.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sql.so.5 <span class="o">(</span>0x00007f516b136000<span class="o">)</span>
+    libQt5Quick.so.5 <span class="o">=</span>&gt; /lib64/libQt5Quick.so.5 <span class="o">(</span>0x00007f5169dad000<span class="o">)</span>
+    libQt5Qml.so.5 <span class="o">=</span>&gt; /lib64/libQt5Qml.so.5 <span class="o">(</span>0x00007f5169999000<span class="o">)</span>
+    libQt5WebChannel.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebChannel.so.5 <span class="o">(</span>0x00007f5169978000<span class="o">)</span>
+</pre></div>
+
+
+<p>While building from the upstream sources gives</p>
+<div class="highlight"><pre><span class="nv">$ </span>ldd /tmp/bin/phantomjs <span class="p">|</span> grep -i qt
+</pre></div>
+
+
+<p>If you take a closer look at PhantomJS's sources you will notice there are
+3 git submodules in their repository - <code>3rdparty</code>, <code>qtbase</code> and <code>qtwebkit</code>.
+Then in their <code>build.py</code> you can clearly see that this local fork of <code>QtWebKit</code>
+is built first, then the <code>phantomjs</code> binary is built against it.</p>
+<p>The problem is that these custom forks include additional patches to make
+WebKit suitable for Phantom's needs. And these patches are not available
+in the stock WebKit library that Ubuntu uses.</p>
+<blockquote>
+<p>Yes, that's correct. We need additional functionality that
+vanilla QtWebKit doesn't have. That's why we use custom version.</p>
+<p>Vitaly Slobodin, PhantomJS</p>
+</blockquote>
+<p>At the moment of this writing Vitaly's qtwebkit fork is 28 commits ahead and
+39 commits behind qt:dev. I'm surprised Ubuntu's PhantomJS even works.</p>
+<p>The solution IMO is to bundle the additional sources into the src.deb package
+and use the same building procedure as upstream.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 23 July 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/07/12/testing-the-8-bit-computer-puldin/" rel="bookmark" title="Permalink to Testing the 8-bit computer Puldin">
                 <h2 class="post-title">
                     Testing the 8-bit computer Puldin
@@ -1926,68 +1985,6 @@ at the <a href="http://search.cpan.org/~bbb/ttylog/ttylog">ttylog</a> utility.</
                  on Fri 25 December 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/23/interesting-ruby-resources/" rel="bookmark" title="Permalink to Interesting Ruby Resources">
-                <h2 class="post-title">
-                    Interesting Ruby Resources
-                </h2>
-            </a>
-                <p>During my quest for
-<a href="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/">faster RSpec tests</a>
-I've come across several interesting posts about Ruby. Being new to the language
-they've helped me understand a bit more about the internals. Posting them here
-so they don't get lost.</p>
-<h2>Garbage Collection</h2>
-<p><a href="https://signalvnoise.com/posts/2742-the-road-to-faster-tests">The road to faster tests</a>
-- a story about tests and garbage collection.</p>
-<p><a href="http://labs.clio.com/tuning-ruby-garbage-collection-for-rspec/">Tuning Ruby garbage collection for RSpec</a>
-- practical explanation of Ruby's garbage collector and how to adjust its
-performance for RSpec</p>
-<p><a href="http://samsaffron.com/archive/2013/11/22/demystifying-the-ruby-gc">Demystifying the Ruby GC</a></p>
-<p>Probably the very first posts I found referencing slow RSpec tests. It turned out
-this was not the issue but I've nevertheless tried running GC manually. I can clearly
-see (using <code>puts GC.count</code> in after()) GC invoked less frequently, memory usage rising
-but the overall execution time wasn't affected. The profiler said 2% speed increase
-to be honest.</p>
-<h2>Profiling</h2>
-<p>Not being very clear about the different profiling tools available and how to
-interpret their results I've found these articles:</p>
-<p><a href="https://www.igvita.com/2009/06/13/profiling-ruby-with-googles-perftools/">Profiling Ruby With Google's Perftools</a>
-- practical example for using perftools.rb</p>
-<p><a href="http://stackoverflow.com/questions/32212970/how-to-read-ruby-profilers-output">How to read ruby profiler's output</a> -
-also see the <a href="http://ruby-doc.org/stdlib-2.1.0/libdoc/profiler/rdoc/Profiler__.html">Profiler__ module</a></p>
-<p><a href="http://stackoverflow.com/questions/4856500/show-runtime-for-each-rspec-example">Show runtime for each rspec example</a>
-- using <code>rspec --profile</code></p>
-<h2>Suggestions for Faster Tests</h2>
-<p>Several general best practices for faster tests:</p>
-<p><a href="https://www.netguru.co/blog/9-ways-to-speed-up-your-rspec-tests">9 ways to speed up your RSpec tests</a></p>
-<p><a href="https://infinum.co/the-capsized-eight/articles/run-faster-ruby-on-rails-tests">Run faster Ruby on Rails tests</a></p>
-<p><a href="http://blog.plataformatec.com.br/2011/12/three-tips-to-improve-the-performance-of-your-test-suite/">Three tips to improve the performance of your test suite</a></p>
-<h2>RubyGems related</h2>
-<p>I've noticed Bundler loading tons of requirements (nearly 3000 unique modules)
-and for some particular specs this wasn't necessary (for example running Rubocop).
-I've found the following articles below which sound very reasonable to me:</p>
-<p><a href="http://anti-pattern.com/use-bundler-setup-instead-of-bundler-require">Use Bundler.setup Instead of Bundler.require</a></p>
-<p><a href="http://myronmars.to/n/dev-blog/2012/12/5-reasons-to-avoid-bundler-require">5 Reasons to Avoid Bundler.require</a></p>
-<p><a href="http://2ndscale.com/rtomayko/2009/require-rubygems-antipattern">Why "require 'rubygems'" Is Wrong</a></p>
-<h2>Weird</h2>
-<p>Finally (or more precisely first of all) I've seen this
-<a href="https://www.ruby-forum.com/topic/184516 suggests broken rubygems">Weird performance issue</a>.</p>
-<p>During my initial profiling I've seen (and still see) a similar issue.
-When calling require it goes through lots of hoops before finally loading
-the module. My profiling results show this taking a lot of time but this time
-is likely measured with profiling enabled and doesn't represent the real deal.</p>
-<p>On my
-<a href="http://atodorov.org/blog/2015/04/26/installing-red-hat-enterprise-linux-7-on-macbook-air-2015/">MacBook Air with Red Hat Enterprise Linux 7</a>
-this happens when using Ruby 2.2.2 from Software Collections. If using Ruby
-installed from source with rbenv the profiling profile is completely different.</p>
-<p>I will be examining this one in more details. I'm interested to know what is
-the difference and if that affects performance somehow so stay tuned!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 23 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/23/interesting-ruby-resources/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -1997,7 +1994,7 @@ the difference and if that affects performance somehow so stay tuned!</p>
                 <a href="http://atodorov.org/blog/categories/fedoraplanet/index.html"> &larr; Newest Posts</a>
         </li>
     </ul>
-    Page 2 / 4
+    Page 2 / 5
     <hr>
             </div>
         </div>
