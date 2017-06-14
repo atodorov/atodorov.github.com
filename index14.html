@@ -145,6 +145,64 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/" rel="bookmark" title="Permalink to Email Logging for Django on RedHat OpenShift with Amazon SES">
+                <h2 class="post-title">
+                    Email Logging for Django on RedHat OpenShift with Amazon SES
+                </h2>
+            </a>
+                <p>Sending email in the cloud can be tricky. IPs of cloud providers are blacklisted
+because of frequent abuse. For that reason I use
+<a href="http://aws.amazon.com/ses/">Amazon SES</a> as my email backend. Here is how to
+configure <a href="https://www.djangoproject.com/">Django</a> to send emails to site admins
+when something goes wrong.</p>
+<div class="highlight"><span class="filename">settings.py</span><pre><span class="c"># Valid addresses only.</span>
+<span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s">&#39;Alexander Todorov&#39;</span><span class="p">,</span> <span class="s">&#39;atodorov@example.com&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s">&#39;disable_existing_loggers&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&#39;mail_admins&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+            <span class="s">&#39;class&#39;</span><span class="p">:</span> <span class="s">&#39;django.utils.log.AdminEmailHandler&#39;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s">&#39;loggers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&#39;django.request&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;mail_admins&#39;</span><span class="p">],</span>
+            <span class="s">&#39;level&#39;</span><span class="p">:</span> <span class="s">&#39;ERROR&#39;</span><span class="p">,</span>
+            <span class="s">&#39;propagate&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+ 
+<span class="c"># Used as the From: address when reporting errors to admins</span>
+<span class="c"># Needs to be verified in Amazon SES as a valid sender</span>
+<span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&#39;django@example.com&#39;</span>
+
+<span class="c"># Amazon Simple Email Service settings</span>
+<span class="n">AWS_SES_ACCESS_KEY_ID</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxxxxxx&#39;</span>
+<span class="n">AWS_SES_SECRET_ACCESS_KEY</span> <span class="o">=</span> <span class="s">&#39;xxxxxxxx&#39;</span>
+<span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">&#39;django_ses.SESBackend&#39;</span>
+</pre></div>
+
+
+<p>You also need the <a href="https://github.com/hmarr/django-ses">django-ses</a>
+dependency.</p>
+<p>See <a href="http://docs.djangoproject.com/en/dev/topics/logging">http://docs.djangoproject.com/en/dev/topics/logging</a> for
+more details on how to customize your logging configuration.</p>
+<p>I am using this configuration successfully at RedHat's OpenShift PaaS environment.
+Other users have
+<a href="https://openshift.redhat.com/community/forums/express/missing-email-on-500-ise-w-django">reported</a>
+it works for them too. Should work with any other PaaS provider.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 28 February 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/" rel="bookmark" title="Permalink to Performance Test: Amazon EBS vs. Instance Storage, Pt.1">
                 <h2 class="post-title">
                     Performance Test: Amazon EBS vs. Instance Storage, Pt.1
@@ -1495,58 +1553,6 @@ if you wish to work around this limitation.</p>
                  on Sat 18 February 2012
             </p>
 <p>There are <a href="http://atodorov.org/blog/2012/02/18/how-to-update-dependencies-on-openshift/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/" rel="bookmark" title="Permalink to Spinning-up a Development Instance on OpenShift">
-                <h2 class="post-title">
-                    Spinning-up a Development Instance on OpenShift
-                </h2>
-            </a>
-                <p><a href="http://www.dif.io">Difio</a> is hosted on <a href="http://openshift.redhat.com">OpenShift</a>.
-During development I often need to spin-up another copy of Difio to use for testing and development.
-With OpenShift this is easy and fast. Here's how:</p>
-<ol>
-<li>
-<p>Create another application on OpenShift. This will be your development instance.</p>
-<div class="highlight"><pre>rhc-create-app -a myappdevel -t python-2.6
-</pre></div>
-
-
-</li>
-<li>
-<p>Find out the git URL for the production application:</p>
-<div class="highlight"><pre><span class="nv">$ </span>rhc-user-info
-Application <span class="nv">Info</span>
-<span class="o">================</span>
-myapp
-    Framework: python-2.6
-     Creation: 2012-02-10T12:39:53-05:00
-         UUID: 723f0331e17041e8b34228f87a6cf1f5
-      Git URL: ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-   Public URL: http://myapp-mydomain.rhcloud.com/
-</pre></div>
-
-
-</li>
-<li>
-<p>Push the current code base from the production instance to devel instance:</p>
-<div class="highlight"><pre>cd myappdevel
-git remote add production -m master ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-git pull -s recursive -X theirs production master
-git push
-</pre></div>
-
-
-</li>
-<li>
-<p>Now your <code>myappdevel</code> is the same as your production instance. You will probably want to
-modify your database connection settings at this point and start adding new features.</p>
-</li>
-</ol>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 10 February 2012
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2012/02/10/spinning-up-a-development-instance-on-openshift/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

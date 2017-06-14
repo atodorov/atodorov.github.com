@@ -1,5 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-12T11:30:00+03:00</updated><entry><title>Monitoring behavior via automated tests</title><link href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="alternate"></link><updated>2017-06-12T11:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-12:blog/2017/06/12/monitoring-behavior-via-automated-tests/</id><summary type="html">&lt;p&gt;In my last several presentations I briefly talked about
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-14T11:00:00+03:00</updated><entry><title>VMware's favorite login form</title><link href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/" rel="alternate"></link><updated>2017-06-14T11:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-14:blog/2017/06/14/vmwares-favorite-login-form/</id><summary type="html">&lt;p&gt;&lt;em&gt;How do you test a login form?&lt;/em&gt; is one of my favorite questions when
+screening candidates for QA positions and also a good brain exercise
+even for experienced testers. I've written about it
+&lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;last year&lt;/a&gt;. In this
+blog post I'd like to share a different perspective on this same question,
+this time courtesy of my friend Rayna Stankova.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Login form" src="/images/login_form_vmware.png" title="Login form" /&gt;&lt;/p&gt;
+&lt;h2&gt;What bugs do you see above&lt;/h2&gt;
+&lt;p&gt;The series of images above is from a
+&lt;a href="https://www.meetup.com/Women-Who-Code-Sofia/events/239480974/"&gt;Women Who Code Sofia&lt;/a&gt;
+workshop where the participants were given printed copies and asked to find
+as much defects as possible. Here they are (counting clock-wise from the top-left corner):&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Typo in "Registr" link at the bottom;&lt;/li&gt;
+&lt;li&gt;UI components are not aligned;&lt;/li&gt;
+&lt;li&gt;Missing "Forgot your password?" link&lt;/li&gt;
+&lt;li&gt;Backend credentials validation with empty password;
+   plain text password field; Too specific information about incorrect credentials;&lt;/li&gt;
+&lt;li&gt;Too specific information about incorrect credentials with visual hint
+   as to what exactly is not correct. In this case it looks like the password
+   is OK, maybe it was one of
+   &lt;a href="https://www.youtube.com/watch?v=0Jx8Eay5fWQ"&gt;the 4 most commonly used passwords&lt;/a&gt;,
+   but the username is wrong which we can easily figure out;&lt;/li&gt;
+&lt;li&gt;In this case the error handling appears to be correct, not disclosing what
+   exactly is wrong. The placement is somewhat wrong, it looks like an error
+   message for one of the fields instead for the entire form. I'd move that to the top
+   and even slightly update the wording to be more like &lt;em&gt;Login failed, bad credentials,
+   try again&lt;/em&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;How do you test this&lt;/h2&gt;
+&lt;p&gt;Here is a list of possible test scenarios, proposed by Rayna. Notes are mine.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UI Layer&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 1: Verify Email (User ID) field has focus on page load&lt;/li&gt;
+&lt;li&gt;Test 2: Verify Empty Email (User ID) field and Password field&lt;/li&gt;
+&lt;li&gt;Test 3: Verify Empty Email (User ID) field&lt;/li&gt;
+&lt;li&gt;Test 4: Verify Empty Password field&lt;/li&gt;
+&lt;li&gt;Test 5: Verify Correct sign in&lt;/li&gt;
+&lt;li&gt;Test 6: Verify Incorrect sign in&lt;/li&gt;
+&lt;li&gt;Test 7: Verify Password Reset - working link&lt;/li&gt;
+&lt;li&gt;Test 8: Verify Password Reset - invalid emails&lt;/li&gt;
+&lt;li&gt;Test 9: Verify Password Reset - valid email&lt;/li&gt;
+&lt;li&gt;Test 10: Verify Password Reset - using new password&lt;/li&gt;
+&lt;li&gt;Test 11: Verify Password Reset - using old password&lt;/li&gt;
+&lt;li&gt;Test 12: Verify whether password text is hidden&lt;/li&gt;
+&lt;li&gt;Test 13: Verify text field limits - whether the browser accepts more than the allowed database limits&lt;/li&gt;
+&lt;li&gt;Test 14: Verify that validation message is displayed in case user exceeds the character limit of the username and password fields&lt;/li&gt;
+&lt;li&gt;Test 15: Verify if there is checkbox with label "remember password" in the login page&lt;/li&gt;
+&lt;li&gt;Test 16: Verify if it’s allowed the username to contain non printable characters? If not, this is invalid on the 'create user' section.&lt;/li&gt;
+&lt;li&gt;Test 17: Verify if the user must be logged in to access any other area of the site.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Tests 10 and 11 are particularly relevant for Fedora Account System where
+you need a really strong password and (at least in the past) had to change it more often
+and couldn't reuse any of your old passwords. As a user I really hate this b/c I can't remember
+my own password but it makes for a good test scenario.&lt;/p&gt;
+&lt;p&gt;13 and 14 are also something I rarely see and could make a nice case for
+property based testing.&lt;/p&gt;
+&lt;p&gt;16 would have been the bread and butter of testing Emoj.li (the first emoji-only
+social network).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Keyboard Specific&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 18: Verify Navigate to all fields&lt;/li&gt;
+&lt;li&gt;Test 19: Verify Enter submits on password focus&lt;/li&gt;
+&lt;li&gt;Test 20: Verify Space submits on login focus&lt;/li&gt;
+&lt;li&gt;Test 21: Verify Enter submits&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These are all so relevant with beautifully styled websites nowadays. The one I hate the most
+is when space key doesn't trigger select/unselect for checkboxes which are actually
+images!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Security:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 22: Verify SQL Injections testing - password field&lt;/li&gt;
+&lt;li&gt;Test 23: Verify SQL Injections testing - username field&lt;/li&gt;
+&lt;li&gt;Test 24: Verify SQL Injections testing - reset password&lt;/li&gt;
+&lt;li&gt;Test 25: Verify Password/username not visible from URL login&lt;/li&gt;
+&lt;li&gt;Test 26: Verify For security point of view, in case of incorrect credentials user is displayed the message like
+  "incorrect username or password" instead of exact message pointing at the field that is incorrect.
+  As message like "incorrect username" will aid hacker in brute-forcing the fields one by one&lt;/li&gt;
+&lt;li&gt;Test 27: Verify the timeout of the login session&lt;/li&gt;
+&lt;li&gt;Test 28: Verify if the password can be copy-pasted or not&lt;/li&gt;
+&lt;li&gt;Test 29: Verify that once logged in, clicking back button doesn't logout user&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;22, 23 and 24 are a bit generic and I guess can be collapsed into one. Better yet make
+them more specific instead.&lt;/p&gt;
+&lt;p&gt;Test 28 may sound like nonsense but is not. I remember back in the days that
+it was possible to copy and paste the password out of Windows dial-up credentials screen.
+With heavily styled form fields it is possible to have this problem again so it is
+a valid check IMO.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Others:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 30: Verify that the password is in encrypted form when entered&lt;/li&gt;
+&lt;li&gt;Test 31: Verify the user must be logged in to call any web services.&lt;/li&gt;
+&lt;li&gt;Test 32: Verify if the username is allowed to contain non printable characters,
+  the code handling login can deal with them and no error is thrown.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I think Test 30 means to validate that the backend doesn't store passwords in plain text
+but rather stores their hashes.&lt;/p&gt;
+&lt;p&gt;32 is a duplicate of 16. I also say why only the username? Password field is also
+a good candidate for this.&lt;/p&gt;
+&lt;p&gt;If you check how I
+&lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;would test a login form&lt;/a&gt; you will find
+some similarities but there are also scenarios which are different. I'm interested to
+see what other scenarios we've both missed, especially ones which have manifested themselves
+as bugs in actual applications.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Monitoring behavior via automated tests</title><link href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="alternate"></link><updated>2017-06-12T11:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-12:blog/2017/06/12/monitoring-behavior-via-automated-tests/</id><summary type="html">&lt;p&gt;In my last several presentations I briefly talked about
 using your tests as a monitoring tool. I've not been eating my own
 dog food and stuff failed in production!&lt;/p&gt;
 &lt;h2&gt;What is monitoring via testing&lt;/h2&gt;
@@ -2449,39 +2553,4 @@ how much does their gender being known affect their performance! I hope the girl
 find a way to perform this experiment together with the university Psychology department
 and share the results with us.&lt;/p&gt;
 &lt;p&gt;Btw I will be visiting
-&lt;a href="http://oscal.openlabs.cc/"&gt;OSCAL'17&lt;/a&gt; to check up on that so see you in Albania!&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category></entry><entry><title>Updated MacBook Air Drivers for RHEL 7.3</title><link href="http://atodorov.org/blog/2016/10/18/updated-macbook-air-drivers-for-rhel-7.3/" rel="alternate"></link><updated>2016-10-18T13:27:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-10-18:blog/2016/10/18/updated-macbook-air-drivers-for-rhel-7.3/</id><summary type="html">&lt;p&gt;Today I have re-build the wifi and backlight drivers for MacBook Air
-against the upcoming Red Hat Enterprise Linux 7.3 kernel.
-&lt;em&gt;wl-kmod&lt;/em&gt; again needed a
-&lt;a href="https://github.com/atodorov/wl-kmod-for-rhel7/commit/c6b3d0fde66dd29671df5f52c40f7395f1e1e59e"&gt;small patch&lt;/a&gt;
-before it can be compiled. &lt;em&gt;mba6x_bl&lt;/em&gt; has been updated to the latest
-upstream and compiled without errors. The current RPM versions are&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;akmod-wl-6.30.223.248-9.el7.x86_64.rpm
-kmod-wl-3.10.0-513.el7.x86_64-6.30.223.248-9.el7.x86_64.rpm
-kmod-wl-6.30.223.248-9.el7.x86_64.rpm
-wl-kmod-debuginfo-6.30.223.248-9.el7.x86_64.rpm
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;div class="highlight"&gt;&lt;pre&gt;kmod-mba6x_bl-20161018.d05c125-1.el7.x86_64.rpm
-kmod-mba6x_bl-3.10.0-513.el7.x86_64-20161018.d05c125-1.el7.x86_64.rpm
-mba6x_bl-common-20161018.d05c125-1.el7.x86_64.rpm
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;and they seem to work fine for me. Let me know if you have any issues
-after RHEL 7.3 comes out officially.&lt;/p&gt;
-&lt;p&gt;PS: The &lt;a href="https://github.com/patjak/bcwc_pcie"&gt;bcwc_pcie&lt;/a&gt; driver for the video camera
-appears to be ready for general use, regardless of some issues. No promises here
-but I'll try to compile that one as well and provide it in my
-&lt;a href="http://atodorov.org/blog/2015/04/29/rhel-7-repository-for-macbook-air/"&gt;Macbook Air RHEL 7 repository&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;PS2: Sometime after Sept 14th I have probably upgraded my system and now it can't
-detect external displays if the display is not plugged in during boot. I'm seeing
-the following&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;# cat /sys/class/drm/card0-DP-1/enabled
-disabled
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;which appears to be the same issue reported on the
-&lt;a href="https://bbs.archlinux.org/viewtopic.php?pid=1269591#p1269591"&gt;ArchLinux forum&lt;/a&gt;.
-I'm in a hurry to resolve this and any help is welcome.&lt;/p&gt;</summary><category term="Mac"></category><category term="RHEL"></category><category term="fedora.planet"></category></entry></feed>
+&lt;a href="http://oscal.openlabs.cc/"&gt;OSCAL'17&lt;/a&gt; to check up on that so see you in Albania!&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category></entry></feed>

@@ -145,6 +145,54 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/" rel="bookmark" title="Permalink to Tip: Caching Large Objects for Celery and Amazon SQS">
+                <h2 class="post-title">
+                    Tip: Caching Large Objects for Celery and Amazon SQS
+                </h2>
+            </a>
+                <p>Some time ago a guy called Matt
+<a href="https://groups.google.com/forum/?fromgroups=#!topic/celery-users/RFAuGjZwtmg">asked</a>
+about passing large objects through their messaging queue. They were switching from
+RabbitMQ to Amazon SQS which has a limit of 64K total message size.</p>
+<p>Recently I've made some changes in <a href="http://www.dif.io">Difio</a> which require passing
+larger objects as parameters to a Celery task. Since Difio is also using SQS I faced the
+same problem. Here is the solution using a cache back-end: </p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">cache</span> <span class="k">as</span> <span class="n">cache_module</span>
+
+<span class="k">def</span> <span class="nf">some_method</span><span class="p">():</span>
+    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+
+    <span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+    <span class="n">task_cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+
+    <span class="n">handle_data</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+
+    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">handle_data</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span>
+    <span class="n">task_cache</span> <span class="o">=</span> <span class="n">cache_module</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="s">&#39;taskq&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">task_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="o">...</span> <span class="n">do</span> <span class="n">stuff</span> <span class="o">...</span>
+</pre></div>
+
+
+<p>Objects are persisted in a secondary cache back-end, not the default one, to avoid
+accidental destruction. <code>uuid</code> parameter is a string.</p>
+<p>Although the objects passed are smaller than 64K I haven't seen any issues
+with this solution so far. Let me know if you are using something similar in your code
+and how it works for you. </p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 June 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/06/19/tip-caching-large-objects-for-celery-and-amazon-sqs/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/19/django-tips-using-cache-for-stateful-http/" rel="bookmark" title="Permalink to Django Tips: Using Cache for Stateful HTTP">
                 <h2 class="post-title">
                     Django Tips: Using Cache for Stateful HTTP
@@ -1356,35 +1404,6 @@ don't hesitate to share them in the comments.</p>
                  on Fri 19 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/19/hackfmi-code-stats/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/16/quick-script-for-khan-academy/" rel="bookmark" title="Permalink to Quick Script for Khan Academy - Looking for Contributors">
-                <h2 class="post-title">
-                    Quick Script for Khan Academy - Looking for Contributors
-                </h2>
-            </a>
-                <p>The Bulgarian translators team behind
-<a href="https://www.khanacademy.org/">Khan Academy</a> asked for help some time ago 
-on a local mailing list. I promised to help but had nearly forgotten about that.
-The guys are no developers, they simply wanted a script which will give them information
-if a particular video has Bulgarian subtitles and the completion percentage.</p>
-<p>They gave me a spread sheet file with a list of video URLs (3000 + of them).
-Using Python's <em>BeautifulSoup</em> module I hacked a small script to produce the
-desired output. 
-Everything can be found at <a href="https://github.com/atodorov/Khan-Academy-Find-Subtitles">https://github.com/atodorov/Khan-Academy-Find-Subtitles</a>.</p>
-<p>The script is very fresh, just run it today against the given input and produced
-some results. Lots of the URLs were skipped, around 500 entries produced results,
-100 more failed. I have no idea what happened to the rest.</p>
-<p>This is an ideal side project for students (I'm looking at you #HackFMI participants)
-which will teach you something about screen scraping and extracting data from
-the web. It will also boost your karma by helping a project which
-lacks developers but is open source in nature.</p>
-<p>If you have some Python skills and would like to help please ping me as I
-may not have the time to maintain this project in the long term.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 16 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/16/quick-script-for-khan-academy/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

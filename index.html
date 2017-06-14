@@ -145,6 +145,122 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/" rel="bookmark" title="Permalink to VMware's favorite login form">
+                <h2 class="post-title">
+                    VMware's favorite login form
+                </h2>
+            </a>
+                <p><em>How do you test a login form?</em> is one of my favorite questions when
+screening candidates for QA positions and also a good brain exercise
+even for experienced testers. I've written about it
+<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">last year</a>. In this
+blog post I'd like to share a different perspective on this same question,
+this time courtesy of my friend Rayna Stankova.</p>
+<p><img alt="Login form" src="/images/login_form_vmware.png" title="Login form" /></p>
+<h2>What bugs do you see above</h2>
+<p>The series of images above is from a
+<a href="https://www.meetup.com/Women-Who-Code-Sofia/events/239480974/">Women Who Code Sofia</a>
+workshop where the participants were given printed copies and asked to find
+as much defects as possible. Here they are (counting clock-wise from the top-left corner):</p>
+<ol>
+<li>Typo in "Registr" link at the bottom;</li>
+<li>UI components are not aligned;</li>
+<li>Missing "Forgot your password?" link</li>
+<li>Backend credentials validation with empty password;
+   plain text password field; Too specific information about incorrect credentials;</li>
+<li>Too specific information about incorrect credentials with visual hint
+   as to what exactly is not correct. In this case it looks like the password
+   is OK, maybe it was one of
+   <a href="https://www.youtube.com/watch?v=0Jx8Eay5fWQ">the 4 most commonly used passwords</a>,
+   but the username is wrong which we can easily figure out;</li>
+<li>In this case the error handling appears to be correct, not disclosing what
+   exactly is wrong. The placement is somewhat wrong, it looks like an error
+   message for one of the fields instead for the entire form. I'd move that to the top
+   and even slightly update the wording to be more like <em>Login failed, bad credentials,
+   try again</em>.</li>
+</ol>
+<h2>How do you test this</h2>
+<p>Here is a list of possible test scenarios, proposed by Rayna. Notes are mine.</p>
+<p><strong>UI Layer</strong></p>
+<ul>
+<li>Test 1: Verify Email (User ID) field has focus on page load</li>
+<li>Test 2: Verify Empty Email (User ID) field and Password field</li>
+<li>Test 3: Verify Empty Email (User ID) field</li>
+<li>Test 4: Verify Empty Password field</li>
+<li>Test 5: Verify Correct sign in</li>
+<li>Test 6: Verify Incorrect sign in</li>
+<li>Test 7: Verify Password Reset - working link</li>
+<li>Test 8: Verify Password Reset - invalid emails</li>
+<li>Test 9: Verify Password Reset - valid email</li>
+<li>Test 10: Verify Password Reset - using new password</li>
+<li>Test 11: Verify Password Reset - using old password</li>
+<li>Test 12: Verify whether password text is hidden</li>
+<li>Test 13: Verify text field limits - whether the browser accepts more than the allowed database limits</li>
+<li>Test 14: Verify that validation message is displayed in case user exceeds the character limit of the username and password fields</li>
+<li>Test 15: Verify if there is checkbox with label "remember password" in the login page</li>
+<li>Test 16: Verify if it’s allowed the username to contain non printable characters? If not, this is invalid on the 'create user' section.</li>
+<li>Test 17: Verify if the user must be logged in to access any other area of the site.</li>
+</ul>
+<p>Tests 10 and 11 are particularly relevant for Fedora Account System where
+you need a really strong password and (at least in the past) had to change it more often
+and couldn't reuse any of your old passwords. As a user I really hate this b/c I can't remember
+my own password but it makes for a good test scenario.</p>
+<p>13 and 14 are also something I rarely see and could make a nice case for
+property based testing.</p>
+<p>16 would have been the bread and butter of testing Emoj.li (the first emoji-only
+social network).</p>
+<p><strong>Keyboard Specific</strong></p>
+<ul>
+<li>Test 18: Verify Navigate to all fields</li>
+<li>Test 19: Verify Enter submits on password focus</li>
+<li>Test 20: Verify Space submits on login focus</li>
+<li>Test 21: Verify Enter submits</li>
+</ul>
+<p>These are all so relevant with beautifully styled websites nowadays. The one I hate the most
+is when space key doesn't trigger select/unselect for checkboxes which are actually
+images!</p>
+<p><strong>Security:</strong></p>
+<ul>
+<li>Test 22: Verify SQL Injections testing - password field</li>
+<li>Test 23: Verify SQL Injections testing - username field</li>
+<li>Test 24: Verify SQL Injections testing - reset password</li>
+<li>Test 25: Verify Password/username not visible from URL login</li>
+<li>Test 26: Verify For security point of view, in case of incorrect credentials user is displayed the message like
+  "incorrect username or password" instead of exact message pointing at the field that is incorrect.
+  As message like "incorrect username" will aid hacker in brute-forcing the fields one by one</li>
+<li>Test 27: Verify the timeout of the login session</li>
+<li>Test 28: Verify if the password can be copy-pasted or not</li>
+<li>Test 29: Verify that once logged in, clicking back button doesn't logout user</li>
+</ul>
+<p>22, 23 and 24 are a bit generic and I guess can be collapsed into one. Better yet make
+them more specific instead.</p>
+<p>Test 28 may sound like nonsense but is not. I remember back in the days that
+it was possible to copy and paste the password out of Windows dial-up credentials screen.
+With heavily styled form fields it is possible to have this problem again so it is
+a valid check IMO.</p>
+<p><strong>Others:</strong></p>
+<ul>
+<li>Test 30: Verify that the password is in encrypted form when entered</li>
+<li>Test 31: Verify the user must be logged in to call any web services.</li>
+<li>Test 32: Verify if the username is allowed to contain non printable characters,
+  the code handling login can deal with them and no error is thrown.</li>
+</ul>
+<p>I think Test 30 means to validate that the backend doesn't store passwords in plain text
+but rather stores their hashes.</p>
+<p>32 is a duplicate of 16. I also say why only the username? Password field is also
+a good candidate for this.</p>
+<p>If you check how I
+<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">would test a login form</a> you will find
+some similarities but there are also scenarios which are different. I'm interested to
+see what other scenarios we've both missed, especially ones which have manifested themselves
+as bugs in actual applications.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 14 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="bookmark" title="Permalink to Monitoring behavior via automated tests">
                 <h2 class="post-title">
                     Monitoring behavior via automated tests
@@ -2794,117 +2910,6 @@ I wrote. I will be writing about this experiment next week so stay tuned.</p>
                  on Wed 30 November 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/11/30/highlights-from-ista-and-gtac-2016/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/11/21/women-in-open-source/" rel="bookmark" title="Permalink to Women In Open Source">
-                <h2 class="post-title">
-                    Women In Open Source
-                </h2>
-            </a>
-                <p><img alt="OpenFest 2016" src="/images/openfest2016.jpg" title="OpenFest 2016" /></p>
-<p>It's been 2 weeks after <a href="http://openfest.org">OpenFest 2016</a> and I've promised
-to blog about what happened during the <em>Women in Open Source</em> presentation, which
-is the only single talk I did attend.</p>
-<p>The presenters were Jona Azizaj, whom I met at FOSDEM
-<a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/">earlier this year</a>,
-Suela Palushi and Kristi Progri, all 3 from Albania. I've went to OpenFest
-specifically to meet them and listen to their presentation.</p>
-<p>They started by explaining
-their background and telling us more about their respective communities,
-<a href="https://fedoraproject.org/wiki/Women">Fedora Women</a>,
-<a href="http://womoz.org">WoMoz</a>,
-<a href="https://www.gnome.org/outreachy/">GNOME Outreach</a> and the 
-<a href="https://openlabs.cc/">Open Labs</a> hackerspace in Tirana.
-The girls gave some stats how many women there are in the larger FOSS
-community and what some newcomer's first impressions could be.</p>
-<p><strong>Did you know that in 2002 1.1% of all FOSS participants were female, while in
-2013 that was 11% ? A 10x increase but of them only 1.5% are developers.</strong></p>
-<p>The presentation was a nice overview of different opportunities
-to get involved in open source geared towards women. I've specifically asked and
-the girls responded how they first came to join open source. In general they've
-had a good and welcoming community around them which made it natural to
-join and thrive.</p>
-<p>Now comes the sad part. Instead of welcoming and supporting these girls that they've
-stood up to talk about their experiences the audience did the opposite. In particular
-<a href="http://plushiegames.com/">Maya Milusheva from Plushie Games</a> made a very passionate claim
-against the topic women in tech. It went like this:</p>
-<ul>
-<li>I am a woman</li>
-<li>I am a good developer</li>
-<li>I am a mother</li>
-<li>I am a CEO of a successful IT company</li>
-<li>when I hire I want the best people for my company and they are men</li>
-<li>women simply don't have the required tech skills/level of expertise</li>
-<li>the whole talk about women in open source/diversity is bullshit</li>
-<li>girls need to sit down on their asses and read more, code more, etc.</li>
-</ul>
-<p>In terms of successfullness I think I can compare to Maya. I also have a small
-child, which I regularly take to conferences with me (the badges above).
-I also have an IT company
-which generates a comparable amount of income. I also want to hire the best employees
-for any given project I'm working on. Sometimes it's happened that to be a woman,
-sometimes not. The point here however was not about hiring more women per se. It
-was about giving opportunities in the communities and letting people grow for themselves.</p>
-<p><strong>
-Yes, she has a point but there's something WRONG in coming to listen to a presenter
-just to tell them they are full of shit! It's
-very arrogant shouting around and arguing a point about hiring when in fact the
-entire presentation was not about hiring!
-It is totally unacceptable,
-The NY Times writing about apps you develop and behaving like an asshole at public events at
-the same time!
-</strong></p>
-<p>I've been there, the crowd telling me I'm full of shit when I've been presenting about
-new technologies. I've been there being told that my ideas will not work in this or that
-way, while in fact the very idea of trying and considering a completely different
-technological approach was what counted. And finally I've been there years later when
-the same ideas and technologies have become mainstream and the same crowd was now talking
-about them!</p>
-<p>After Maya there was another person who grabbed the microphone and continued to talk nonsense.
-Unfortunately he didn't state his name and I don't know the guy in person. What he said was
-along the lines of <em>little boys play with robots, little girls play with dolls. They like it
-this way and that's why girls don't get involved in the technical field. Also if a girl
-played with robots she will be called a tomboy and generally have a negative attitude
-towards her</em>.</p>
-<p>It's absolutely clear this guy has no idea what he's talking about.
-Everyone who has small children around them
-will agree that they are born with equal mental capacity. It is up to the
-environment, parents, teachers, etc to shape this capacity in a positive way. I've
-seen children who taught themselves speaking English from YouTube and children the
-same age barely speaking Bulgarian. I've seen children who are curious about the world
-and how it works and children who can't wipe their own noses. It's not because they
-like it that way, it's because of their parents and the environment they live in.</p>
-<p>Finally I'd like to respond to this guy (I was specifically motioned at the conference
-not to respond) with this</p>
-<p><strong>
-I have a 5 year old girl. She likes robots as much as she likes dolls. She works with Linux
-and is lucky enough to have one of the two OLPCs laptops in Bulgaria. She plays
-SuperTux and has already found a bug in it (I've reported it). She's been to several
-Linux and IT conferences as you can see from the picture above.
-She likes being taken to hackathons and learning about inspiring stuff that students are doing.</p>
-<p>Are you telling me that because we have the wrong idea women can't be good at technology
-she can't become a successful engineer ? Are you telling me to basically scratch the next 10 years
-of her life and tell her she can't become what she wants ? Because if you do I say FUCK OFF!</p>
-<p>Even I as a parent don't have the power to tell my child what they can do or not do,
-what they can accomplish or not. My job is to show them the various possibilities that
-exist and guide and support them along they way they want to go! This is what we as society
-also need to do for everyone else!
-</strong></p>
-<p>To wrap up I will tell you about a psychological experiment we devised with Jona and Suela.
-I've proposed
-to find a male and female student in Tirana and have them pose online as somebody from the opposite
-sex, fake accounts and all. They've proposed having the same person both act as male or female
-for the purposes of evening out the tech skills difference.
-The goal is to see how does the tech community react to their contributions and try to measure
-how much does their gender being known affect their performance! I hope the girls will
-find a way to perform this experiment together with the university Psychology department
-and share the results with us.</p>
-<p>Btw I will be visiting
-<a href="http://oscal.openlabs.cc/">OSCAL'17</a> to check up on that so see you in Albania!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 21 November 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/11/21/women-in-open-source/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -1,5 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-12T11:30:00+03:00</updated><entry><title>Monitoring behavior via automated tests</title><link href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="alternate"></link><updated>2017-06-12T11:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-12:blog/2017/06/12/monitoring-behavior-via-automated-tests/</id><summary type="html">&lt;p&gt;In my last several presentations I briefly talked about
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-14T11:00:00+03:00</updated><entry><title>VMware's favorite login form</title><link href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/" rel="alternate"></link><updated>2017-06-14T11:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-14:blog/2017/06/14/vmwares-favorite-login-form/</id><summary type="html">&lt;p&gt;&lt;em&gt;How do you test a login form?&lt;/em&gt; is one of my favorite questions when
+screening candidates for QA positions and also a good brain exercise
+even for experienced testers. I've written about it
+&lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;last year&lt;/a&gt;. In this
+blog post I'd like to share a different perspective on this same question,
+this time courtesy of my friend Rayna Stankova.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Login form" src="/images/login_form_vmware.png" title="Login form" /&gt;&lt;/p&gt;
+&lt;h2&gt;What bugs do you see above&lt;/h2&gt;
+&lt;p&gt;The series of images above is from a
+&lt;a href="https://www.meetup.com/Women-Who-Code-Sofia/events/239480974/"&gt;Women Who Code Sofia&lt;/a&gt;
+workshop where the participants were given printed copies and asked to find
+as much defects as possible. Here they are (counting clock-wise from the top-left corner):&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Typo in "Registr" link at the bottom;&lt;/li&gt;
+&lt;li&gt;UI components are not aligned;&lt;/li&gt;
+&lt;li&gt;Missing "Forgot your password?" link&lt;/li&gt;
+&lt;li&gt;Backend credentials validation with empty password;
+   plain text password field; Too specific information about incorrect credentials;&lt;/li&gt;
+&lt;li&gt;Too specific information about incorrect credentials with visual hint
+   as to what exactly is not correct. In this case it looks like the password
+   is OK, maybe it was one of
+   &lt;a href="https://www.youtube.com/watch?v=0Jx8Eay5fWQ"&gt;the 4 most commonly used passwords&lt;/a&gt;,
+   but the username is wrong which we can easily figure out;&lt;/li&gt;
+&lt;li&gt;In this case the error handling appears to be correct, not disclosing what
+   exactly is wrong. The placement is somewhat wrong, it looks like an error
+   message for one of the fields instead for the entire form. I'd move that to the top
+   and even slightly update the wording to be more like &lt;em&gt;Login failed, bad credentials,
+   try again&lt;/em&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;How do you test this&lt;/h2&gt;
+&lt;p&gt;Here is a list of possible test scenarios, proposed by Rayna. Notes are mine.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UI Layer&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 1: Verify Email (User ID) field has focus on page load&lt;/li&gt;
+&lt;li&gt;Test 2: Verify Empty Email (User ID) field and Password field&lt;/li&gt;
+&lt;li&gt;Test 3: Verify Empty Email (User ID) field&lt;/li&gt;
+&lt;li&gt;Test 4: Verify Empty Password field&lt;/li&gt;
+&lt;li&gt;Test 5: Verify Correct sign in&lt;/li&gt;
+&lt;li&gt;Test 6: Verify Incorrect sign in&lt;/li&gt;
+&lt;li&gt;Test 7: Verify Password Reset - working link&lt;/li&gt;
+&lt;li&gt;Test 8: Verify Password Reset - invalid emails&lt;/li&gt;
+&lt;li&gt;Test 9: Verify Password Reset - valid email&lt;/li&gt;
+&lt;li&gt;Test 10: Verify Password Reset - using new password&lt;/li&gt;
+&lt;li&gt;Test 11: Verify Password Reset - using old password&lt;/li&gt;
+&lt;li&gt;Test 12: Verify whether password text is hidden&lt;/li&gt;
+&lt;li&gt;Test 13: Verify text field limits - whether the browser accepts more than the allowed database limits&lt;/li&gt;
+&lt;li&gt;Test 14: Verify that validation message is displayed in case user exceeds the character limit of the username and password fields&lt;/li&gt;
+&lt;li&gt;Test 15: Verify if there is checkbox with label "remember password" in the login page&lt;/li&gt;
+&lt;li&gt;Test 16: Verify if it’s allowed the username to contain non printable characters? If not, this is invalid on the 'create user' section.&lt;/li&gt;
+&lt;li&gt;Test 17: Verify if the user must be logged in to access any other area of the site.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Tests 10 and 11 are particularly relevant for Fedora Account System where
+you need a really strong password and (at least in the past) had to change it more often
+and couldn't reuse any of your old passwords. As a user I really hate this b/c I can't remember
+my own password but it makes for a good test scenario.&lt;/p&gt;
+&lt;p&gt;13 and 14 are also something I rarely see and could make a nice case for
+property based testing.&lt;/p&gt;
+&lt;p&gt;16 would have been the bread and butter of testing Emoj.li (the first emoji-only
+social network).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Keyboard Specific&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 18: Verify Navigate to all fields&lt;/li&gt;
+&lt;li&gt;Test 19: Verify Enter submits on password focus&lt;/li&gt;
+&lt;li&gt;Test 20: Verify Space submits on login focus&lt;/li&gt;
+&lt;li&gt;Test 21: Verify Enter submits&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These are all so relevant with beautifully styled websites nowadays. The one I hate the most
+is when space key doesn't trigger select/unselect for checkboxes which are actually
+images!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Security:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 22: Verify SQL Injections testing - password field&lt;/li&gt;
+&lt;li&gt;Test 23: Verify SQL Injections testing - username field&lt;/li&gt;
+&lt;li&gt;Test 24: Verify SQL Injections testing - reset password&lt;/li&gt;
+&lt;li&gt;Test 25: Verify Password/username not visible from URL login&lt;/li&gt;
+&lt;li&gt;Test 26: Verify For security point of view, in case of incorrect credentials user is displayed the message like
+  "incorrect username or password" instead of exact message pointing at the field that is incorrect.
+  As message like "incorrect username" will aid hacker in brute-forcing the fields one by one&lt;/li&gt;
+&lt;li&gt;Test 27: Verify the timeout of the login session&lt;/li&gt;
+&lt;li&gt;Test 28: Verify if the password can be copy-pasted or not&lt;/li&gt;
+&lt;li&gt;Test 29: Verify that once logged in, clicking back button doesn't logout user&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;22, 23 and 24 are a bit generic and I guess can be collapsed into one. Better yet make
+them more specific instead.&lt;/p&gt;
+&lt;p&gt;Test 28 may sound like nonsense but is not. I remember back in the days that
+it was possible to copy and paste the password out of Windows dial-up credentials screen.
+With heavily styled form fields it is possible to have this problem again so it is
+a valid check IMO.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Others:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Test 30: Verify that the password is in encrypted form when entered&lt;/li&gt;
+&lt;li&gt;Test 31: Verify the user must be logged in to call any web services.&lt;/li&gt;
+&lt;li&gt;Test 32: Verify if the username is allowed to contain non printable characters,
+  the code handling login can deal with them and no error is thrown.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I think Test 30 means to validate that the backend doesn't store passwords in plain text
+but rather stores their hashes.&lt;/p&gt;
+&lt;p&gt;32 is a duplicate of 16. I also say why only the username? Password field is also
+a good candidate for this.&lt;/p&gt;
+&lt;p&gt;If you check how I
+&lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;would test a login form&lt;/a&gt; you will find
+some similarities but there are also scenarios which are different. I'm interested to
+see what other scenarios we've both missed, especially ones which have manifested themselves
+as bugs in actual applications.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Monitoring behavior via automated tests</title><link href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="alternate"></link><updated>2017-06-12T11:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-12:blog/2017/06/12/monitoring-behavior-via-automated-tests/</id><summary type="html">&lt;p&gt;In my last several presentations I briefly talked about
 using your tests as a monitoring tool. I've not been eating my own
 dog food and stuff failed in production!&lt;/p&gt;
 &lt;h2&gt;What is monitoring via testing&lt;/h2&gt;
@@ -2382,62 +2486,4 @@ vanilla QtWebKit doesn't have. That's why we use custom version.&lt;/p&gt;
 &lt;p&gt;At the moment of this writing Vitaly's qtwebkit fork is 28 commits ahead and
 39 commits behind qt:dev. I'm surprised Ubuntu's PhantomJS even works.&lt;/p&gt;
 &lt;p&gt;The solution IMO is to bundle the additional sources into the src.deb package
-and use the same building procedure as upstream.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>On Python Infinite Loops</title><link href="http://atodorov.org/blog/2016/07/15/on-python-infinite-loops/" rel="alternate"></link><updated>2016-07-15T09:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-07-15:blog/2016/07/15/on-python-infinite-loops/</id><summary type="html">&lt;p&gt;How do you write an endless loop without using &lt;code&gt;True&lt;/code&gt;, &lt;code&gt;False&lt;/code&gt;, number constants
-and comparison operators in Python ?&lt;/p&gt;
-&lt;p&gt;I've been working on the mutation test tool
-&lt;a href="https://github.com/sixty-north/cosmic-ray"&gt;Cosmic Ray&lt;/a&gt; and discovered that it
-was missing a boolean replacement operator, that is an operator which will switch
-&lt;code&gt;True&lt;/code&gt; to &lt;code&gt;False&lt;/code&gt; and vice versa, so I wrote one. I've also added some tests to
-Cosmic Ray's test suite and then I hit the infinite loop problem.
-CR's test suite contains the following code inside a module called &lt;code&gt;adam.py&lt;/code&gt;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="k"&gt;break&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;The test suite executes mutations on &lt;code&gt;adam.py&lt;/code&gt; and then runs some tests which
-it expects to fail. During execution one of the mutations is
-&lt;code&gt;replace break with continue&lt;/code&gt; which makes the above loop infinite. The test suite
-times out after a while and kills the mutation. Everything fails as expected and
-we're good.&lt;/p&gt;
-&lt;p&gt;Adding my boolean replacement operator broke this function. All of the other mutations
-work as expected but then the loop becomes&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="k"&gt;break&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;When we test this particular mutation there is no infinite loop so Cosmic Ray's
-test suite doesn't time out like it should and an error is reported.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;job ID 25:Outcome.SURVIVED:adam
-command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
-&lt;span class="gd"&gt;--- mutation diff ---&lt;/span&gt;
-&lt;span class="gd"&gt;--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
-&lt;span class="gi"&gt;+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py&lt;/span&gt;
-&lt;span class="gu"&gt;@@ -32,6 +32,6 @@&lt;/span&gt;
-     return x
- 
- def trigger_infinite_loop():
-&lt;span class="gd"&gt;-    while True:&lt;/span&gt;
-&lt;span class="gi"&gt;+    while False:&lt;/span&gt;
-         break
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;So the question becomes how to write the loop condition in such a way that nothing
-will mutate it but it will still remain true so that when &lt;code&gt;break&lt;/code&gt; becomes &lt;code&gt;continue&lt;/code&gt;
-this piece of code will become an infinite loop ? Using &lt;code&gt;True&lt;/code&gt; or &lt;code&gt;False&lt;/code&gt; constants
-obviously is a no go. Same goes for numeric constants, e.g. &lt;code&gt;1&lt;/code&gt; or comparison
-operators like &lt;code&gt;&amp;gt;&lt;/code&gt;, &lt;code&gt;&amp;lt;&lt;/code&gt;, &lt;code&gt;is&lt;/code&gt;, &lt;code&gt;not&lt;/code&gt;, etc. - all of them will be mutated and will
-break the loop condition.&lt;/p&gt;
-&lt;p&gt;So I took a look at the docs for
-&lt;a href="https://docs.python.org/2.4/lib/truth.html"&gt;truth value testing&lt;/a&gt; and discovered
-&lt;a href="https://github.com/sixty-north/cosmic-ray/pull/155"&gt;my solution&lt;/a&gt;:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-    &lt;span class="k"&gt;break&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;I'm creating an object instance here which will not be mutated by any of the
-existing mutation operators.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="Python"></category></entry></feed>
+and use the same building procedure as upstream.&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
