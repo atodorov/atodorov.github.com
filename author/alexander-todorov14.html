@@ -97,6 +97,37 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/" rel="bookmark" title="Permalink to Tip: Delete User Profiles with django-social-auth">
+                <h2 class="post-title">
+                    Tip: Delete User Profiles with django-social-auth
+                </h2>
+            </a>
+                <p>Common functionality for websites is the 'DELETE ACCOUNT' or 'DISABLE ACCOUNT'
+button. This is how to implement it if using 
+<a href="https://github.com/omab/django-social-auth">django-social-auth</a>.</p>
+<div class="highlight"><span class="filename">views.py</span><pre><span class="n">delete_objects_for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span> <span class="c"># optional</span>
+<span class="n">UserSocialAuth</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+<span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">is_active</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s">&#39;django.contrib.auth.views.logout&#39;</span><span class="p">))</span>
+</pre></div>
+
+
+<p>This snippet does the following:</p>
+<ul>
+<li>Delete (or archive) all objects for the current user;</li>
+<li>Delete the social auth profile(s) because there is no way to disable them.
+DSA will create new objects if the user logs in again;</li>
+<li>Disable the <code>User</code> object. You could also delete it but mind foreign keys;</li>
+<li>Clear the email for the <code>User</code> object - if a new user is created after deletion
+we don't want duplicated email addresses in the database;</li>
+<li>Finally redirect the user to the logout view.</li>
+</ul>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 06 March 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/03/06/tip-delete-user-profiles-django-social-auth/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/02/28/email-logging-django-redhat-openshift-amazon-ses/" rel="bookmark" title="Permalink to Email Logging for Django on RedHat OpenShift with Amazon SES">
                 <h2 class="post-title">
                     Email Logging for Django on RedHat OpenShift with Amazon SES
@@ -1409,102 +1440,6 @@ myapp
                  on Fri 09 March 2012
             </p>
 <p>There are <a href="http://atodorov.org/blog/2012/03/09/how-to-get-to-the-openshift-shell/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2012/02/18/how-to-update-dependencies-on-openshift/" rel="bookmark" title="Permalink to How to Update Dependencies on OpenShift">
-                <h2 class="post-title">
-                    How to Update Dependencies on OpenShift
-                </h2>
-            </a>
-                <p>If you are already running some cool application on <a href="http://openshift.redhat.com">OpenShift</a>
-it could be the case that you have to update some of the packages installed as dependencies.
-Here is an example for an application using the python-2.6 cartridge.</p>
-<h2>Pull latest upstream packages</h2>
-<p>The most simple method is to update everything to the latest upstream versions. </p>
-<ol>
-<li>
-<p>Backup! Backup! Backup!</p>
-<div class="highlight"><pre>rhc-snapshot -a mycoolapp
-mv mycoolapp.tar.gz mycoolapp-backup-before-update.tar.gz
-</pre></div>
-
-
-</li>
-<li>
-<p>If you haven't specified any particular version in <code>setup.py</code> it will
-look like this:</p>
-<div class="highlight"><pre><span class="o">...</span>
-<span class="n">install_requires</span><span class="o">=</span><span class="p">[</span>
-                <span class="s">&#39;difio-openshift-python&#39;</span><span class="p">,</span>
-                <span class="s">&#39;MySQL-python&#39;</span><span class="p">,</span>
-                <span class="s">&#39;Markdown&#39;</span><span class="p">,</span>
-               <span class="p">],</span>
-<span class="o">...</span>
-</pre></div>
-
-
-</li>
-<li>
-<p>To update simply push to OpenShift instructing it to rebuild your virtualenv:</p>
-<div class="highlight"><pre>cd mycoolapp/
-touch .openshift/markers/force_clean_build
-git add .openshift/markers/force_clean_build
-git commit -m &quot;update to latest upstream&quot;
-git push
-</pre></div>
-
-
-</li>
-</ol>
-<p>Voila! The environment hosting your application is rebuilt from scratch.</p>
-<h2>Keeping some packages unchanged</h2>
-<p>Suppose that before the update you have <code>Markdown-2.0.1</code> and you want to keep it!
-This is easily solved by adding versioned dependency to <code>setup.py</code></p>
-<div class="highlight"><pre><span class="gd">-       &#39;Markdown&#39;,</span>
-<span class="gi">+       &#39;Markdown==2.0.1&#39;,</span>
-</pre></div>
-
-
-<p>If you do that OpenShift will install the same <code>Markdown</code> version when rebuilding your
-application. Everything else will use the latest available versions.</p>
-<p><strong>Note:</strong> after the update it's recommended that you remove the 
-<code>.openshift/markers/force_clean_build</code> file. This will speed up the push/build process
-and will not surprise you with unwanted changes.</p>
-<h2>Update only selected packages</h2>
-<p>Unless your application is really simple or you have tested the updates, I suspect that
-you want to update only selected packages. This can be done without rebuilding the whole
-virtualenv. Use versioned dependencies in <code>setup.py</code> :</p>
-<div class="highlight"><pre><span class="gd">-       &#39;Markdown==2.0.1&#39;,</span>
-<span class="gd">-       &#39;django-countries&#39;,</span>
-<span class="gi">+       &#39;Markdown&gt;=2.1&#39;,</span>
-<span class="gi">+       &#39;django-countries&gt;=1.1.2&#39;,</span>
-</pre></div>
-
-
-<p>No need for <code>force_clean_build</code> this time. Just</p>
-<div class="highlight"><pre>    git commit &amp;&amp; git push
-</pre></div>
-
-
-<p>At the time of writing my application was using <code>Markdown-2.0.1</code> and <code>django-countries-1.0.5</code>.
-Then it updated to <code>Markdown-2.1.1</code> and <code>django-countires-1.1.2</code> which also happened to be
-the latest versions.</p>
-<p><strong>Note:</strong> this will not work without <code>force_clean_build</code></p>
-<div class="highlight"><pre><span class="gd">-       &#39;django-countries==1.0.5&#39;,</span>
-<span class="gi">+       &#39;django-countries&#39;,</span>
-</pre></div>
-
-
-<h2>Warning</h2>
-<p>OpenShift uses a local mirror of <a href="http://pypi.python.org">Python Package Index</a>.
-It seems to be updated every 24 hours or so. Have this in mind if you want to update
-to a package that was just released. It will not work! See
-<a href="/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">How to Deploy Python Hotfix on OpenShift</a>
-if you wish to work around this limitation.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 18 February 2012
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2012/02/18/how-to-update-dependencies-on-openshift/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
