@@ -113,8 +113,8 @@ The last two paragraphs are the semantic/functional mistake I see in this code. 
 for it to work is to use an OOP variant which is further away from what the existing
 clues give us.
 
-**Note:** The variant `sad? stop` is syntactically correct. This means call the function `sad?`
-with parameter `stop`, which depending on the outer scope of this program may or may not
+**Note:** The variant `sad? stop()` is syntactically correct. This means call the function `sad?`
+with parameter the result of calling the method `stop()`, which depending on the outer scope of this program may or may not
 be correct (e.g. `stop` is defined, `sad?` accepts optional parameters, `sad?` maintains
 global state).
 
