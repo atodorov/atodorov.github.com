@@ -90,6 +90,118 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="bookmark" title="Permalink to What's the bug in this pseudo-code">
+                <h2 class="post-title">
+                    What's the bug in this pseudo-code
+                </h2>
+            </a>
+                <p><img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /></p>
+<p>This is one of the stickers for the second edition of Rails Girls Vratsa which
+was held yesterday. Let's explore some of the bug proposals submitted by the Bulgarian QA group:</p>
+<blockquote>
+<ol>
+<li>sad() == true is ugly</li>
+<li>sad() is not very nice, better make it if(isSad())</li>
+<li>use sadStop(), and even better - stopSad()</li>
+<li>there is an extra space character in beAwesome( )</li>
+<li>the last curly bracket needs to be on a new line</li>
+</ol>
+<p>Lyudmil Latinov</p>
+</blockquote>
+<p>My friend Lu describes what I would call style issues. The style he refers to
+is mostly Java oriented, especially with naming things. In Ruby we would probably
+go with <code>sad?</code> instead of <code>isSad</code>. Style is important and there are many tools
+to help us with that this will not cause a functional problem! While I'm at it let me say
+the curly brackets are not the problem either. They are not valid in Ruby this is
+a pseudo-code and they also fall in the style category.</p>
+<p>The next interesting proposal comes from Tsveta Krasteva. She examines the possibility
+of <code>sad()</code> returning an object or nil instead of boolean value. Her first question was
+will the if statement still work, and the answer is yes. In Ruby everything is an object
+and every object can be compared to <code>true</code> and <code>false</code>. See
+<a href="http://www.skorks.com/2009/09/true-false-and-nil-objects-in-ruby/">Alan Skorkin's</a> blog
+post on the subject.</p>
+<p>Then Tsveta says the answer is to use <code>sad().stop()</code> with the warning that it may return
+nil. In this context the <code>sad()</code> method returns on object indicating that the person
+is feeling sad. If the method returns nil then the person is feeling OK.</p>
+<div class="highlight"><span class="filename">example by Tsveta</span><pre><span class="k">class</span> <span class="nc">Csad</span>
+  <span class="k">def</span> <span class="nf">stop</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stop</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">sad</span><span class="p">()</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="no">Csad</span><span class="o">.</span><span class="n">new</span><span class="p">();</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">beAwesome</span><span class="p">()</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;beAwesome</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="k">end</span>
+
+<span class="c1"># notice == true was removed</span>
+<span class="k">if</span><span class="p">(</span><span class="n">sad</span><span class="p">())</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Yes, I am sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="n">sad</span><span class="o">.</span><span class="n">stop</span><span class="p">();</span>
+  <span class="n">beAwesome</span><span class="p">(</span> <span class="p">);</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>While this is coming closer to a functioning solution something about it is bugging me.
+In the if statement the developer has typed more characters than required (<code>== true</code>).
+This sounds to me unlikely but is possible with less experienced developers.
+The other issue is that we are using an object (of <code>class Csad</code>) to represent an internal
+state in the system under test. There is one method to return the state (<code>sad()</code>) and
+another one to alter the state (<code>Csad.stop()</code>). The two methods don't operate on
+the same object! Not a very strong OOP design. On top of that we have to call the
+method twice, first time in the if statement, the second time in the body of the
+if statement, which may have unwanted side effects. It is best to assign the return
+value to some variable instead.</p>
+<p>IMO if we are to use this OOP approach the code should look something like:</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Person</span>
+  <span class="n">def</span> <span class="n">sad</span>?()
+  <span class="nb">end</span>
+
+  <span class="n">def</span> <span class="n">stopBeingSad</span>()
+  <span class="nb">end</span>
+
+  <span class="n">def</span> <span class="n">beAwesome</span>()
+  <span class="nb">end</span>
+<span class="nb">end</span>
+
+<span class="n">p</span> = <span class="n">Person</span>.<span class="nb">new</span>
+<span class="k">if</span> <span class="n">p</span>.<span class="n">sad</span>?
+    <span class="n">p</span>.<span class="n">stopBeingSad</span>
+    <span class="n">p</span>.<span class="n">beAwesome</span>
+<span class="nb">end</span>
+</pre></div>
+
+
+<p>Let me return back to assuming we don't use classes here.
+The first <em>obvious</em> mistake is the space in <code>sad stop();</code> first spotted by Peter Sabev*.
+His proposal, backed by others is to use <code>sad.stop()</code>. However they
+didn't use my hint asking what is the return value of <code>sad()</code> ?</p>
+<p>If <code>sad()</code> returns boolean then we'll get
+<code>undefined method 'stop' for true:TrueClass (NoMethodError)</code>!
+Same thing if <code>sad()</code> returns nil, although we skip the if block in this case.</p>
+<p>In Ruby we are allowed to skip parentheses when calling a method, like I've shown
+above. If we ignore this fact for a second, then <code>sad?.stop()</code> will mean execute the
+method named <code>stop()</code> which is a member of the <code>sad?</code> variable, which is of type method!
+Again, methods don't have an attribute named <code>stop</code>!</p>
+<p>The last two paragraphs are the semantic/functional mistake I see in this code. The only way
+for it to work is to use an OOP variant which is further away from what the existing
+clues give us.</p>
+<p><strong>Note:</strong> The variant <code>sad? stop</code> is syntactically correct. This means call the function <code>sad?</code>
+with parameter <code>stop</code>, which depending on the outer scope of this program may or may not
+be correct (e.g. <code>stop</code> is defined, <code>sad?</code> accepts optional parameters, <code>sad?</code> maintains
+global state).</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 26 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/" rel="bookmark" title="Permalink to VMware's favorite login form">
                 <h2 class="post-title">
                     VMware's favorite login form
@@ -2757,65 +2869,6 @@ for this data structure!</p>
                  on Fri 05 August 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/08/05/python-2-vs-python-3-list-sort-causes-bugs/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/" rel="bookmark" title="Permalink to PhantomJS 2.1.1 in Ubuntu different from upstream">
-                <h2 class="post-title">
-                    PhantomJS 2.1.1 in Ubuntu different from upstream
-                </h2>
-            </a>
-                <p>For some time now I've been hitting
-<a href="https://github.com/ariya/phantomjs/issues/12506">PhantomJS #12506</a> with the
-latest 2.1.1 version. The problem is supposedly fixed in 2.1.0 but this is not
-always the case. If you use a .deb package from the latest Ubuntu then the problem
-still exists, see
-<a href="https://bugs.launchpad.net/ubuntu/+source/phantomjs/+bug/1605628">Ubuntu #1605628</a>.</p>
-<p>It turns out the root cause of this, and probably other problems, is the way
-PhantomJS packages are built. Ubuntu builds the package against their stock
-Qt5WebKit libraries which leads to</p>
-<div class="highlight"><pre><span class="nv">$ </span>ldd usr/lib/phantomjs/phantomjs <span class="p">|</span> grep -i qt
-    libQt5WebKitWidgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKitWidgets.so.5 <span class="o">(</span>0x00007f5173ebf000<span class="o">)</span>
-    libQt5PrintSupport.so.5 <span class="o">=</span>&gt; /lib64/libQt5PrintSupport.so.5 <span class="o">(</span>0x00007f5173e4d000<span class="o">)</span>
-    libQt5Widgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5Widgets.so.5 <span class="o">(</span>0x00007f51737b6000<span class="o">)</span>
-    libQt5WebKit.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKit.so.5 <span class="o">(</span>0x00007f5171342000<span class="o">)</span>
-    libQt5Gui.so.5 <span class="o">=</span>&gt; /lib64/libQt5Gui.so.5 <span class="o">(</span>0x00007f5170df8000<span class="o">)</span>
-    libQt5Network.so.5 <span class="o">=</span>&gt; /lib64/libQt5Network.so.5 <span class="o">(</span>0x00007f5170c9a000<span class="o">)</span>
-    libQt5Core.so.5 <span class="o">=</span>&gt; /lib64/libQt5Core.so.5 <span class="o">(</span>0x00007f517080d000<span class="o">)</span>
-    libQt5Sensors.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sensors.so.5 <span class="o">(</span>0x00007f516b218000<span class="o">)</span>
-    libQt5Positioning.so.5 <span class="o">=</span>&gt; /lib64/libQt5Positioning.so.5 <span class="o">(</span>0x00007f516b1d7000<span class="o">)</span>
-    libQt5OpenGL.so.5 <span class="o">=</span>&gt; /lib64/libQt5OpenGL.so.5 <span class="o">(</span>0x00007f516b17c000<span class="o">)</span>
-    libQt5Sql.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sql.so.5 <span class="o">(</span>0x00007f516b136000<span class="o">)</span>
-    libQt5Quick.so.5 <span class="o">=</span>&gt; /lib64/libQt5Quick.so.5 <span class="o">(</span>0x00007f5169dad000<span class="o">)</span>
-    libQt5Qml.so.5 <span class="o">=</span>&gt; /lib64/libQt5Qml.so.5 <span class="o">(</span>0x00007f5169999000<span class="o">)</span>
-    libQt5WebChannel.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebChannel.so.5 <span class="o">(</span>0x00007f5169978000<span class="o">)</span>
-</pre></div>
-
-
-<p>While building from the upstream sources gives</p>
-<div class="highlight"><pre><span class="nv">$ </span>ldd /tmp/bin/phantomjs <span class="p">|</span> grep -i qt
-</pre></div>
-
-
-<p>If you take a closer look at PhantomJS's sources you will notice there are
-3 git submodules in their repository - <code>3rdparty</code>, <code>qtbase</code> and <code>qtwebkit</code>.
-Then in their <code>build.py</code> you can clearly see that this local fork of <code>QtWebKit</code>
-is built first, then the <code>phantomjs</code> binary is built against it.</p>
-<p>The problem is that these custom forks include additional patches to make
-WebKit suitable for Phantom's needs. And these patches are not available
-in the stock WebKit library that Ubuntu uses.</p>
-<blockquote>
-<p>Yes, that's correct. We need additional functionality that
-vanilla QtWebKit doesn't have. That's why we use custom version.</p>
-<p>Vitaly Slobodin, PhantomJS</p>
-</blockquote>
-<p>At the moment of this writing Vitaly's qtwebkit fork is 28 commits ahead and
-39 commits behind qt:dev. I'm surprised Ubuntu's PhantomJS even works.</p>
-<p>The solution IMO is to bundle the additional sources into the src.deb package
-and use the same building procedure as upstream.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 23 July 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

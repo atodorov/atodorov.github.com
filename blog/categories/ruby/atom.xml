@@ -1,5 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ruby/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2016-12-04T22:48:00+02:00</updated><entry><title>Overridden let() causes segfault with RSpec</title><link href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/" rel="alternate"></link><updated>2016-12-04T22:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-04:blog/2016/12/04/overridden-let-causes-segfault-with-rspec/</id><summary type="html">&lt;p&gt;Last week &lt;a href="https://github.com/syndbg"&gt;Anton&lt;/a&gt; asked me to take a look at one of
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/ruby/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-26T13:30:00+03:00</updated><entry><title>What's the bug in this pseudo-code</title><link href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="alternate"></link><updated>2017-06-26T13:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-26:blog/2017/06/26/whats-the-bug-in-this-pseudo-code/</id><summary type="html">&lt;p&gt;&lt;img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /&gt;&lt;/p&gt;
+&lt;p&gt;This is one of the stickers for the second edition of Rails Girls Vratsa which
+was held yesterday. Let's explore some of the bug proposals submitted by the Bulgarian QA group:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ol&gt;
+&lt;li&gt;sad() == true is ugly&lt;/li&gt;
+&lt;li&gt;sad() is not very nice, better make it if(isSad())&lt;/li&gt;
+&lt;li&gt;use sadStop(), and even better - stopSad()&lt;/li&gt;
+&lt;li&gt;there is an extra space character in beAwesome( )&lt;/li&gt;
+&lt;li&gt;the last curly bracket needs to be on a new line&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Lyudmil Latinov&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;My friend Lu describes what I would call style issues. The style he refers to
+is mostly Java oriented, especially with naming things. In Ruby we would probably
+go with &lt;code&gt;sad?&lt;/code&gt; instead of &lt;code&gt;isSad&lt;/code&gt;. Style is important and there are many tools
+to help us with that this will not cause a functional problem! While I'm at it let me say
+the curly brackets are not the problem either. They are not valid in Ruby this is
+a pseudo-code and they also fall in the style category.&lt;/p&gt;
+&lt;p&gt;The next interesting proposal comes from Tsveta Krasteva. She examines the possibility
+of &lt;code&gt;sad()&lt;/code&gt; returning an object or nil instead of boolean value. Her first question was
+will the if statement still work, and the answer is yes. In Ruby everything is an object
+and every object can be compared to &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt;. See
+&lt;a href="http://www.skorks.com/2009/09/true-false-and-nil-objects-in-ruby/"&gt;Alan Skorkin's&lt;/a&gt; blog
+post on the subject.&lt;/p&gt;
+&lt;p&gt;Then Tsveta says the answer is to use &lt;code&gt;sad().stop()&lt;/code&gt; with the warning that it may return
+nil. In this context the &lt;code&gt;sad()&lt;/code&gt; method returns on object indicating that the person
+is feeling sad. If the method returns nil then the person is feeling OK.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;example by Tsveta&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Csad&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;stop&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;stop&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;sad&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;sad&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+  &lt;span class="no"&gt;Csad&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;new&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;beAwesome&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;beAwesome&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+
+&lt;span class="c1"&gt;# notice == true was removed&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sad&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+  &lt;span class="nb"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Yes, I am sad&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+  &lt;span class="n"&gt;sad&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;stop&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+  &lt;span class="n"&gt;beAwesome&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;While this is coming closer to a functioning solution something about it is bugging me.
+In the if statement the developer has typed more characters than required (&lt;code&gt;== true&lt;/code&gt;).
+This sounds to me unlikely but is possible with less experienced developers.
+The other issue is that we are using an object (of &lt;code&gt;class Csad&lt;/code&gt;) to represent an internal
+state in the system under test. There is one method to return the state (&lt;code&gt;sad()&lt;/code&gt;) and
+another one to alter the state (&lt;code&gt;Csad.stop()&lt;/code&gt;). The two methods don't operate on
+the same object! Not a very strong OOP design. On top of that we have to call the
+method twice, first time in the if statement, the second time in the body of the
+if statement, which may have unwanted side effects. It is best to assign the return
+value to some variable instead.&lt;/p&gt;
+&lt;p&gt;IMO if we are to use this OOP approach the code should look something like:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="n"&gt;Person&lt;/span&gt;
+  &lt;span class="n"&gt;def&lt;/span&gt; &lt;span class="n"&gt;sad&lt;/span&gt;?()
+  &lt;span class="nb"&gt;end&lt;/span&gt;
+
+  &lt;span class="n"&gt;def&lt;/span&gt; &lt;span class="n"&gt;stopBeingSad&lt;/span&gt;()
+  &lt;span class="nb"&gt;end&lt;/span&gt;
+
+  &lt;span class="n"&gt;def&lt;/span&gt; &lt;span class="n"&gt;beAwesome&lt;/span&gt;()
+  &lt;span class="nb"&gt;end&lt;/span&gt;
+&lt;span class="nb"&gt;end&lt;/span&gt;
+
+&lt;span class="n"&gt;p&lt;/span&gt; = &lt;span class="n"&gt;Person&lt;/span&gt;.&lt;span class="nb"&gt;new&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;p&lt;/span&gt;.&lt;span class="n"&gt;sad&lt;/span&gt;?
+    &lt;span class="n"&gt;p&lt;/span&gt;.&lt;span class="n"&gt;stopBeingSad&lt;/span&gt;
+    &lt;span class="n"&gt;p&lt;/span&gt;.&lt;span class="n"&gt;beAwesome&lt;/span&gt;
+&lt;span class="nb"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Let me return back to assuming we don't use classes here.
+The first &lt;em&gt;obvious&lt;/em&gt; mistake is the space in &lt;code&gt;sad stop();&lt;/code&gt; first spotted by Peter Sabev*.
+His proposal, backed by others is to use &lt;code&gt;sad.stop()&lt;/code&gt;. However they
+didn't use my hint asking what is the return value of &lt;code&gt;sad()&lt;/code&gt; ?&lt;/p&gt;
+&lt;p&gt;If &lt;code&gt;sad()&lt;/code&gt; returns boolean then we'll get
+&lt;code&gt;undefined method 'stop' for true:TrueClass (NoMethodError)&lt;/code&gt;!
+Same thing if &lt;code&gt;sad()&lt;/code&gt; returns nil, although we skip the if block in this case.&lt;/p&gt;
+&lt;p&gt;In Ruby we are allowed to skip parentheses when calling a method, like I've shown
+above. If we ignore this fact for a second, then &lt;code&gt;sad?.stop()&lt;/code&gt; will mean execute the
+method named &lt;code&gt;stop()&lt;/code&gt; which is a member of the &lt;code&gt;sad?&lt;/code&gt; variable, which is of type method!
+Again, methods don't have an attribute named &lt;code&gt;stop&lt;/code&gt;!&lt;/p&gt;
+&lt;p&gt;The last two paragraphs are the semantic/functional mistake I see in this code. The only way
+for it to work is to use an OOP variant which is further away from what the existing
+clues give us.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; The variant &lt;code&gt;sad? stop&lt;/code&gt; is syntactically correct. This means call the function &lt;code&gt;sad?&lt;/code&gt;
+with parameter &lt;code&gt;stop&lt;/code&gt;, which depending on the outer scope of this program may or may not
+be correct (e.g. &lt;code&gt;stop&lt;/code&gt; is defined, &lt;code&gt;sad?&lt;/code&gt; accepts optional parameters, &lt;code&gt;sad?&lt;/code&gt; maintains
+global state).&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Ruby"></category></entry><entry><title>Overridden let() causes segfault with RSpec</title><link href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/" rel="alternate"></link><updated>2016-12-04T22:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-04:blog/2016/12/04/overridden-let-causes-segfault-with-rspec/</id><summary type="html">&lt;p&gt;Last week &lt;a href="https://github.com/syndbg"&gt;Anton&lt;/a&gt; asked me to take a look at one of
 his RSpec test suites. He was able to consistently reproduce a segfault which
 looked like this:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;home&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;atodorov/.rbenv&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;versions&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;2.3.2&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;ruby&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;gems&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;2.3.0&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;gems&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;rspec&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="s-Atom"&gt;core&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;3.5.4&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;lib&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;rspec&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;core&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="s-Atom"&gt;runner&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nn"&gt;rb&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;113&lt;/span&gt;&lt;span class="s-Atom"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;BUG&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="s-Atom"&gt;vm_call_cfunc&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="s-Atom"&gt;cfp&lt;/span&gt; &lt;span class="s-Atom"&gt;consistency&lt;/span&gt; &lt;span class="s-Atom"&gt;error&lt;/span&gt;

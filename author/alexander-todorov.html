@@ -97,6 +97,118 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="bookmark" title="Permalink to What's the bug in this pseudo-code">
+                <h2 class="post-title">
+                    What's the bug in this pseudo-code
+                </h2>
+            </a>
+                <p><img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /></p>
+<p>This is one of the stickers for the second edition of Rails Girls Vratsa which
+was held yesterday. Let's explore some of the bug proposals submitted by the Bulgarian QA group:</p>
+<blockquote>
+<ol>
+<li>sad() == true is ugly</li>
+<li>sad() is not very nice, better make it if(isSad())</li>
+<li>use sadStop(), and even better - stopSad()</li>
+<li>there is an extra space character in beAwesome( )</li>
+<li>the last curly bracket needs to be on a new line</li>
+</ol>
+<p>Lyudmil Latinov</p>
+</blockquote>
+<p>My friend Lu describes what I would call style issues. The style he refers to
+is mostly Java oriented, especially with naming things. In Ruby we would probably
+go with <code>sad?</code> instead of <code>isSad</code>. Style is important and there are many tools
+to help us with that this will not cause a functional problem! While I'm at it let me say
+the curly brackets are not the problem either. They are not valid in Ruby this is
+a pseudo-code and they also fall in the style category.</p>
+<p>The next interesting proposal comes from Tsveta Krasteva. She examines the possibility
+of <code>sad()</code> returning an object or nil instead of boolean value. Her first question was
+will the if statement still work, and the answer is yes. In Ruby everything is an object
+and every object can be compared to <code>true</code> and <code>false</code>. See
+<a href="http://www.skorks.com/2009/09/true-false-and-nil-objects-in-ruby/">Alan Skorkin's</a> blog
+post on the subject.</p>
+<p>Then Tsveta says the answer is to use <code>sad().stop()</code> with the warning that it may return
+nil. In this context the <code>sad()</code> method returns on object indicating that the person
+is feeling sad. If the method returns nil then the person is feeling OK.</p>
+<div class="highlight"><span class="filename">example by Tsveta</span><pre><span class="k">class</span> <span class="nc">Csad</span>
+  <span class="k">def</span> <span class="nf">stop</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stop</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">sad</span><span class="p">()</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="no">Csad</span><span class="o">.</span><span class="n">new</span><span class="p">();</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">beAwesome</span><span class="p">()</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;beAwesome</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="k">end</span>
+
+<span class="c1"># notice == true was removed</span>
+<span class="k">if</span><span class="p">(</span><span class="n">sad</span><span class="p">())</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Yes, I am sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="n">sad</span><span class="o">.</span><span class="n">stop</span><span class="p">();</span>
+  <span class="n">beAwesome</span><span class="p">(</span> <span class="p">);</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>While this is coming closer to a functioning solution something about it is bugging me.
+In the if statement the developer has typed more characters than required (<code>== true</code>).
+This sounds to me unlikely but is possible with less experienced developers.
+The other issue is that we are using an object (of <code>class Csad</code>) to represent an internal
+state in the system under test. There is one method to return the state (<code>sad()</code>) and
+another one to alter the state (<code>Csad.stop()</code>). The two methods don't operate on
+the same object! Not a very strong OOP design. On top of that we have to call the
+method twice, first time in the if statement, the second time in the body of the
+if statement, which may have unwanted side effects. It is best to assign the return
+value to some variable instead.</p>
+<p>IMO if we are to use this OOP approach the code should look something like:</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="n">Person</span>
+  <span class="n">def</span> <span class="n">sad</span>?()
+  <span class="nb">end</span>
+
+  <span class="n">def</span> <span class="n">stopBeingSad</span>()
+  <span class="nb">end</span>
+
+  <span class="n">def</span> <span class="n">beAwesome</span>()
+  <span class="nb">end</span>
+<span class="nb">end</span>
+
+<span class="n">p</span> = <span class="n">Person</span>.<span class="nb">new</span>
+<span class="k">if</span> <span class="n">p</span>.<span class="n">sad</span>?
+    <span class="n">p</span>.<span class="n">stopBeingSad</span>
+    <span class="n">p</span>.<span class="n">beAwesome</span>
+<span class="nb">end</span>
+</pre></div>
+
+
+<p>Let me return back to assuming we don't use classes here.
+The first <em>obvious</em> mistake is the space in <code>sad stop();</code> first spotted by Peter Sabev*.
+His proposal, backed by others is to use <code>sad.stop()</code>. However they
+didn't use my hint asking what is the return value of <code>sad()</code> ?</p>
+<p>If <code>sad()</code> returns boolean then we'll get
+<code>undefined method 'stop' for true:TrueClass (NoMethodError)</code>!
+Same thing if <code>sad()</code> returns nil, although we skip the if block in this case.</p>
+<p>In Ruby we are allowed to skip parentheses when calling a method, like I've shown
+above. If we ignore this fact for a second, then <code>sad?.stop()</code> will mean execute the
+method named <code>stop()</code> which is a member of the <code>sad?</code> variable, which is of type method!
+Again, methods don't have an attribute named <code>stop</code>!</p>
+<p>The last two paragraphs are the semantic/functional mistake I see in this code. The only way
+for it to work is to use an OOP variant which is further away from what the existing
+clues give us.</p>
+<p><strong>Note:</strong> The variant <code>sad? stop</code> is syntactically correct. This means call the function <code>sad?</code>
+with parameter <code>stop</code>, which depending on the outer scope of this program may or may not
+be correct (e.g. <code>stop</code> is defined, <code>sad?</code> accepts optional parameters, <code>sad?</code> maintains
+global state).</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 26 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/15/design-for-developers-in-5-steps/" rel="bookmark" title="Permalink to Design for developers in 5 steps">
                 <h2 class="post-title">
                     Design for developers in 5 steps
@@ -2742,104 +2854,6 @@ Job #77.44!</p>
                  on Fri 16 December 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/" rel="bookmark" title="Permalink to Overridden let() causes segfault with RSpec">
-                <h2 class="post-title">
-                    Overridden let() causes segfault with RSpec
-                </h2>
-            </a>
-                <p>Last week <a href="https://github.com/syndbg">Anton</a> asked me to take a look at one of
-his RSpec test suites. He was able to consistently reproduce a segfault which
-looked like this:</p>
-<div class="highlight"><pre><span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span><span class="s-Atom">:</span> <span class="p">[</span><span class="nv">BUG</span><span class="p">]</span> <span class="s-Atom">vm_call_cfunc</span> <span class="o">-</span> <span class="s-Atom">cfp</span> <span class="s-Atom">consistency</span> <span class="s-Atom">error</span>
-<span class="s-Atom">ruby</span> <span class="mf">2.3.2</span><span class="nf">p217</span> <span class="p">(</span><span class="mi">2016</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">15</span> <span class="s-Atom">revision</span> <span class="mi">56796</span><span class="p">)</span> <span class="p">[</span><span class="s-Atom">x86_64</span><span class="o">-</span><span class="s-Atom">linux</span><span class="p">]</span>
-
-<span class="s-Atom">--</span> <span class="nv">Control</span> <span class="s-Atom">frame</span> <span class="s-Atom">information</span> <span class="s-Atom">-----------------------------------------------</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0013</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0048</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000047</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:map</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0045</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000044</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0035</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0043</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000042</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">configuration</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">1835</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0040</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000039</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">112</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0009</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0018</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0037</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000036</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">reporter</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">77</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0008</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0022</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0033</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000032</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">111</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0007</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0028</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000027</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">87</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0006</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0085</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0023</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000022</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">71</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0005</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0026</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0016</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000015</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">45</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0004</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000011</span> <span class="nv">TOP</span>    <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">exe</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">4</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0003</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000009</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:load</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0002</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0136</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0006</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">001</span><span class="s-Atom">e10</span> <span class="nv">EVAL</span>   <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">bin</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">22</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
-<span class="nn">c</span><span class="p">:</span><span class="mi">0001</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0000</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0002</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">0000</span><span class="nf">a0</span> <span class="p">(</span><span class="s-Atom">none</span><span class="p">)</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
-</pre></div>
-
-
-<p>Googling for <code>vm_call_cfunc - cfp consistency error</code> yields
-<a href="https://bugs.ruby-lang.org/issues/10460">Ruby #10460</a>. Comments on the bug and
-particularly this one point towards the error:</p>
-<div class="highlight"><pre>&gt; Ruby is trying to be nice about reporting the error; but in the end,
-&gt; your code is still broken if it overflows stack.
-</pre></div>
-
-
-<p>Somewhere in the test suite was a piece of code that was overflowing the stack.
-It was somewhere along the lines of</p>
-<div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
-  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
-    <span class="n">it_behaves_like</span> <span class="s1">&#39;manager authentication&#39;</span> <span class="k">do</span>
-      <span class="n">include_examples</span> <span class="s1">&#39;active client for user with existing user&#39;</span>
-    <span class="k">end</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</pre></div>
-
-
-<p>Considering the examples in the bug I started looking for patterns where a variable
-was defined and later redefined, possibly circling back to the previous definition.
-Expanding the shared examples by hand transformed the code into</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
- 2
- 3
- 4
- 5
- 6
- 7
- 8
- 9
-10
-11
-12
-13</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
-  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
-    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span> <span class="ss">:manager</span><span class="p">)</span> <span class="p">}</span>
-    <span class="n">let!</span><span class="p">(</span><span class="ss">:api_user_authentication</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user_authentication</span><span class="p">,</span> <span class="ss">user</span><span class="p">:</span> <span class="n">user</span><span class="p">)</span> <span class="p">}</span>
-    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">api_user_authentication</span><span class="o">.</span><span class="n">user</span> <span class="p">}</span>
-
-    <span class="n">context</span> <span class="s1">&#39;with an `active_assigned_client`&#39;</span> <span class="k">do</span>
-      <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
-    <span class="k">end</span>
-
-    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</pre></div>
-</td></tr></table>
-
-<p>Line 5. overrode line 3. When line 4. was executed first because of lazy execution
-and the call execution path became: 4-5-4-5-4-5 ... <strong>NOTE:</strong> I think we need a
-warning about that in RuboCop, see
-<a href="https://github.com/bbatsov/rubocop/issues/3769">RuboCop #3769</a>.
-The fix however is a no brainer:</p>
-<div class="highlight"><pre><span class="gd">-  let(:user) { create(:user, :manager) }</span>
-<span class="gd">-  let!(:api_user_authentication) { create(:user_authentication, user: user) }</span>
-<span class="gi">+  let(:manager) { create(:user, :manager) }</span>
-<span class="gi">+  let!(:api_user_authentication) { create(:user_authentication, user: manager) }</span>
-</pre></div>
-
-
-<p>Thanks for reading and happy testing.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 04 December 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
