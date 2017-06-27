@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-        <meta charset="utf-8">
+            <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
             <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
 
-        <title>atodorov.org - Authors</title>
+        <title>Producing coverage report for Haskell binaries</title>
 
         <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
         <!-- Bootstrap Core CSS -->
@@ -35,14 +35,34 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-                <meta property="fb:admins" content="1616937247" >
+
+
+        <meta name="description" content="and integration with Coveralls.io">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="fedora.planet">
+        <meta name="tags" content="QA">
+
+	                <meta property="fb:admins" content="1616937247" >
                 <meta property="og:locale" content="en_US">
 		<meta property="og:site_name" content="atodorov.org">
-            <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:site" content="@atodorov_">
-            <meta name="twitter:title" content="atodorov.org">
-            <meta name="twitter:description" content="you can logoff, but you can never leave">
-                <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/">
+	<meta property="og:title" content="Producing coverage report for Haskell binaries">
+	<meta property="article:published_time" content="2017-06-27 10:00:00+03:00">
+            <meta property="og:description" content="and integration with Coveralls.io">
+
+            <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Producing coverage report for Haskell binaries">
+
+            <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
+
+            <meta name="twitter:description" content="and integration with Coveralls.io">
 </head>
 
 <body>
@@ -79,7 +99,13 @@
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>Articles by </h1>
+                        <h1>Producing coverage report for Haskell binaries</h1>
+                            <h3 class="subheading">and integration with Coveralls.io</h3>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Tue 27 June 2017
+                        </span>
+                        
                     </div>
                 </div>
             </div>
@@ -90,14 +116,140 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-preview">
-            <a href="http://atodorov.org/author/alexander-todorov.html" rel="bookmark">
-                <h2 class="post-title">
-                    Alexander Todorov (286)
-                </h2>
-            </a>
+    <!-- Post Content -->
+    <article>
+        <p>Recently I've started testing a Haskell application and a question I find
+unanswered (or at least very poorly documented) is how to produce coverage
+reports for binaries ?</p>
+<h2>Understanding HPC &amp; cabal</h2>
+<p><code>hpc</code> is the Haskell code coverage tool. It produces the following files:</p>
+<ul>
+<li>.mix - module index file, contains information about <em>tick boxes</em> - their type
+  and location in the source code;</li>
+<li>.tix - tick index file aka coverage report;</li>
+<li>.pix - program index file, used only by <code>hpc trans</code>.</li>
+</ul>
+<p>The invocation to <code>hpc report</code> needs to know where to find the .mix files in order
+to be able to translate the coverage information back to source and it needs to
+know the location (full path or relative from pwd) to the tix file we want to
+report.</p>
+<p><code>cabal</code> is the package management tool for Haskell. Among other thing it can be used
+to build your code, execute the test suite and produce the coverage report for you.
+<code>cabal build</code> will produce module information in <code>dist/hpc/vanilla/mix</code> and
+<code>cabal test</code> will store coverage information in <code>dist/hpc/vanilla/tix</code>!</p>
+<p>A particular thing about Haskell is that you can only test code which can be
+<code>import</code>ed, e.g. it is a library module. You can't test (via Hspec or Hunit) code which
+lives inside a file that produces a binary (e.g. Main.hs). However you can still
+execute these binaries (e.g. invoke them from the shell) and they will produce a
+coverage report in the current directory (e.g. main.tix).</p>
+<h2>Putting everything together</h2>
+<ol>
+<li>Using <code>cabal build</code> and <code>cabal test</code> build the project and execute your unit tests.
+   This will create the necessary .mix files (including ones for binaries) and .tix
+   files coming from unit testing;</li>
+<li>Invoke your binaries passing appropriate data and examining the results (e.g. compare
+   the output to a known value). A simple shell or Python script could do the job;</li>
+<li>Copy the <code>binary.tix</code> file under <code>dist/hpc/vanilla/binary/binary.tix</code>!</li>
+</ol>
+<p>Produce coverage report with hpc:</p>
+<div class="highlight"><pre>hpc markup --hpcdir=dist/hpc/vanilla/mix/lib --hpcdir=dist/hpc/vanilla/mix/binary  dist/hpc/vanilla/tix/binary/binary.tix
+</pre></div>
+
+
+<p>Convert the coverage report to JSON and send it to Coveralls.io:</p>
+<div class="highlight"><pre>cabal install hpc-coveralls
+~/.cabal/bin/hpc-coveralls --display-report tests binary
+</pre></div>
+
+
+<h2>Example</h2>
+<p>Check out the <a href="https://github.com/weldr/haskell-rpm/pull/18">haskell-rpm</a> repository
+for an example. See <a href="https://coveralls.io/builds/12131112">job #45</a> where there is now
+coverage for the <code>inspect.hs</code>, <code>unrpm.hs</code> and <code>rpm2json.hs</code> files, producing binary executables.
+Also notice that in
+<a href="https://coveralls.io/builds/12131112/source?filename=.%2FRPM%2FParse.hs">RPM/Parse.hs</a>
+the function <code>parseRPMC</code> is now covered, while it was not covered in the
+<a href="https://coveralls.io/builds/12102486/source?filename=.%2FRPM%2FParse.hs">previous job #42</a>!</p>
+<div class="highlight"><span class="filename">.travis.yml snippet</span><pre><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hlint .</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install --dependencies-only --enable-tests</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal configure --enable-tests --enable-coverage --ghc-option=-DTEST</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal build</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal test --show-details=always</span>
+
+  <span class="c1"># tests to produce coverage for binaries</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/x86_64/efivar-0.14-1.el7.x86_64.rpm</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">./tests/test_binaries.sh ./efivar-0.14-1.el7.x86_64.rpm</span>
+
+  <span class="c1"># move .tix files in appropriate directories</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mkdir ./dist/hpc/vanilla/tix/inspect/ ./dist/hpc/vanilla/tix/unrpm/ ./dist/hpc/vanilla/tix/rpm2json/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv inspect.tix ./dist/hpc/vanilla/tix/inspect/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv rpm2json.tix ./dist/hpc/vanilla/tix/rpm2json/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv unrpm.tix ./dist/hpc/vanilla/tix/unrpm/</span>
+
+<span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install hpc-coveralls</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hpc-coveralls --display-report tests inspect rpm2json unrpm</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy testing!</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, <a href="http://atodorov.org/blog/categories/qa/">QA</a></p>
         </div>
-        <hr>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2017/06/27/producing-coverage-report-for-haskell-binaries/';
+                var disqus_url = 'http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
             </div>
         </div>
     </div>

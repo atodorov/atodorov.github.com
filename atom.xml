@@ -1,5 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-26T13:30:00+03:00</updated><entry><title>What's the bug in this pseudo-code</title><link href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="alternate"></link><updated>2017-06-26T13:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-26:blog/2017/06/26/whats-the-bug-in-this-pseudo-code/</id><summary type="html">&lt;p&gt;&lt;img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-27T10:00:00+03:00</updated><entry><title>Producing coverage report for Haskell binaries</title><link href="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/" rel="alternate"></link><updated>2017-06-27T10:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-27:blog/2017/06/27/producing-coverage-report-for-haskell-binaries/</id><summary type="html">&lt;p&gt;Recently I've started testing a Haskell application and a question I find
+unanswered (or at least very poorly documented) is how to produce coverage
+reports for binaries ?&lt;/p&gt;
+&lt;h2&gt;Understanding HPC &amp;amp; cabal&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;hpc&lt;/code&gt; is the Haskell code coverage tool. It produces the following files:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;.mix - module index file, contains information about &lt;em&gt;tick boxes&lt;/em&gt; - their type
+  and location in the source code;&lt;/li&gt;
+&lt;li&gt;.tix - tick index file aka coverage report;&lt;/li&gt;
+&lt;li&gt;.pix - program index file, used only by &lt;code&gt;hpc trans&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The invocation to &lt;code&gt;hpc report&lt;/code&gt; needs to know where to find the .mix files in order
+to be able to translate the coverage information back to source and it needs to
+know the location (full path or relative from pwd) to the tix file we want to
+report.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;cabal&lt;/code&gt; is the package management tool for Haskell. Among other thing it can be used
+to build your code, execute the test suite and produce the coverage report for you.
+&lt;code&gt;cabal build&lt;/code&gt; will produce module information in &lt;code&gt;dist/hpc/vanilla/mix&lt;/code&gt; and
+&lt;code&gt;cabal test&lt;/code&gt; will store coverage information in &lt;code&gt;dist/hpc/vanilla/tix&lt;/code&gt;!&lt;/p&gt;
+&lt;p&gt;A particular thing about Haskell is that you can only test code which can be
+&lt;code&gt;import&lt;/code&gt;ed, e.g. it is a library module. You can't test (via Hspec or Hunit) code which
+lives inside a file that produces a binary (e.g. Main.hs). However you can still
+execute these binaries (e.g. invoke them from the shell) and they will produce a
+coverage report in the current directory (e.g. main.tix).&lt;/p&gt;
+&lt;h2&gt;Putting everything together&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Using &lt;code&gt;cabal build&lt;/code&gt; and &lt;code&gt;cabal test&lt;/code&gt; build the project and execute your unit tests.
+   This will create the necessary .mix files (including ones for binaries) and .tix
+   files coming from unit testing;&lt;/li&gt;
+&lt;li&gt;Invoke your binaries passing appropriate data and examining the results (e.g. compare
+   the output to a known value). A simple shell or Python script could do the job;&lt;/li&gt;
+&lt;li&gt;Copy the &lt;code&gt;binary.tix&lt;/code&gt; file under &lt;code&gt;dist/hpc/vanilla/binary/binary.tix&lt;/code&gt;!&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Produce coverage report with hpc:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;hpc markup --hpcdir=dist/hpc/vanilla/mix/lib --hpcdir=dist/hpc/vanilla/mix/binary  dist/hpc/vanilla/tix/binary/binary.tix
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Convert the coverage report to JSON and send it to Coveralls.io:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cabal install hpc-coveralls
+~/.cabal/bin/hpc-coveralls --display-report tests binary
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Example&lt;/h2&gt;
+&lt;p&gt;Check out the &lt;a href="https://github.com/weldr/haskell-rpm/pull/18"&gt;haskell-rpm&lt;/a&gt; repository
+for an example. See &lt;a href="https://coveralls.io/builds/12131112"&gt;job #45&lt;/a&gt; where there is now
+coverage for the &lt;code&gt;inspect.hs&lt;/code&gt;, &lt;code&gt;unrpm.hs&lt;/code&gt; and &lt;code&gt;rpm2json.hs&lt;/code&gt; files, producing binary executables.
+Also notice that in
+&lt;a href="https://coveralls.io/builds/12131112/source?filename=.%2FRPM%2FParse.hs"&gt;RPM/Parse.hs&lt;/a&gt;
+the function &lt;code&gt;parseRPMC&lt;/code&gt; is now covered, while it was not covered in the
+&lt;a href="https://coveralls.io/builds/12102486/source?filename=.%2FRPM%2FParse.hs"&gt;previous job #42&lt;/a&gt;!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;.travis.yml snippet&lt;/span&gt;&lt;pre&gt;&lt;span class="l-Scalar-Plain"&gt;script&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;~/.cabal/bin/hlint .&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cabal install --dependencies-only --enable-tests&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cabal configure --enable-tests --enable-coverage --ghc-option=-DTEST&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cabal build&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cabal test --show-details=always&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# tests to produce coverage for binaries&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/x86_64/efivar-0.14-1.el7.x86_64.rpm&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;./tests/test_binaries.sh ./efivar-0.14-1.el7.x86_64.rpm&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# move .tix files in appropriate directories&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;mkdir ./dist/hpc/vanilla/tix/inspect/ ./dist/hpc/vanilla/tix/unrpm/ ./dist/hpc/vanilla/tix/rpm2json/&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;mv inspect.tix ./dist/hpc/vanilla/tix/inspect/&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;mv rpm2json.tix ./dist/hpc/vanilla/tix/rpm2json/&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;mv unrpm.tix ./dist/hpc/vanilla/tix/unrpm/&lt;/span&gt;
+
+&lt;span class="l-Scalar-Plain"&gt;after_success&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cabal install hpc-coveralls&lt;/span&gt;
+  &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;~/.cabal/bin/hpc-coveralls --display-report tests inspect rpm2json unrpm&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>What's the bug in this pseudo-code</title><link href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="alternate"></link><updated>2017-06-26T13:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-26:blog/2017/06/26/whats-the-bug-in-this-pseudo-code/</id><summary type="html">&lt;p&gt;&lt;img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /&gt;&lt;/p&gt;
 &lt;p&gt;This is one of the stickers for the second edition of Rails Girls Vratsa which
 was held yesterday. Let's explore some of the bug proposals submitted by the Bulgarian QA group:&lt;/p&gt;
 &lt;blockquote&gt;
@@ -2465,56 +2540,4 @@ which will be held in London.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;UPDATE:&lt;/strong&gt; I have written
 &lt;a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/"&gt;Mutation testing vs. coverage, Pt.2&lt;/a&gt;
 with another example.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>How to create auxiliary build jobs in Travis-CI matrix</title><link href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/" rel="alternate"></link><updated>2016-12-16T11:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-16:blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/</id><summary type="html">&lt;p&gt;&lt;img alt="Auxiliary build job in Travis-CI" src="/images/travisci_extra_job_in_matrix.png" title="Auxiliary build job in Travis-CI" /&gt;&lt;/p&gt;
-&lt;p&gt;In Travis-CI when you combine the three main configuration options of
-&lt;em&gt;Runtime (language)&lt;/em&gt;, &lt;em&gt;Environment&lt;/em&gt; and &lt;em&gt;Exclusions/Inclusions&lt;/em&gt; you get a
-&lt;a href="https://docs.travis-ci.com/user/customizing-the-build#Build-Matrix"&gt;build matrix&lt;/a&gt;
-of all possible combinations! For example, for &lt;em&gt;django-chartit&lt;/em&gt; the matrix includes
-43 build jobs, spread across various Python and Django versions. For reference
-see &lt;a href="https://travis-ci.org/chartit/django-chartit/builds/181115880"&gt;Build #75&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;For &lt;em&gt;django-chartit&lt;/em&gt; I wanted to have an additional build job which would execute
-pylint. I wanted the job to be independent because currently pylint produces lots
-of errors and warnings. Having an independent job instead of integrating pylint
-together with all jobs makes it easier to see if any of the functional tests failed.&lt;/p&gt;
-&lt;p&gt;Using the inclusion functionality of Travis-CI I was able to define an auxiliary
-build job. The trick is to provide sane environment defaults for all
-build jobs (regular and auxiliary ones) so you don't have to expand your environment
-section! In this case the change looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/.travis.yml b/.travis.yml&lt;/span&gt;
-&lt;span class="gh"&gt;index 67f656d..9b669f9 100644&lt;/span&gt;
-&lt;span class="gd"&gt;--- a/.travis.yml&lt;/span&gt;
-&lt;span class="gi"&gt;+++ b/.travis.yml&lt;/span&gt;
-&lt;span class="gu"&gt;@@ -2,6 +2,8 @@ after_success:&lt;/span&gt;
- - coveralls
- before_install:
- - pip install coveralls
-&lt;span class="gi"&gt;+- if [ -z &amp;quot;$_COMMAND&amp;quot; ]; then export _COMMAND=coverage; fi&lt;/span&gt;
-&lt;span class="gi"&gt;+- if [ -z &amp;quot;$_DJANGO&amp;quot; ]; then export _DJANGO=1.10.4; fi&lt;/span&gt;
- env:
- - !!python/unicode &amp;#39;_DJANGO=1.10&amp;#39;
- - !!python/unicode &amp;#39;_DJANGO=1.10.2&amp;#39;
-&lt;span class="gu"&gt;@@ -41,6 +43,10 @@ matrix:&lt;/span&gt;
-     python: 3.3
-   - env: _DJANGO=1.10.4
-     python: 3.3
-&lt;span class="gi"&gt;+  include:&lt;/span&gt;
-&lt;span class="gi"&gt;+  - env: _COMMAND=pylint&lt;/span&gt;
-&lt;span class="gi"&gt;+    python: 3.5&lt;/span&gt;
-&lt;span class="gi"&gt;+&lt;/span&gt;
- notifications:
-   email:
-     on_failure: change
-&lt;span class="gu"&gt;@@ -50,4 +56,4 @@ python:&lt;/span&gt;
- - 3.3
- - 3.4
- - 3.5
-&lt;span class="gd"&gt;-script: make coverage&lt;/span&gt;
-&lt;span class="gi"&gt;+script: make $_COMMAND&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;For more info take a look at
-&lt;a href="https://github.com/chartit/django-chartit/commit/b22eda7cd67a062f49a0f60b8ac51383e4f8c3a5"&gt;commit b22eda7&lt;/a&gt;
-and &lt;a href="https://travis-ci.org/chartit/django-chartit/builds/183883813"&gt;Build #77&lt;/a&gt;. Note
-Job #77.44!&lt;/p&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>

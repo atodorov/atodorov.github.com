@@ -90,6 +90,57 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="bookmark" title="Permalink to 4000+ bugs in Fedora - checksec failures">
+                <h2 class="post-title">
+                    4000+ bugs in Fedora - checksec failures
+                </h2>
+            </a>
+                <p>In the last week I've been trying to figure out how many packages
+conform to the new
+<a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages">Harden All Packages</a>
+policy in Fedora!</p>
+<p>From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
+From them 4489 are reported as failed <code>checksec</code>.</p>
+<p>What you should see as the output from <code>checksec is</code></p>
+<div class="highlight"><pre>Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
+Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
+</pre></div>
+
+
+<p>The first line is for binaries, the second one for libraries b/c
+DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
+e.g. <code>%{_libdir}/foo/</code> and I've tried to exclude them unless
+other offenses are found. The script which does this is
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect">checksec-collect</a>.</p>
+<p>Most often I'm seeing <em>Partial RELRO</em>, <em>No canary found</em> and <em>No PIE</em> errors.
+Since all packages potentially process untrusted input, it makes sense for all of them
+to be hardened and enhance the security of Fedora. That's why all of these errors
+should be considered valid bugs.</p>
+<h2>Attn package maintainers</h2>
+<p>Please see if your package is in the list and try to fix it or let me know
+why it should be excluded, for example it's a boot loader and doesn't function
+properly with hardening enabled. The full list is available at
+<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log">GitHub</a>.</p>
+<p>For more information about the different protection mechanisms see the following
+links:</p>
+<ul>
+<li><a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html">Partial vs Full RELRO</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries">Stack canaries</a></li>
+<li><a href="https://en.wikipedia.org/wiki/NX_bit#Linux">NX memory protection</a></li>
+<li><a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/">Position Independent Executables</a></li>
+<li><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath">RPATH</a></li>
+<li><a href="http://blog.tremily.us/posts/rpath/">RUNPATH</a></li>
+</ul>
+<p><strong>UPDATE 2015-09-17</strong></p>
+<p>I've posted my findings on 
+<a href="https://lists.fedoraproject.org/pipermail/devel/2015-September/thread.html">fedora-devel</a>
+and the comments are more than interesting even revealing an old bug in libtool.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 16 September 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/08/20/minor-typo-bug-in-messenger/" rel="bookmark" title="Permalink to Minor Typo Bug in Messenger for bg_BG.UTF-8">
                 <h2 class="post-title">
                     Minor Typo Bug in Messenger for bg_BG.UTF-8
@@ -1046,50 +1097,6 @@ I don't think it will happen soon but if we don't use it why have it there? </p>
                  on Mon 03 March 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/03/03/last-week-in-fedora-qa/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/02/28/action-improving-test-coverage-in-fedora/" rel="bookmark" title="Permalink to Call to Action: Improving Overall Test Coverage in Fedora">
-                <h2 class="post-title">
-                    Call to Action: Improving Overall Test Coverage in Fedora
-                </h2>
-            </a>
-                <p>Around Christmas 2013
-<a href="/blog/2013/12/24/upstream-test-suite-status-of-fedora-20/">I said</a></p>
-<blockquote>
-<p>... it looks like on average 30% of the packages execute their test suites at
-build time in the %check section and less than 35% have test suites at all!
-There’s definitely room for improvement and I plan to focus on this during 2014!</p>
-</blockquote>
-<p>I've recently started working on this goal by first identifying potential offending
-packages and discussing the idea on Fedora's
-<a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/thread.html">devel</a>,
-<a href="https://lists.fedoraproject.org/pipermail/packaging/2014-February/thread.html">packaging</a>
-and <a href="https://lists.fedoraproject.org/pipermail/test/2014-February/thread.html">test</a>
-mailing lists.</p>
-<p>May I present you nearly <strong>2000 packages</strong> which need your love:</p>
-<ul>
-<li><a href="https://fedoraproject.org/wiki/QA/Testing_in_check">wiki/QA/Testing_in_check</a></li>
-<li><a href="https://fedoraproject.org/wiki/QA/Missing_upstream_test_suites">wiki/QA/Missing_upstream_test_suites</a></li>
-</ul>
-<p>The intent for these pages is to serve as a source of working material for Fedora 
-volunteers.</p>
-<h2>How Can I Help</h2>
-<ul>
-<li>Join upstream and create a test suite for a package you find interesting;</li>
-<li>Provide patches - <a href="https://lists.fedoraproject.org/pipermail/devel/2014-February/196035.html">first patch</a>
-came in less than 30 minutes of initial announcement :);</li>
-<li>Review packages in the wiki and help identify false negatives;</li>
-<li>Forward to people who may be interested to work on these items;</li>
-<li>Share and promote in your local open source and developer communities;</li>
-</ul>
-<h2>Important</h2>
-<p>If you would like to gain some open source practice and QA experience I will
-happily provide mentorship and general help so you can start working on Fedora.
-Just ping me!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 28 February 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/02/28/action-improving-test-coverage-in-fedora/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

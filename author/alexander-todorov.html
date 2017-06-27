@@ -97,6 +97,93 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/" rel="bookmark" title="Permalink to Producing coverage report for Haskell binaries">
+                <h2 class="post-title">
+                    Producing coverage report for Haskell binaries
+                </h2>
+            </a>
+                <p>Recently I've started testing a Haskell application and a question I find
+unanswered (or at least very poorly documented) is how to produce coverage
+reports for binaries ?</p>
+<h2>Understanding HPC &amp; cabal</h2>
+<p><code>hpc</code> is the Haskell code coverage tool. It produces the following files:</p>
+<ul>
+<li>.mix - module index file, contains information about <em>tick boxes</em> - their type
+  and location in the source code;</li>
+<li>.tix - tick index file aka coverage report;</li>
+<li>.pix - program index file, used only by <code>hpc trans</code>.</li>
+</ul>
+<p>The invocation to <code>hpc report</code> needs to know where to find the .mix files in order
+to be able to translate the coverage information back to source and it needs to
+know the location (full path or relative from pwd) to the tix file we want to
+report.</p>
+<p><code>cabal</code> is the package management tool for Haskell. Among other thing it can be used
+to build your code, execute the test suite and produce the coverage report for you.
+<code>cabal build</code> will produce module information in <code>dist/hpc/vanilla/mix</code> and
+<code>cabal test</code> will store coverage information in <code>dist/hpc/vanilla/tix</code>!</p>
+<p>A particular thing about Haskell is that you can only test code which can be
+<code>import</code>ed, e.g. it is a library module. You can't test (via Hspec or Hunit) code which
+lives inside a file that produces a binary (e.g. Main.hs). However you can still
+execute these binaries (e.g. invoke them from the shell) and they will produce a
+coverage report in the current directory (e.g. main.tix).</p>
+<h2>Putting everything together</h2>
+<ol>
+<li>Using <code>cabal build</code> and <code>cabal test</code> build the project and execute your unit tests.
+   This will create the necessary .mix files (including ones for binaries) and .tix
+   files coming from unit testing;</li>
+<li>Invoke your binaries passing appropriate data and examining the results (e.g. compare
+   the output to a known value). A simple shell or Python script could do the job;</li>
+<li>Copy the <code>binary.tix</code> file under <code>dist/hpc/vanilla/binary/binary.tix</code>!</li>
+</ol>
+<p>Produce coverage report with hpc:</p>
+<div class="highlight"><pre>hpc markup --hpcdir=dist/hpc/vanilla/mix/lib --hpcdir=dist/hpc/vanilla/mix/binary  dist/hpc/vanilla/tix/binary/binary.tix
+</pre></div>
+
+
+<p>Convert the coverage report to JSON and send it to Coveralls.io:</p>
+<div class="highlight"><pre>cabal install hpc-coveralls
+~/.cabal/bin/hpc-coveralls --display-report tests binary
+</pre></div>
+
+
+<h2>Example</h2>
+<p>Check out the <a href="https://github.com/weldr/haskell-rpm/pull/18">haskell-rpm</a> repository
+for an example. See <a href="https://coveralls.io/builds/12131112">job #45</a> where there is now
+coverage for the <code>inspect.hs</code>, <code>unrpm.hs</code> and <code>rpm2json.hs</code> files, producing binary executables.
+Also notice that in
+<a href="https://coveralls.io/builds/12131112/source?filename=.%2FRPM%2FParse.hs">RPM/Parse.hs</a>
+the function <code>parseRPMC</code> is now covered, while it was not covered in the
+<a href="https://coveralls.io/builds/12102486/source?filename=.%2FRPM%2FParse.hs">previous job #42</a>!</p>
+<div class="highlight"><span class="filename">.travis.yml snippet</span><pre><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hlint .</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install --dependencies-only --enable-tests</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal configure --enable-tests --enable-coverage --ghc-option=-DTEST</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal build</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal test --show-details=always</span>
+
+  <span class="c1"># tests to produce coverage for binaries</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/x86_64/efivar-0.14-1.el7.x86_64.rpm</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">./tests/test_binaries.sh ./efivar-0.14-1.el7.x86_64.rpm</span>
+
+  <span class="c1"># move .tix files in appropriate directories</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mkdir ./dist/hpc/vanilla/tix/inspect/ ./dist/hpc/vanilla/tix/unrpm/ ./dist/hpc/vanilla/tix/rpm2json/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv inspect.tix ./dist/hpc/vanilla/tix/inspect/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv rpm2json.tix ./dist/hpc/vanilla/tix/rpm2json/</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv unrpm.tix ./dist/hpc/vanilla/tix/unrpm/</span>
+
+<span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install hpc-coveralls</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hpc-coveralls --display-report tests inspect rpm2json unrpm</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 27 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/26/whats-the-bug-in-this-pseudo-code/" rel="bookmark" title="Permalink to What's the bug in this pseudo-code">
                 <h2 class="post-title">
                     What's the bug in this pseudo-code
@@ -2790,70 +2877,6 @@ with another example.</p>
                  on Tue 27 December 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/" rel="bookmark" title="Permalink to How to create auxiliary build jobs in Travis-CI matrix">
-                <h2 class="post-title">
-                    How to create auxiliary build jobs in Travis-CI matrix
-                </h2>
-            </a>
-                <p><img alt="Auxiliary build job in Travis-CI" src="/images/travisci_extra_job_in_matrix.png" title="Auxiliary build job in Travis-CI" /></p>
-<p>In Travis-CI when you combine the three main configuration options of
-<em>Runtime (language)</em>, <em>Environment</em> and <em>Exclusions/Inclusions</em> you get a
-<a href="https://docs.travis-ci.com/user/customizing-the-build#Build-Matrix">build matrix</a>
-of all possible combinations! For example, for <em>django-chartit</em> the matrix includes
-43 build jobs, spread across various Python and Django versions. For reference
-see <a href="https://travis-ci.org/chartit/django-chartit/builds/181115880">Build #75</a>.</p>
-<p>For <em>django-chartit</em> I wanted to have an additional build job which would execute
-pylint. I wanted the job to be independent because currently pylint produces lots
-of errors and warnings. Having an independent job instead of integrating pylint
-together with all jobs makes it easier to see if any of the functional tests failed.</p>
-<p>Using the inclusion functionality of Travis-CI I was able to define an auxiliary
-build job. The trick is to provide sane environment defaults for all
-build jobs (regular and auxiliary ones) so you don't have to expand your environment
-section! In this case the change looks like this</p>
-<div class="highlight"><pre><span class="gh">diff --git a/.travis.yml b/.travis.yml</span>
-<span class="gh">index 67f656d..9b669f9 100644</span>
-<span class="gd">--- a/.travis.yml</span>
-<span class="gi">+++ b/.travis.yml</span>
-<span class="gu">@@ -2,6 +2,8 @@ after_success:</span>
- - coveralls
- before_install:
- - pip install coveralls
-<span class="gi">+- if [ -z &quot;$_COMMAND&quot; ]; then export _COMMAND=coverage; fi</span>
-<span class="gi">+- if [ -z &quot;$_DJANGO&quot; ]; then export _DJANGO=1.10.4; fi</span>
- env:
- - !!python/unicode &#39;_DJANGO=1.10&#39;
- - !!python/unicode &#39;_DJANGO=1.10.2&#39;
-<span class="gu">@@ -41,6 +43,10 @@ matrix:</span>
-     python: 3.3
-   - env: _DJANGO=1.10.4
-     python: 3.3
-<span class="gi">+  include:</span>
-<span class="gi">+  - env: _COMMAND=pylint</span>
-<span class="gi">+    python: 3.5</span>
-<span class="gi">+</span>
- notifications:
-   email:
-     on_failure: change
-<span class="gu">@@ -50,4 +56,4 @@ python:</span>
- - 3.3
- - 3.4
- - 3.5
-<span class="gd">-script: make coverage</span>
-<span class="gi">+script: make $_COMMAND</span>
-</pre></div>
-
-
-<p>For more info take a look at
-<a href="https://github.com/chartit/django-chartit/commit/b22eda7cd67a062f49a0f60b8ac51383e4f8c3a5">commit b22eda7</a>
-and <a href="https://travis-ci.org/chartit/django-chartit/builds/183883813">Build #77</a>. Note
-Job #77.44!</p>
-<p>Thanks for reading and happy testing!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 16 December 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
