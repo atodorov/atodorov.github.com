@@ -1,5 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-06-27T10:00:00+03:00</updated><entry><title>Producing coverage report for Haskell binaries</title><link href="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/" rel="alternate"></link><updated>2017-06-27T10:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-27:blog/2017/06/27/producing-coverage-report-for-haskell-binaries/</id><summary type="html">&lt;p&gt;Recently I've started testing a Haskell application and a question I find
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-04T22:30:00+03:00</updated><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
+started happening after I migrated &lt;a href="http://MrSenko.com/kiwi/"&gt;KiwiTestPad&lt;/a&gt; to
+Django 1.10.7. Here is the reason why this happened.&lt;/p&gt;
+&lt;h2&gt;Symptoms&lt;/h2&gt;
+&lt;p&gt;After migrating to Django 1.10 all tests appeared to be working locally
+on SQLite however they
+&lt;a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309883"&gt;failed on MySQL&lt;/a&gt; with&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;TransactionManagementError&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;An&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="n"&gt;occurred&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="n"&gt;transaction&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="n"&gt;You&lt;/span&gt; &lt;span class="n"&gt;can&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;t execute queries until the end of the &amp;#39;&lt;/span&gt;&lt;span class="n"&gt;atomic&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;block&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The exact same test cases
+&lt;a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309884"&gt;failed on PostgreSQL&lt;/a&gt; with:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;InterfaceError&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;connection&lt;/span&gt; &lt;span class="n"&gt;already&lt;/span&gt; &lt;span class="n"&gt;closed&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Since version 1.10 Django executes all tests inside transactions so my first
+thoughts were related to the auto-commit mode. However upon closer inspection
+we can see that the line which triggers the failure is&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;self.assertTrue(users.exists())
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;which is essentially a &lt;code&gt;SELECT&lt;/code&gt; query aka
+&lt;code&gt;User.objects.filter(username=username).exists()&lt;/code&gt;!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;My tests were failing on a SELECT query!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Reading the numerous posts about &lt;code&gt;TransactionManagementError&lt;/code&gt; I discovered it may
+be caused by a run-away cursor. The application did use raw SQL statements which
+I've converted promptly to ORM queries, that took me some time. Then I also fixed
+a couple of places where it used &lt;code&gt;transaction.atomic()&lt;/code&gt; as well. No luck!&lt;/p&gt;
+&lt;p&gt;Then, after numerous experiments and tons of logging inside Django's own code I was
+able to figure out when the failure occurred and what events were in place. The test
+code looked like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;client&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;/confirm/&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;User&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;new_user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;is_active&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;The failure was happening after the view had been rendered upon the
+first time I do a SELECT against the database!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The problem was that the connection to the database had been closed
+midway during the transaction!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;In particular (after more debugging of course) the sequence of events was:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;execute &lt;code&gt;django/test/client.py::Client::get()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;execute &lt;code&gt;django/test/client.py::ClientHandler::__call__()&lt;/code&gt;, which takes
+   care to disconnect/connect &lt;code&gt;signals.request_started&lt;/code&gt; and &lt;code&gt;signals.request_finished&lt;/code&gt;
+   which are responsible for tearing down the DB connection, so problem not here&lt;/li&gt;
+&lt;li&gt;execute &lt;code&gt;django/core/handlers/base.py::BaseHandler::get_response()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;execute &lt;code&gt;django/core/handlers/base.py::BaseHandler::_get_response()&lt;/code&gt; which goes through
+   the middleware (needless to say I did inspect all of it as well since there
+   have been some changes in Django 1.10)&lt;/li&gt;
+&lt;li&gt;execute &lt;code&gt;response = wrapped_callback()&lt;/code&gt; while still inside &lt;code&gt;BaseHandler._get_response()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;execute &lt;code&gt;django/http/response.py::HttpResponseBase::close()&lt;/code&gt; which looks like&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# These methods partially implement the file-like object interface.&lt;/span&gt;
+&lt;span class="c"&gt;# See https://docs.python.org/3/library/io.html#io.IOBase&lt;/span&gt;
+ 
+&lt;span class="c"&gt;# The WSGI server must call this method upon completion of the request.&lt;/span&gt;
+&lt;span class="c"&gt;# See http://blog.dscpl.com.au/2012/10/obligations-for-calling-close-on.html&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;close&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;closable&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_closable_objects&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;closable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;pass&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;closed&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+    &lt;span class="n"&gt;signals&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;request_finished&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;send&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sender&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_handler_class&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;signals.request_finished&lt;/code&gt; is fired&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;django/db/__init__.py::close_old_connections()&lt;/code&gt; closes the connection!&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;IMPORTANT:&lt;/strong&gt; On MySQL setting &lt;code&gt;AUTO_COMMIT=False&lt;/code&gt; and &lt;code&gt;CONN_MAX_AGE=None&lt;/code&gt; helps
+workaround this problem but is not the solution for me because it didn't help on
+PostgreSQL.&lt;/p&gt;
+&lt;p&gt;Going back to &lt;code&gt;HttpResponseBase::close()&lt;/code&gt; I started wondering who calls this method.
+The answer was it was getting called by the &lt;code&gt;@content.setter&lt;/code&gt; method at
+&lt;code&gt;django/http/response.py::HttpResponse::content()&lt;/code&gt; which is even more weird because
+we assign to &lt;code&gt;self.content&lt;/code&gt; inside &lt;code&gt;HttpResponse::__init__()&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;Root cause&lt;/h2&gt;
+&lt;p&gt;The root cause of my problem was precisely this &lt;code&gt;HttpResponse::__init__()&lt;/code&gt; method
+or rather the way we arrive at it inside the application. &lt;/p&gt;
+&lt;p&gt;The offending view last line was&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;HttpResponse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Prompt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+     &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+     &lt;span class="n"&gt;info_type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;Prompt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Info&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+     &lt;span class="n"&gt;info&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;msg&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+     &lt;span class="nb"&gt;next&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GET&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;next&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;reverse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;core-views-index&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;and the Prompt class looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.shortcuts&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;render&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Prompt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;object&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;render&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;info_type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;info&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;next&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;render&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;prompt.html&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;type&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;info_type&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;info&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;info&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;next&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nb"&gt;next&lt;/span&gt;
+        &lt;span class="p"&gt;})&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Looking back at the internals of &lt;code&gt;HttpResponse&lt;/code&gt; we see that&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;if content is a string we call &lt;code&gt;self.make_bytes()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;if the content is an iterator then we assign it and if the object has a close method
+  then it is executed.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;HttpResponse&lt;/code&gt; itself is an iterator, inherits from &lt;code&gt;six.Iterator&lt;/code&gt; so when we initialize
+&lt;code&gt;HttpResponse&lt;/code&gt; with another &lt;code&gt;HttpResponse&lt;/code&gt; object (aka the content) we execute &lt;code&gt;content.close()&lt;/code&gt;
+which unfortunately happens to close the database connection as well.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;IMPORTANT:&lt;/strong&gt; note that from the point of view of a person using the application the
+HTML content is exactly the same regardless of whether we have nested &lt;code&gt;HttpResponse&lt;/code&gt; objects
+or not.
+Also during normal execution the code doesn't run inside a transaction so we never notice
+the problem in production.&lt;/p&gt;
+&lt;p&gt;The fix of course is very simple, just &lt;code&gt;return Prompt.render()&lt;/code&gt;!&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Django"></category></entry><entry><title>Producing coverage report for Haskell binaries</title><link href="http://atodorov.org/blog/2017/06/27/producing-coverage-report-for-haskell-binaries/" rel="alternate"></link><updated>2017-06-27T10:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-27:blog/2017/06/27/producing-coverage-report-for-haskell-binaries/</id><summary type="html">&lt;p&gt;Recently I've started testing a Haskell application and a question I find
 unanswered (or at least very poorly documented) is how to produce coverage
 reports for binaries ?&lt;/p&gt;
 &lt;h2&gt;Understanding HPC &amp;amp; cabal&lt;/h2&gt;
@@ -2469,56 +2598,4 @@ which will be held in London.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;UPDATE:&lt;/strong&gt; I have written
 &lt;a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/"&gt;Mutation testing vs. coverage, Pt.2&lt;/a&gt;
 with another example.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>How to create auxiliary build jobs in Travis-CI matrix</title><link href="http://atodorov.org/blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/" rel="alternate"></link><updated>2016-12-16T11:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-16:blog/2016/12/16/how-to-create-auxiliary-build-jobs-in-travis-ci-matrix/</id><summary type="html">&lt;p&gt;&lt;img alt="Auxiliary build job in Travis-CI" src="/images/travisci_extra_job_in_matrix.png" title="Auxiliary build job in Travis-CI" /&gt;&lt;/p&gt;
-&lt;p&gt;In Travis-CI when you combine the three main configuration options of
-&lt;em&gt;Runtime (language)&lt;/em&gt;, &lt;em&gt;Environment&lt;/em&gt; and &lt;em&gt;Exclusions/Inclusions&lt;/em&gt; you get a
-&lt;a href="https://docs.travis-ci.com/user/customizing-the-build#Build-Matrix"&gt;build matrix&lt;/a&gt;
-of all possible combinations! For example, for &lt;em&gt;django-chartit&lt;/em&gt; the matrix includes
-43 build jobs, spread across various Python and Django versions. For reference
-see &lt;a href="https://travis-ci.org/chartit/django-chartit/builds/181115880"&gt;Build #75&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;For &lt;em&gt;django-chartit&lt;/em&gt; I wanted to have an additional build job which would execute
-pylint. I wanted the job to be independent because currently pylint produces lots
-of errors and warnings. Having an independent job instead of integrating pylint
-together with all jobs makes it easier to see if any of the functional tests failed.&lt;/p&gt;
-&lt;p&gt;Using the inclusion functionality of Travis-CI I was able to define an auxiliary
-build job. The trick is to provide sane environment defaults for all
-build jobs (regular and auxiliary ones) so you don't have to expand your environment
-section! In this case the change looks like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;diff --git a/.travis.yml b/.travis.yml&lt;/span&gt;
-&lt;span class="gh"&gt;index 67f656d..9b669f9 100644&lt;/span&gt;
-&lt;span class="gd"&gt;--- a/.travis.yml&lt;/span&gt;
-&lt;span class="gi"&gt;+++ b/.travis.yml&lt;/span&gt;
-&lt;span class="gu"&gt;@@ -2,6 +2,8 @@ after_success:&lt;/span&gt;
- - coveralls
- before_install:
- - pip install coveralls
-&lt;span class="gi"&gt;+- if [ -z &amp;quot;$_COMMAND&amp;quot; ]; then export _COMMAND=coverage; fi&lt;/span&gt;
-&lt;span class="gi"&gt;+- if [ -z &amp;quot;$_DJANGO&amp;quot; ]; then export _DJANGO=1.10.4; fi&lt;/span&gt;
- env:
- - !!python/unicode &amp;#39;_DJANGO=1.10&amp;#39;
- - !!python/unicode &amp;#39;_DJANGO=1.10.2&amp;#39;
-&lt;span class="gu"&gt;@@ -41,6 +43,10 @@ matrix:&lt;/span&gt;
-     python: 3.3
-   - env: _DJANGO=1.10.4
-     python: 3.3
-&lt;span class="gi"&gt;+  include:&lt;/span&gt;
-&lt;span class="gi"&gt;+  - env: _COMMAND=pylint&lt;/span&gt;
-&lt;span class="gi"&gt;+    python: 3.5&lt;/span&gt;
-&lt;span class="gi"&gt;+&lt;/span&gt;
- notifications:
-   email:
-     on_failure: change
-&lt;span class="gu"&gt;@@ -50,4 +56,4 @@ python:&lt;/span&gt;
- - 3.3
- - 3.4
- - 3.5
-&lt;span class="gd"&gt;-script: make coverage&lt;/span&gt;
-&lt;span class="gi"&gt;+script: make $_COMMAND&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;For more info take a look at
-&lt;a href="https://github.com/chartit/django-chartit/commit/b22eda7cd67a062f49a0f60b8ac51383e4f8c3a5"&gt;commit b22eda7&lt;/a&gt;
-and &lt;a href="https://travis-ci.org/chartit/django-chartit/builds/183883813"&gt;Build #77&lt;/a&gt;. Note
-Job #77.44!&lt;/p&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>

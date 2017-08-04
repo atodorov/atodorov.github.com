@@ -145,6 +145,75 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/" rel="bookmark" title="Permalink to Bad Stub Design in DNF, Pt.2">
+                <h2 class="post-title">
+                    Bad Stub Design in DNF, Pt.2
+                </h2>
+            </a>
+                <p>Do you remember my example of a
+<a href="/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/">bad stub design in DNF</a> ?
+At that time I didn't have a good example of why this is a bad design and what are the
+consequences of it. Today I have!</p>
+<p>From my comment on
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/pull/118">PR #118</a></p>
+<blockquote>
+<p>Note: the benefit of this patch are quite subtle.
+I've played around with creating a few more tests and the benefit I see affect
+only a few lines of code.</p>
+<p>For #114 there doesn't seem to be any need to test _get_query directly,
+although we call</p>
+<div class="highlight"><pre>   q = self.base.sack.query()
+   q = q.available()
+</pre></div>
+
+
+<p>which will benefit from this PR b/c we're stubbing out the entire Sack object.
+I will work on a test later today/tomorrow to see how it looks.</p>
+<p>OTOH for #113 where we modify _get_query the test can look something like this:</p>
+<div class="highlight"><pre>def test_get_query_with_local_rpm(self):
+    try:
+        (fs, rpm_path) = tempfile.mkstemp(&#39;foobar-99.99-1.x86_64.rpm&#39;)
+        # b/c self.cmd.cli.base is a mock object add_remote_rpm
+        # will not update the available packages while testing.
+        # it is expected to hit an exception
+        with self.assertRaises(dnf.exceptions.PackageNotFoundError):
+            self.cmd._get_query(rpm_path)
+        self.cmd.cli.base.add_remote_rpm.assert_called_with(rpm_path)
+    finally:
+        os.remove(rpm_path)
+</pre></div>
+
+
+<p>Note the comment above the with block. If we leave out <code>_get_query</code> as before
+(a simple stub function) we're not going to be able to use <code>assert_called_with</code>
+later.</p>
+</blockquote>
+<p>Now a more practical example. See 
+<a href="https://github.com/rpm-software-management/dnf-plugins-core/commit/fe130669ffc4c1d6eba8f10cda35ab4d803d5a3d">commit fe13066</a>
+- in case the package is not found we log the error. In case configuration is
+<code>strict=True</code> then the plugin will raise another exception. With the initial version
+of the stubs this change in behavior is silently ignored. If there was an error
+in the newly introduced lines it would go straight into production because the
+existing tests passed.</p>
+<p>What happens is that <code>test_get_packages()</code> calls <code>_get_packages(['notfound'])</code>,
+which is not the real code but a test stub and returns an empty list in this case.
+The empty list is expected from the test and it will not fail!</p>
+<p>With my new stub design the test will execute the actual <code>_get_packages()</code>
+method from <code>download.py</code> and choke on the exception. The test itself needs
+to be modified, which is done in
+<a href="https://github.com/atodorov/dnf-plugins-core/commit/2c2b34237c99cbf32e23bde43027d22873f4e8b7">commit 2c2b34</a>
+and no further errors were found.</p>
+<p>So let me summarize:
+<strong>
+When using mocks, stubs and fake objects we should be replacing external
+dependencies of the software under test, not internal methods from the SUT!
+</strong></p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 23 November 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/11/23/bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/11/23/tip-running-dnf-plugins-from-git/" rel="bookmark" title="Permalink to Tip: Running DNF Plugins from git">
                 <h2 class="post-title">
                     Tip: Running DNF Plugins from git
@@ -1345,73 +1414,6 @@ If you're interested in speaking please get in touch with me ASAP.</p>
                  on Wed 01 July 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/07/01/open-data-event-coming-to-sofia/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/" rel="bookmark" title="Permalink to DEVit Conf 2015 Impressions">
-                <h2 class="post-title">
-                    DEVit Conf 2015 Impressions
-                </h2>
-            </a>
-                <p>It's been a busy week after <a href="http://devitconf.org/">DEVit conf</a> took place in
-Thessaloniki. Here are my impressions.</p>
-<p><img alt="Crack, Train, Fix, Release" src="/images/devit2015.jpg" title="Crack, Train, Fix, Release" /></p>
-<h2>Sessions</h2>
-<p>I've started the day with the session called "Crack, Train, Fix, Release" by 
-Chris Heilmann. While it was very interesting for some unknown reason I
-was expecting a talk more closely related to software testing. Unfortunately at the
-same time in the other room was a talk called "Integration Testing from the Trenches"
-by Nicolas Frankel which I missed.</p>
-<p>At the end Chris answered the question "What to do about old versions of IE ?".
-And the answer pretty much was "Don't try to support everything, leave them with
-basic functionality so that users can achieve what they came for on your website.
-Don't put nice buttons b/c IE 6 users are not used to nice things and they get confused."</p>
-<p>If you remember I had a similar question to Jeremy Keith at 
-<a href="/blog/2015/04/20/videos-from-bulgaria-web-summit-2015/">Bulgaria Web Summit</a> last month
-and the answer was similar:</p>
-<blockquote>
-<p>Q: Which one is Jeremy's favorite device/browser to develop for.</p>
-<p>A: Your approach is wrong and instead we should be thinking in terms of what features are 
-essential or non-essential for our websites and develop around features
-(if supported, if not supported) not around browsers!</p>
-</blockquote>
-<p>Btw I did ask Chris if he knows Jeremy and he does.</p>
-<p>After the coffee break there was "JavaScript ♥ Unicode" by Mathias Bynens which
-I saw last year at <a href="http://how.camp/">How Camp</a> in Veliko Tarnovo so I just stopped by
-to say hi and went to listen to 
-"The future of responsive web design: web component queries" by Nikos Zinas.
-As far as I understood Nikos is a local rock-star developer. I'm not much into web
-development but the opportunity to create your own HTML components (tags) looks
-very promising. I guess there will be more business coming for
-<a href="http://telerik.com">Telerik</a> :).</p>
-<p>I wanted to listen to "Live Productive Coder" by Heinz Kabutz but that one started
-in Greek so I switched the room for 
-"iOS real time content modifications using websockets" by  Benny Weingarten-Gabbay.</p>
-<p>After lunch I went straight for
-"Introduction to Docker: What is it and why should I care?" by Ian Miell
-which IMO was the most interesting talk of the day. It wasn't very technical but
-managed to clear some of the mysticism around Docker and what it actually is.
-I tried to grab a few minutes of Ian's time and we found topics of common interest
-to talk about (<a href="http://www.projectatomic.io/">Project Atomic</a> anyone?) but later
-failed to find him and continue the talk. I guess I'll have to follow online.</p>
-<p>Tim Perry with "Your Web Stack Would Betray You In An Instant" made a great show.
-The room was packed, I myself was actually standing the whole time. He described a series
-of failures across the entire web development stack which gave developers hard times
-patching and upgrading their services. The lesson: everything fails, be prepared!</p>
-<p>The last talk I visited was "GitHub Automation" by Forbes Lindesay. It was more of an
-inspirational talk, rather than technical one. GitHub provides cool API so why not use it?</p>
-<h2>Organization</h2>
-<p><img alt="DEVit team" src="/images/devit2015team.jpg" title="DEVit team" /></p>
-<p>From what I know this is the first year of DEVit. For a first timer the team did great!
-I particularly liked the two coffee breaks before lunch and in the early afternoon and the
-sponsors pitches in between the main talks.</p>
-<p>All talks were recorded but I have no idea what's happening with the videos!</p>
-<p>I will definitely make a point of visiting Thessaloniki more often and follow the local
-IT and start-up scenes there. And tonight is Silicon Drinkabout which will be the official
-after party of <a href="http://digitalk.bg/">DigitalK</a> in Sofia.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 22 May 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
