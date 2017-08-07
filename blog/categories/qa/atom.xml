@@ -1,5 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-04T22:30:00+03:00</updated><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-07T11:11:00+03:00</updated><entry><title>Faster Travis CI tests with Docker cache</title><link href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/" rel="alternate"></link><updated>2017-08-07T11:11:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-07:blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/</id><summary type="html">&lt;p&gt;For a while now I've been running tests on Travis CI using Docker
+containers to build the project and execute the tests inside. In this
+post I will explain how to speed up execution times.&lt;/p&gt;
+&lt;p&gt;A Docker image is a filesystem snapshot similar to a virtual machine
+image. From these images we build containers (e.g. we run the container X
+from the image Y). The construction of Docker images is controlled via
+&lt;code&gt;Dockerfile&lt;/code&gt; which contains a set of instructions how to build the image.
+For example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;FROM welder/web-nodejs:latest
+MAINTAINER Brian C. Lane &amp;lt;bcl@redhat.com&amp;gt;
+RUN dnf install -y nginx
+
+CMD nginx -g &amp;quot;daemon off;&amp;quot;
+EXPOSE 3000
+
+## Do the things more likely to change below here. ##
+
+COPY ./docker/nginx.conf /etc/nginx/
+
+# Update node dependencies only if they have changed
+COPY ./package.json /welder/package.json
+RUN cd /welder/ &amp;amp;&amp;amp; npm install
+
+# Copy the rest of the UI files over and compile them
+COPY . /welder/
+RUN cd /welder/ &amp;amp;&amp;amp; node run build
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT [&amp;quot;/usr/local/bin/entrypoint.sh&amp;quot;]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;docker build&lt;/code&gt; is smart enough to actually build intermediate layers for each
+command and store them on your computer. Each command is hashed and it is rebuilt
+only if it has been changed. Thus the stuff which doesn't change often goes first
+(like setting up a web server or a DB) and the stuff that changes (like the project source code)
+goes at the end. All of this is beautifully explained by &lt;a href="https://www.youtube.com/watch?v=3a0gVrfmWC8"&gt;Stefan Kanev in
+this video&lt;/a&gt; (in Bulgarian).&lt;/p&gt;
+&lt;h2&gt;Travis and Docker&lt;/h2&gt;
+&lt;p&gt;While intermediate layer caching is a standard feature for Docker it is disabled
+by default in Travis CI and any other CI service I was able to find. To be frank
+Circles CI offer this as a premium feature but their pricing plans on that aren't
+clear at all.&lt;/p&gt;
+&lt;p&gt;However you can enable the use of caching following a few simple steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Make your Docker images publicly available (e.g. Docker Hub or Amazon EC2 Container Service)&lt;/li&gt;
+&lt;li&gt;Before starting the test job do a &lt;code&gt;docker pull my/image:latest&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;When building your Docker images in Travis add &lt;code&gt;--cache-from my/image:latest&lt;/code&gt; to &lt;code&gt;docker build&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;After successful execution &lt;code&gt;docker tag&lt;/code&gt; the latest image with the build job number and
+   &lt;code&gt;docker push&lt;/code&gt; it again to the hub!&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;NOTES:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Everything you do will become public so take care not to expose internal code.
+  Alternatively you may configure a private docker registry (e.g. Amazon EC2 CS)
+  and use encrypted passwords for Travis to access your images;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker pull&lt;/code&gt; will download all layers that it needs. If your hosting is slow
+  this will negatively impact execution times;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker push&lt;/code&gt; will upload only the layers that have been changed;&lt;/li&gt;
+&lt;li&gt;I only push images coming from the master branch which are not from a pull request
+  build job. This prevents me from accidentally messing something up.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you examine the logs of &lt;a href="https://travis-ci.org/weldr/welder-web/jobs/260970675"&gt;Job #247.4&lt;/a&gt;
+and &lt;a href="https://travis-ci.org/weldr/welder-web/jobs/261732264"&gt;Job #254.4&lt;/a&gt; you will notice
+that almost all intermediate layers were re-used from cache:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Step 3/12 : RUN dnf install -y nginx
+ ---&amp;gt; Using cache
+ ---&amp;gt; 25311f052381
+Step 4/12 : CMD nginx -g &amp;quot;daemon off;&amp;quot;
+ ---&amp;gt; Using cache
+ ---&amp;gt; 858606811c85
+Step 5/12 : EXPOSE 3000
+ ---&amp;gt; Using cache
+ ---&amp;gt; d778cbbe0758
+Step 6/12 : COPY ./docker/nginx.conf /etc/nginx/
+ ---&amp;gt; Using cache
+ ---&amp;gt; 56bfa3fa4741
+Step 7/12 : COPY ./package.json /welder/package.json
+ ---&amp;gt; Using cache
+ ---&amp;gt; 929f20da0fc1
+Step 8/12 : RUN cd /welder/ &amp;amp;&amp;amp; npm install
+ ---&amp;gt; Using cache
+ ---&amp;gt; 68a30a4aa5c6
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here the slowest operations are &lt;code&gt;dnf install&lt;/code&gt; and &lt;code&gt;npm install&lt;/code&gt; which on normal execution
+will take around 5 minutes.&lt;/p&gt;
+&lt;p&gt;You can check-out my
+&lt;a href="https://github.com/weldr/welder-web/blob/master/.travis.yml"&gt;.travis.yml&lt;/a&gt; for more info.&lt;/p&gt;
+&lt;h2&gt;First time cache&lt;/h2&gt;
+&lt;p&gt;It is important to note that you need to have your docker images available in the
+registry before you execute the first &lt;code&gt;docker pull&lt;/code&gt; from CI. I do this by manually building
+the images on my computer and uploading them before configuring CI integration. Afterwards
+the CI system takes care of updating the images for me.&lt;/p&gt;
+&lt;p&gt;Initially you may not notice a significant improvement as seen in
+&lt;a href="https://travis-ci.org/weldr/bdcs-api-rs/builds/261510313"&gt;Job #262&lt;/a&gt;, Step 18/22.
+The initial image available on Docker Hub has all the build dependencies installed
+and the code has not been changed when job #262 was executed.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;COPY&lt;/code&gt; command copies the entire contents of the directory, including filesystem metadata!
+Things like uid/gid (file ownership), timestamps (not sure if taken into account)
+and/or extended attributes (e.g. SELinux)
+will cause the intermediate layers checksums to differ even though the actual
+source code didn't change. This will resolve itself once your CI system starts automatically
+pushing the latest images to the registry.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
 started happening after I migrated &lt;a href="http://MrSenko.com/kiwi/"&gt;KiwiTestPad&lt;/a&gt; to
 Django 1.10.7. Here is the reason why this happened.&lt;/p&gt;
 &lt;h2&gt;Symptoms&lt;/h2&gt;
@@ -2570,34 +2675,4 @@ need to give them autonomy, transparency and short feedback loop!&lt;/p&gt;
 &lt;li&gt;Fail fast means learning fast and improving fast.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Photo credit: Rayna Stankova&lt;/em&gt;&lt;/p&gt;</summary><category term="events"></category><category term="QA"></category></entry><entry><title>Animate &amp; Automate</title><link href="http://atodorov.org/blog/2016/10/24/animate-automate/" rel="alternate"></link><updated>2016-10-24T00:01:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-10-24:blog/2016/10/24/animate-automate/</id><summary type="html">&lt;p&gt;Recently I've attended a presentation by MentorMate where they talked about
-testing CSS animations (
-&lt;a href="https://www.youtube.com/watch?v=MIxzzfFBR8o&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=6"&gt;video in Bulgarian&lt;/a&gt;
-). The software under test was an ad tech SDK which
-provides CSS based animations to mobile apps and games. The content
-is displayed inside a webview and they had to make sure animations were
-working correctly on different OS and devices.&lt;/p&gt;
-&lt;p&gt;Analyzing the content (aka getting to know the domain) they figured out
-in reality there were about 20 basic movements and transformations. So the
-problem was reduced to "How do we test these 20 basic movements under
-various OSes and devices" or "How do we verify that basic CSS transformations
-are supported under different versions and flavors of the OS"?&lt;/p&gt;
-&lt;p&gt;Their test bed included hand crafted web pages with each basic movement
-and then several ones with more complex animations (aka integration testing).
-The idea was to load
-these pages under different devices and inspect whether or not the animations
-were visualized properly.&lt;/p&gt;
-&lt;p&gt;A test script (aka their testing framework) was constantly recording the
-coordinates of the elements under test to verify that they were really animated.
-The idea was to use a sample rate of 20ms and expect at lest 20 different changes
-to the element under test. Coordinates along with color and gradient were recorded
-and then returned back and analyzed to report a PASS or FAIL result.&lt;/p&gt;
-&lt;p&gt;This simplistic framework has limitations of course. It is not currently checking
-the boundaries of where the elements are rendered on the screen. Thus if everything
-else works as expected this will be a false positive result. On their slides
-this can be seen at &lt;a href="https://youtu.be/MIxzzfFBR8o?t=23m10s"&gt;23:10&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;As a side note the entire effort took about 2 days, including research and preparing
-the test content.&lt;/p&gt;
-&lt;p&gt;I really like the back to basics approach here and the simplistic framework that
-MentorMate came up with. Sure it misses some problems but for that particular case
-it is good enough, easy and fast to implement.&lt;/p&gt;</summary><category term="QA"></category></entry></feed>
+&lt;p&gt;&lt;em&gt;Photo credit: Rayna Stankova&lt;/em&gt;&lt;/p&gt;</summary><category term="events"></category><category term="QA"></category></entry></feed>

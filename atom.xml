@@ -1,5 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-04T22:30:00+03:00</updated><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-07T11:11:00+03:00</updated><entry><title>Faster Travis CI tests with Docker cache</title><link href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/" rel="alternate"></link><updated>2017-08-07T11:11:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-07:blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/</id><summary type="html">&lt;p&gt;For a while now I've been running tests on Travis CI using Docker
+containers to build the project and execute the tests inside. In this
+post I will explain how to speed up execution times.&lt;/p&gt;
+&lt;p&gt;A Docker image is a filesystem snapshot similar to a virtual machine
+image. From these images we build containers (e.g. we run the container X
+from the image Y). The construction of Docker images is controlled via
+&lt;code&gt;Dockerfile&lt;/code&gt; which contains a set of instructions how to build the image.
+For example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;FROM welder/web-nodejs:latest
+MAINTAINER Brian C. Lane &amp;lt;bcl@redhat.com&amp;gt;
+RUN dnf install -y nginx
+
+CMD nginx -g &amp;quot;daemon off;&amp;quot;
+EXPOSE 3000
+
+## Do the things more likely to change below here. ##
+
+COPY ./docker/nginx.conf /etc/nginx/
+
+# Update node dependencies only if they have changed
+COPY ./package.json /welder/package.json
+RUN cd /welder/ &amp;amp;&amp;amp; npm install
+
+# Copy the rest of the UI files over and compile them
+COPY . /welder/
+RUN cd /welder/ &amp;amp;&amp;amp; node run build
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT [&amp;quot;/usr/local/bin/entrypoint.sh&amp;quot;]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;docker build&lt;/code&gt; is smart enough to actually build intermediate layers for each
+command and store them on your computer. Each command is hashed and it is rebuilt
+only if it has been changed. Thus the stuff which doesn't change often goes first
+(like setting up a web server or a DB) and the stuff that changes (like the project source code)
+goes at the end. All of this is beautifully explained by &lt;a href="https://www.youtube.com/watch?v=3a0gVrfmWC8"&gt;Stefan Kanev in
+this video&lt;/a&gt; (in Bulgarian).&lt;/p&gt;
+&lt;h2&gt;Travis and Docker&lt;/h2&gt;
+&lt;p&gt;While intermediate layer caching is a standard feature for Docker it is disabled
+by default in Travis CI and any other CI service I was able to find. To be frank
+Circles CI offer this as a premium feature but their pricing plans on that aren't
+clear at all.&lt;/p&gt;
+&lt;p&gt;However you can enable the use of caching following a few simple steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Make your Docker images publicly available (e.g. Docker Hub or Amazon EC2 Container Service)&lt;/li&gt;
+&lt;li&gt;Before starting the test job do a &lt;code&gt;docker pull my/image:latest&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;When building your Docker images in Travis add &lt;code&gt;--cache-from my/image:latest&lt;/code&gt; to &lt;code&gt;docker build&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;After successful execution &lt;code&gt;docker tag&lt;/code&gt; the latest image with the build job number and
+   &lt;code&gt;docker push&lt;/code&gt; it again to the hub!&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;NOTES:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Everything you do will become public so take care not to expose internal code.
+  Alternatively you may configure a private docker registry (e.g. Amazon EC2 CS)
+  and use encrypted passwords for Travis to access your images;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker pull&lt;/code&gt; will download all layers that it needs. If your hosting is slow
+  this will negatively impact execution times;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker push&lt;/code&gt; will upload only the layers that have been changed;&lt;/li&gt;
+&lt;li&gt;I only push images coming from the master branch which are not from a pull request
+  build job. This prevents me from accidentally messing something up.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you examine the logs of &lt;a href="https://travis-ci.org/weldr/welder-web/jobs/260970675"&gt;Job #247.4&lt;/a&gt;
+and &lt;a href="https://travis-ci.org/weldr/welder-web/jobs/261732264"&gt;Job #254.4&lt;/a&gt; you will notice
+that almost all intermediate layers were re-used from cache:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Step 3/12 : RUN dnf install -y nginx
+ ---&amp;gt; Using cache
+ ---&amp;gt; 25311f052381
+Step 4/12 : CMD nginx -g &amp;quot;daemon off;&amp;quot;
+ ---&amp;gt; Using cache
+ ---&amp;gt; 858606811c85
+Step 5/12 : EXPOSE 3000
+ ---&amp;gt; Using cache
+ ---&amp;gt; d778cbbe0758
+Step 6/12 : COPY ./docker/nginx.conf /etc/nginx/
+ ---&amp;gt; Using cache
+ ---&amp;gt; 56bfa3fa4741
+Step 7/12 : COPY ./package.json /welder/package.json
+ ---&amp;gt; Using cache
+ ---&amp;gt; 929f20da0fc1
+Step 8/12 : RUN cd /welder/ &amp;amp;&amp;amp; npm install
+ ---&amp;gt; Using cache
+ ---&amp;gt; 68a30a4aa5c6
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here the slowest operations are &lt;code&gt;dnf install&lt;/code&gt; and &lt;code&gt;npm install&lt;/code&gt; which on normal execution
+will take around 5 minutes.&lt;/p&gt;
+&lt;p&gt;You can check-out my
+&lt;a href="https://github.com/weldr/welder-web/blob/master/.travis.yml"&gt;.travis.yml&lt;/a&gt; for more info.&lt;/p&gt;
+&lt;h2&gt;First time cache&lt;/h2&gt;
+&lt;p&gt;It is important to note that you need to have your docker images available in the
+registry before you execute the first &lt;code&gt;docker pull&lt;/code&gt; from CI. I do this by manually building
+the images on my computer and uploading them before configuring CI integration. Afterwards
+the CI system takes care of updating the images for me.&lt;/p&gt;
+&lt;p&gt;Initially you may not notice a significant improvement as seen in
+&lt;a href="https://travis-ci.org/weldr/bdcs-api-rs/builds/261510313"&gt;Job #262&lt;/a&gt;, Step 18/22.
+The initial image available on Docker Hub has all the build dependencies installed
+and the code has not been changed when job #262 was executed.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;COPY&lt;/code&gt; command copies the entire contents of the directory, including filesystem metadata!
+Things like uid/gid (file ownership), timestamps (not sure if taken into account)
+and/or extended attributes (e.g. SELinux)
+will cause the intermediate layers checksums to differ even though the actual
+source code didn't change. This will resolve itself once your CI system starts automatically
+pushing the latest images to the registry.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
 started happening after I migrated &lt;a href="http://MrSenko.com/kiwi/"&gt;KiwiTestPad&lt;/a&gt; to
 Django 1.10.7. Here is the reason why this happened.&lt;/p&gt;
 &lt;h2&gt;Symptoms&lt;/h2&gt;
@@ -2244,110 +2349,4 @@ and large scale bug finding;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;If you have suggestions please comment below, especially if you can tell me
 how to implement them in practice.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>4 Quick Wins to Manage the Cost of Software Testing</title><link href="http://atodorov.org/blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/" rel="alternate"></link><updated>2016-12-28T11:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-28:blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/</id><summary type="html">&lt;div class="highlight"&gt;&lt;pre&gt;Every activity in software development has a cost and a value. Getting cost to
-trend down while increasing value, is the ultimate goal.
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;This is the introduction of an e-book called
-&lt;a href="http://pi.qasymphony.com/four-quick-wins-thank-you"&gt;4 Quick Wins to Manage the Cost of Software Testing&lt;/a&gt;.
-It was sent to me by Ivan Fingarov couple of months ago. Just now I've managed to
-read it and here's a quick summary. I urge everyone to download the original copy
-and give it a read.&lt;/p&gt;
-&lt;p&gt;The paper focuses on several practices which organizations can apply immediately
-in order to become more efficient and transparent in their software testing. While
-larger organizations (e.g. enterprises) have most of these practices already in place
-smaller companies (up to 50-100 engineering staff) may not be familiar with them
-and will reap the most benefits of implementing said practices. Even though I work
-for a large enterprise I find this guide useful when considered at the individual
-team level!&lt;/p&gt;
-&lt;p&gt;The first chapter focuses on &lt;em&gt;Tactics&lt;/em&gt; to minimize cost: Process, Tools, Bug System Mining
-and Eliminating Handoffs.&lt;/p&gt;
-&lt;p&gt;In &lt;em&gt;Process&lt;/em&gt; the goal is to minimize the burden of documenting the test process
-(aka testing artifacts), allow for better transparency and visibility outside the QA group
-and streamline the decision making process of what to test and when to stop testing,
-how much has been tested, what the risk is, ect. The authors propose testing core functionality
-paired with emerging risk areas based on new features development. They propose making
-a list of these and sorting that list by perceived risk/priority and testing as much
-as possible. Indeed this is very similar to the method I've used at Red Hat when designing
-testing for new features and new major releases of Red Hat Enterprise Linux. A similar
-method I've seen in place at several start-ups as well, although in the small organization
-the primary driver for this method is lack of sufficient test resources.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Tools&lt;/em&gt; proposes the use of test case management systems to ease the documentation burden.
-I've used &lt;a href="http://testlink.org/"&gt;TestLink&lt;/a&gt; and &lt;a href="https://github.com/Nitrate/Nitrate"&gt;Nitrate&lt;/a&gt;.
-From them Nitrate has more features but is currently unmaintained with me being the
-largest contributor on GitHub. From the paid variants I've used
-&lt;a href="https://www.polarion.com/products/qa/test-automation"&gt;Polarion&lt;/a&gt; which I generally dislike.
-Polarion is most suitable for large organizations because it gives lots of opportunities
-for tracking and reporting. For small organizations it is an overkill.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Bug System Mining&lt;/em&gt; is a technique which involves regularly scanning the bug tracker
-and searching for patterns. This is useful for finding bug types which appear
-frequently and generally point to a flaw in the software development process. The fix for these
-flaws usually is a change in policy/workflow which eliminates the source of the errors.
-I'm a fan of this technique when joining an existing project and need to assess
-what the current state is. I've done this when consulting for a few start-ups, including
-&lt;a href="http://meet.jit.si"&gt;Jitsi Meet&lt;/a&gt; (acquired by Atlassian), however I'm not doing bug mining
-on a regular basis which I consider a drawback and I really should start doing!&lt;/p&gt;
-&lt;p&gt;For example at one project I found lots of bugs reported against translations, e.g.
-missing translations, text overflowing the visible screen area or not playing well with
-existing design, chosen language/style not fitting well with the product domain, etc.&lt;/p&gt;
-&lt;p&gt;The root cause of the problem was how the software in question has been localized.
-The translators were given a file of English strings, which they would translate and
-return back in an spread sheet. Developers would copy&amp;amp;paste the translated strings
-into localization files and integrate with the software. Then QA would usually
-inspect all the pages and report the above issues. The solution was to remove devel
-and QA from the translation process, implement a translation management system together
-with live preview (web based) so that translators can keep track of what is left to
-translate and can visually inspect their work immediately after a string was translated.
-Thus translators are given more context for their work but also given the responsibility
-to produce good quality translations.&lt;/p&gt;
-&lt;p&gt;Another example I've seen are many bugs which seem like a follow up/nice to have features
-of partially implemented functionality. The root cause of this problem turned out to be
-that devel was jumping straight to implementation without taking the time to brainstorm
-and consult with QE and product owners, not taking into account corner cases and minor
-issues which would have easily been raised by skillful testers. This process lead to
-several iterations until the said functionality was considered initially implemented.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Eliminating Handoffs&lt;/em&gt; proposes the use of cross-functional teams to reduce idle time
-and reduce the back-and-forth communication which happens when a bug is found, reported,
-evaluated and considered for a fix, fixed by devel and finally deployed for testing.
-This method argues that including testers early in the process and pairing them with
-the devel team will produce faster bug fixes and reduce communication burden.&lt;/p&gt;
-&lt;p&gt;While I generally agree with that statement it's worth noting that cross-functional
-teams perform really well when all team members have relatively equal skill level
-on the horizontal scale and strong experience on the vertical scale (think T-shaped specialist).
-Cross-functional teams
-don't work well when you have developers who aren't well versed in the testing domain
-and/or testers who are not well versed in programming or the broader OS/computer science
-fundamentals domain. In my opinion you need well experienced engineers for a good cross-functional
-team.&lt;/p&gt;
-&lt;p&gt;In the chapter &lt;em&gt;Collaboration&lt;/em&gt; the paper focuses on pairing, building the right thing
-and faster feedback loops for developers. This overlaps with earlier proposals for
-cross-functional teams and QA bringing value by asking the "what if" questions.
-The chapter specifically talks about the Three Amigos meeting between PM, devel and QA
-where they discuss a feature proposal from all angles and finally come to a conclusion
-what the feature should look like. I'm a strong supporter of this technique and have
-been working with it under one form or another during my entire career. This also
-touches on the notion that testers need to move into the &lt;em&gt;Quality Assistance&lt;/em&gt; business
-and be proactive during the software development process, which is something I'm
-hoping to talk about at the
-&lt;a href="http://www.romaniatesting.ro/"&gt;Romanian Testing Conference&lt;/a&gt; next year!&lt;/p&gt;
-&lt;p&gt;Finally the book talks about &lt;em&gt;Skills Development&lt;/em&gt; and makes the distinction between
-Centers of Excellence (CoE) and Communities of Practice (CoP). Both the book and I
-are supporters of the CoP approach. This is a bottoms-up approach which is open for
-everyone to join in and harnesses the team creative abilities. It also takes into
-account that different teams use different methods and tools and that
-"one size doesn't fit all"!&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Skilled teams find important bugs faster, discover innovative solutions to hard
-testing problems and know how to communicate their value. Sometimes, a few super
-testers can replace an army of average testers.
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;While I consider myself to be a "super tester" with thousands of bugs reported there
-is a very important note to make here. Communities of Practice are successful when
-their members are self-focused on skill development! In my view and to some
-extent the communities I've worked with everyone should strive to constantly improve
-their skills but also exercise peer pressure on their co-workers to not fall behind.
-This has been confirmed by other folks in the QA industry and I've heard it many times
-when talking to friends from other companies.&lt;/p&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>

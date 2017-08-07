@@ -97,6 +97,52 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/03/16/mining-e-mail-identities-with-gravatar/" rel="bookmark" title="Permalink to Mining E-mail Identities with Gravatar">
+                <h2 class="post-title">
+                    Mining E-mail Identities with Gravatar
+                </h2>
+            </a>
+                <p>Recently I've laid my hands on a list of little over 7000 email addresses.
+This begs the question how much of them are still in use and what for ?</p>
+<p>My data is not fresh so I've uploaded the list to Facebook and created a custom
+audience. 2400 of 7129 addresses were recognized - 30% of these addresses are
+on Facebook and easy to target! Need to figure out which ones. </p>
+<p>I could have tried some sort of batch search combined with the custom audience
+functionality but I didn't find an API for that and decided not to bother.
+Instead I've opted for Gravatar.</p>
+<div class="highlight"><span class="filename">gravatars.sh</span><pre><span class="c">#!/bin/bash</span>
+
+<span class="k">while</span> <span class="nb">read </span>LINE<span class="p">;</span> <span class="k">do</span>
+    <span class="nv">HASH</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> -n <span class="nv">$LINE</span> <span class="p">|</span> md5sum <span class="p">|</span> cut -f1 -d<span class="s1">&#39; &#39;</span><span class="sb">`</span>
+    wget <span class="s2">&quot;http://gravatar.com/avatar/</span><span class="nv">$HASH</span><span class="s2">&quot;</span> -O <span class="s2">&quot;</span><span class="nv">$LINE</span><span class="s2">&quot;</span>
+<span class="k">done</span> &lt; /dev/stdin
+</pre></div>
+
+
+<p>Feed <code>gravatars.sh</code> with the email list and it will download all images to the
+current working directory and use the address as the file name. After 
+<code>md5sum *@* | cut -f1 -d' ' | sort | uniq -c</code> I quickly noticed the following:</p>
+<ul>
+<li>4563 addresses have the <code>a1719586837f0fdac8835f74cf4ef04a</code> check-sum; These are
+not found on Gravatar.</li>
+<li>2400 addresses have the <code>d5fe5cbcc31cff5f8ac010db72eb000c</code> check-sum. These are
+addresses which are registered with Gravatar but didn't bother to change the default
+image.</li>
+<li>166 remaining addresses, each with a different check-sum. These have their custom
+pictures uploaded to Gravatar and probably much more actively used.</li>
+</ul>
+<p>A second check with Facebook reveals 900 out of these 2566 addresses were recognized.
+This begs the question is Facebook showing incorrect stats or are there 1500 addresses
+using Gravatar (or have used at some point) which are not on Facebook ?</p>
+<p>At least some of the remaining 4000 addresses are still active and used to send emails.
+Next I will be looking for ways to identify them. Any suggestions and comments are more
+than welcome!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 16 March 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/03/16/mining-e-mail-identities-with-gravatar/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/01/09/pedometer-bug-in-samsung-gear-fit-smartwatch/" rel="bookmark" title="Permalink to Pedometer Bug in Samsung Gear Fit Smartwatch">
                 <h2 class="post-title">
                     Pedometer Bug in Samsung Gear Fit Smartwatch
@@ -1312,45 +1358,6 @@ Luckily Z10 (and possibly others) has a shell application with <code>cp</code>, 
                  on Mon 30 June 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/06/30/software-design-vol-1/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2014/06/26/using-d-link-dap-1320-wireless-range-extender-with-mac-filtering/" rel="bookmark" title="Permalink to Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering">
-                <h2 class="post-title">
-                    Using D-Link DAP-1320 Wireless Range Extender with MAC Filtering
-                </h2>
-            </a>
-                <iframe style="width:120px;height:240px;float:left;display:inline-block;margin-right:10px;" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" src="//ws-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&OneJS=1&Operation=GetAdHtml&MarketPlace=US&source=ss&ref=ss_til&ad_type=product_link&tracking_id=atodorovorg-20&marketplace=amazon&region=US&placement=B00B0RQSD0&asins=B00B0RQSD0&linkId=R2B5GSDVQ7GHLAXK&show_border=true&link_opens_in_new_window=true">
-</iframe>
-
-<p>Recently I've purchased a
-<a href="http://www.amazon.com/gp/product/B00B0RQSD0/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B00B0RQSD0&linkCode=as2&tag=atodorovorg-20&linkId=ELZCDTH62GGNKJTL">wireless range extender</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B00B0RQSD0" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
-as the one shown here. It had troubles connecting to the upstream Wi-Fi router
-because it used MAC filtering instead of password security. Luckily there was
-a <a href="http://forums.dlink.com/index.php?topic=56386.0">forum thread</a> which helped
-me figure it out.</p>
-<h2>DAP 1320 uses two MAC addresses</h2>
-<p>Everything was working just fine with MAC filtering disabled on the upstream
-router but failed miserably when enabled. I thought the MAC address provided
-on the DAP 1320 packaging was wrong. </p>
-<p>It turned out the device had 2 addresses.
-The one on the packaging is <em>70:62:B8:07:0B:76</em> and it didn't matter if that
-is enabled or disabled in the router settings. The second MAC is used when
-trying to forward connections through the router. Both addresses differ by the
-second symbol with a difference of 2. So I've enabled <em>72:62:B8:07:0B:76</em>
-in the router settings and everything worked like a charm.</p>
-<h2>Other findings</h2>
-<p>Unfortunately if a device is connected to the wifi extender's network it will
-bypass the MAC filtering employed on the upstream wifi router. As much as I dislike
-using passwords for Wi-Fi I had to configure one for the extended network.</p>
-<p>I've also found that when you save the configuration file from the device on your
-hard drive it comes in a base64-encoded-line-by-line format. Pretty awkward.</p>
-<p>Another pleasant (but not entirely surprising) finding was that D-Link included
-a written acknowledgment of using open source components and an offer to provide
-source code upon request.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 26 June 2014
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2014/06/26/using-d-link-dap-1320-wireless-range-extender-with-mac-filtering/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
