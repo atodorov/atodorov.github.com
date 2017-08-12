@@ -1,6 +1,6 @@
 Title: Code coverage from Nightmare.js tests
 Headline: end-to-end testing of React application
-date: 2017-08-12 10:11
+date: 2017-08-12 18:11
 comments: true
 Tags: fedora.planet, QA
 og_image: images/code_coverage_analysis.png
