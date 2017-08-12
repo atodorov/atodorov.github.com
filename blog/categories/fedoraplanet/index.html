@@ -90,6 +90,161 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/" rel="bookmark" title="Permalink to Code coverage from Nightmare.js tests">
+                <h2 class="post-title">
+                    Code coverage from Nightmare.js tests
+                </h2>
+            </a>
+                <p>In this article I'm going to walk you through the steps required
+to collect code coverage when running an end-to-end test suite
+against a React.js application.</p>
+<p>The application under test looks like this</p>
+<div class="highlight"><pre><span class="cp">&lt;!doctype html&gt;</span>
+<span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">&quot;en-us&quot;</span> <span class="na">class=</span><span class="s">&quot;layout-pf layout-pf-fixed&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;head&gt;</span>
+    <span class="c">&lt;!-- js dependencies skipped --&gt;</span>
+  <span class="nt">&lt;/head&gt;</span>
+  <span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;main&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;./dist/main.js?0ca4cedf3884d3943762&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
+
+
+<p>It is served as an <code>index.html</code> file and a <code>main.js</code> file which intercepts
+all interactions from the user and sends requests to the backend API when
+needed.</p>
+<p>There is an existing unit-test suite which loads the individual components
+and tests them in isolation.
+<a href="https://twitter.com/atodorov_/status/886881560754102272">Apparently people do this</a>!</p>
+<p>There is also an end-to-end test suite which does the majority of the testing.
+It fires up a browser instance and interacts with the application. Everything
+runs inside Docker containers providing a full-blown production-like environment.
+They look like this</p>
+<div class="highlight"><pre><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should switch to Edit Recipe page - recipe creation success&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">done</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kr">const</span> <span class="nx">nightmare</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Nightmare</span><span class="p">();</span>
+  <span class="nx">nightmare</span>
+    <span class="p">.</span><span class="kr">goto</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">url</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">btnCreateRecipe</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">btnCreateRecipe</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">page</span> <span class="o">=&gt;</span> <span class="nb">document</span><span class="p">.</span><span class="nx">querySelector</span><span class="p">(</span><span class="nx">page</span><span class="p">.</span><span class="nx">dialogRootElement</span><span class="p">).</span><span class="nx">style</span><span class="p">.</span><span class="nx">display</span> <span class="o">===</span> <span class="s1">&#39;block&#39;</span>
+      <span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">inputName</span><span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">varRecName</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">inputDescription</span><span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">varRecDesc</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">btnSave</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">editRecipePage</span><span class="p">.</span><span class="nx">componentListItemRootElement</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">editRecipePage</span><span class="p">.</span><span class="nx">componentListItemRootElement</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">end</span><span class="p">()</span> <span class="c1">// remove this!</span>
+    <span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">element</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="nx">expect</span><span class="p">(</span><span class="nx">element</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+      <span class="c1">// here goes coverage collection helper</span>
+      <span class="nx">done</span><span class="p">();</span> <span class="c1">// remove this!</span>
+    <span class="p">});</span>
+<span class="p">},</span> <span class="nx">timeout</span><span class="p">);</span>
+</pre></div>
+
+
+<p>The browser interaction is handled by Nightmare.js (sort of like Selenium) and
+the test runner is Jest.</p>
+<h2>Code instrumentation</h2>
+<p>The first thing we need is to instrument the application code to provide coverage
+statistics. This is done via <code>babel-plugin-istanbul</code>. Because unit-tests are
+executed a bit differently we want to enable conditional instrumentation. In reality
+for unit tests we use <code>jest --coverage</code> which enables istanbul on the fly and having
+the code already instrumented breaks this. So I have the following in <code>webpack.config.js</code></p>
+<div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">argv</span><span class="p">.</span><span class="nx">includes</span><span class="p">(</span><span class="s1">&#39;--with-coverage&#39;</span><span class="p">))</span> <span class="p">{</span>
+  <span class="nx">babelConfig</span><span class="p">.</span><span class="nx">plugins</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s1">&#39;istanbul&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>and then build my application with <code>node run build --with-coverage</code>.</p>
+<p>You can execute <code>node run start --with-coverage</code>, open the JavaScript console
+in your browser and inspect the <code>window.__coverage__</code> variable. If this is defined
+then the application is instrumented correctly.</p>
+<h2>Fetching coverage information from within the tests</h2>
+<p>Remember that <code>main.js</code> from the beginning of this post? It lives inside <code>index.html</code>
+which means everything gets downloaded to the client side and executed there.
+When running the end-to-end test suite that is the browser instance which is controlled
+via Nightmare. <strong>You have to pass <code>window.__coverage__</code> from the browser scope back to
+nodejs scope via <code>nightmare.evaluate()</code></strong>! I opted to directly save the coverage data
+on the file system and make it available to coverage reporting tools later!</p>
+<p>My coverage collecting snippet looks like this</p>
+<div class="highlight"><pre><span class="nx">nightmare</span>
+  <span class="p">.</span><span class="nx">evaluate</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nb">window</span><span class="p">.</span><span class="nx">__coverage__</span><span class="p">)</span> <span class="c1">// this executes in browser scope</span>
+  <span class="p">.</span><span class="nx">end</span><span class="p">()</span> <span class="c1">// terminate the Electron (browser) process</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">cov</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="c1">// this executes in Node scope</span>
+    <span class="c1">// handle the data passed back to us from browser scope</span>
+    <span class="kr">const</span> <span class="nx">strCoverage</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">cov</span><span class="p">);</span>
+    <span class="kr">const</span> <span class="nx">hash</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto&#39;</span><span class="p">).</span><span class="nx">createHmac</span><span class="p">(</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">strCoverage</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">digest</span><span class="p">(</span><span class="s1">&#39;hex&#39;</span><span class="p">);</span>
+    <span class="kr">const</span> <span class="nx">fileName</span> <span class="o">=</span> <span class="err">`</span><span class="o">/</span><span class="nx">tmp</span><span class="o">/</span><span class="nx">coverage</span><span class="o">-</span><span class="nx">$</span><span class="p">{</span><span class="nx">hash</span><span class="p">}.</span><span class="nx">json</span><span class="err">`</span><span class="p">;</span>
+    <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">).</span><span class="nx">writeFileSync</span><span class="p">(</span><span class="nx">fileName</span><span class="p">,</span> <span class="nx">strCoverage</span><span class="p">);</span>
+
+    <span class="nx">done</span><span class="p">();</span> <span class="c1">// the callback from the test</span>
+  <span class="p">})</span>
+<span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">err</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+</pre></div>
+
+
+<p>Nightmare returns <code>window.__coverage__</code> from browser scope back to nodejs scope
+and we save it under <code>/tmp</code> using a hash value of the coverage data as the file
+name.</p>
+<p><em>Side note:</em> I do have about 40% less coverage files than number of test cases.
+This means some test scenarios exercise the same code paths. Storing the individual
+coverage reports under a hashed file name makes this very easy to see!</p>
+<p>Note that in my coverage handling code I also call <code>.end()</code> which will terminate
+the browser instance and also execute the <code>done()</code> callback which is being passed
+as parameter to the test above! This is important because it means we had to update
+the way tests were written. In particular the Nightmare method sequence doesn't
+have to call <code>.end()</code> and <code>done()</code> except in the coverage handling code. The
+coverage helper must be the last code executed inside the body of the last
+<code>.then()</code> method. This is usually after all assertions (expectations) have been met!</p>
+<p>Now this coverage helper needs to be part of every single test case so I
+wanted it to be a one line function, easy to copy&amp;paste! All my attempts to
+move this code inside a module have been futile. I can get the module loaded
+but it kept failing with
+<code>Unhandled promise rejection (rejection id: 1): cov_23rlop1885 is not defined</code>;`</p>
+<p>At the end I've resorted to this simple hack</p>
+<div class="highlight"><pre><span class="nb">eval</span><span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="s1">&#39;utils/coverage.js&#39;</span><span class="p">).</span><span class="nx">toString</span><span class="p">());</span>
+</pre></div>
+
+
+<p>Shout-out to <a href="http://krasimirtsonev.com/">Krasimir Tsonev</a> who joined me on a two
+days pairing session to figure this stuff out. Too bad we couldn't quite figure it
+out. If you do please send me a pull request!</p>
+<h2>Reporting the results</h2>
+<p>All of these <code>coverage-*.json</code> files are directly consumable by <code>nyc</code> - the
+coverage reporting tool that comes with the Istanbul suite! I mounted
+<code>.nyc_output/</code> directly under <code>/tmp</code> inside my Docker container so I could</p>
+<div class="highlight"><pre>nyc report
+nyc report --reporter=lcov | codecov
+</pre></div>
+
+
+<p>We can also modify the unit-test command to
+<code>jest --coverage --coverageReporters json --coverageDirectory .nyc_output</code> so it
+produces a <code>coverage-final.json</code> file for <code>nyc</code>. Use this if you want to combine
+the coverage reports from both test suites.</p>
+<p>Because I'm using Travis CI the two test suites are executed independently and
+there is no easy way to share information between them. Instead I've switched
+from Coveralls to CodeCov which is smart enough to merge coverage submissions
+coming from multiple jobs on the same git commits. You can compare the commit
+<a href="https://codecov.io/gh/atodorov/welder-web/commit/46556808e42a21f48d008ced2d53ffe176c01b6d">submitting only unit-test results</a>
+with the one
+<a href="https://codecov.io/gh/atodorov/welder-web/commit/15f437477c17b63797cdb2455f1371336d7dc0e5">submitting coverage from both test suites</a>.</p>
+<p>All of the above steps are put into practice in
+<a href="https://github.com/weldr/welder-web/pull/136">PR #136</a> if you want to check them out!</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sat 12 August 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/" rel="bookmark" title="Permalink to Faster Travis CI tests with Docker cache">
                 <h2 class="post-title">
                     Faster Travis CI tests with Docker cache
@@ -2596,124 +2751,6 @@ how to implement them in practice.</p>
                  on Thu 29 December 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/12/29/qa-automation-101-retrospective/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/" rel="bookmark" title="Permalink to 4 Quick Wins to Manage the Cost of Software Testing">
-                <h2 class="post-title">
-                    4 Quick Wins to Manage the Cost of Software Testing
-                </h2>
-            </a>
-                <div class="highlight"><pre>Every activity in software development has a cost and a value. Getting cost to
-trend down while increasing value, is the ultimate goal.
-</pre></div>
-
-
-<p>This is the introduction of an e-book called
-<a href="http://pi.qasymphony.com/four-quick-wins-thank-you">4 Quick Wins to Manage the Cost of Software Testing</a>.
-It was sent to me by Ivan Fingarov couple of months ago. Just now I've managed to
-read it and here's a quick summary. I urge everyone to download the original copy
-and give it a read.</p>
-<p>The paper focuses on several practices which organizations can apply immediately
-in order to become more efficient and transparent in their software testing. While
-larger organizations (e.g. enterprises) have most of these practices already in place
-smaller companies (up to 50-100 engineering staff) may not be familiar with them
-and will reap the most benefits of implementing said practices. Even though I work
-for a large enterprise I find this guide useful when considered at the individual
-team level!</p>
-<p>The first chapter focuses on <em>Tactics</em> to minimize cost: Process, Tools, Bug System Mining
-and Eliminating Handoffs.</p>
-<p>In <em>Process</em> the goal is to minimize the burden of documenting the test process
-(aka testing artifacts), allow for better transparency and visibility outside the QA group
-and streamline the decision making process of what to test and when to stop testing,
-how much has been tested, what the risk is, ect. The authors propose testing core functionality
-paired with emerging risk areas based on new features development. They propose making
-a list of these and sorting that list by perceived risk/priority and testing as much
-as possible. Indeed this is very similar to the method I've used at Red Hat when designing
-testing for new features and new major releases of Red Hat Enterprise Linux. A similar
-method I've seen in place at several start-ups as well, although in the small organization
-the primary driver for this method is lack of sufficient test resources.</p>
-<p><em>Tools</em> proposes the use of test case management systems to ease the documentation burden.
-I've used <a href="http://testlink.org/">TestLink</a> and <a href="https://github.com/Nitrate/Nitrate">Nitrate</a>.
-From them Nitrate has more features but is currently unmaintained with me being the
-largest contributor on GitHub. From the paid variants I've used
-<a href="https://www.polarion.com/products/qa/test-automation">Polarion</a> which I generally dislike.
-Polarion is most suitable for large organizations because it gives lots of opportunities
-for tracking and reporting. For small organizations it is an overkill.</p>
-<p><em>Bug System Mining</em> is a technique which involves regularly scanning the bug tracker
-and searching for patterns. This is useful for finding bug types which appear
-frequently and generally point to a flaw in the software development process. The fix for these
-flaws usually is a change in policy/workflow which eliminates the source of the errors.
-I'm a fan of this technique when joining an existing project and need to assess
-what the current state is. I've done this when consulting for a few start-ups, including
-<a href="http://meet.jit.si">Jitsi Meet</a> (acquired by Atlassian), however I'm not doing bug mining
-on a regular basis which I consider a drawback and I really should start doing!</p>
-<p>For example at one project I found lots of bugs reported against translations, e.g.
-missing translations, text overflowing the visible screen area or not playing well with
-existing design, chosen language/style not fitting well with the product domain, etc.</p>
-<p>The root cause of the problem was how the software in question has been localized.
-The translators were given a file of English strings, which they would translate and
-return back in an spread sheet. Developers would copy&amp;paste the translated strings
-into localization files and integrate with the software. Then QA would usually
-inspect all the pages and report the above issues. The solution was to remove devel
-and QA from the translation process, implement a translation management system together
-with live preview (web based) so that translators can keep track of what is left to
-translate and can visually inspect their work immediately after a string was translated.
-Thus translators are given more context for their work but also given the responsibility
-to produce good quality translations.</p>
-<p>Another example I've seen are many bugs which seem like a follow up/nice to have features
-of partially implemented functionality. The root cause of this problem turned out to be
-that devel was jumping straight to implementation without taking the time to brainstorm
-and consult with QE and product owners, not taking into account corner cases and minor
-issues which would have easily been raised by skillful testers. This process lead to
-several iterations until the said functionality was considered initially implemented.</p>
-<p><em>Eliminating Handoffs</em> proposes the use of cross-functional teams to reduce idle time
-and reduce the back-and-forth communication which happens when a bug is found, reported,
-evaluated and considered for a fix, fixed by devel and finally deployed for testing.
-This method argues that including testers early in the process and pairing them with
-the devel team will produce faster bug fixes and reduce communication burden.</p>
-<p>While I generally agree with that statement it's worth noting that cross-functional
-teams perform really well when all team members have relatively equal skill level
-on the horizontal scale and strong experience on the vertical scale (think T-shaped specialist).
-Cross-functional teams
-don't work well when you have developers who aren't well versed in the testing domain
-and/or testers who are not well versed in programming or the broader OS/computer science
-fundamentals domain. In my opinion you need well experienced engineers for a good cross-functional
-team.</p>
-<p>In the chapter <em>Collaboration</em> the paper focuses on pairing, building the right thing
-and faster feedback loops for developers. This overlaps with earlier proposals for
-cross-functional teams and QA bringing value by asking the "what if" questions.
-The chapter specifically talks about the Three Amigos meeting between PM, devel and QA
-where they discuss a feature proposal from all angles and finally come to a conclusion
-what the feature should look like. I'm a strong supporter of this technique and have
-been working with it under one form or another during my entire career. This also
-touches on the notion that testers need to move into the <em>Quality Assistance</em> business
-and be proactive during the software development process, which is something I'm
-hoping to talk about at the
-<a href="http://www.romaniatesting.ro/">Romanian Testing Conference</a> next year!</p>
-<p>Finally the book talks about <em>Skills Development</em> and makes the distinction between
-Centers of Excellence (CoE) and Communities of Practice (CoP). Both the book and I
-are supporters of the CoP approach. This is a bottoms-up approach which is open for
-everyone to join in and harnesses the team creative abilities. It also takes into
-account that different teams use different methods and tools and that
-"one size doesn't fit all"!</p>
-<div class="highlight"><pre>Skilled teams find important bugs faster, discover innovative solutions to hard
-testing problems and know how to communicate their value. Sometimes, a few super
-testers can replace an army of average testers.
-</pre></div>
-
-
-<p>While I consider myself to be a "super tester" with thousands of bugs reported there
-is a very important note to make here. Communities of Practice are successful when
-their members are self-focused on skill development! In my view and to some
-extent the communities I've worked with everyone should strive to constantly improve
-their skills but also exercise peer pressure on their co-workers to not fall behind.
-This has been confirmed by other folks in the QA industry and I've heard it many times
-when talking to friends from other companies.</p>
-<p>Thanks for reading and happy testing!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 28 December 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

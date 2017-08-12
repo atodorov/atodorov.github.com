@@ -90,6 +90,86 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/" rel="bookmark" title="Permalink to Hello World QA Challenge">
+                <h2 class="post-title">
+                    Hello World QA Challenge
+                </h2>
+            </a>
+                <p>Recently I've been asked on Quora
+"Do simple programs like hello world have any bugs" ? In particular if the
+computer hardware and OS are healthy, will there be any bugs in a simple
+hello-world program?</p>
+<p>I'm challenging you to tell me what
+kinds of bugs have you seen which would easily apply to a very simple program!
+Below are some I was able to think about.</p>
+<h2>Localization</h2>
+<p>Once we add a requirement to our system to work in environment which supports
+multiple languages and input methods, not supporting them immediately becomes a bug,
+although the SUT still functions correctly. For example, if using a French locale
+I would expect the program to print "Bonjour le monde". Same for German, Spanish,
+Italian, etc. It even becomes trickier with languages using non-latin script like
+Bulgarian and Japanese for example. Depending on your environment you may not be
+able to display non-latin script at all.
+See also
+<a href="http://atodorov.org/blog/2014/03/17/how-do-you-test-thai-scalable-fonts/">How do you test fonts</a>!</p>
+<h2>Packaging and distribution</h2>
+<p>This is an entire class of problems not directly related to the SUT but to the way
+it is packaged and distributed to its target customers. For a Linux system it makes
+sense to have an RPM or DEB packages. Dependency resolution and proper installation
+and upgrade for these packages need to be tested and ensured.</p>
+<p>A famous example of a high impact packaging bug is
+<a href="https://code.djangoproject.com/ticket/19858">Django #19858</a>. During an urgent
+security release it was discovered that the source package was shipping byte-compiled
+<code>*.pyc</code> files made with a newer version of Python (2.7). Even worse there were
+byte-compiled files without the corresponding source files.</p>
+<p>Being a security release everyone
+rushed to upgrade immediately. Everyone who had Python 2.6 saw their website
+produce <code>ImportError: Bad magic number</code> and crash immediately after the upgrade!</p>
+<p><strong>NOTE:</strong> byte-compiled files between different versions of Python are
+incompatible!</p>
+<p>Another one is
+<a href="https://github.com/tschellenbach/Django-facebook/issues/262">django-facebook #262</a>
+in which version 4.3.0 suddenly grew from 200KiB to 23MiB in size, shipping a ton
+of extra JPEG images.</p>
+<h2>Portability</h2>
+<p>There are so many different portability issues which may affect an otherwise
+working program. You only need to add a requirement to build/execute on another
+OS or CPU architecture - for example aarch64 (64-bit ARM).
+This resulted in hundreds of bugs
+reported by Dennis Gilmore, for example <a href="https://bugzilla.redhat.com/show_bug.cgi?id=926850">RHBZ#926850</a> which is also related to
+packaging and the build chain.</p>
+<p>Then we have possibility for big endian vs. little endian issues especially if
+we run on Power 8 CPU which supports both modes.</p>
+<p>Another one could be 16bit vs. 32bit vs 64bit memory addressing. For example
+on platforms like IBM mainframe (s390) they reserved the most significant bit
+to easily support applications expecting 24-bit addressing, as well as to
+sidestep a problem with extending two instructions to handle 32-bit unsigned
+addresses, which made the address space 31-bits!</p>
+<h2>Performance</h2>
+<p>Not all processors are created equal! Both Intel (x86_64), ARM and PowerPC
+have different instruction sets and numbers of registers. Depending on what
+sort of calculations you perform one of the architectures may be more suitable
+than the other.</p>
+<h2>Typos</h2>
+<p>It not uncommon to mistype even common words like
+"hello" and "world" and I've rarely seen QAs and developers running spell
+checkers on all of their source strings. We do this for documentation and
+occasionally for man pages but for the actual program output or widget labels -
+almost never.</p>
+<h2>Challenge</h2>
+<p>I find the original question very interesting and a good metal exercise for
+IT professionals. I will be going through Bugzilla
+to find examples which illustrate the above points and even more possible problems
+with a program as simple as hello world and will update this blog accordingly!</p>
+<p>Tell me what kinds of bugs have you seen which would easily apply to a very simple program!
+It's best if you can post links to public bugs and/or detailed explanation.
+Thanks!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 25 March 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/03/11/qa-switch-from-waterfall-to-bdd/" rel="bookmark" title="Permalink to QA Switch from Waterfall to BDD">
                 <h2 class="post-title">
                     QA Switch from Waterfall to BDD
@@ -1654,96 +1734,6 @@ does it warrant to spend the resources doing functional testing for X as well?</
                  on Tue 27 October 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/" rel="bookmark" title="Permalink to Anaconda & coverage.py - Pt.2 - Details">
-                <h2 class="post-title">
-                    Anaconda &amp; coverage.py - Pt.2 - Details
-                </h2>
-            </a>
-                <p>My <a href="/blog/2015/10/14/anaconda-coverage.py-introduction/">previous post</a>
-was an introduction to testing installation related components. Now I'm going to
-talk more about anaconda and how it is tested.</p>
-<p>There are two primary ways to test anaconda. You can execute <code>make check</code> in the
-source directory which will trigger the package test suite. The other possibility
-is to perform an actual installation, on bare meta or virtual machine, using the
-<a href="https://kojipkgs.fedoraproject.org/mash/">latest Rawhide snapshots</a> which also
-include the latest anaconda. For both of these methods we can collect code
-coverage information. In live installation mode coverage is enabled via the
-<code>inst.debug</code> boot argument. Fedora 23 and earlier use <code>debug=1</code> but that
-can lead to <a href="https://github.com/rhinstaller/anaconda/pull/291">problems</a>
-sometimes.</p>
-<h2>Kickstart Testing</h2>
-<p><a href="https://github.com/rhinstaller/pykickstart/blob/master/docs/kickstart-docs.rst">Kickstart</a>
-is a method of automating the installation of Fedora by supplying the necessary
-configuration into a text file and pointing the installer at this file. There is
-the directory <code>tests/kickstart_tests</code>, inside the anaconda source, where each
-test is a kickstart file and a shell script. The test runner provisions a virtual
-machine using boot.iso and the kickstart file. A shell script then verifies
-installation was as expected and copies files of interest to the host system.
-Kickstart files are also the basis for testing Fedora installations in
-<a href="https://beaker.fedoraproject.org/bkr/jobs/">Beaker</a>.</p>
-<p>Naturally some of these in-package kickstart tests are the same as
-<a href="https://bitbucket.org/fedoraqa/fedora-beaker-tests/">out-of-band kickstart tests</a>.
-Hint: there are more available but not yet public.</p>
-<p>The question which I don't have an answer for right now is
-"Can we remove some of the duplicates and how this affects devel and QE teams" ?
-The pros of in-package testing are that it is faster compared to Beaker. The cons
-are that you're not testing the real distro (every snapshot is a possible final
-release to the users).</p>
-<h2>Dogtail</h2>
-<p><a href="https://fedorahosted.org/dogtail/">Dogtail</a> uses accessibility technologies to
-communicate with desktop applications. It is written in Python and can be used
-as GUI test automation framework. Long time ago I've proposed support for Dogtail
-in anaconda which was rejected, then couple of years later it was accepted and
-later removed from the code again.</p>
-<p>Anaconda has in-package Dogtail tests (<code>tests/gui/</code>). They work by attaching
-a second disk image with the test suite to a VM running a LiveCD. Anaconda is
-started on the LiveCD and an attempt to install Fedora on disk 1 is made.
-Everything is driven by the Dogtail scripts. There are only a few of these
-tests available and they are currently disabled.
-Red Hat QE has also created another method for running Dogtail tests in anaconda
-using an updates.img with the previous functionality.</p>
-<p>Even if there are some duplicate tests I'm not convinced we have to drop the
-<code>tests/gui/</code> directory from the code because
-the framework used to drive the graphical interface of anaconda appears to be very
-well written. The code is clean and easy to follow.
-Also I don't have metrics of how much these two methods differ or how much they cover
-in their testing. IMO they are pretty close and before we can find a way to
-reliably execute them on a regular basis there isn't much to be done here.
-One idea is to use the <code>--dirinstall</code> or <code>--image</code> options and skip the
-LiveCD part entirely.</p>
-<h2>How Much is Tested</h2>
-<p><code>make ci</code> covers 10% of the entire code base for anaconda. Mind you that
-<code>tests/storage</code> and <code>tests/gui</code> are currently disabled.
-See <a href="https://github.com/rhinstaller/anaconda/pull/346">PR #346</a>,
-<a href="https://github.com/rhinstaller/anaconda/pull/327">PR #327</a> and
-<a href="https://github.com/rhinstaller/anaconda/pull/319">PR #319</a>!
-There is definitely room for improvement.</p>
-<p>On the other hand live installation testing is much
-better. Text mode covers around 25% while graphical installations around 40%.
-Text and graphical combined cover 50% though. These numbers will drop quite a bit
-once anaconda learns to
-<a href="https://github.com/rhinstaller/anaconda/pull/397">include all possible files</a>
-in its report but it is a good estimate.</p>
-<p>The important questions to ask here are:</p>
-<ul>
-<li>How much can PyUnit tests cover in anaconda?</li>
-<li>How much can kickstart tests cover ?</li>
-<li>Have we reached a threshold in any of the two primary methods for testing ?</li>
-<li>Does UI automation (with Dogtail) improve anything ?</li>
-<li>When testing a particular feature (say user creation) how different is the
-code execution path between manual (GUI) testing, kickstart and unit testing ?
-If not so different can we invest in unit tests instead of higher level tests then ?</li>
-<li>How different is the code execution path between different tests (manual or kickstart) ?
-In other words how much value are we getting from testing for the resources we're putting in ?</li>
-</ul>
-<p>In my next post I will talk more about these questions and some rudimentary
-analysis against coverage data from the various test methods and test cases!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 15 October 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/10/15/anaconda-coverage.py-details/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

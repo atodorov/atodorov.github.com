@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Code coverage from Nightmare.js tests</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="end-to-end testing of React application">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="fedora.planet">
+        <meta name="tags" content="QA">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/">
+	<meta property="og:title" content="Code coverage from Nightmare.js tests">
+	<meta property="article:published_time" content="2017-08-12 18:11:00+03:00">
+            <meta property="og:description" content="end-to-end testing of React application">
+
+                <meta property="og:image" content="http://atodorov.org/images/code_coverage_analysis.png">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Code coverage from Nightmare.js tests">
+
+                <meta property="twitter:image" content="http://atodorov.org/images/code_coverage_analysis.png">
+
+            <meta name="twitter:description" content="end-to-end testing of React application">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Code coverage from Nightmare.js tests</h1>
+                            <h3 class="subheading">end-to-end testing of React application</h3>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Sat 12 August 2017
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>In this article I'm going to walk you through the steps required
+to collect code coverage when running an end-to-end test suite
+against a React.js application.</p>
+<p>The application under test looks like this</p>
+<div class="highlight"><pre><span class="cp">&lt;!doctype html&gt;</span>
+<span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">&quot;en-us&quot;</span> <span class="na">class=</span><span class="s">&quot;layout-pf layout-pf-fixed&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;head&gt;</span>
+    <span class="c">&lt;!-- js dependencies skipped --&gt;</span>
+  <span class="nt">&lt;/head&gt;</span>
+  <span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;main&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;./dist/main.js?0ca4cedf3884d3943762&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
+
+
+<p>It is served as an <code>index.html</code> file and a <code>main.js</code> file which intercepts
+all interactions from the user and sends requests to the backend API when
+needed.</p>
+<p>There is an existing unit-test suite which loads the individual components
+and tests them in isolation.
+<a href="https://twitter.com/atodorov_/status/886881560754102272">Apparently people do this</a>!</p>
+<p>There is also an end-to-end test suite which does the majority of the testing.
+It fires up a browser instance and interacts with the application. Everything
+runs inside Docker containers providing a full-blown production-like environment.
+They look like this</p>
+<div class="highlight"><pre><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should switch to Edit Recipe page - recipe creation success&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">done</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kr">const</span> <span class="nx">nightmare</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Nightmare</span><span class="p">();</span>
+  <span class="nx">nightmare</span>
+    <span class="p">.</span><span class="kr">goto</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">url</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">btnCreateRecipe</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">recipesPage</span><span class="p">.</span><span class="nx">btnCreateRecipe</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">page</span> <span class="o">=&gt;</span> <span class="nb">document</span><span class="p">.</span><span class="nx">querySelector</span><span class="p">(</span><span class="nx">page</span><span class="p">.</span><span class="nx">dialogRootElement</span><span class="p">).</span><span class="nx">style</span><span class="p">.</span><span class="nx">display</span> <span class="o">===</span> <span class="s1">&#39;block&#39;</span>
+      <span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">inputName</span><span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">varRecName</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">inputDescription</span><span class="p">,</span> <span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">varRecDesc</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">createRecipePage</span><span class="p">.</span><span class="nx">btnSave</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">wait</span><span class="p">(</span><span class="nx">editRecipePage</span><span class="p">.</span><span class="nx">componentListItemRootElement</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">editRecipePage</span><span class="p">.</span><span class="nx">componentListItemRootElement</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">end</span><span class="p">()</span> <span class="c1">// remove this!</span>
+    <span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">element</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="nx">expect</span><span class="p">(</span><span class="nx">element</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+      <span class="c1">// here goes coverage collection helper</span>
+      <span class="nx">done</span><span class="p">();</span> <span class="c1">// remove this!</span>
+    <span class="p">});</span>
+<span class="p">},</span> <span class="nx">timeout</span><span class="p">);</span>
+</pre></div>
+
+
+<p>The browser interaction is handled by Nightmare.js (sort of like Selenium) and
+the test runner is Jest.</p>
+<h2>Code instrumentation</h2>
+<p>The first thing we need is to instrument the application code to provide coverage
+statistics. This is done via <code>babel-plugin-istanbul</code>. Because unit-tests are
+executed a bit differently we want to enable conditional instrumentation. In reality
+for unit tests we use <code>jest --coverage</code> which enables istanbul on the fly and having
+the code already instrumented breaks this. So I have the following in <code>webpack.config.js</code></p>
+<div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">argv</span><span class="p">.</span><span class="nx">includes</span><span class="p">(</span><span class="s1">&#39;--with-coverage&#39;</span><span class="p">))</span> <span class="p">{</span>
+  <span class="nx">babelConfig</span><span class="p">.</span><span class="nx">plugins</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s1">&#39;istanbul&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>and then build my application with <code>node run build --with-coverage</code>.</p>
+<p>You can execute <code>node run start --with-coverage</code>, open the JavaScript console
+in your browser and inspect the <code>window.__coverage__</code> variable. If this is defined
+then the application is instrumented correctly.</p>
+<h2>Fetching coverage information from within the tests</h2>
+<p>Remember that <code>main.js</code> from the beginning of this post? It lives inside <code>index.html</code>
+which means everything gets downloaded to the client side and executed there.
+When running the end-to-end test suite that is the browser instance which is controlled
+via Nightmare. <strong>You have to pass <code>window.__coverage__</code> from the browser scope back to
+nodejs scope via <code>nightmare.evaluate()</code></strong>! I opted to directly save the coverage data
+on the file system and make it available to coverage reporting tools later!</p>
+<p>My coverage collecting snippet looks like this</p>
+<div class="highlight"><pre><span class="nx">nightmare</span>
+  <span class="p">.</span><span class="nx">evaluate</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nb">window</span><span class="p">.</span><span class="nx">__coverage__</span><span class="p">)</span> <span class="c1">// this executes in browser scope</span>
+  <span class="p">.</span><span class="nx">end</span><span class="p">()</span> <span class="c1">// terminate the Electron (browser) process</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">cov</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="c1">// this executes in Node scope</span>
+    <span class="c1">// handle the data passed back to us from browser scope</span>
+    <span class="kr">const</span> <span class="nx">strCoverage</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">cov</span><span class="p">);</span>
+    <span class="kr">const</span> <span class="nx">hash</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto&#39;</span><span class="p">).</span><span class="nx">createHmac</span><span class="p">(</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">strCoverage</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">digest</span><span class="p">(</span><span class="s1">&#39;hex&#39;</span><span class="p">);</span>
+    <span class="kr">const</span> <span class="nx">fileName</span> <span class="o">=</span> <span class="err">`</span><span class="o">/</span><span class="nx">tmp</span><span class="o">/</span><span class="nx">coverage</span><span class="o">-</span><span class="nx">$</span><span class="p">{</span><span class="nx">hash</span><span class="p">}.</span><span class="nx">json</span><span class="err">`</span><span class="p">;</span>
+    <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">).</span><span class="nx">writeFileSync</span><span class="p">(</span><span class="nx">fileName</span><span class="p">,</span> <span class="nx">strCoverage</span><span class="p">);</span>
+
+    <span class="nx">done</span><span class="p">();</span> <span class="c1">// the callback from the test</span>
+  <span class="p">})</span>
+<span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">err</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+</pre></div>
+
+
+<p>Nightmare returns <code>window.__coverage__</code> from browser scope back to nodejs scope
+and we save it under <code>/tmp</code> using a hash value of the coverage data as the file
+name.</p>
+<p><em>Side note:</em> I do have about 40% less coverage files than number of test cases.
+This means some test scenarios exercise the same code paths. Storing the individual
+coverage reports under a hashed file name makes this very easy to see!</p>
+<p>Note that in my coverage handling code I also call <code>.end()</code> which will terminate
+the browser instance and also execute the <code>done()</code> callback which is being passed
+as parameter to the test above! This is important because it means we had to update
+the way tests were written. In particular the Nightmare method sequence doesn't
+have to call <code>.end()</code> and <code>done()</code> except in the coverage handling code. The
+coverage helper must be the last code executed inside the body of the last
+<code>.then()</code> method. This is usually after all assertions (expectations) have been met!</p>
+<p>Now this coverage helper needs to be part of every single test case so I
+wanted it to be a one line function, easy to copy&amp;paste! All my attempts to
+move this code inside a module have been futile. I can get the module loaded
+but it kept failing with
+<code>Unhandled promise rejection (rejection id: 1): cov_23rlop1885 is not defined</code>;`</p>
+<p>At the end I've resorted to this simple hack</p>
+<div class="highlight"><pre><span class="nb">eval</span><span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="s1">&#39;utils/coverage.js&#39;</span><span class="p">).</span><span class="nx">toString</span><span class="p">());</span>
+</pre></div>
+
+
+<p>Shout-out to <a href="http://krasimirtsonev.com/">Krasimir Tsonev</a> who joined me on a two
+days pairing session to figure this stuff out. Too bad we couldn't quite figure it
+out. If you do please send me a pull request!</p>
+<h2>Reporting the results</h2>
+<p>All of these <code>coverage-*.json</code> files are directly consumable by <code>nyc</code> - the
+coverage reporting tool that comes with the Istanbul suite! I mounted
+<code>.nyc_output/</code> directly under <code>/tmp</code> inside my Docker container so I could</p>
+<div class="highlight"><pre>nyc report
+nyc report --reporter=lcov | codecov
+</pre></div>
+
+
+<p>We can also modify the unit-test command to
+<code>jest --coverage --coverageReporters json --coverageDirectory .nyc_output</code> so it
+produces a <code>coverage-final.json</code> file for <code>nyc</code>. Use this if you want to combine
+the coverage reports from both test suites.</p>
+<p>Because I'm using Travis CI the two test suites are executed independently and
+there is no easy way to share information between them. Instead I've switched
+from Coveralls to CodeCov which is smart enough to merge coverage submissions
+coming from multiple jobs on the same git commits. You can compare the commit
+<a href="https://codecov.io/gh/atodorov/welder-web/commit/46556808e42a21f48d008ced2d53ffe176c01b6d">submitting only unit-test results</a>
+with the one
+<a href="https://codecov.io/gh/atodorov/welder-web/commit/15f437477c17b63797cdb2455f1371336d7dc0e5">submitting coverage from both test suites</a>.</p>
+<p>All of the above steps are put into practice in
+<a href="https://github.com/weldr/welder-web/pull/136">PR #136</a> if you want to check them out!</p>
+<p>Thanks for reading and happy testing!</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, <a href="http://atodorov.org/blog/categories/qa/">QA</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2017/08/12/code-coverage-from-nightmarejs-tests/';
+                var disqus_url = 'http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        a general purpose open source developer, Red Hat Certified professional,
+        cloud hacker and an entrepreneur! My latest start-up is
+        <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Mr. Senko</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

@@ -1,5 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-07T11:11:00+03:00</updated><entry><title>Faster Travis CI tests with Docker cache</title><link href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/" rel="alternate"></link><updated>2017-08-07T11:11:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-07:blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/</id><summary type="html">&lt;p&gt;For a while now I've been running tests on Travis CI using Docker
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-12T18:11:00+03:00</updated><entry><title>Code coverage from Nightmare.js tests</title><link href="http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/" rel="alternate"></link><updated>2017-08-12T18:11:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-12:blog/2017/08/12/code-coverage-from-nightmarejs-tests/</id><summary type="html">&lt;p&gt;In this article I'm going to walk you through the steps required
+to collect code coverage when running an end-to-end test suite
+against a React.js application.&lt;/p&gt;
+&lt;p&gt;The application under test looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;&amp;lt;!doctype html&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;html&lt;/span&gt; &lt;span class="na"&gt;lang=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;en-us&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;class=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layout-pf layout-pf-fixed&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;head&amp;gt;&lt;/span&gt;
+    &lt;span class="c"&gt;&amp;lt;!-- js dependencies skipped --&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;/head&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;body&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;div&lt;/span&gt; &lt;span class="na"&gt;id=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;main&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/div&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;script &lt;/span&gt;&lt;span class="na"&gt;src=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;./dist/main.js?0ca4cedf3884d3943762&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/script&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;/body&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/html&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It is served as an &lt;code&gt;index.html&lt;/code&gt; file and a &lt;code&gt;main.js&lt;/code&gt; file which intercepts
+all interactions from the user and sends requests to the backend API when
+needed.&lt;/p&gt;
+&lt;p&gt;There is an existing unit-test suite which loads the individual components
+and tests them in isolation.
+&lt;a href="https://twitter.com/atodorov_/status/886881560754102272"&gt;Apparently people do this&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;There is also an end-to-end test suite which does the majority of the testing.
+It fires up a browser instance and interacts with the application. Everything
+runs inside Docker containers providing a full-blown production-like environment.
+They look like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;test&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;should switch to Edit Recipe page - recipe creation success&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;done&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;nightmare&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="nx"&gt;Nightmare&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+  &lt;span class="nx"&gt;nightmare&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="kr"&gt;goto&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;recipesPage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;wait&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;recipesPage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;btnCreateRecipe&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;click&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;recipesPage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;btnCreateRecipe&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;wait&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;page&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;document&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;querySelector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;page&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;dialogRootElement&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;style&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;display&lt;/span&gt; &lt;span class="o"&gt;===&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;block&amp;#39;&lt;/span&gt;
+      &lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;insert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;inputName&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;varRecName&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;insert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;inputDescription&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;varRecDesc&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;click&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;createRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;btnSave&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;wait&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;editRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;componentListItemRootElement&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;exists&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;editRecipePage&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;componentListItemRootElement&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;end&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;// remove this!&lt;/span&gt;
+    &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;then&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nx"&gt;element&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="nx"&gt;expect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;element&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;toBe&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+      &lt;span class="c1"&gt;// here goes coverage collection helper&lt;/span&gt;
+      &lt;span class="nx"&gt;done&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt; &lt;span class="c1"&gt;// remove this!&lt;/span&gt;
+    &lt;span class="p"&gt;});&lt;/span&gt;
+&lt;span class="p"&gt;},&lt;/span&gt; &lt;span class="nx"&gt;timeout&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The browser interaction is handled by Nightmare.js (sort of like Selenium) and
+the test runner is Jest.&lt;/p&gt;
+&lt;h2&gt;Code instrumentation&lt;/h2&gt;
+&lt;p&gt;The first thing we need is to instrument the application code to provide coverage
+statistics. This is done via &lt;code&gt;babel-plugin-istanbul&lt;/code&gt;. Because unit-tests are
+executed a bit differently we want to enable conditional instrumentation. In reality
+for unit tests we use &lt;code&gt;jest --coverage&lt;/code&gt; which enables istanbul on the fly and having
+the code already instrumented breaks this. So I have the following in &lt;code&gt;webpack.config.js&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;process&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;includes&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;--with-coverage&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="nx"&gt;babelConfig&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;plugins&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;push&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;istanbul&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;and then build my application with &lt;code&gt;node run build --with-coverage&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;You can execute &lt;code&gt;node run start --with-coverage&lt;/code&gt;, open the JavaScript console
+in your browser and inspect the &lt;code&gt;window.__coverage__&lt;/code&gt; variable. If this is defined
+then the application is instrumented correctly.&lt;/p&gt;
+&lt;h2&gt;Fetching coverage information from within the tests&lt;/h2&gt;
+&lt;p&gt;Remember that &lt;code&gt;main.js&lt;/code&gt; from the beginning of this post? It lives inside &lt;code&gt;index.html&lt;/code&gt;
+which means everything gets downloaded to the client side and executed there.
+When running the end-to-end test suite that is the browser instance which is controlled
+via Nightmare. &lt;strong&gt;You have to pass &lt;code&gt;window.__coverage__&lt;/code&gt; from the browser scope back to
+nodejs scope via &lt;code&gt;nightmare.evaluate()&lt;/code&gt;&lt;/strong&gt;! I opted to directly save the coverage data
+on the file system and make it available to coverage reporting tools later!&lt;/p&gt;
+&lt;p&gt;My coverage collecting snippet looks like this&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;nightmare&lt;/span&gt;
+  &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;evaluate&lt;/span&gt;&lt;span class="p"&gt;(()&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;window&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;__coverage__&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// this executes in browser scope&lt;/span&gt;
+  &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;end&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;// terminate the Electron (browser) process&lt;/span&gt;
+  &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;then&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nx"&gt;cov&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;// this executes in Node scope&lt;/span&gt;
+    &lt;span class="c1"&gt;// handle the data passed back to us from browser scope&lt;/span&gt;
+    &lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;strCoverage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;stringify&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;cov&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;hash&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;crypto&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;createHmac&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;sha256&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;update&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;strCoverage&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;digest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;hex&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;fileName&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nx"&gt;tmp&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nx"&gt;coverage&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="nx"&gt;hash&lt;/span&gt;&lt;span class="p"&gt;}.&lt;/span&gt;&lt;span class="nx"&gt;json&lt;/span&gt;&lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;fs&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;writeFileSync&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;fileName&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;strCoverage&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+
+    &lt;span class="nx"&gt;done&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt; &lt;span class="c1"&gt;// the callback from the test&lt;/span&gt;
+  &lt;span class="p"&gt;})&lt;/span&gt;
+&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="k"&gt;catch&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;err&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="nx"&gt;console&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;err&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Nightmare returns &lt;code&gt;window.__coverage__&lt;/code&gt; from browser scope back to nodejs scope
+and we save it under &lt;code&gt;/tmp&lt;/code&gt; using a hash value of the coverage data as the file
+name.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Side note:&lt;/em&gt; I do have about 40% less coverage files than number of test cases.
+This means some test scenarios exercise the same code paths. Storing the individual
+coverage reports under a hashed file name makes this very easy to see!&lt;/p&gt;
+&lt;p&gt;Note that in my coverage handling code I also call &lt;code&gt;.end()&lt;/code&gt; which will terminate
+the browser instance and also execute the &lt;code&gt;done()&lt;/code&gt; callback which is being passed
+as parameter to the test above! This is important because it means we had to update
+the way tests were written. In particular the Nightmare method sequence doesn't
+have to call &lt;code&gt;.end()&lt;/code&gt; and &lt;code&gt;done()&lt;/code&gt; except in the coverage handling code. The
+coverage helper must be the last code executed inside the body of the last
+&lt;code&gt;.then()&lt;/code&gt; method. This is usually after all assertions (expectations) have been met!&lt;/p&gt;
+&lt;p&gt;Now this coverage helper needs to be part of every single test case so I
+wanted it to be a one line function, easy to copy&amp;amp;paste! All my attempts to
+move this code inside a module have been futile. I can get the module loaded
+but it kept failing with
+&lt;code&gt;Unhandled promise rejection (rejection id: 1): cov_23rlop1885 is not defined&lt;/code&gt;;`&lt;/p&gt;
+&lt;p&gt;At the end I've resorted to this simple hack&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;eval&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;fs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;readFileSync&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;utils/coverage.js&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;toString&lt;/span&gt;&lt;span class="p"&gt;());&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Shout-out to &lt;a href="http://krasimirtsonev.com/"&gt;Krasimir Tsonev&lt;/a&gt; who joined me on a two
+days pairing session to figure this stuff out. Too bad we couldn't quite figure it
+out. If you do please send me a pull request!&lt;/p&gt;
+&lt;h2&gt;Reporting the results&lt;/h2&gt;
+&lt;p&gt;All of these &lt;code&gt;coverage-*.json&lt;/code&gt; files are directly consumable by &lt;code&gt;nyc&lt;/code&gt; - the
+coverage reporting tool that comes with the Istanbul suite! I mounted
+&lt;code&gt;.nyc_output/&lt;/code&gt; directly under &lt;code&gt;/tmp&lt;/code&gt; inside my Docker container so I could&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;nyc report
+nyc report --reporter=lcov | codecov
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We can also modify the unit-test command to
+&lt;code&gt;jest --coverage --coverageReporters json --coverageDirectory .nyc_output&lt;/code&gt; so it
+produces a &lt;code&gt;coverage-final.json&lt;/code&gt; file for &lt;code&gt;nyc&lt;/code&gt;. Use this if you want to combine
+the coverage reports from both test suites.&lt;/p&gt;
+&lt;p&gt;Because I'm using Travis CI the two test suites are executed independently and
+there is no easy way to share information between them. Instead I've switched
+from Coveralls to CodeCov which is smart enough to merge coverage submissions
+coming from multiple jobs on the same git commits. You can compare the commit
+&lt;a href="https://codecov.io/gh/atodorov/welder-web/commit/46556808e42a21f48d008ced2d53ffe176c01b6d"&gt;submitting only unit-test results&lt;/a&gt;
+with the one
+&lt;a href="https://codecov.io/gh/atodorov/welder-web/commit/15f437477c17b63797cdb2455f1371336d7dc0e5"&gt;submitting coverage from both test suites&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;All of the above steps are put into practice in
+&lt;a href="https://github.com/weldr/welder-web/pull/136"&gt;PR #136&lt;/a&gt; if you want to check them out!&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>Faster Travis CI tests with Docker cache</title><link href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/" rel="alternate"></link><updated>2017-08-07T11:11:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-07:blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/</id><summary type="html">&lt;p&gt;For a while now I've been running tests on Travis CI using Docker
 containers to build the project and execute the tests inside. In this
 post I will explain how to speed up execution times.&lt;/p&gt;
 &lt;p&gt;A Docker image is a filesystem snapshot similar to a virtual machine
@@ -2278,110 +2421,4 @@ and large scale bug finding;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;If you have suggestions please comment below, especially if you can tell me
 how to implement them in practice.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>4 Quick Wins to Manage the Cost of Software Testing</title><link href="http://atodorov.org/blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/" rel="alternate"></link><updated>2016-12-28T11:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-28:blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/</id><summary type="html">&lt;div class="highlight"&gt;&lt;pre&gt;Every activity in software development has a cost and a value. Getting cost to
-trend down while increasing value, is the ultimate goal.
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;This is the introduction of an e-book called
-&lt;a href="http://pi.qasymphony.com/four-quick-wins-thank-you"&gt;4 Quick Wins to Manage the Cost of Software Testing&lt;/a&gt;.
-It was sent to me by Ivan Fingarov couple of months ago. Just now I've managed to
-read it and here's a quick summary. I urge everyone to download the original copy
-and give it a read.&lt;/p&gt;
-&lt;p&gt;The paper focuses on several practices which organizations can apply immediately
-in order to become more efficient and transparent in their software testing. While
-larger organizations (e.g. enterprises) have most of these practices already in place
-smaller companies (up to 50-100 engineering staff) may not be familiar with them
-and will reap the most benefits of implementing said practices. Even though I work
-for a large enterprise I find this guide useful when considered at the individual
-team level!&lt;/p&gt;
-&lt;p&gt;The first chapter focuses on &lt;em&gt;Tactics&lt;/em&gt; to minimize cost: Process, Tools, Bug System Mining
-and Eliminating Handoffs.&lt;/p&gt;
-&lt;p&gt;In &lt;em&gt;Process&lt;/em&gt; the goal is to minimize the burden of documenting the test process
-(aka testing artifacts), allow for better transparency and visibility outside the QA group
-and streamline the decision making process of what to test and when to stop testing,
-how much has been tested, what the risk is, ect. The authors propose testing core functionality
-paired with emerging risk areas based on new features development. They propose making
-a list of these and sorting that list by perceived risk/priority and testing as much
-as possible. Indeed this is very similar to the method I've used at Red Hat when designing
-testing for new features and new major releases of Red Hat Enterprise Linux. A similar
-method I've seen in place at several start-ups as well, although in the small organization
-the primary driver for this method is lack of sufficient test resources.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Tools&lt;/em&gt; proposes the use of test case management systems to ease the documentation burden.
-I've used &lt;a href="http://testlink.org/"&gt;TestLink&lt;/a&gt; and &lt;a href="https://github.com/Nitrate/Nitrate"&gt;Nitrate&lt;/a&gt;.
-From them Nitrate has more features but is currently unmaintained with me being the
-largest contributor on GitHub. From the paid variants I've used
-&lt;a href="https://www.polarion.com/products/qa/test-automation"&gt;Polarion&lt;/a&gt; which I generally dislike.
-Polarion is most suitable for large organizations because it gives lots of opportunities
-for tracking and reporting. For small organizations it is an overkill.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Bug System Mining&lt;/em&gt; is a technique which involves regularly scanning the bug tracker
-and searching for patterns. This is useful for finding bug types which appear
-frequently and generally point to a flaw in the software development process. The fix for these
-flaws usually is a change in policy/workflow which eliminates the source of the errors.
-I'm a fan of this technique when joining an existing project and need to assess
-what the current state is. I've done this when consulting for a few start-ups, including
-&lt;a href="http://meet.jit.si"&gt;Jitsi Meet&lt;/a&gt; (acquired by Atlassian), however I'm not doing bug mining
-on a regular basis which I consider a drawback and I really should start doing!&lt;/p&gt;
-&lt;p&gt;For example at one project I found lots of bugs reported against translations, e.g.
-missing translations, text overflowing the visible screen area or not playing well with
-existing design, chosen language/style not fitting well with the product domain, etc.&lt;/p&gt;
-&lt;p&gt;The root cause of the problem was how the software in question has been localized.
-The translators were given a file of English strings, which they would translate and
-return back in an spread sheet. Developers would copy&amp;amp;paste the translated strings
-into localization files and integrate with the software. Then QA would usually
-inspect all the pages and report the above issues. The solution was to remove devel
-and QA from the translation process, implement a translation management system together
-with live preview (web based) so that translators can keep track of what is left to
-translate and can visually inspect their work immediately after a string was translated.
-Thus translators are given more context for their work but also given the responsibility
-to produce good quality translations.&lt;/p&gt;
-&lt;p&gt;Another example I've seen are many bugs which seem like a follow up/nice to have features
-of partially implemented functionality. The root cause of this problem turned out to be
-that devel was jumping straight to implementation without taking the time to brainstorm
-and consult with QE and product owners, not taking into account corner cases and minor
-issues which would have easily been raised by skillful testers. This process lead to
-several iterations until the said functionality was considered initially implemented.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Eliminating Handoffs&lt;/em&gt; proposes the use of cross-functional teams to reduce idle time
-and reduce the back-and-forth communication which happens when a bug is found, reported,
-evaluated and considered for a fix, fixed by devel and finally deployed for testing.
-This method argues that including testers early in the process and pairing them with
-the devel team will produce faster bug fixes and reduce communication burden.&lt;/p&gt;
-&lt;p&gt;While I generally agree with that statement it's worth noting that cross-functional
-teams perform really well when all team members have relatively equal skill level
-on the horizontal scale and strong experience on the vertical scale (think T-shaped specialist).
-Cross-functional teams
-don't work well when you have developers who aren't well versed in the testing domain
-and/or testers who are not well versed in programming or the broader OS/computer science
-fundamentals domain. In my opinion you need well experienced engineers for a good cross-functional
-team.&lt;/p&gt;
-&lt;p&gt;In the chapter &lt;em&gt;Collaboration&lt;/em&gt; the paper focuses on pairing, building the right thing
-and faster feedback loops for developers. This overlaps with earlier proposals for
-cross-functional teams and QA bringing value by asking the "what if" questions.
-The chapter specifically talks about the Three Amigos meeting between PM, devel and QA
-where they discuss a feature proposal from all angles and finally come to a conclusion
-what the feature should look like. I'm a strong supporter of this technique and have
-been working with it under one form or another during my entire career. This also
-touches on the notion that testers need to move into the &lt;em&gt;Quality Assistance&lt;/em&gt; business
-and be proactive during the software development process, which is something I'm
-hoping to talk about at the
-&lt;a href="http://www.romaniatesting.ro/"&gt;Romanian Testing Conference&lt;/a&gt; next year!&lt;/p&gt;
-&lt;p&gt;Finally the book talks about &lt;em&gt;Skills Development&lt;/em&gt; and makes the distinction between
-Centers of Excellence (CoE) and Communities of Practice (CoP). Both the book and I
-are supporters of the CoP approach. This is a bottoms-up approach which is open for
-everyone to join in and harnesses the team creative abilities. It also takes into
-account that different teams use different methods and tools and that
-"one size doesn't fit all"!&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;Skilled teams find important bugs faster, discover innovative solutions to hard
-testing problems and know how to communicate their value. Sometimes, a few super
-testers can replace an army of average testers.
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;While I consider myself to be a "super tester" with thousands of bugs reported there
-is a very important note to make here. Communities of Practice are successful when
-their members are self-focused on skill development! In my view and to some
-extent the communities I've worked with everyone should strive to constantly improve
-their skills but also exercise peer pressure on their co-workers to not fall behind.
-This has been confirmed by other folks in the QA industry and I've heard it many times
-when talking to friends from other companies.&lt;/p&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
