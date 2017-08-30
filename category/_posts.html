@@ -91,6 +91,64 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/08/30/speeding-up-rust-builds-inside-docker/" rel="bookmark" title="Permalink to Speeding up Rust builds inside Docker">
+                <h2 class="post-title">
+                    Speeding up Rust builds inside Docker
+                </h2>
+            </a>
+                <p>Currently <a href="https://github.com/rust-lang/cargo/pull/3567">it is not possible</a>
+to instruct <code>cargo</code>, the Rust package manager, to build only the dependencies
+of the software you are compiling! This means you can't easily pre-install
+build dependencies. Luckily you can workaround this with <code>cargo build -p</code>!
+I've been using this Python script to parse <code>Cargo.toml</code>:</p>
+<div class="highlight"><span class="filename">parse-cargo-toml.py</span><pre><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">toml</span>
+
+<span class="n">_pwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
+<span class="n">cargo</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_pwd</span><span class="p">,</span> <span class="s">&#39;Cargo.toml&#39;</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+<span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dependencies&#39;</span><span class="p">,</span> <span class="s">&#39;dev-dependencies&#39;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">dep</span><span class="p">,</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">cargo</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;cargo build -p </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">dep</span><span class="p">)</span>
+</pre></div>
+
+
+<p>and then inside my <code>Dockerfile</code>:</p>
+<div class="highlight"><pre><span class="x">RUN mkdir /bdcs-api-rs/</span>
+<span class="x">COPY parse-cargo-toml.py /bdcs-api-rs/</span>
+
+<span class="err">#</span><span class="x"> Manually install cargo dependencies before building</span>
+<span class="err">#</span><span class="x"> so we can have a reusable intermediate container.</span>
+<span class="err">#</span><span class="x"> This workaround is needed until cargo can do this by itself:</span>
+<span class="err">#</span><span class="x"> https://github.com/rust-lang/cargo/issues/2644</span>
+<span class="err">#</span><span class="x"> https://github.com/rust-lang/cargo/pull/3567</span>
+<span class="x">COPY Cargo.toml /bdcs-api-rs/</span>
+<span class="x">WORKDIR /bdcs-api-rs/</span>
+<span class="x">RUN python ./parse-cargo-toml.py | while read cmd; do \</span>
+<span class="x">        </span><span class="p">$</span><span class="nv">cmd</span><span class="x">;                                    \</span>
+<span class="x">    done</span>
+</pre></div>
+
+
+<p>It doesn't take into account the version constraints specified in <code>Cargo.toml</code> but
+is still able to produce an intermediate docker layer which I can use to
+<a href="http://atodorov.org/blog/2017/08/07/faster-travis-ci-tests-with-docker-cache/">speed-up my tests by caching the dependency compilation part</a>.</p>
+<p>As seen in the <a href="https://travis-ci.org/weldr/bdcs-api-rs/builds/268489460#L1173">build log</a>,
+lines 1173-1182, when doing <code>cargo build</code> it downloads and compiles <code>chrono v0.3.0</code> and
+<code>toml v0.3.2</code>. The rest of the dependencies are already available. The logs also show
+that after Job #285 the build times dropped from 16 minutes down to 3-4 minutes due to
+Docker caching. This would be even less if the cache is kept locally!</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 30 August 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/08/30/speeding-up-rust-builds-inside-docker/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/08/12/code-coverage-from-nightmarejs-tests/" rel="bookmark" title="Permalink to Code coverage from Nightmare.js tests">
                 <h2 class="post-title">
                     Code coverage from Nightmare.js tests
@@ -2264,204 +2322,6 @@ introduce them to <a href="http://amzn.to/2ijQlBD">Hello Ruby</a> and
                  on Fri 13 January 2017
             </p>
 <p>There are <a href="http://atodorov.org/blog/2017/01/13/a-5-year-old-girl-vs-coderdojo/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2017/01/03/circo-loco-2017/" rel="bookmark" title="Permalink to Circo loco 2017">
-                <h2 class="post-title">
-                    Circo loco 2017
-                </h2>
-            </a>
-                <p><img alt="HackConf 2016" src="/images/hack_conf.jpg" title="HackConf 2016" /></p>
-<p>Due to popular demand I'm sharing my plans for the upcoming conference season.
-Here is a list of events I plan to visit and speak at (hopefully). The list
-will be updated throughout the year so please subscribe to the comments section
-to receive a notification when that happens! I'm open to meeting new people so
-ping me for a beer if you are attending some of these events!</p>
-<h2>02 February - Hack Belgium Pre-Event Workshops, Brussels</h2>
-<p><strong>Note: added on Jan 12th</strong></p>
-<p>Last year I had an amazing time visiting an
-<a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/">Elixir &amp; Erlang workshop</a> so
-I'm about to repeat the experience. I will be visiting a
-<a href="http://www.hackathon.com/event/hack-belgium-pre-event-workshops-29372270251">workshop</a>
-organized by HackBelgium and keep you posted with the results.</p>
-<h2>03 February - Git Merge, Brussels</h2>
-<p><strong>Note: added on Jan 12th</strong></p>
-<p><a href="http://git-merge.com/">Git Merge</a> is organized by GitHub and will be held in Brussels
-this year. I will be visiting only the conference track and hopefully giving a lightning talk
-titled <em>Automatic upstream dependency testing with GitHub API</em>! That and the afterparty
-of course!</p>
-<h2>04-05 February - FOSDEM, Brussels</h2>
-<p><a href="https://fosdem.org/2017/">FOSDEM</a> is the largest free and open source gathering
-in Europe which I have been visiting since 2009 (IIRC). You can checkout some
-of my reports about
-<a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-1-python-stands-lightning-talks/">FOSDEM 2014, Day 1</a>,
-<a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014, Day 2</a> and
-<a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/">FOSDEM 2016</a>.</p>
-<p>I will present my
-<a href="https://fosdem.org/2017/schedule/event/mutant_testing/">Mutants, tests and zombies</a>
-talk at the <em>Testing &amp; Automation devroom</em> on Sunday.</p>
-<p><strong>UPDATE:</strong> Video recording is available
-<a href="https://www.youtube.com/watch?v=ZyKvwODy9jw&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">here</a></p>
-<p>I will be in Brussels between February 1st and 5th to explore the local
-start-up scene and get to meet with the Python community so ping me if you are around.</p>
-<h2>18 March - QA Challenge Accepted 3.0, Sofia</h2>
-<p><a href="http://qachallengeaccepted.com/">QA: Challenge Accepted</a> is a specialized QA conference
-in Sofia and most of the sessions are in Bulgarian. I've visited last year and it was great.
-I even proposed a <a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/">challenge of my own</a>.</p>
-<p>CFP is still open but I have a strong confidence that my talk
-<em>Testing Red Hat Enterprise Linux the MicroSoft way</em> will be approved. It will describe
-a large scale experiment with pairwise testing, which btw I learned about at
-QA: Challenge Accepted 2.0 :).</p>
-<p><strong>UPDATE:</strong> I will be also on the jury for <em>QA of the year</em> award.</p>
-<p><strong>UPDATE:</strong> I did a lightning talk about my
-<a href="https://www.youtube.com/watch?v=14e1z-pYwMc">test case management system</a> (in Bulgarian).</p>
-<h2>07-08 April - Bulgaria Web Summit, Sofia</h2>
-<p>I have been a moderator at
-<a href="https://bulgariawebsummit.com/">Bulgaria Web Summit</a> for several years and this year
-is no exception. This is one of the strongest events held in Sofia and is in English.
-Last year over 60% of the attendees were from abroad so you are welcome!</p>
-<p>I'm not going to speak at this event but will record as much of it
-as possible. <strong>UPDATE:</strong> Checkout the recordings on my
-<a href="https://www.youtube.com/watch?v=NW8wjpK-hRg&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;index=11">YouTube</a>
-channel!</p>
-<h2>10-12 May - Romanian Testing Conference, Cluj-Napoca</h2>
-<p><a href="http://romaniatesting.ro/">RTC'17</a> is a new event I found in neighboring Romania.
-The topic this year is <em>Thriving and remaining relevant in Quality Assurance</em>. My talk is titled
-<em>Quality Assistance in the Brave New World</em> where I'll share some experiences
-and visions for the QA profession if that gets accepted.</p>
-<p>As it turned out I know a few people living in Cluj so I'll be arriving one day earlier
-on May 9th to meet the locals.</p>
-<h2>13-14 May - OSCAL, Tirana</h2>
-<p><a href="http://oscal.openlabs.cc/">Open Source Conference Albania</a> is the largest OSS event in
-the country. I'm on a row here to explore the IT scene on the Balkans. Due to traveling
-constraints my availability will be limited to the conference venue only but I've booked
-a hotel across the street :).</p>
-<p>I will be meeting a few friends in Tirana and hear about the progress of an
-<a href="http://atodorov.org/blog/2016/11/21/women-in-open-source/">psychological experiment</a> we devised
-with Jona Azizaj and Suela Palushi.</p>
-<p>Talking wise I'm hoping to get the chance of introducing mutation testing and
-even host a workshop on the topic.</p>
-<p><strong>UPDATE:</strong> Here is the video recording from
-<a href="https://www.youtube.com/watch?v=mG1eAhMWZJ8">OSCAL</a>. The quality is very poor though.</p>
-<h2>20-21 May - DEVit, Thessaloniki</h2>
-<p>This is the 3rd edition of <a href="http://devitconf.org/">DEVit</a>,
-the 360° web development conference of Northern Greece. I've been a regular
-visitor since the beginning and this year I've proposed a session on mutation
-testing. Because the Thessaloniki community seems more interested in Ruby and Rails
-my goal is to share more examples from my Ruby work and compare how that is different
-from the Python world. There is once again an opportunity for a workshop.</p>
-<p>So far I've been the only Bulgarian to visit DEVit and also locally known as
-"The guy who Kosta &amp; Kosta met in Sofia"! Checkout my impressions from
-<a href="http://atodorov.org/blog/2015/05/22/devit-conf-2015-impressions/">DEVit'15</a> and
-<a href="http://atodorov.org/blog/2016/05/25/devit-conf-2016/">DEVit'16</a>
-if you are still wondering whether to attend or not! I strongly recommend it!</p>
-<p><strong>UPDATE:</strong> I am still the only Bulgarian visiting DEVit!</p>
-<h2>22 May - Dev.bg, Sofia</h2>
-<p>I've hosted a session titled <em>Quality Assurance According to Einstein</em> for the
-local QA community in Sofia. <a href="https://www.youtube.com/watch?v=CnxNCdX3iG0">Video</a>
-(in Bulgarian) and <a href="http://atodorov.org/blog/2017/04/20/quality-assurance-according-2-einstein/">links</a> are available!</p>
-<p><strong>UPDATE:</strong> added post-mortem.</p>
-<h2>01-02 June - Shift Developer Conference, Split</h2>
-<p><a href="http://shift.codeanywhere.com/">Shift</a> appears to be a very big event in Croatia.
-My attendance is still unconfirmed due to lots of traveling before that and
-the general trouble of efficiently traveling on the Balkans. However I have a
-CFP submitted and waiting for approval. This time it is my
-<em>Mutation Testing in Patterns</em>, which is a journal of different code patterns
-found during mutation testing. I have not yet presented it to the public
-but will blog about it sometime soon so stay tuned.</p>
-<p><strong>UPDATE:</strong> this one is a no-go!</p>
-<h2>03-04 June - TuxCon, Plovdiv</h2>
-<p><a href="http://tuxcon.mobi/">TuxCon</a> is held in Plovdiv around the beginning of July.
-I'm usually presenting some lightning talks there and use the opportunity to
-meet with friends and peers outside Sofia and catch up with news from the
-local community. The conference is in Bulgarian with the exception of the
-occasional foreign speaker. If you understand Bulgarian I recommend the
-story of
-<a href="http://atodorov.org/blog/2016/07/12/testing-the-8-bit-computer-puldin/">Puldin - a Bulgarian computer from the 80s</a>.</p>
-<p><strong>UPDATE:</strong> I will be opening the conference with <em>QA According to Einstein</em></p>
-<h2>17-18 June - How Camp, Varna</h2>
-<p><a href="http://how.camp/">How Camp</a> is the little brother of Bulgaria Web Summit and is always
-held outside of Sofia. This year it will be in Varna, Bulgaria. I will be there of course
-and depending on the crowd may talk about some software testing patterns.</p>
-<p><strong>UPDATE:</strong> it looks like this is also a no-go but stay tuned for the upcoming
-<em>Macedonia Web Summit</em> and <em>Albania Web Summit</em> where yours trully will probably
-be a moderator!</p>
-<h2>25-29 September - SuSE CON, Prague</h2>
-<p>Yeah, this is the <a href="http://www.susecon.com">conference organized by SuSE</a>. I'm definitely
-not afraid to visit the competition. I even hope I could teach them something. More
-details are still TBA because this event is very close to/overlapping with the next
-two.</p>
-<h2>28-29 September - SEETEST, Sofia</h2>
-<p><a href="http://seetest.org">South East European Software Testing Conference</a> is, AFAIK,
-an international event which is hosted in a major city on the Balkans. Last year it was
-held in Bucharest with previous years held in Sofia.</p>
-<p>In my view this is the most formal event, especially related to software testing,
-I'm about to visit. Nevertheless I like to hear about new ideas and some research
-in the field of QA so this is a good opportunity.</p>
-<p><strong>UPDATE:</strong> I have submitted a new talk titled
-<em>If the facts don't fit the theory, change the facts!</em></p>
-<h2>30 September-1 October - HackConf, Sofia</h2>
-<p><a href="https://hackconf.bg">HackConf</a> is one of the largest conferences in Bulgaria, gathering
-over 1000 people each year. I am strongly affiliated with the people who organize it
-and even had the opportunity to host the opening session last year. The picture above
-is from this event.</p>
-<p>The audience is still very young and inexperienced but the presenters are above average.
-Organizers' goal is HackConf to become the strongest technical conference in the country
-and also serve as a sort of inspiration for young IT professionals.</p>
-<p><strong>UPDATE:</strong> I have submitted both a talk proposal and a workshop proposal.
-For the workshop I intend to teach children
-<a href="http://atodorov.org/blog/2017/05/27/learn-python-selenium-automation-in-8-weeks/">Python and Selenium Automation in 8 hours</a>.
-I've also been helping the organizers with bringing some very cool speakers
-from abroad!</p>
-<h2>October - IT Weekend, Bulgaria</h2>
-<p><a href="http://it-weekend.com/">IT Weekend</a> is organized by Petar Sabev, the same person who's
-behind QA: Challenge Accepted. It is a non-formal gathering of engineers with the intent
-to share some news and then discuss and share problems and experiences. Checkout my
-review of
-<a href="http://atodorov.org/blog/2016/10/08/what-i-learned-from-it-weekend/">IT Weekend #1</a> and
-<a href="http://atodorov.org/blog/2016/11/02/it-weekend-highlights/">IT Weekend #3</a>.</p>
-<p>The topic revolve around QA, leadership and management but the format is open and the
-intention is to broaden the topics covered. The event is held outside Sofia at a SPA
-hotel and makes for a very nice retreat. I don't have a topic but I'm definitely going
-if time allows. I will probably make something up if we have QA slots available :).</p>
-<h2>October - Software Freedom Kosova, Prishtina</h2>
-<p><a href="http://sfk.flossk.org">Software Freedom Kosova</a> is one of the oldest conferences
-about free and open source software in the region.
-This is part of my goal to explore the IT communities on the Balkans.
-Kosovo sounds a bit strange to visit but I did recognize a few names on the speaker
-list of previous years.</p>
-<p>The CFP is not open yet but I'm planning to make a presentation. Also if weather
-allows I'm planning a road trip on my motorbike :).</p>
-<p><strong>UPDATE:</strong> I've met with some of the FLOSSK members in Tirana at OSCAL and they
-seem to be more busy with running the hacker space in Prishtina so the conference
-is nearly a no-go.</p>
-<h2>14-15 November - Google Test Automation Conference, London</h2>
-<p><a href="https://developers.google.com/google-test-automation-conference/">GTAC 2017</a>
-will be held in London. Both speakers and attendees are pre-approved
-and my goal is to be the first Red Hatter and second Bulgarian to speak at GTAC.</p>
-<p>The previous two years saw talks about
-<a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/">mutation testing vs. coverage</a>
-and their respective use
-to determine the quality of a test suite with both parties arguing against
-each other. Since I'm working in both of these fields and have at least two
-practical example I'm trying to gather more information and present my findings
-to the world.</p>
-<p><strong>UPDATE:</strong> I've also submitted my <em>Testing Red Hat Enterprise Linux the Microsoft way</em></p>
-<h2>16-17 November - ISTA Con, Sofia</h2>
-<p><a href="https://istacon.org/">Innovations in Software Technologies and Automation</a> started as a QA conference
-several years ago but it has broaden the range of acceptable topics to include
-development, devops and agile. I was at the first two editions and then didn't attend
-for a while until <a href="http://atodorov.org/blog/2016/11/30/highlights-from-ista-and-gtac-2016/">last year</a> when I
-really liked it. The event is entirely in English with lots of foreign speakers.</p>
-<p>Recently I've been working on something I call "Regression Test Monitoring" and my
-intention is to present this at ISTA 2017 so stay tuned.</p>
-<p><strong>UPDATE:</strong> I didn't manage to collect enough information on the
-<em>Regression Test Monitoring</em> topic but have made two other proposals.</p>
-<p>Thanks for reading and see you around!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 03 January 2017
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2017/01/03/circo-loco-2017/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
