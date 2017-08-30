@@ -1,6 +1,6 @@
 Title: Speeding up Rust builds inside Docker
 Headline: aka cargo build --deps-only
-date: 2017-08-30 10:11
+date: 2017-08-30 09:00
 comments: true
 Tags: fedora.planet, QA
 og_image: images/cargo-containers.jpg
