@@ -91,6 +91,44 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/" rel="bookmark" title="Permalink to Commit a file with the GitHub API and Python">
+                <h2 class="post-title">
+                    Commit a file with the GitHub API and Python
+                </h2>
+            </a>
+                <p>How do you commit changes to a file using the GitHub API ?
+I've found
+<a href="http://www.levibotelho.com/development/commit-a-file-with-the-github-api/">this post</a>
+by Levi Botelho which explains the necessary steps but without any code.
+So I've used it and created a
+<a href="https://github.com/atodorov/api-commit-test">Python example</a>.</p>
+<p>I've rearranged the steps so that all write operations follow after a certain
+section in the code and also added an intermediate section which creates the
+updated content based on what is available in the repository.</p>
+<p>I'm just appending
+versions of Markdown to the <code>.travis.yml</code> (I will explain why in my next post)
+and this is hard-coded for the sake of example. All content related operations
+are also based on the GitHub API because I want to be independent of the source
+code being around when I push this script to a hosting provider.</p>
+<p>I've tested this script against itself. In the
+<a href="https://github.com/atodorov/api-commit-test/commits/master">commits log</a>
+you can find the <em>Automatic update to Markdown-X.Y</em> messages. These are
+from the script. Also notice the <em>Merge remote-tracking branch 'origin/master'</em>
+messages, these appeared when I pulled to my local copy. I believe the
+reason for this is that I have some dangling trees and/or commits from
+the time I was still experimenting with a broken script. I've tested on another
+clean repository and <a href="https://github.com/atodorov/bztest/commits/master">there are</a>
+no such merges.</p>
+<p><strong>IMPORTANT</strong></p>
+<p>For this to work you need to properly authenticate with GitHub. I've crated
+a new token at <a href="https://github.com/settings/tokens">https://github.com/settings/tokens</a> with the <em>public_repo</em>
+permission and that works for me.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 01 December 2015
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2015/12/01/commit-a-file-with-the-github-api-and-python/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2015/11/29/inspecting-method-arguments-in-python/" rel="bookmark" title="Permalink to Inspecting Method Arguments in Python">
                 <h2 class="post-title">
                     Inspecting Method Arguments in Python
@@ -1480,57 +1518,6 @@ by Roy Osherove!</p>
                  on Fri 25 September 2015
             </p>
 <p>There are <a href="http://atodorov.org/blog/2015/09/25/unit-testing-bad-stub-design-in-dnf/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/" rel="bookmark" title="Permalink to 4000+ bugs in Fedora - checksec failures">
-                <h2 class="post-title">
-                    4000+ bugs in Fedora - checksec failures
-                </h2>
-            </a>
-                <p>In the last week I've been trying to figure out how many packages
-conform to the new
-<a href="https://fedoraproject.org/wiki/Changes/Harden_All_Packages">Harden All Packages</a>
-policy in Fedora!</p>
-<p>From 46884 RPMs, 17385 are 'x86_64' meaning they may contain ELF objects.
-From them 4489 are reported as failed <code>checksec</code>.</p>
-<p>What you should see as the output from <code>checksec is</code></p>
-<div class="highlight"><pre>Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH
-Full RELRO      Canary found      NX enabled    DSO             No RPATH   No RUNPATH
-</pre></div>
-
-
-<p>The first line is for binaries, the second one for libraries b/c
-DSOs on x86_64 are always position-independent. Some RPATHs are acceptable,
-e.g. <code>%{_libdir}/foo/</code> and I've tried to exclude them unless
-other offenses are found. The script which does this is
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec-collect">checksec-collect</a>.</p>
-<p>Most often I'm seeing <em>Partial RELRO</em>, <em>No canary found</em> and <em>No PIE</em> errors.
-Since all packages potentially process untrusted input, it makes sense for all of them
-to be hardened and enhance the security of Fedora. That's why all of these errors
-should be considered valid bugs.</p>
-<h2>Attn package maintainers</h2>
-<p>Please see if your package is in the list and try to fix it or let me know
-why it should be excluded, for example it's a boot loader and doesn't function
-properly with hardening enabled. The full list is available at
-<a href="https://github.com/atodorov/fedora-scripts/blob/master/checksec.log">GitHub</a>.</p>
-<p>For more information about the different protection mechanisms see the following
-links:</p>
-<ul>
-<li><a href="http://tk-blog.blogspot.bg/2009/02/relro-not-so-well-known-memory.html">Partial vs Full RELRO</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Buffer_overflow_protection#Canaries">Stack canaries</a></li>
-<li><a href="https://en.wikipedia.org/wiki/NX_bit#Linux">NX memory protection</a></li>
-<li><a href="https://securityblog.redhat.com/2012/11/28/position-independent-executables-pie/">Position Independent Executables</a></li>
-<li><a href="https://fedoraproject.org/wiki/Packaging:Guidelines#Beware_of_Rpath">RPATH</a></li>
-<li><a href="http://blog.tremily.us/posts/rpath/">RUNPATH</a></li>
-</ul>
-<p><strong>UPDATE 2015-09-17</strong></p>
-<p>I've posted my findings on 
-<a href="https://lists.fedoraproject.org/pipermail/devel/2015-September/thread.html">fedora-devel</a>
-and the comments are more than interesting even revealing an old bug in libtool.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 16 September 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/09/16/4000-bugs-in-fedora-checksec-failures/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
