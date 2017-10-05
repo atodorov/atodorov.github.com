@@ -145,6 +145,186 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/" rel="bookmark" title="Permalink to Mutation Testing vs. Coverage, Pt. 2">
+                <h2 class="post-title">
+                    Mutation Testing vs. Coverage, Pt. 2
+                </h2>
+            </a>
+                <p>In a <a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/">previous post</a> I
+have shown an example of real world bugs which we were not able to detect
+despite having 100% mutation and test coverage. I am going to show you another
+example here.</p>
+<p>This example comes from one of my training courses. The task is to write a
+class which represents a bank account with methods to deposit, withdraw and
+transfer money. The solution looks like this</p>
+<div class="highlight"><span class="filename">bank.py</span><pre><span class="k">class</span> <span class="nc">BankAccount</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">balance</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">=</span> <span class="n">balance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">deposit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Deposit amount must be positive!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">+=</span> <span class="n">amount</span>
+
+    <span class="k">def</span> <span class="nf">withdraw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Withdraw amount must be positive!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">-=</span> <span class="n">amount</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;Withdraw for </span><span class="si">%d</span><span class="s"> failed&quot;</span> <span class="o">%</span> <span class="n">amount</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">transfer_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_account</span><span class="p">,</span> <span class="n">how_much</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
+        <span class="n">other_account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Notice that if withdrawal is not possible then the function returns <code>False</code>. The tests
+look like this</p>
+<div class="highlight"><span class="filename">test.py</span><pre><span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">solution</span> <span class="kn">import</span> <span class="n">BankAccount</span>
+
+
+<span class="k">class</span> <span class="nc">TestBankAccount</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">account</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&quot;Rado&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_deposit_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_deposit_negative_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_deposit_zero_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_withdraw_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_withdraw_maximum_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_withdraw_from_empty_account</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIsNotNone</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s">&quot;Withdraw for 50 failed&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_history</span>
+
+    <span class="k">def</span> <span class="nf">test_withdraw_non_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_transfer_negative_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_1</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_2</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">test_transfer_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_1</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_2</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+
+<p>Try the following commands to verify that you have 100% coverage</p>
+<div class="highlight"><pre>coverage run test.py
+coverage report
+
+cosmic-ray run --test-runner nose --baseline 10 example.json bank.py -- test.py`
+cosmic-ray report example.json
+</pre></div>
+
+
+<p>Can you tell where the bug is ? How about I try to transfer more money than is
+available from one account to the other</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">test_transfer_more_than_available_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="c"># transfer more than available</span>
+    <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_1</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_2</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<p>If you execute the above test it will fail</p>
+<div class="highlight"><pre><span class="n">FAIL</span><span class="o">:</span> <span class="n">test_transfer_more_than_available_balance</span> <span class="o">(</span><span class="n">__main__</span><span class="o">.</span><span class="na">TestBankAccount</span><span class="o">)</span>
+<span class="o">----------------------------------------------------------------------</span>
+<span class="n">Traceback</span> <span class="o">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="o">):</span>
+  <span class="n">File</span> <span class="s2">&quot;./test.py&quot;</span><span class="o">,</span> <span class="n">line</span> <span class="mi">79</span><span class="o">,</span> <span class="k">in</span> <span class="n">test_transfer_more_than_available_balance</span>
+    <span class="n">self</span><span class="o">.</span><span class="na">assertEqual</span><span class="o">(</span><span class="n">account_2</span><span class="o">.</span><span class="na">_balance</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+<span class="n">AssertionError</span><span class="o">:</span> <span class="mi">160</span> <span class="o">!=</span> <span class="mi">10</span>
+
+<span class="o">----------------------------------------------------------------------</span>
+</pre></div>
+
+
+<p>The problem is that when <code>self.withdraw(how_much)</code> fails <code>transfer_to()</code> ignores
+the result and tries to deposit the money into the other account! A better
+implementation would be</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">transfer_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_account</span><span class="p">,</span> <span class="n">how_much</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="n">how_much</span><span class="p">):</span>
+        <span class="n">other_account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Transfer failed!&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>In my earlier article the bugs were caused by external environment
+and tools/metrics like code coverage and mutation score are not affected by it.
+In fact the jinja-ab example falls into the category of data coverage testing.</p>
+<p>The current example on the other hand is ignoring the return value of the <code>withdraw()</code>
+function and that's why it fails when we add the appropriate test.</p>
+<p><strong>NOTE:</strong> some mutation test tools support the <em>removing/modifying return value</em>
+mutation. Cosmic Ray doesn't support this at the moment (I should add it). Even if it did
+that would not help us find the bug because we would kill the mutation using
+the <code>test_withdraw...()</code> test methods, which already assert on the return value!</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 05 April 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/04/04/article-about-nitrate-in-methods-tools/" rel="bookmark" title="Permalink to Article about Nitrate in Methods & Tools">
                 <h2 class="post-title">
                     Article about Nitrate in Methods &amp; Tools
@@ -2365,137 +2545,6 @@ me if you want to chat.</p>
                  on Mon 26 September 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/09/26/what-i-learned-from-euruko-2016/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/" rel="bookmark" title="Permalink to What Ivan Learned from Organizing Internships">
-                <h2 class="post-title">
-                    What Ivan Learned from Organizing Internships
-                </h2>
-            </a>
-                <p>This is a summary of <a href="http://inem.at/">Ivan Nemytchenko</a>'s talk at
-EuRuKo yesterday
-(slides <a href="http://www.slideshare.net/creatop/my-experiense-of-remote-internship-for-junior-ruby-developers">here</a>).
-I'm writing this because that was the best talk both
-in terms of content and visual presentation I saw at the conference and because
-it is closely related to my work with <a href="http://hackbulgaria.com">HackBulgaria</a>.</p>
-<p>The short story is that at some point Ivan was mentoring several junior developers
-and saw the need to scale this effort so he did a call for interns and got back 60 replies.</p>
-<h2>What an Intern Gets</h2>
-<ol>
-<li>Projects in their portfolio</li>
-<li>Working experience, including team work</li>
-<li>Developing an entire product from idea to production</li>
-</ol>
-<p>Ivan wanted to find suitable interns who have basic Ruby on Rails knowledge
-and who could invest a minimum of 20 hours per week of their time so he devised
-an aptitude test of 3 parts. </p>
-<blockquote class="twitter-tweet" data-lang="en">
-<p lang="en" dir="ltr">The three part test <a href="https://twitter.com/inem">@inem</a> used to challenge 60 candidates for a Ruby internship. Pretty cool. <a href="https://twitter.com/hashtag/euruko?src=hash">#euruko</a> <a href="https://t.co/OsnN03pXkf">pic.twitter.com/OsnN03pXkf</a></p>&mdash; Tatiana Stantonian (@binaryberry) <a href="https://twitter.com/binaryberry/status/779664766394564608">September 24, 2016</a></blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-<p>Part 1 is developing basic functionality of the product.
-Part 2 was adding different user types which require different validation logic, etc.
-Part 3 was adding "purchasing" logic via external APIs. In Part 3 intentionally
-there was no code review!</p>
-<p>The final result was shit! That was the purpose of the test. The reasoning being that
-there is no right or wrong way to solve the problems he presented to the interns. Instead
-he wanted to make them think and decide on a solution. Then feel the pain of their decision.
-Ivan argues that what made us senior developers are these pains we have experienced at some
-point in our careers, those fuck-ups that we did in some old project. All of them made us
-better in our job because we could learn from the mistakes we've made and more importantly
-understand the consequence of our decisions.</p>
-<p>The common mistakes Ivan saw were:</p>
-<ul>
-<li>Ignoring levels of abstraction;</li>
-<li>Using too many gems without knowing or understanding their limitations;</li>
-<li>Gems were treated as the only way to solve a problem. More importantly changing
-this way was out of the question;</li>
-<li>Interns didn't know about <a href="http://stevelorek.com/service-objects.html">service objects</a>,
-well even some experienced developers seem to not know that;</li>
-<li>Business logic was all around the place;</li>
-<li>Bad naming all around</li>
-</ul>
-<p>The next thing Ivan did was a group hangout code review followed by a short lecture about
-design patterns, a refactoring session and finally cross code review. At the end the
-product was delivered as expected.</p>
-<p>Following these initial efforts Ivan continued (with even more interns, or the next group of them I think)
-by asking interns to develop internship automatization, that is a means for the system to
-distribute tasks based on git commits, tags, etc so it can scale. They've added an admin
-dashboard and started working on an open source alternative to NewRelic (if I got that correctly).
-He was also able to enlist 2 more mentors to help him.</p>
-<p>Problems Ivan found:</p>
-<ul>
-<li>Not enough mentors and external projects to work on for all of the interns;</li>
-<li>Treating a project as not real (e.g. not a real world product) is a mistake;</li>
-<li>A training project has the same management issues that a real product will have
-and they need to be resolved in pretty much the same way;</li>
-<li>There was collective irresponsibility from the group of interns. They didn't do
-what they said they will do;</li>
-<li>There were communication issues between the interns and the lack of enough mentors
-was an obvious problem.</li>
-<li>There was also lack of motivation.</li>
-</ul>
-<p>I'd say these are the typical problems one also sees in almost any teams. It doesn't
-matter if these are teams of students or teams of developers inside some company.</p>
-<h2>What a Junior Needs</h2>
-<ul>
-<li>A real project to work on;</li>
-<li><strong>A business context, a reason why something should be done and why it needs to be
-done in a particular way</strong>;</li>
-<li>Some visible achievement for their portfolio;</li>
-<li>Team work experience;</li>
-<li>Whole cycle development experience.</li>
-</ul>
-<p>Ivan thinks that <strong>the aptitude test worked great</strong> because his interns were able to find
-good jobs afterwards but he will change a few things. There will be even more tests
-and he will reject unfit/bad interns. He will also do call for mentors not only for interns.
-And he wants to turn mentors' experience into tests as well.</p>
-<p>I particularly like the "business context" item. IMO even seasoned developers need to have this
-if they are expected to create a great product for their company. We're not just coders but
-sometimes companies forget that!</p>
-<p>I am also wondering how can I apply a similar aptitude test in my work (both mentoring at
-HackBulgaria and otherwise).</p>
-<h2>How about Senior Developers</h2>
-<ul>
-<li>They all have routine tasks;</li>
-<li>and research tasks;</li>
-<li>Nice to have features and</li>
-<li>Low priority features;</li>
-<li>Side project ideas</li>
-<li>Missing features in their favorite open source projects</li>
-</ul>
-<p>Senior developers' tasks and desires will have to align with what a junior needs in order
-for the mentorship to work. As senior devs we often make a mistake and expect everyone else
-to think the same way we do and act as fast as we do. <strong>Ideally senior developers want to have multiple clones
-of ourselves to work with!</strong> I myself have been guilty of that and trying to change.</p>
-<p>In the context of a for-profit company the above findings should be taken into deep consideration
-if you are about to have interns.</p>
-<p>After the talk I was lucky to talk to Ivan and tell him more about the training sessions
-at HackBulgaria. I also proposed to him the sponsorship model which he hasn't considered.
-He then made a counter offer: ask interns for high payment upfront and let them recoup that
-based on their progress towards the end.</p>
-<p>I am really happy to have heard this presentation and being able to talk to Ivan in person. I also have
-my notes about my "QA and Automation 101" training at HackBulgaria and I now
-have a better idea how to go about organizing and summarizing them (will try to publish that soon).</p>
-<p>Last but not least, Ivan works at GitLab and promised to look at an issue I personally have
-so here it is <a href="https://gitlab.com/gitlab-org/gitlab-ce/issues/7953">GitLab #7953</a> :).</p>
-<h2>Related reading</h2>
-<ul>
-<li>My <em>How to hire Software Testers</em> series: parts
-<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">One</a>,
-<a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/">Two</a> and
-<a href="http://atodorov.org/blog/2016/06/03/how-to-hire-software-testers-pt-3/">Three</a>;</li>
-<li>RadoRado's <a href="http://radorado.me/kak_stanah_po_dobar_programist/">How I Became a Better Developer</a>
-in Bulgarian but please use Google translate;</li>
-<li><a href="https://twitter.com/sidonath">Damir Zekic</a>'s The Importance of Teaching and Mentoring (from the
-pov of the mentor) lightning talk at EuRuKo (will link video soon), similar to what Rado says;</li>
-<li>Alex Moldovan's <a href="https://medium.com/@alexnm/how-outsourcing-is-killing-cluj-345a4cbbcb6c#.nutpdfftu">How Outsourcing is Killing Cluj</a>.</li>
-</ul>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 25 September 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
