@@ -145,6 +145,43 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/" rel="bookmark" title="Permalink to Bug in the Fridge">
+                <h2 class="post-title">
+                    Bug in the Fridge
+                </h2>
+            </a>
+                <p><img src="/images/liebherr_kbgb_3864.jpg" alt="Liebherr KBGB 3864" style="float:left; margin-right: 20px;" /></p>
+<p>Once you've been into
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=quality%20assurance&linkCode=ur2&rh=i%3Aaps%2Ck%3Aquality%20assurance&sprefix=quality%20ass%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Daps">Quality Assurance</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
+for 5+ years you start to notice <a href="/blog/categories/qa/">bugs everywhere</a>
+and develop a sixth sense for it. Today I found a bug in my
+<a target="_blank" href="http://www.amazon.com/s/?_encoding=UTF8&camp=1789&creative=390957&field-keywords=liebherr&linkCode=ur2&rh=n%3A2619525011%2Ck%3Aliebherr&sprefix=Liebherr%2Caps%2C273&tag=atodorovorg-20&url=search-alias%3Dappliances">Liebherr</a><img src="https://www.assoc-amazon.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0"  style="border:none !important; margin:0px !important;" />
+KBGB 3864 refrigerator, caused by what looks like a race-condition.</p>
+<p>This appliance starts beeping in case the door is left open for more than 60 seconds.
+The alarm stops if door is closed or can be muted manually while the door is still open.</p>
+<h2>The Bug</h2>
+<p>It happened so that I had the door open for nearly one minute and as it was closing 
+I heard a beep. This time however the beeping didn't stop after the door had closed.
+The alarm continued beeping with the door closed so I tried to re-open and close it again.
+It didn't stop! I had to open the door and manually mute the alarm for it to stop. </p>
+<div style="display:block; clear:both;">&nbsp;</div>
+
+<h2>The Root Cause</h2>
+<p>While not entirely sure, I think the reason for this malfunction
+was a race-condition. The alarm went on at nearly the same time when the 
+controlling timer should have gone off (when closing the door).</p>
+<h2>Steps To Reproduce</h2>
+<p>I tried reproducing several times afterwards by opening and closing the door
+at the last possible moment. I used a stop-watch to time my actions. However
+I wasn't able to reproduce twice. Every time I tried, there was only one single
+beep as the door was closing and no more.</p>
+<p>I guess then, like we say in QE, <em>WORKS FOR ME</em>!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 29 March 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/03/29/bug-in-the-fridge/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/03/27/what-runs-your-startup/" rel="bookmark" title="Permalink to What Runs Your Start-up">
                 <h2 class="post-title">
                     What Runs Your Start-up
@@ -1339,79 +1376,6 @@ deal like I did?</p>
                  on Thu 31 January 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/01/31/tip-save-money-on-amazon-buy-used-books/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/01/31/click-tracking-without-mailchimp/" rel="bookmark" title="Permalink to Click Tracking without MailChimp">
-                <h2 class="post-title">
-                    Click Tracking without MailChimp
-                </h2>
-            </a>
-                <p>Here is a standard notification message that users at <a href="http://www.dif.io">Difio</a>
-receive. It is plain text, no HTML crap, short and URLs are clean and
-descriptive. As the project lead developer I wanted to track when people click on
-these links and visit the website but also keep existing functionality.</p>
-<p><img alt="&quot;Email with links&quot;" src="/images/email_w_links.png" title="Email with links" /></p>
-<h2>Standard approach</h2>
-<p>A pretty common approach when sending huge volumes of email is to use an external
-service, such as MailChimp. This is one of many email
-marketing services which comes with a lot of features. The most important to me
-was analytics and reports.</p>
-<p>The downside is that MailChimp (and I guess others) use HTML formatted emails
-extensively. I don't like that and I'm sure my users will not like it as well. 
-They are all developers. Not to mention that MailChimp is much more expensive
-than <a href="http://aws.amazon.com/ses/">Amazon SES</a> which I use currently.
-No MailChimp for me!</p>
-<p>Another common approach, used by Feedburner by the way,
-is to use shortened URLs which redirect to the original ones and measure clicks
-in between. I also didn't like this for two reasons: 1) the shortened URLs look
-ugly and they are not at all descriptive and 2) I need to generate them automatically
-and maintain all the mappings. Why bother ?</p>
-<h2>How I did it?</h2>
-<p>So I needed something which will do a redirect to a predefined URL, measure how many
-redirects were there (essentially clicks on the link) and look nice. The solution is
-very simple, if you have not recognized it by now from the picture above. </p>
-<p>I opted for a custom redirect engine, which will add tracking information to the
-destination URL so I can track it in Google Analytics.</p>
-<p>Previous URLs were of the form <code>http://www.dif.io/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/</code>.
-I've added the humble <code>/daily/?</code> prefix before the URL path so it becomes
-<code>http://www.dif.io/daily/?/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/</code></p>
-<p>Now <code>/updates/haml-3.1.2/haml-3.2.0.rc.3/11765/</code> becomes a query string parameter which
-the <code>/daily/index.html</code> page uses as its destination. Before doing the redirect
-a script adds tracking parameters so that Google Analytics will properly
-report this visit. Here is the code: </p>
-<div class="highlight"><pre><span class="nt">&lt;html&gt;</span>
-<span class="nt">&lt;head&gt;</span>
-<span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span><span class="nt">&gt;</span>
-<span class="kd">var</span> <span class="nx">uri</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">toString</span><span class="p">();</span>
-<span class="kd">var</span> <span class="nx">question</span> <span class="o">=</span> <span class="nx">uri</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">);</span>
-<span class="kd">var</span> <span class="nx">param</span> <span class="o">=</span> <span class="nx">uri</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="nx">question</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nx">uri</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
-<span class="k">if</span> <span class="p">(</span><span class="nx">question</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-    <span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">href</span> <span class="o">=</span> <span class="nx">param</span> <span class="o">+</span> <span class="s1">&#39;?utm_source=email&amp;utm_medium=email&amp;utm_campaign=Daily_Notification&#39;</span><span class="p">;</span>
-<span class="p">}</span>
-<span class="nt">&lt;/script&gt;</span>
-<span class="nt">&lt;/head&gt;</span>
-<span class="nt">&lt;body&gt;&lt;/body&gt;</span>
-<span class="nt">&lt;/html&gt;</span>
-</pre></div>
-
-
-<p>Previously Google Analytics was reporting these visits as direct hits while now it lists them under
-campaigns like so:</p>
-<p><img alt="&quot;Difio Analytics&quot;" src="/images/analytics_difio_campaigns.png" title="Difio Analytics" /></p>
-<p>Because all visitors of <a href="http://www.dif.io">Difio</a> use JavaScript enabled browsers
-I combined this approach with another one, to
-<a href="/blog/2013/01/28/remove-query-string-with-javascript-and-html5/">remove query string with JavaScript</a>
-and present clean URLs to the visitor.</p>
-<h2>Why JavaScript?</h2>
-<p>You may be asking why the hell I am using JavaScript and not Apache's wonderful mod_rewrite module? 
-This is because the destination URLs are hosted in <a href="http://aws.amazon.com/s3/">Amazon S3</a> and I'm
-planning to integrate with <a href="http://aws.amazon.com/cloudfront/">Amazon CloudFront</a>. Both of them
-don't support .htaccess rules nor anything else similar to mod_rewrite.</p>
-<p>As always I'd love to hear your thoughts and feedback. Please use the comment form below.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Thu 31 January 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/01/31/click-tracking-without-mailchimp/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

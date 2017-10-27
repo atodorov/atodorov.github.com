@@ -145,6 +145,28 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/10/27/fallback-to-default-values-for-null-columns-in-rust-sqlite/" rel="bookmark" title="Permalink to Fallback to default values for NULL columns in Rust SQLite">
+                <h2 class="post-title">
+                    Fallback to default values for NULL columns in Rust SQLite
+                </h2>
+            </a>
+                <p>I have been working on code which changed its DB schema to add a NULL column
+without a default value! The standard <code>row.get()</code> from Rusqlite throws errors
+because NULL is not a valid integer value.</p>
+<p>The solution is to use <code>row.get_checked()</code> like so:</p>
+<div class="highlight"><pre><span class="kd">let</span><span class="w"> </span><span class="n">build_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">row</span><span class="p">.</span><span class="n">get_checked</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">unwrap_or</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+
+<p>Interestingly enough I wasn't able to find clear information about this on the
+Internet so here it is.</p>
+<p>Thanks for reading and happy hacking!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 27 October 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/10/27/fallback-to-default-values-for-null-columns-in-rust-sqlite/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/10/05/the-arcs-model-of-motivational-design/" rel="bookmark" title="Permalink to The ARCS model of motivational design">
                 <h2 class="post-title">
                     The ARCS model of motivational design
@@ -2148,295 +2170,6 @@ of useful techniques I will be presenting very soon.</p>
                  on Sat 15 April 2017
             </p>
 <p>There are <a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2017/04/14/testing-red-hat-enterprise-linux-the-microsoft-way/" rel="bookmark" title="Permalink to Testing Red Hat Enterprise Linux the Microsoft way">
-                <h2 class="post-title">
-                    Testing Red Hat Enterprise Linux the Microsoft way
-                </h2>
-            </a>
-                <p><img alt="Microsoft and Red Hat logos" src="/images/microsoft-redhat-puzzle.jpg" title="Microsoft and Red Hat logos" /></p>
-<p>Pairwise (a.k.a. all-pairs) testing is an effective test case generation
-technique that is based on the observation that most faults are caused by
-interactions of at most two factors! Pairwise-generated test suites cover
-all combinations of two therefore are much smaller than exhaustive ones yet
-still very effective in finding defects. This technique has been pioneered by
-Microsoft in testing their products. For an example please see
-<a href="https://github.com//microsoft/pict">their GitHub repo</a>!</p>
-<p>I heard about pairwise testing by
-<a href="https://www.linkedin.com/in/niels-sander-christensen-a2639b1/">Niels Sander Christensen</a>
-last year at
-<a href="http://qachallengeaccepted.com/2016.html#agenda2016">QA Challenge Accepted 2.0</a> and
-I immediately knew where it would fit into my test matrix.</p>
-<p>This article describes an experiment made during Red Hat Enterprise Linux 6.9
-installation testing campaign. The experiment covers generating a
-test plan (referred to Pairwise Test Plan) based on the pairwise test strategy and
-some heuristics. The goal was to reduce the number of test cases which needed to be
-executed and still maintain good test coverage (in terms of breadth of testing) and
-also maintain low risk for the product.</p>
-<h1>Product background</h1>
-<p>For RHEL 6.9 there are 9 different product variants each comprising of particular
-package set and CPU architecture:</p>
-<ul>
-<li>Server i386</li>
-<li>Server x86_64</li>
-<li>Server ppc64 (IBM Power)</li>
-<li>Server s390x (IBM mainframe)</li>
-<li>Workstation i386</li>
-<li>Workstation x86_64</li>
-<li>Client i386</li>
-<li>Client x86_64</li>
-<li>ComputeNode x86_64</li>
-</ul>
-<p>Traditional testing activities are classified as Tier #1, Tier #2 and Tier #3</p>
-<ul>
-<li>Tier #1 - basic form of installation testing. Executed for all arch/variants on all builds,
-  including nightly builds. This group includes the most common installation methods and configurations.
-  If Tier #1 fails the product is considered unfit for customers and further testing blocking the release!</li>
-<li>Tier #2 and #3 - includes additional installation configurations and/or functionality which is deemed important.
-  These are still fairly common scenarios but not the most frequently used ones.
-  If some of the Tier#2 and #3 test cases fail they will not block the release.</li>
-</ul>
-<p>This experiment focuses only on Tier #2 and #3 test cases because they generate the
-largest test matrix! This experiment is related only to installation testing of RHEL.
-This broadly means <em>"Can the customer install RHEL via the Anaconda installer and boot
-into the installed system"</em>.
-I do not test functionality of the system after reboot!</p>
-<p><strong>I have theorized that from the point of view of installation testing RHEL is mostly a
-platform independent product!</strong></p>
-<p>Individual product variants rarely exhibit differences in their functional behavior
-because they are compiled from the same code base! If a feature is present it should work
-the same on all variants. The main differences between variants are:</p>
-<ul>
-<li>What software has been packaged as part of the variant (e.g. base package set and add-on repos);</li>
-<li>Whether or not a particular feature is officially supported, e.g. iBFT on Client variants.
-  Support is usually provided via including the respective packages in the variant package set
-  and declaring SLA for it.</li>
-</ul>
-<p>These differences may lead to problems with resolving dependencies and missing packages
-but historically haven't shown significant tendency to cause functional failures
-e.g. using NFS as installation source working on Server but not on Client.</p>
-<p>The main component being tested, Anaconda - the installer, is also mostly platform independent.
-In a previous experiment I had collected code coverage data from Anaconda while
-performing installation with the same kickstart (or same manual options) on various architectures.
-The coverage report supports the claim that Anaconda is platform independent!
-See
-<a href="http://atodorov.org/blog/2015/10/27/anaconda-coverage.py-coverage-diff/">Anaconda &amp; coverage.py - Pt.3 - coverage-diff, section Kickstart vs. Kickstart</a>!</p>
-<h1>Testing approach</h1>
-<p>The traditional pairwise approach focuses on features whose functionality is
-controlled via parameters. For example: RAID level, encryption cipher, etc.
-<strong>I have taken this definition one level up and applied it to the entire product!
-Now functionality is also controlled by variant and CPU architecture!</strong>
-This allows me to reduce the number of total test cases in the test matrix but still
-execute all of them at least once!</p>
-<p>The initial implementation used a simple script, built with
-<a href="https://github.com/josephwilk/pairwise">the Ruby pairwise gem</a>, that:</p>
-<ul>
-<li>
-<p>Copies verbatim all test cases which are applicable for a single product variant,
-    for example s390x Server or ppc64 Server! There's nothing we can do to reduce these
-    from combinatorial point of view!</p>
-</li>
-<li>
-<p>Then we have the group of test cases with input parameters. For example:</p>
-<div class="highlight"><pre>storage / iBFT / No authentication / Network init script
-storage / iBFT / CHAP authentication / Network Manager
-storage / iBFT / Reverse CHAP authentication / Network Manager
-</pre></div>
-
-
-<p>In this example the test is <code>storage / iBFT</code> and the parameters are</p>
-<ul>
-<li>Authentication type<ul>
-<li>None</li>
-<li>CHAP</li>
-<li>Reverse CHAP</li>
-</ul>
-</li>
-<li>Network management type<ul>
-<li>SysV init</li>
-<li>NetworkManager</li>
-</ul>
-</li>
-</ul>
-<p>For test cases in this group I also consider the CPU architecture and OS variant
-as part of the input parameters and combine them using pairwise. Usually this results
-in around 50% reduction of test efforts compared to testing against all product variants!</p>
-</li>
-<li>
-<p>Last we have the group of test cases which don't depend on any input parameters,
-    for example <code>partitioning / swap on LVM</code>. They are grouped together (wrt their applicable variants)
-    and each test case is executed only once against a randomly chosen product variant!
-    This is my own heuristic based on the fact that the product is platform
-    independent!</p>
-<p><strong>NOTE:</strong> You may think that for these test cases the product variant is their input parameter.
-If we consider this to be the case then we'll not get any reduction because of
-how pairwise generation works (the 2 parameters with the largest number of possible values determine
-the maximum size of the test matrix). In this case the 9 product variants is the largest set of values!</p>
-</li>
-</ul>
-<p>For this experiment
-<a href="https://gist.github.com/atodorov/8f44022e209f749c7121f91281aa641e">pairwise_spec.rb</a>
-only produced the list of test scenarios (test cases) to be executed! It doesn't
-schedule test execution and it doesn't update the
-<a href="http://atodorov.org/blog/2017/04/04/article-about-nitrate-in-methods-tools/">test case management system</a>
-with actual results. It just tells you what to do! Obviously this script
-will need to integrate with other systems and processes as defined by the organization!</p>
-<p>Example results:</p>
-<div class="highlight"><pre>RHEL 6.9 Tier #2 and #3 testing
-  Test case w/o parameters can&#39;t be reduced via pairwise
-    x86_64 Server - partitioning / swap on LVM
-    x86_64 Workstation - partitioning / swap on LVM
-    x86_64 Client - partitioning / swap on LVM
-    x86_64 ComputeNode - partitioning / swap on LVM
-    i386 Server - partitioning / swap on LVM
-    i386 Workstation - partitioning / swap on LVM
-    i386 Client - partitioning / swap on LVM
-    ppc64 Server - partitioning / swap on LVM
-    s390x Server - partitioning / swap on LVM
-  Test case(s) with parameters can be reduced by pairwise
-    x86_64 Server - rescue mode / LVM / plain
-    x86_64 ComputeNode - rescue mode / RAID / encrypted
-    x86_64 Client - rescue mode / RAID / plain
-    x86_64 Workstation - rescue mode / LVM / encrypted
-    x86_64 Server - rescue mode / RAID / encrypted
-    x86_64 Workstation - rescue mode / RAID / plain
-    x86_64 Client - rescue mode / LVM / encrypted
-    x86_64 ComputeNode - rescue mode / LVM / plain
-    i386 Server - rescue mode / LVM / plain
-    i386 Client - rescue mode / RAID / encrypted
-    i386 Workstation - rescue mode / RAID / plain
-    i386 Workstation - rescue mode / LVM / encrypted
-    i386 Server - rescue mode / RAID / encrypted
-    i386 Workstation - rescue mode / RAID / encrypted
-    i386 Client - rescue mode / LVM / plain
-    ppc64 Server - rescue mode / LVM / plain
-    s390x Server - rescue mode / RAID / encrypted
-    s390x Server - rescue mode / RAID / plain
-    s390x Server - rescue mode / LVM / encrypted
-    ppc64 Server - rescue mode / RAID / encrypted
-
-Finished in 0.00602 seconds (files took 0.10734 seconds to load)
-29 examples, 0 failures
-</pre></div>
-
-
-<p>In this example there are 9 (variants) * 2 (partitioning type) * 2 (encryption type) == 32
-total combinations! As you can see pairwise reduced them to 20! Also notice that
-if you don't take CPU arch and variant into account you are left with
-2 (partitioning type) * 2 (encryption type) == 4 combinations for each product variant
-and they can't be reduced on their own!</p>
-<h1>Acceptance criteria</h1>
-<p>I did evaluate all bugs which were found by executing the test cases from the
-pairwise test plan and compared them to the list of all bugs found by the team.
-This will tell me how good my pairwise test plan was compared to the regular one.
-"good" meaning:</p>
-<ul>
-<li>How many bugs would I find if I don't execute the full test matrix</li>
-<li>How many critical bugs would I miss if I don't execute the full test matrix</li>
-</ul>
-<p>Results:</p>
-<ul>
-<li>Pairwise found <strong>14 new bugs</strong>;</li>
-<li><strong>23 bugs were first found by regular test plan</strong><ul>
-<li>some by test cases not included in this experiment;</li>
-<li>pairwise totally <strong>missed 4 bugs</strong>!</li>
-</ul>
-</li>
-</ul>
-<p>Pairwise test plan <strong>missed 3 critical regressions</strong> due to:</p>
-<ul>
-<li>Poor planning of pairwise test activity. There was a regression in
-  one of the latest builds and that particular test was simply not executed!</li>
-<li>Human factor aka me not being careful enough and not following the process diligently.
-  I waived a test due to infrastructure issues while there was a bug which stayed undiscovered!
-  I should have tried harder to retest this scenario after fixing my infrastructure!</li>
-<li>Architecture and networking specific regression which wasn't tested on multiple levels and
-  is very narrow corner case.
-  Can be mitigated with more testing upstream, more automation and better understanding of the hidden test
-  requirements (e.g. IPv4 vs IPv6) for all of which pairwise can help (analysis and more available resources).</li>
-</ul>
-<p>All of the missed regressions could have been missed by regular test plan as well, however the risk of missing
-them in pairwise is higher b/c of the reduced test matrix and the fact that
-you may not execute exactly the same test scenario for quite a long time.
-OTOH the risk can be mitigated with more automation b/c we now have more free resources.</p>
-<p>IMO pairwise test plan did a good job and didn't introduce "dramatic" changes in risk level for the product!</p>
-<h1>Summary</h1>
-<ul>
-<li>65 % reduction in test matrix;</li>
-<li>Only 1/3rd of team engineers needed;<ul>
-<li>keep arch experts around though;</li>
-</ul>
-</li>
-<li>2/3rd of team engineers could be free for automation and to create even more test cases;</li>
-<li>Test run execution completion rate is comparable to regular test plan<ul>
-<li>average execution completion for pairwise test plan was 76%!</li>
-<li>average execution completion for regular test plan was 85%!</li>
-</ul>
-</li>
-<li>New bugs found:<ul>
-<li>30% by Pairwise Test Plan</li>
-<li>30% by Tier #1 test cases (good job here)</li>
-<li>30% by exploratory testing</li>
-</ul>
-</li>
-<li>Risk of missing regressions or critical bugs exists (I did miss 3) but can be mitigated;</li>
-<li>Clearly exposes the need of constant review, analysis and improvement of existing test cases;</li>
-<li>Exposes hidden parameters in test scenarios and some hidden relationships;</li>
-<li>Patterns and other optimization techniques observed</li>
-</ul>
-<p>Patterns observed:</p>
-<ul>
-<li>Many new test case combinations found, which I had to describe into
-  <a href="http://atodorov.org/blog/2017/04/04/article-about-nitrate-in-methods-tools/">Nitrate</a>; The longer you use
-  pairwise the less new combinations are discovered (aka undocumented scenarios).
-  The first 3 initial test runs discovered the most of the missing combinations!</li>
-<li>Found quite a few test cases with hidden parameters, for example <code>swap / recommended</code>
-  which calculates the recommended size of swap partition based on 4 different
-  ranges in which the actual RAM size fits! These ranges became parameters
-  to the test case;</li>
-<li>Can combine (2, 3, etc) independent test cases together and consider them as parameters
-  so we can apply pairwise against the combination. This will create new scenarios, broaden
-  the test matrix but not result in significant increase in execution time. I didn't try this
-  because it was not the focus of the experiment;</li>
-<li>Found some redundant/duplicate test cases - test plans need to be constantly analyzed and
-  maintained you know;</li>
-<li>Automated scheduling and tools integration is critical. This needs to be working perfectly
-  in order to capitalize on the newly freed resources;</li>
-<li>Testing on s390x was sub-optimal (mostly my own inexperience with the platform) so for
-  specialized environments we still want to keep the experts around;</li>
-<li>1 engineer (me) was able to largely keep up with schedule with the rest of the team!<ul>
-<li>experiment was conducted during the course of several months</li>
-<li>I have tried to adhere to all milestones and deadlines and mostly succeeded</li>
-</ul>
-</li>
-</ul>
-<p>I have also discovered ideas for new test execution optimization techniques
-which need to be evaluated and measured further:</p>
-<ul>
-<li>Use a common set-up step for multiple test cases across variants, e.g.<ul>
-<li>install a RAID system then;</li>
-<li>perform 3 rescue mode tests (same test case, different variants)</li>
-</ul>
-</li>
-<li>Pipeline test cases so that the result of one case is the setup for the next, e.g.<ul>
-<li>install a RAID system and test for correctness of the installation;</li>
-<li>perform rescue mode test;</li>
-<li>damage one of the RAID partitions while still in rescue mode;</li>
-<li>test installation with damaged disks - it should not crash!</li>
-</ul>
-</li>
-</ul>
-<p>These techniques can be used stand-alone or in combination with
-other optimization techniques and tooling available to the team. They are
-specific to my particular kind of testing so beware of your surroundings
-before you try them out!</p>
-<p>Thanks for reading and happy testing!</p>
-<p><em>Cover image copyright: cio-today.com</em></p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 14 April 2017
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2017/04/14/testing-red-hat-enterprise-linux-the-microsoft-way/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
