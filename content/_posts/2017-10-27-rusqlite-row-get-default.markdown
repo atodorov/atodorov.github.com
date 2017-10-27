@@ -1,5 +1,5 @@
 Title: Fallback to default values for NULL columns in Rust SQLite
-date: 2017-10-05 10:40
+date: 2017-10-27 16:12
 comments: true
 Tags: fedora.planet
 
