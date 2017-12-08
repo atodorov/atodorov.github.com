@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-11-11T01:22:00+02:00</updated><entry><title>4 Situational Leadership Styles</title><link href="http://atodorov.org/blog/2017/11/11/4-situational-leadership-styles/" rel="alternate"></link><updated>2017-11-11T01:22:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-11-11:blog/2017/11/11/4-situational-leadership-styles/</id><summary type="html">&lt;p&gt;At &lt;a href="http://seetest.org"&gt;SEETEST&lt;/a&gt; this year I visited only tracks related to
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-12-08T16:02:00+02:00</updated><entry><title>How to configure MTU for the Docker network</title><link href="http://atodorov.org/blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/" rel="alternate"></link><updated>2017-12-08T16:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-08:blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/</id><summary type="html">&lt;p&gt;On one of my Jenkins slaves I've been experiencing problems when downloading
+files from the network. In particular with &lt;code&gt;cabal update&lt;/code&gt; which fetches data
+from hackage.haskell.org. As suggested by David Roble the problem and solution
+lies in the MTU configured for the default &lt;code&gt;docker0&lt;/code&gt; interface!&lt;/p&gt;
+&lt;p&gt;By default &lt;code&gt;docker0&lt;/code&gt; had MTU of &lt;code&gt;1500&lt;/code&gt; which should be lower than the
+host &lt;code&gt;eth0&lt;/code&gt; MTU of 1400! To configure this before the docker daemon is started
+place any non-default settings in &lt;code&gt;/etc/docker/daemon.json&lt;/code&gt;! For more information
+head to
+&lt;a href="https://docs.docker.com/engine/userguide/networking/default_network/custom-docker0/"&gt;https://docs.docker.com/engine/userguide/networking/default_network/custom-docker0/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category></entry><entry><title>4 Situational Leadership Styles</title><link href="http://atodorov.org/blog/2017/11/11/4-situational-leadership-styles/" rel="alternate"></link><updated>2017-11-11T01:22:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-11-11:blog/2017/11/11/4-situational-leadership-styles/</id><summary type="html">&lt;p&gt;At &lt;a href="http://seetest.org"&gt;SEETEST&lt;/a&gt; this year I visited only tracks related to
 management and leadership. The presentation
 &lt;em&gt;How good leadership makes you a great team player&lt;/em&gt; by Jeroen Rosink
 was of particular interest to me. He talked about
@@ -1728,82 +1737,4 @@ I CAN ASSURE
 YOU MINE ARE STILL
 GREATER.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Automatic cargo update &amp; pull requests for Rust projects</title><link href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/" rel="alternate"></link><updated>2017-04-15T23:18:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-15:blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/</id><summary type="html">&lt;p&gt;If you follow my blog you are aware that I use automated tools to do some
-boring tasks instead of me. For example they can detect when new versions of
-dependencies I'm using are available and then schedule testing against them on the fly.&lt;/p&gt;
-&lt;p&gt;One of these tools is
-&lt;a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/"&gt;Strazar&lt;/a&gt;
-which I use heavily for my Django based packages.
-Example: &lt;a href="https://travis-ci.org/atodorov/django-s3-cache/builds/218758538"&gt;django-s3-cache build job&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Recently I've made a slightly different proof-of-concept for a Rust project.
-Because rustc and various dependencies (called crates) are updated very often
-we didn't want to expand the test matrix like Strazar does. Instead we wanted to
-always build &amp;amp; test against the latest crates versions and if that passes
-create a pull request for the update (in &lt;code&gt;Cargo.lock&lt;/code&gt;). All of this unattended
-of course!&lt;/p&gt;
-&lt;p&gt;To start create a cron job in Travis CI which will execute once per day and call your
-test script. The script looks like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;cargo-update-and-pr&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
-
-&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt; -z &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
-    &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;GITHUB_TOKEN is not defined&amp;quot;&lt;/span&gt;
-    &lt;span class="nb"&gt;exit &lt;/span&gt;1
-&lt;span class="k"&gt;fi&lt;/span&gt;
-
-&lt;span class="nv"&gt;BRANCH_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;automated_cargo_update&amp;quot;&lt;/span&gt;
-
-git checkout -b &lt;span class="nv"&gt;$BRANCH_NAME&lt;/span&gt;
-cargo update &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; cargo &lt;span class="nb"&gt;test&lt;/span&gt;
-
-&lt;span class="nv"&gt;DIFF&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;git diff&lt;span class="sb"&gt;`&lt;/span&gt;
-&lt;span class="c"&gt;# NOTE: we don&amp;#39;t really check the result from testing here. Only that&lt;/span&gt;
-&lt;span class="c"&gt;# something has been changed, e.g. Cargo.lock&lt;/span&gt;
-&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt; -n &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$DIFF&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
-    &lt;span class="c"&gt;# configure git authorship&lt;/span&gt;
-    git config --global user.email &lt;span class="s2"&gt;&amp;quot;atodorov@MrSenko.com&amp;quot;&lt;/span&gt;
-    git config --global user.name &lt;span class="s2"&gt;&amp;quot;Alexander Todorov&amp;quot;&lt;/span&gt;
-
-    &lt;span class="c"&gt;# add a remote with read/write permissions!&lt;/span&gt;
-    &lt;span class="c"&gt;# use token authentication instead of password&lt;/span&gt;
-    git remote add authenticated https://atodorov:&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;@github.com/atodorov/bdcs-api-rs.git
-
-    &lt;span class="c"&gt;# commit the changes to Cargo.lock&lt;/span&gt;
-    git commit -a -m &lt;span class="s2"&gt;&amp;quot;Auto-update cargo crates&amp;quot;&lt;/span&gt;
-
-    &lt;span class="c"&gt;# push the changes so that PR API has something to compare against&lt;/span&gt;
-    git push authenticated &lt;span class="nv"&gt;$BRANCH_NAME&lt;/span&gt;
-
-    &lt;span class="c"&gt;# finally create the PR&lt;/span&gt;
-    curl -X POST -H &lt;span class="s2"&gt;&amp;quot;Content-Type: application/json&amp;quot;&lt;/span&gt; -H &lt;span class="s2"&gt;&amp;quot;Authorization: token &lt;/span&gt;&lt;span class="nv"&gt;$GITHUB_TOKEN&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
-         --data &lt;span class="s1"&gt;&amp;#39;{&amp;quot;title&amp;quot;:&amp;quot;Auto-update cargo crates&amp;quot;,&amp;quot;head&amp;quot;:&amp;quot;automated_cargo_update&amp;quot;,&amp;quot;base&amp;quot;:&amp;quot;master&amp;quot;, &amp;quot;body&amp;quot;:&amp;quot;@atodorov review&amp;quot;}&amp;#39;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
-         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
-&lt;span class="k"&gt;fi&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;A few notes here:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;You need to define a secret &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; variable for authentication;&lt;/li&gt;
-&lt;li&gt;The script doesn't force push, but in practice that may be useful (e.g. updating the PR);&lt;/li&gt;
-&lt;li&gt;The script doesn't have any error handling;&lt;/li&gt;
-&lt;li&gt;If PR is still open GitHub will tell us about it but we ignore the result here;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;DON'T&lt;/strong&gt; paste this into your &lt;code&gt;Makefile&lt;/code&gt; because the &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; variable will be
-  expanded into the logs and your secrets go away! Always call the script from your
-  &lt;code&gt;Makefile&lt;/code&gt; to avoid revealing secrets.&lt;/li&gt;
-&lt;li&gt;I am using topic branches because this is a POC. Switch to &lt;em&gt;master&lt;/em&gt; and maybe move
-  all URLs as variables at the top of the script!&lt;/li&gt;
-&lt;li&gt;I run this cron build against a fork of the project because the team doesn't feel
-  comfortable having automated commits/pushes. I also create the pull requests against
-  my own fork. You will have to adjust the targets if you want your PR to go to the
-  original repository.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Here is the PR which was created by this script:
-&lt;a href="https://github.com/atodorov/bdcs-api-rs/pull/5"&gt;https://github.com/atodorov/bdcs-api-rs/pull/5&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Notice that it includes previous commits b/c they have not been merged to the master branch!&lt;/p&gt;
-&lt;p&gt;Here's the test job (#77) which generated this PR:
-&lt;a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916"&gt;https://travis-ci.org/atodorov/bdcs-api-rs/builds/219274916&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Here's a test job (#87) which bails out miserably because the PR already exists:
-&lt;a href="https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269"&gt;https://travis-ci.org/atodorov/bdcs-api-rs/builds/220954269&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;This post is part of my &lt;em&gt;Quality Assurance According to Einstein&lt;/em&gt; series - a detailed description
-of useful techniques I will be presenting very soon.&lt;/p&gt;
 &lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
