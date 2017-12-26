@@ -1,5 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-08-04T22:30:00+03:00</updated><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-12-26T11:20:00+02:00</updated><entry><title>On Pytest-django and LiveServerTestCase with initial data</title><link href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/" rel="alternate"></link><updated>2017-12-26T11:20:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-26:blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/</id><summary type="html">&lt;p&gt;While working on &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; I've had the opportunity to
+learn in-depth about how the standard test case classes in Django work. This
+is a quick post about creating initial data and order of execution!&lt;/p&gt;
+&lt;h2&gt;Initial test data for TransactionTestCase or LiveServerTestCase&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;class LiveServerTestCase(TransactionTestCase)&lt;/code&gt;, as the name suggests, provides a running
+Django instance during testing. We use that for Kiwi's XML-RPC API tests, issuing
+http requests against the live server instance and examining the responses!
+For testing to work we also need some initial data. There are few key items
+that need to be taken into account to accomplish that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;self._fixture_teardown()&lt;/code&gt; - performs &lt;code&gt;./manage.py flush&lt;/code&gt; which
+  deletes all records from the database, including the ones created during initial
+  migrations;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self.serialized_rollback&lt;/code&gt; - when set to True will serialize initial
+  records from the database into a string and then load this back. Required if
+  subsequent tests need to have access to the records created during migrations!&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cls.setUpTestData&lt;/code&gt; is an attribute of &lt;code&gt;class TestCase(TransactionTestCase)&lt;/code&gt; and hence
+  can't be used to create records before any transaction based test case is executed.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self._fixture_setup()&lt;/code&gt; is where the serialized rollback happens, thus it can
+  be used to create initial data for your tests!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In Kiwi TCMS all XML-RPC test classes have &lt;code&gt;serialized_rollback = True&lt;/code&gt; and
+implement a &lt;code&gt;_fixture_setup()&lt;/code&gt; method instead of &lt;code&gt;setUpTestData()&lt;/code&gt; to create the
+necessary records before testing!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; you can also use fixtures in the above scenario but I don't like using them
+and we've deleted all fixtures from Kiwi TCMS a long time ago so I didn't feel like
+going back to that!&lt;/p&gt;
+&lt;h2&gt;Order of test execution&lt;/h2&gt;
+&lt;p&gt;From
+&lt;a href="https://docs.djangoproject.com/en/2.0/topics/testing/overview/#order-in-which-tests-are-executed"&gt;Django's docs&lt;/a&gt;:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;In order to guarantee that all TestCase code starts with a clean database, the Django test runner reorders
+tests in the following way:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;All TestCase subclasses are run first.&lt;/li&gt;
+&lt;li&gt;Then, all other Django-based tests (test cases based on SimpleTestCase, including TransactionTestCase) are run
+  with no particular ordering guaranteed nor enforced among them.&lt;/li&gt;
+&lt;li&gt;Then any other unittest.TestCase tests (including doctests) that may alter the database without restoring it to
+  its original state are run.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This is not of much concern most of the time but becomes important when you decide
+to mix and match transaction and non-transaction based tests into one test suite.
+As seen in &lt;a href="https://travis-ci.org/kiwitcms/Kiwi/jobs/321018491"&gt;Job #471.1&lt;/a&gt;
+&lt;code&gt;tcms/xmlrpc/tests/test_serializer.py&lt;/code&gt; tests errored out! If you execute these tests
+standalone they all pass! The root cause is that these serializer tests are based on
+Django's &lt;code&gt;test.TestCase&lt;/code&gt; class and are executed after a &lt;code&gt;test.LiveServerTestCase&lt;/code&gt; class!&lt;/p&gt;
+&lt;p&gt;The tests in &lt;code&gt;tcms/xmlrpc/tests/test_product.py&lt;/code&gt; will flush the database, removing all
+records, including the ones from initial migrations. Then when &lt;code&gt;test_serializer.py&lt;/code&gt; is
+executed it will call its factories which in turn rely on initial records being available
+and produces an error because these records have been deleted!&lt;/p&gt;
+&lt;p&gt;The reason for this is that &lt;strong&gt;pytest doesn't respect the order of execution for Django tests&lt;/strong&gt;!
+As seen
+in the build log above tests are executed in the order in which they were discovered!
+My solution was not to use pytest (I don't need it for anything else)!&lt;/p&gt;
+&lt;p&gt;At the moment I'm dealing with strange errors/segmentation faults when running Kiwi's tests
+under Django 2.0. It looks like the http response has been closed before the client side
+tries to read it. Why this happens I have not been able to figure out yet. Expect another
+blog post when I do.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Django"></category></entry><entry><title>TransactionManagementError during testing with Django 1.10</title><link href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="alternate"></link><updated>2017-08-04T22:30:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-08-04:blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/</id><summary type="html">&lt;p&gt;During the past 3 weeks I've been debugging a weird error which
 started happening after I migrated &lt;a href="http://MrSenko.com/kiwi/"&gt;KiwiTestPad&lt;/a&gt; to
 Django 1.10.7. Here is the reason why this happened.&lt;/p&gt;
 &lt;h2&gt;Symptoms&lt;/h2&gt;
@@ -1261,28 +1320,4 @@ without the specified blocks.&lt;/p&gt;
 &lt;p&gt;Teaser: this is part of my effort to replace SNAKE with a client side
 kickstart template engine for
 &lt;a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/"&gt;Beaker&lt;/a&gt;
-so stay tuned!&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="Fedora"></category></entry><entry><title>Django Template Tag Inheritance How-to</title><link href="http://atodorov.org/blog/2013/12/22/django-template-tag-inheritance-howto/" rel="alternate"></link><updated>2013-12-22T23:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-22:blog/2013/12/22/django-template-tag-inheritance-howto/</id><summary type="html">&lt;p&gt;While working on open-sourcing &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt; I needed to remove
-all hard-coded URL references from the templates. My solution was to essentially
-inherit from the standard &lt;code&gt;{% url %}&lt;/code&gt; template tag. Here is how to do it.&lt;/p&gt;
-&lt;h2&gt;Background History&lt;/h2&gt;
-&lt;p&gt;Difio is not hosted on a single server. Parts of the website are static HTML,
-hosted on Amazon S3. Other parts are dynamic - hosted on OpenShift. It's also
-possible but not required at the moment to host at various PaaS providers for
-redundancy and simple load balancing. &lt;/p&gt;
-&lt;p&gt;As an easy fix I had hard-coded some URLs to link to the static S3 pages and others
-go link to my PaaS provider.&lt;/p&gt;
-&lt;p&gt;I needed a simple solution which can be extended to allow for multiple domain hosting.&lt;/p&gt;
-&lt;h2&gt;The Solution&lt;/h2&gt;
-&lt;p&gt;The solution I came up with is to override the standard &lt;code&gt;{% url %}&lt;/code&gt;
-tag and use it everywhere in my templates. The new tag will produce absolute URLs containing
-the specified protocol plus domain name and view path. For this to work you have to
-inherit the standard &lt;code&gt;URLNode&lt;/code&gt; class and override the &lt;code&gt;render()&lt;/code&gt; method to include the new
-values.&lt;/p&gt;
-&lt;p&gt;You also need to register a tag method to utilize the new class. My approach was to use
-the existing &lt;code&gt;url()&lt;/code&gt; method to do all background processing and simply casting the result
-object to the new class. &lt;/p&gt;
-&lt;p&gt;All code is available at &lt;a href="https://djangosnippets.org/snippets/3013/"&gt;https://djangosnippets.org/snippets/3013/&lt;/a&gt;. &lt;/p&gt;
-&lt;p&gt;To use in your templates simply add&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;{% load fqdn_url from fqdn_url %}
-&lt;span class="nt"&gt;&amp;lt;a&lt;/span&gt; &lt;span class="na"&gt;href=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;{% fqdn_url &amp;#39;dashboard&amp;#39; %}&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;Dashboard&lt;span class="nt"&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;</summary><category term="Django"></category></entry></feed>
+so stay tuned!&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="Fedora"></category></entry></feed>

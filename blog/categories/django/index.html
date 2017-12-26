@@ -90,6 +90,77 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/" rel="bookmark" title="Permalink to On Pytest-django and LiveServerTestCase with initial data">
+                <h2 class="post-title">
+                    On Pytest-django and LiveServerTestCase with initial data
+                </h2>
+            </a>
+                <p>While working on <a href="http://kiwitcms.org">Kiwi TCMS</a> I've had the opportunity to
+learn in-depth about how the standard test case classes in Django work. This
+is a quick post about creating initial data and order of execution!</p>
+<h2>Initial test data for TransactionTestCase or LiveServerTestCase</h2>
+<p><code>class LiveServerTestCase(TransactionTestCase)</code>, as the name suggests, provides a running
+Django instance during testing. We use that for Kiwi's XML-RPC API tests, issuing
+http requests against the live server instance and examining the responses!
+For testing to work we also need some initial data. There are few key items
+that need to be taken into account to accomplish that:</p>
+<ul>
+<li><code>self._fixture_teardown()</code> - performs <code>./manage.py flush</code> which
+  deletes all records from the database, including the ones created during initial
+  migrations;</li>
+<li><code>self.serialized_rollback</code> - when set to True will serialize initial
+  records from the database into a string and then load this back. Required if
+  subsequent tests need to have access to the records created during migrations!</li>
+<li><code>cls.setUpTestData</code> is an attribute of <code>class TestCase(TransactionTestCase)</code> and hence
+  can't be used to create records before any transaction based test case is executed.</li>
+<li><code>self._fixture_setup()</code> is where the serialized rollback happens, thus it can
+  be used to create initial data for your tests!</li>
+</ul>
+<p>In Kiwi TCMS all XML-RPC test classes have <code>serialized_rollback = True</code> and
+implement a <code>_fixture_setup()</code> method instead of <code>setUpTestData()</code> to create the
+necessary records before testing!</p>
+<p><strong>NOTE:</strong> you can also use fixtures in the above scenario but I don't like using them
+and we've deleted all fixtures from Kiwi TCMS a long time ago so I didn't feel like
+going back to that!</p>
+<h2>Order of test execution</h2>
+<p>From
+<a href="https://docs.djangoproject.com/en/2.0/topics/testing/overview/#order-in-which-tests-are-executed">Django's docs</a>:</p>
+<blockquote>
+<p>In order to guarantee that all TestCase code starts with a clean database, the Django test runner reorders
+tests in the following way:</p>
+<ul>
+<li>All TestCase subclasses are run first.</li>
+<li>Then, all other Django-based tests (test cases based on SimpleTestCase, including TransactionTestCase) are run
+  with no particular ordering guaranteed nor enforced among them.</li>
+<li>Then any other unittest.TestCase tests (including doctests) that may alter the database without restoring it to
+  its original state are run.</li>
+</ul>
+</blockquote>
+<p>This is not of much concern most of the time but becomes important when you decide
+to mix and match transaction and non-transaction based tests into one test suite.
+As seen in <a href="https://travis-ci.org/kiwitcms/Kiwi/jobs/321018491">Job #471.1</a>
+<code>tcms/xmlrpc/tests/test_serializer.py</code> tests errored out! If you execute these tests
+standalone they all pass! The root cause is that these serializer tests are based on
+Django's <code>test.TestCase</code> class and are executed after a <code>test.LiveServerTestCase</code> class!</p>
+<p>The tests in <code>tcms/xmlrpc/tests/test_product.py</code> will flush the database, removing all
+records, including the ones from initial migrations. Then when <code>test_serializer.py</code> is
+executed it will call its factories which in turn rely on initial records being available
+and produces an error because these records have been deleted!</p>
+<p>The reason for this is that <strong>pytest doesn't respect the order of execution for Django tests</strong>!
+As seen
+in the build log above tests are executed in the order in which they were discovered!
+My solution was not to use pytest (I don't need it for anything else)!</p>
+<p>At the moment I'm dealing with strange errors/segmentation faults when running Kiwi's tests
+under Django 2.0. It looks like the http response has been closed before the client side
+tries to read it. Why this happens I have not been able to figure out yet. Expect another
+blog post when I do.</p>
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 26 December 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/08/04/transactionmanagementerror-during-testing-with-django-110/" rel="bookmark" title="Permalink to TransactionManagementError during testing with Django 1.10">
                 <h2 class="post-title">
                     TransactionManagementError during testing with Django 1.10
@@ -1579,42 +1650,6 @@ so stay tuned!</p>
                  on Fri 21 February 2014
             </p>
 <p>There are <a href="http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/12/22/django-template-tag-inheritance-howto/" rel="bookmark" title="Permalink to Django Template Tag Inheritance How-to">
-                <h2 class="post-title">
-                    Django Template Tag Inheritance How-to
-                </h2>
-            </a>
-                <p>While working on open-sourcing <a href="http://www.dif.io">Difio</a> I needed to remove
-all hard-coded URL references from the templates. My solution was to essentially
-inherit from the standard <code>{% url %}</code> template tag. Here is how to do it.</p>
-<h2>Background History</h2>
-<p>Difio is not hosted on a single server. Parts of the website are static HTML,
-hosted on Amazon S3. Other parts are dynamic - hosted on OpenShift. It's also
-possible but not required at the moment to host at various PaaS providers for
-redundancy and simple load balancing. </p>
-<p>As an easy fix I had hard-coded some URLs to link to the static S3 pages and others
-go link to my PaaS provider.</p>
-<p>I needed a simple solution which can be extended to allow for multiple domain hosting.</p>
-<h2>The Solution</h2>
-<p>The solution I came up with is to override the standard <code>{% url %}</code>
-tag and use it everywhere in my templates. The new tag will produce absolute URLs containing
-the specified protocol plus domain name and view path. For this to work you have to
-inherit the standard <code>URLNode</code> class and override the <code>render()</code> method to include the new
-values.</p>
-<p>You also need to register a tag method to utilize the new class. My approach was to use
-the existing <code>url()</code> method to do all background processing and simply casting the result
-object to the new class. </p>
-<p>All code is available at <a href="https://djangosnippets.org/snippets/3013/">https://djangosnippets.org/snippets/3013/</a>. </p>
-<p>To use in your templates simply add</p>
-<div class="highlight"><pre>{% load fqdn_url from fqdn_url %}
-<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;{% fqdn_url &#39;dashboard&#39; %}&quot;</span><span class="nt">&gt;</span>Dashboard<span class="nt">&lt;/a&gt;</span>
-</pre></div>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 22 December 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/12/22/django-template-tag-inheritance-howto/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

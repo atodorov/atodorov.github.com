@@ -1,5 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-12-08T16:02:00+02:00</updated><entry><title>How to configure MTU for the Docker network</title><link href="http://atodorov.org/blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/" rel="alternate"></link><updated>2017-12-08T16:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-08:blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/</id><summary type="html">&lt;p&gt;On one of my Jenkins slaves I've been experiencing problems when downloading
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-12-26T11:20:00+02:00</updated><entry><title>On Pytest-django and LiveServerTestCase with initial data</title><link href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/" rel="alternate"></link><updated>2017-12-26T11:20:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-26:blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/</id><summary type="html">&lt;p&gt;While working on &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; I've had the opportunity to
+learn in-depth about how the standard test case classes in Django work. This
+is a quick post about creating initial data and order of execution!&lt;/p&gt;
+&lt;h2&gt;Initial test data for TransactionTestCase or LiveServerTestCase&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;class LiveServerTestCase(TransactionTestCase)&lt;/code&gt;, as the name suggests, provides a running
+Django instance during testing. We use that for Kiwi's XML-RPC API tests, issuing
+http requests against the live server instance and examining the responses!
+For testing to work we also need some initial data. There are few key items
+that need to be taken into account to accomplish that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;self._fixture_teardown()&lt;/code&gt; - performs &lt;code&gt;./manage.py flush&lt;/code&gt; which
+  deletes all records from the database, including the ones created during initial
+  migrations;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self.serialized_rollback&lt;/code&gt; - when set to True will serialize initial
+  records from the database into a string and then load this back. Required if
+  subsequent tests need to have access to the records created during migrations!&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cls.setUpTestData&lt;/code&gt; is an attribute of &lt;code&gt;class TestCase(TransactionTestCase)&lt;/code&gt; and hence
+  can't be used to create records before any transaction based test case is executed.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self._fixture_setup()&lt;/code&gt; is where the serialized rollback happens, thus it can
+  be used to create initial data for your tests!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In Kiwi TCMS all XML-RPC test classes have &lt;code&gt;serialized_rollback = True&lt;/code&gt; and
+implement a &lt;code&gt;_fixture_setup()&lt;/code&gt; method instead of &lt;code&gt;setUpTestData()&lt;/code&gt; to create the
+necessary records before testing!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; you can also use fixtures in the above scenario but I don't like using them
+and we've deleted all fixtures from Kiwi TCMS a long time ago so I didn't feel like
+going back to that!&lt;/p&gt;
+&lt;h2&gt;Order of test execution&lt;/h2&gt;
+&lt;p&gt;From
+&lt;a href="https://docs.djangoproject.com/en/2.0/topics/testing/overview/#order-in-which-tests-are-executed"&gt;Django's docs&lt;/a&gt;:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;In order to guarantee that all TestCase code starts with a clean database, the Django test runner reorders
+tests in the following way:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;All TestCase subclasses are run first.&lt;/li&gt;
+&lt;li&gt;Then, all other Django-based tests (test cases based on SimpleTestCase, including TransactionTestCase) are run
+  with no particular ordering guaranteed nor enforced among them.&lt;/li&gt;
+&lt;li&gt;Then any other unittest.TestCase tests (including doctests) that may alter the database without restoring it to
+  its original state are run.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This is not of much concern most of the time but becomes important when you decide
+to mix and match transaction and non-transaction based tests into one test suite.
+As seen in &lt;a href="https://travis-ci.org/kiwitcms/Kiwi/jobs/321018491"&gt;Job #471.1&lt;/a&gt;
+&lt;code&gt;tcms/xmlrpc/tests/test_serializer.py&lt;/code&gt; tests errored out! If you execute these tests
+standalone they all pass! The root cause is that these serializer tests are based on
+Django's &lt;code&gt;test.TestCase&lt;/code&gt; class and are executed after a &lt;code&gt;test.LiveServerTestCase&lt;/code&gt; class!&lt;/p&gt;
+&lt;p&gt;The tests in &lt;code&gt;tcms/xmlrpc/tests/test_product.py&lt;/code&gt; will flush the database, removing all
+records, including the ones from initial migrations. Then when &lt;code&gt;test_serializer.py&lt;/code&gt; is
+executed it will call its factories which in turn rely on initial records being available
+and produces an error because these records have been deleted!&lt;/p&gt;
+&lt;p&gt;The reason for this is that &lt;strong&gt;pytest doesn't respect the order of execution for Django tests&lt;/strong&gt;!
+As seen
+in the build log above tests are executed in the order in which they were discovered!
+My solution was not to use pytest (I don't need it for anything else)!&lt;/p&gt;
+&lt;p&gt;At the moment I'm dealing with strange errors/segmentation faults when running Kiwi's tests
+under Django 2.0. It looks like the http response has been closed before the client side
+tries to read it. Why this happens I have not been able to figure out yet. Expect another
+blog post when I do.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="Django"></category></entry><entry><title>How to configure MTU for the Docker network</title><link href="http://atodorov.org/blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/" rel="alternate"></link><updated>2017-12-08T16:02:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-08:blog/2017/12/08/how-to-configure-mtu-for-the-docker-network/</id><summary type="html">&lt;p&gt;On one of my Jenkins slaves I've been experiencing problems when downloading
 files from the network. In particular with &lt;code&gt;cabal update&lt;/code&gt; which fetches data
 from hackage.haskell.org. As suggested by David Roble the problem and solution
 lies in the MTU configured for the default &lt;code&gt;docker0&lt;/code&gt; interface!&lt;/p&gt;
@@ -1612,129 +1671,4 @@ for that matter) boils down to&lt;/p&gt;
 (which also relies on locating elements) and took 80% of the time we spent
 working with Selenium.&lt;/p&gt;
 &lt;p&gt;Thanks for reading and don't forget to comment and give me your feedback!&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Image source: https://www.udemy.com/selenium-webdriver-with-python/&lt;/em&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Quality Assurance According 2 Einstein</title><link href="http://atodorov.org/blog/2017/04/20/quality-assurance-according-2-einstein/" rel="alternate"></link><updated>2017-04-20T18:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-04-20:blog/2017/04/20/quality-assurance-according-2-einstein/</id><summary type="html">&lt;p&gt;&lt;img alt="logo" src="/images/qa_einstein.png" title="logo" /&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://www.facebook.com/events/1887550261534408/"&gt;Quality Assurance According 2 Einstein&lt;/a&gt;
-is a talk which introduces several different ideas about how we need to think
-and approach software testing. It touches on subjects like mutation testing,
-pairwise testing, automatic test execution, smart test non-execution, using tests
-as monitoring tools and team/process organization.&lt;/p&gt;
-&lt;p&gt;Because testing is more thinking than writing I have chosen a different format
-for this presentation. It contains only slides with famous quotes from one
-of the greatest thinkers of our time - Albert Einstein!&lt;/p&gt;
-&lt;p&gt;This blog post includes the accompanying links and references only! It is my first
-iteration on the topic so expect it to be unclear and incomplete, use your imagination!
-I will continue 
-working and presenting on the same topic in the next few months
-so you can expect updates from time to time. In the mean time I am happy to discuss
-with you down in the comments.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;IMAGINATION
-IS MORE
-IMPORTANT
-THAN KNOWLEDGE.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2016/03/25/hello-world-qa-challenge/"&gt;Hello World bug challenge&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/#disqus_thread"&gt;Testing a Sudoku&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/weldr/welder-web/pull/56"&gt;https://github.com/weldr/welder-web/pull/56&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/weldr/welder-web/pull/59"&gt;https://github.com/weldr/welder-web/pull/59&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;THE FASTER YOU GO,
-THE SHORTER
-YOU ARE.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://bit.ly/GTAC2016Unity3D"&gt;Using Statistics to Predict Which Tests to Run&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://bit.ly/ISTA2016ExMachina"&gt;The framework that knows its bugs&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2017/04/14/testing-red-hat-enterprise-linux-the-microsoft-way/"&gt;Testing Red Hat Enterprise Linux the Microsoft way&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/"&gt;Automatic dependency testing with Strazar&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2017/04/15/automatic-cargo-update-pull-requests-for-rust-projects/"&gt;Automatic cargo update, test and pull request&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;IF THE FACTS
-DON'T FIT
-THE THEORY,
-CHANGE THE FACTS.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=sAfROROGujU&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=47"&gt;Coverage is Not Strongly Correlated with Test Suite Effectiveness&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=NKEptA3KP08&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=1"&gt;Code Coverage is a Strong Predictor of Test Suite Effectiveness&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2016/12/27/mutation-testing-vs-coverage/"&gt;Mutation testing vs. coverage, Pt. 1&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2017/04/05/mutation-testing-vs-coverage-pt-2/"&gt;Mutation testing vs. coverage, Pt. 2&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;There are 101 coverage metrics according to &lt;a href="http://www.badsoftware.com/coverage.htm"&gt;Cem Kaner&lt;/a&gt;.
-  Which ones are you measuring and what conclusions are you making out of these metrics?&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;THE WHOLE OF
-SCIENCE
-IS NOTHING MORE
-THAN A REFINEMENT
-OF EVERYDAY
-THINKING.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="https://github.com/HackBulgaria/QA-and-Automation-101/tree/master/lesson12"&gt;How to find 1000 bugs in 30 minutes&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=m5NfgXP76Vw&amp;amp;index=1&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;t=103s"&gt;How we found a million style and grammar errors in the English Wikipedia&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=56oNQf5oITw&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;t=1300s&amp;amp;index=47"&gt;Simple Testing Can Prevent Most Critical Failures&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=nCGBgI1MNwE&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;amp;index=60"&gt;Need it robust, make it fragile&lt;/a&gt;&lt;ul&gt;
-&lt;li&gt;btw its me who asks the first question at the end :)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;INSANITY -
-DOING THE SAME THING
-OVER AND OVER
-AND EXPECTING
-DIFFERENT RESULTS.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://atodorov.org/blog/2016/12/28/4-quick-wins-to-manage-the-cost-of-software-testing/"&gt;4 Quick Wins to Manage the Cost of Software Testing&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;This principle can be applied to any team/process within the organization.
-The above link is reference to a nice book which was recommended to me but the
-gist of it is that we always need to analyze, ask questions and change is we want
-to achieve great results. A practicle example of what is possible if you follow
-this principle is this talk
-&lt;a href="https://www.youtube.com/watch?v=khSsjjg2eSQ&amp;amp;index=1&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db"&gt;Accelerate Automation Tests From 3 Hours to 3 Minutes&lt;/a&gt;.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;THE ONLY
-REASON FOR TIME
-IS SO THAT
-EVERYTHING DOESN'T
-HAPPEN AT ONCE.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;The topic here is "using tests as a monitoring tool".
-This is something I started a while back ago, helping a prominent startup with their
-production testing but my involvement ended very soon after the framework was
-deployed live so I don't have lots of insight.&lt;/p&gt;
-&lt;p&gt;As the first few days this technique identified some unexpected behaviors,
-for example a 3rd party service was updating very often. Once even they were
-broken for a few hours - something nobody had information about.&lt;/p&gt;
-&lt;p&gt;Since then I've heard about 2 more companies using similar techniques to continuously
-validate that production software continues to work without having a physical
-person to verify it. In the event of failures there are alerts which are
-delath with accordingly.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;NO PROBLEM
-CAN BE SOLVED FROM
-THE SAME LEVEL
-OF CONSIOUSNESS
-THAT CREATED IT.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;That much must be obvious to us quality engineers. What about the future however?&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="https://www.quora.com/How-do-I-implement-AI-in-test-automation"&gt;How do I implement AI in test automation&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://sourced.tech/"&gt;source{d} - Building the first AI that understands code&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;I don't have anything more concrete here. Just looking towards what is coming next!&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;DO NOT WORRY ABOUT
-YOUR DIFFICULTIES
-IN MATHEMATICS.
-I CAN ASSURE
-YOU MINE ARE STILL
-GREATER.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
+&lt;p&gt;&lt;em&gt;Image source: https://www.udemy.com/selenium-webdriver-with-python/&lt;/em&gt;&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
