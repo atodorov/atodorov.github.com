@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>How to write pylint checker plugins</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="In this post I will walk you through the process of learning how to write additional checkers for pylint! Prerequisites Read ...">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="fedora.planet">
+        <meta name="tags" content="QA">
+        <meta name="tags" content="Python">
+        <meta name="tags" content="Django">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/">
+	<meta property="og:title" content="How to write pylint checker plugins">
+	<meta property="article:published_time" content="2018-01-05 13:00:00+02:00">
+            <meta property="og:description" content="In this post I will walk you through the process of learning how to write additional checkers for pylint! Prerequisites Read ...">
+
+                <meta property="og:image" content="http://atodorov.org/images/validation.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="How to write pylint checker plugins">
+
+                <meta property="twitter:image" content="http://atodorov.org/images/validation.jpg">
+
+            <meta name="twitter:description" content="In this post I will walk you through the process of learning how to write additional checkers for pylint! Prerequisites Read ...">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>How to write pylint checker plugins</h1>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Fri 05 January 2018
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>In this post I will walk you through the process of learning how to write
+additional checkers for pylint!</p>
+<h2>Prerequisites</h2>
+<ol>
+<li>
+<p>Read
+   <a href="https://pylint.readthedocs.io/en/latest/development_guide/contribute.html">Contributing to pylint</a>
+   to get basic knowledge of how to execute the test suite and how it is structured.
+   Basically call <code>tox -e py36</code>. Verify that all tests <strong>PASS</strong> locally!</p>
+</li>
+<li>
+<p>Read pylint's
+   <a href="https://pylint.readthedocs.io/en/latest/how_tos/index.html">How To Guides</a>,
+   in particular the section about writing a new checker. A plugin is usually
+   a Python module that registers a new checker.</p>
+</li>
+<li>
+<p>Most of pylint checkers are AST based, meaning they operate on the
+   abstract syntax tree of the source code. You will have to familiarize
+   yourself with the AST node reference for the <code>astroid</code> and <code>ast</code> modules.
+   Pylint uses Astroid for parsing and augmenting the AST.</p>
+<p><strong>NOTE:</strong> there is compact and excellent documentation provided by the
+   <em>Green Tree Snakes</em> project. I would recommend the
+   <a href="http://greentreesnakes.readthedocs.io/en/latest/nodes.html">Meet the Nodes</a>
+   chapter.</p>
+<p>Astroid also provides exhaustive documentation and
+   <a href="http://astroid.readthedocs.io/en/latest/api/astroid.nodes.html">node API reference</a>.  </p>
+<p><strong>WARNING:</strong> sometimes Astroid node class names don't match the ones from ast!</p>
+</li>
+<li>
+<p>Your interactive shell weapons are <code>ast.dump()</code>, <code>ast.parse()</code>, <code>astroid.parse()</code> and
+   <code>astroid.extract_node()</code>. I use them inside an interactive Python shell to
+   figure out how a piece of source code is parsed and converted back to AST nodes!
+   You can also try this
+   <a href="https://bitbucket.org/takluyver/greentreesnakes/src/default/astpp.py?fileviewer=file-view-default">ast node pretty printer</a>!
+   I personally haven't used it.</p>
+</li>
+</ol>
+<h2>How pylint processes the AST tree</h2>
+<p>Every checker class may include special methods with names
+<code>visit_xxx(self, node)</code> and <code>leave_xxx(self, node)</code> where xxx is the lowercase
+name of the node class (as defined by astroid). These methods are executed
+automatically when the parser iterates over nodes of the respective type.</p>
+<p>All of the magic happens inside such methods. They are responsible for collecting
+information about the context of specific statements or patterns that you wish to
+detect. The hard part is figuring out how to collect all the information you need
+because sometimes it can be spread across nodes of several different types (e.g.
+more complex code patterns).</p>
+<p>There is a special decorator called <code>@utils.check_messages</code>. You have to list
+all message ids that your <code>visit_</code> or <code>leave_</code> method will generate!</p>
+<h2>How to select message codes and IDs</h2>
+<p>One of the most unclear things for me is message codes. pylint
+<a href="https://pylint.readthedocs.io/en/latest/how_tos/custom_checkers.html">docs</a> say</p>
+<blockquote>
+<blockquote>
+<p>The message-id should be a 5-digit number, prefixed with a message category.
+There are multiple message categories, these being <code>C</code>, <code>W</code>, <code>E</code>, <code>F</code>, <code>R</code>,
+standing for <code>Convention</code>, <code>Warning</code>, <code>Error</code>, <code>Fatal</code> and <code>Refactoring</code>.
+The rest of the 5 digits should not conflict with existing checkers and they
+should be consistent across the checker. For instance, the first two digits should
+not be different across the checker.</p>
+</blockquote>
+</blockquote>
+<p>I'm usually having troubles with the numbering part so you will have to get creative
+or look at existing checker codes.</p>
+<h2>Practical example</h2>
+<p>In <a href="http://kiwitcms.org">Kiwi TCMS</a> there's legacy code that looks like this:</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">add_cases</span><span class="p">(</span><span class="n">run_ids</span><span class="p">,</span> <span class="n">case_ids</span><span class="p">):</span>
+    <span class="n">trs</span> <span class="o">=</span> <span class="n">TestRun</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">run_id__in</span><span class="o">=</span><span class="n">pre_process_ids</span><span class="p">(</span><span class="n">run_ids</span><span class="p">))</span>
+    <span class="n">tcs</span> <span class="o">=</span> <span class="n">TestCase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">case_id__in</span><span class="o">=</span><span class="n">pre_process_ids</span><span class="p">(</span><span class="n">case_ids</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">trs</span><span class="o">.</span><span class="n">iterator</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">tcs</span><span class="o">.</span><span class="n">iterator</span><span class="p">():</span>
+            <span class="n">tr</span><span class="o">.</span><span class="n">add_case_run</span><span class="p">(</span><span class="n">case</span><span class="o">=</span><span class="n">tc</span><span class="p">)</span>
+
+    <span class="k">return</span>
+</pre></div>
+
+
+<p>Notice the dangling <code>return</code> statement at the end! It is useless because when missing
+the default return value of this function will still be <code>None</code>. So I've decided to
+create a plugin for that.</p>
+<p>Armed with the knowledge above I first try the ast parser in the console:</p>
+<div class="highlight"><pre><span class="n">Python</span> <span class="mf">3.6</span><span class="o">.</span><span class="mi">3</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Oct</span>  <span class="mi">5</span> <span class="mi">2017</span><span class="p">,</span> <span class="mi">20</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">50</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">5</span> <span class="mi">20150623</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mi">11</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux</span>
+<span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">ast</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">astroid</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ast</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;def func():</span><span class="se">\n</span><span class="s">    return&#39;</span><span class="p">))</span>
+<span class="s">&quot;Module(body=[FunctionDef(name=&#39;func&#39;, args=arguments(args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Return(value=None)], decorator_list=[], returns=None)])&quot;</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;def func():</span><span class="se">\n</span><span class="s">    return&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span>
+<span class="o">&lt;</span><span class="n">Module</span> <span class="n">l</span><span class="o">.</span><span class="mi">0</span> <span class="n">at</span> <span class="mh">0x7f5b04621b38</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span>
+<span class="p">[</span><span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="o">.</span><span class="mi">1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="o">.</span><span class="mi">1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">body</span>
+<span class="p">[</span><span class="o">&lt;</span><span class="n">Return</span> <span class="n">l</span><span class="o">.</span><span class="mi">2</span> <span class="n">at</span> <span class="mh">0x7f5b04621c18</span><span class="o">&gt;</span><span class="p">]</span>
+</pre></div>
+
+
+<p>As you can see there is a <code>FunctionDef</code> node representing the function and it has
+a <code>body</code> attribute which is a list of all statements inside the function. The last
+element is <code>.body[-1]</code> and it is of type <code>Return</code>! The <code>Return</code> node also has an
+attribute called <code>.value</code> which is the return value! The complete code will look
+like this:</p>
+<div class="highlight"><span class="filename">uselessreturn.py</span><pre><span class="kn">import</span> <span class="nn">astroid</span>
+
+<span class="kn">from</span> <span class="nn">pylint</span> <span class="kn">import</span> <span class="n">checkers</span>
+<span class="kn">from</span> <span class="nn">pylint</span> <span class="kn">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">pylint.checkers</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<span class="k">class</span> <span class="nc">UselessReturnChecker</span><span class="p">(</span><span class="n">checkers</span><span class="o">.</span><span class="n">BaseChecker</span><span class="p">):</span>
+    <span class="n">__implements__</span> <span class="o">=</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">IAstroidChecker</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;useless-return&#39;</span>
+
+    <span class="n">msgs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;R2119&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s">&quot;Useless return at end of function or method&quot;</span><span class="p">,</span>
+                  <span class="s">&#39;useless-return&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;Emitted when a bare return statement is found at the end of &#39;</span>
+                  <span class="s">&#39;function or method definition&#39;</span>
+                  <span class="p">),</span>
+        <span class="p">}</span>
+
+
+    <span class="nd">@utils.check_messages</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">visit_functiondef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Checks for presence of return statement at the end of a function</span>
+<span class="sd">            &quot;return&quot; or &quot;return None&quot; are useless because None is the default</span>
+<span class="sd">            return type if they are missing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># if the function has empty body then return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">astroid</span><span class="o">.</span><span class="n">Return</span><span class="p">):</span>
+            <span class="c"># e.g. &quot;return&quot;</span>
+            <span class="k">if</span> <span class="n">last</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+            <span class="c"># e.g. &quot;return None&quot;</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">astroid</span><span class="o">.</span><span class="n">Const</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">linter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;required method to auto register this checker&quot;&quot;&quot;</span>
+    <span class="n">linter</span><span class="o">.</span><span class="n">register_checker</span><span class="p">(</span><span class="n">UselessReturnChecker</span><span class="p">(</span><span class="n">linter</span><span class="p">))</span>
+</pre></div>
+
+
+<p>Here's how to execute the new plugin:</p>
+<div class="highlight"><pre><span class="nv">$ PYTHONPATH</span><span class="o">=</span>./myplugins pylint --load-plugins<span class="o">=</span>uselessreturn tcms/xmlrpc/api/testrun.py <span class="p">|</span> grep useless-return
+W: 40, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
+W:117, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
+W:242, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
+W:495, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
+</pre></div>
+
+
+<p><strong>NOTES:</strong></p>
+<ul>
+<li>
+<p>If you contribute this code upstream and pylint releases it you will get a traceback:</p>
+<div class="highlight"><pre>pylint.exceptions.InvalidMessageError: Message symbol &#39;useless-return&#39; is already defined
+</pre></div>
+
+
+<p>this means your checker has been released in the latest version and you can drop the custom
+plugin!</p>
+</li>
+<li>
+<p>This is example is fairly simple because the AST tree provides the information we
+  need in a very handy way. Take a look at some of
+  <a href="https://github.com/PyCQA/pylint/pulls/atodorov">my other checkers</a> to get a feeling
+  of what a more complex checker looks like!</p>
+</li>
+<li>
+<p>Write and run tests for your new checkers, especially if contributing upstream.
+  Have in mind that the new checker will be executed against existing code and in
+  combination with other checkers which could lead to some interesting results.
+  I will leave the testing to yourself, all is written in the documentation.</p>
+</li>
+</ul>
+<p>This particular example I've contributed as
+<a href="https://github.com/PyCQA/pylint/pull/1821">PR #1821</a> which happened to contradict
+an existing checker. The update, raising warnings only when there's a single return
+statement in the function body, is <a href="https://github.com/PyCQA/pylint/pull/1823">PR #1823</a>.</p>
+<h2>Workshop around the corner</h2>
+<p>I will be working together with <a href="http://hacksoft.io">HackSoft</a> on an in-house
+workshop/training for writing pylint plugins. I'm also looking at reviving
+<a href="https://github.com/landscapeio/pylint-django/">pylint-django</a> so we can
+write more plugins specifically for Django based projects.</p>
+<p>If you are interested in workshop and training on the topic let me know!</p>
+<p>Thanks for reading and happy testing!</p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, <a href="http://atodorov.org/blog/categories/qa/">QA</a>, <a href="http://atodorov.org/blog/categories/python/">Python</a>, <a href="http://atodorov.org/blog/categories/django/">Django</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2018/01/05/how-to-write-pylint-checker-plugins/';
+                var disqus_url = 'http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat responsible for finding over
+        <a href="/blog/2014/02/19/7-years-1400-bugs-red-hat-qa/">1600 bugs</a>,
+        Red Hat Certified professional, cloud hacker and a general purpose
+        open source developer! I am the maintainer of
+        <a href="http://kiwitcms.org/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Kiwi TCMS</a>!
+    </p>
+    <p>
+        I am living in the <a href="http://planet.sofiavalley.com">Sofia Valley</a>
+        which is emerging as a busy place for start-up founders and tech enthusiasts
+        in Eastern Europe! You can find more about me <a href="/blog/2013/01/25/about-me/">here</a>.
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2016 &diams; Alexander Todorov &diams;
+    <a href="http://planet.sofiavalley.com">SofiaValley Blog</a>
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

@@ -1,5 +1,205 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-10-05T10:40:00+03:00</updated><entry><title>The ARCS model of motivational design</title><link href="http://atodorov.org/blog/2017/10/05/the-arcs-model-of-motivational-design/" rel="alternate"></link><updated>2017-10-05T10:40:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-10-05:blog/2017/10/05/the-arcs-model-of-motivational-design/</id><summary type="html">&lt;p&gt;&lt;img alt="Motivation" src="/images/motivation.jpg" title="Motivation" /&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/qa/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-01-05T13:00:00+02:00</updated><entry><title>How to write pylint checker plugins</title><link href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/" rel="alternate"></link><updated>2018-01-05T13:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-05:blog/2018/01/05/how-to-write-pylint-checker-plugins/</id><summary type="html">&lt;p&gt;In this post I will walk you through the process of learning how to write
+additional checkers for pylint!&lt;/p&gt;
+&lt;h2&gt;Prerequisites&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Read
+   &lt;a href="https://pylint.readthedocs.io/en/latest/development_guide/contribute.html"&gt;Contributing to pylint&lt;/a&gt;
+   to get basic knowledge of how to execute the test suite and how it is structured.
+   Basically call &lt;code&gt;tox -e py36&lt;/code&gt;. Verify that all tests &lt;strong&gt;PASS&lt;/strong&gt; locally!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Read pylint's
+   &lt;a href="https://pylint.readthedocs.io/en/latest/how_tos/index.html"&gt;How To Guides&lt;/a&gt;,
+   in particular the section about writing a new checker. A plugin is usually
+   a Python module that registers a new checker.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Most of pylint checkers are AST based, meaning they operate on the
+   abstract syntax tree of the source code. You will have to familiarize
+   yourself with the AST node reference for the &lt;code&gt;astroid&lt;/code&gt; and &lt;code&gt;ast&lt;/code&gt; modules.
+   Pylint uses Astroid for parsing and augmenting the AST.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; there is compact and excellent documentation provided by the
+   &lt;em&gt;Green Tree Snakes&lt;/em&gt; project. I would recommend the
+   &lt;a href="http://greentreesnakes.readthedocs.io/en/latest/nodes.html"&gt;Meet the Nodes&lt;/a&gt;
+   chapter.&lt;/p&gt;
+&lt;p&gt;Astroid also provides exhaustive documentation and
+   &lt;a href="http://astroid.readthedocs.io/en/latest/api/astroid.nodes.html"&gt;node API reference&lt;/a&gt;.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;WARNING:&lt;/strong&gt; sometimes Astroid node class names don't match the ones from ast!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Your interactive shell weapons are &lt;code&gt;ast.dump()&lt;/code&gt;, &lt;code&gt;ast.parse()&lt;/code&gt;, &lt;code&gt;astroid.parse()&lt;/code&gt; and
+   &lt;code&gt;astroid.extract_node()&lt;/code&gt;. I use them inside an interactive Python shell to
+   figure out how a piece of source code is parsed and converted back to AST nodes!
+   You can also try this
+   &lt;a href="https://bitbucket.org/takluyver/greentreesnakes/src/default/astpp.py?fileviewer=file-view-default"&gt;ast node pretty printer&lt;/a&gt;!
+   I personally haven't used it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;How pylint processes the AST tree&lt;/h2&gt;
+&lt;p&gt;Every checker class may include special methods with names
+&lt;code&gt;visit_xxx(self, node)&lt;/code&gt; and &lt;code&gt;leave_xxx(self, node)&lt;/code&gt; where xxx is the lowercase
+name of the node class (as defined by astroid). These methods are executed
+automatically when the parser iterates over nodes of the respective type.&lt;/p&gt;
+&lt;p&gt;All of the magic happens inside such methods. They are responsible for collecting
+information about the context of specific statements or patterns that you wish to
+detect. The hard part is figuring out how to collect all the information you need
+because sometimes it can be spread across nodes of several different types (e.g.
+more complex code patterns).&lt;/p&gt;
+&lt;p&gt;There is a special decorator called &lt;code&gt;@utils.check_messages&lt;/code&gt;. You have to list
+all message ids that your &lt;code&gt;visit_&lt;/code&gt; or &lt;code&gt;leave_&lt;/code&gt; method will generate!&lt;/p&gt;
+&lt;h2&gt;How to select message codes and IDs&lt;/h2&gt;
+&lt;p&gt;One of the most unclear things for me is message codes. pylint
+&lt;a href="https://pylint.readthedocs.io/en/latest/how_tos/custom_checkers.html"&gt;docs&lt;/a&gt; say&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The message-id should be a 5-digit number, prefixed with a message category.
+There are multiple message categories, these being &lt;code&gt;C&lt;/code&gt;, &lt;code&gt;W&lt;/code&gt;, &lt;code&gt;E&lt;/code&gt;, &lt;code&gt;F&lt;/code&gt;, &lt;code&gt;R&lt;/code&gt;,
+standing for &lt;code&gt;Convention&lt;/code&gt;, &lt;code&gt;Warning&lt;/code&gt;, &lt;code&gt;Error&lt;/code&gt;, &lt;code&gt;Fatal&lt;/code&gt; and &lt;code&gt;Refactoring&lt;/code&gt;.
+The rest of the 5 digits should not conflict with existing checkers and they
+should be consistent across the checker. For instance, the first two digits should
+not be different across the checker.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I'm usually having troubles with the numbering part so you will have to get creative
+or look at existing checker codes.&lt;/p&gt;
+&lt;h2&gt;Practical example&lt;/h2&gt;
+&lt;p&gt;In &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; there's legacy code that looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;add_cases&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_ids&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;case_ids&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;trs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TestRun&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_id__in&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;pre_process_ids&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_ids&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;tcs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case_id__in&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;pre_process_ids&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case_ids&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tr&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;trs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iterator&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tc&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;tcs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iterator&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+            &lt;span class="n"&gt;tr&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_case_run&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tc&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Notice the dangling &lt;code&gt;return&lt;/code&gt; statement at the end! It is useless because when missing
+the default return value of this function will still be &lt;code&gt;None&lt;/code&gt;. So I've decided to
+create a plugin for that.&lt;/p&gt;
+&lt;p&gt;Armed with the knowledge above I first try the ast parser in the console:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Python&lt;/span&gt; &lt;span class="mf"&gt;3.6&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;default&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Oct&lt;/span&gt;  &lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="mi"&gt;2017&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;GCC&lt;/span&gt; &lt;span class="mf"&gt;4.8&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="mi"&gt;20150623&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Red&lt;/span&gt; &lt;span class="n"&gt;Hat&lt;/span&gt; &lt;span class="mf"&gt;4.8&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;linux&lt;/span&gt;
+&lt;span class="n"&gt;Type&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;help&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;copyright&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;credits&amp;quot;&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;license&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;more&lt;/span&gt; &lt;span class="n"&gt;information&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;ast&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;astroid&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ast&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dump&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ast&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;def func():&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;    return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="s"&gt;&amp;quot;Module(body=[FunctionDef(name=&amp;#39;func&amp;#39;, args=arguments(args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Return(value=None)], decorator_list=[], returns=None)])&amp;quot;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; 
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; 
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;def func():&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;    return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Module&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b04621b38&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;FunctionDef&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;func&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b046219e8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;FunctionDef&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;func&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b046219e8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Return&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b04621c18&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As you can see there is a &lt;code&gt;FunctionDef&lt;/code&gt; node representing the function and it has
+a &lt;code&gt;body&lt;/code&gt; attribute which is a list of all statements inside the function. The last
+element is &lt;code&gt;.body[-1]&lt;/code&gt; and it is of type &lt;code&gt;Return&lt;/code&gt;! The &lt;code&gt;Return&lt;/code&gt; node also has an
+attribute called &lt;code&gt;.value&lt;/code&gt; which is the return value! The complete code will look
+like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;uselessreturn.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;astroid&lt;/span&gt;
+
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;checkers&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;interfaces&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint.checkers&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;utils&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;UselessReturnChecker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;checkers&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BaseChecker&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;__implements__&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;interfaces&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;IAstroidChecker&lt;/span&gt;
+
+    &lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;
+
+    &lt;span class="n"&gt;msgs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;R2119&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Useless return at end of function or method&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;Emitted when a bare return statement is found at the end of &amp;#39;&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;function or method definition&amp;#39;&lt;/span&gt;
+                  &lt;span class="p"&gt;),&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+
+    &lt;span class="nd"&gt;@utils.check_messages&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;visit_functiondef&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;            Checks for presence of return statement at the end of a function&lt;/span&gt;
+&lt;span class="sd"&gt;            &amp;quot;return&amp;quot; or &amp;quot;return None&amp;quot; are useless because None is the default&lt;/span&gt;
+&lt;span class="sd"&gt;            return type if they are missing&lt;/span&gt;
+&lt;span class="sd"&gt;        &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="c"&gt;# if the function has empty body then return&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="n"&gt;last&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;isinstance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Return&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="c"&gt;# e.g. &amp;quot;return&amp;quot;&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_message&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="c"&gt;# e.g. &amp;quot;return None&amp;quot;&lt;/span&gt;
+            &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="nb"&gt;isinstance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Const&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_message&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;register&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;required method to auto register this checker&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;register_checker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;UselessReturnChecker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here's how to execute the new plugin:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ PYTHONPATH&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;./myplugins pylint --load-plugins&lt;span class="o"&gt;=&lt;/span&gt;uselessreturn tcms/xmlrpc/api/testrun.py &lt;span class="p"&gt;|&lt;/span&gt; grep useless-return
+W: 40, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:117, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:242, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:495, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;NOTES:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;If you contribute this code upstream and pylint releases it you will get a traceback:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;pylint.exceptions.InvalidMessageError: Message symbol &amp;#39;useless-return&amp;#39; is already defined
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;this means your checker has been released in the latest version and you can drop the custom
+plugin!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;This is example is fairly simple because the AST tree provides the information we
+  need in a very handy way. Take a look at some of
+  &lt;a href="https://github.com/PyCQA/pylint/pulls/atodorov"&gt;my other checkers&lt;/a&gt; to get a feeling
+  of what a more complex checker looks like!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Write and run tests for your new checkers, especially if contributing upstream.
+  Have in mind that the new checker will be executed against existing code and in
+  combination with other checkers which could lead to some interesting results.
+  I will leave the testing to yourself, all is written in the documentation.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This particular example I've contributed as
+&lt;a href="https://github.com/PyCQA/pylint/pull/1821"&gt;PR #1821&lt;/a&gt; which happened to contradict
+an existing checker. The update, raising warnings only when there's a single return
+statement in the function body, is &lt;a href="https://github.com/PyCQA/pylint/pull/1823"&gt;PR #1823&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Workshop around the corner&lt;/h2&gt;
+&lt;p&gt;I will be working together with &lt;a href="http://hacksoft.io"&gt;HackSoft&lt;/a&gt; on an in-house
+workshop/training for writing pylint plugins. I'm also looking at reviving
+&lt;a href="https://github.com/landscapeio/pylint-django/"&gt;pylint-django&lt;/a&gt; so we can
+write more plugins specifically for Django based projects.&lt;/p&gt;
+&lt;p&gt;If you are interested in workshop and training on the topic let me know!&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Python"></category><category term="Django"></category></entry><entry><title>The ARCS model of motivational design</title><link href="http://atodorov.org/blog/2017/10/05/the-arcs-model-of-motivational-design/" rel="alternate"></link><updated>2017-10-05T10:40:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-10-05:blog/2017/10/05/the-arcs-model-of-motivational-design/</id><summary type="html">&lt;p&gt;&lt;img alt="Motivation" src="/images/motivation.jpg" title="Motivation" /&gt;&lt;/p&gt;
 &lt;p&gt;The ARCS model is an instructional design method developed by John Keller
 that focuses on motivation. ARCS is based on a research into best practices
 and successful teachers and gives you tactics on how to evaluate your
@@ -2135,365 +2335,4 @@ really liked it. The event is entirely in English with lots of foreign speakers.
 intention is to present this at ISTA 2017 so stay tuned.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;UPDATE:&lt;/strong&gt; I didn't manage to collect enough information on the
 &lt;em&gt;Regression Test Monitoring&lt;/em&gt; topic but have made two other proposals.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and see you around!&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>QA &amp; Automation 101 Retrospective</title><link href="http://atodorov.org/blog/2016/12/29/qa-automation-101-retrospective/" rel="alternate"></link><updated>2016-12-29T10:48:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2016-12-29:blog/2016/12/29/qa-automation-101-retrospective/</id><summary type="html">&lt;p&gt;&lt;img alt="QA 101 graduation" src="/images/qa101_final.jpg" title="QA 101 graduation" /&gt;&lt;/p&gt;
-&lt;p&gt;At the beginning of this year I've hosted the first QA related course at
-&lt;a href="http://hackbulgaria.com/"&gt;HackBulgaria&lt;/a&gt;. This is a long overdue post about
-how the course went, what worked well and what didn't. Brace yourself because
-it is going to be a long one.&lt;/p&gt;
-&lt;p&gt;The idea behind a QA course has been lurking in both RadoRado's (from HackBulgaria)
-and my heads for quite a while. We've been discussing it at least a year before we
-actually started. One day Rado told me he'd found a sponsor and we have the go ahead
-for the course and that's how it all started!&lt;/p&gt;
-&lt;p&gt;The first issue was that we weren't prepared to start at a moments notice. I literally
-had two weeks to prepare
-&lt;a href="https://github.com/HackBulgaria/QA-and-Automation-101"&gt;the curriculum&lt;/a&gt;
-and &lt;a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/"&gt;initial interview questions&lt;/a&gt;.
-Next we opened the application form and left it open until the last possible moment.
-I've been reviewing candidate answers hours before the course started, which was
-another mistake we made!&lt;/p&gt;
-&lt;p&gt;On the positive side is that I hosted a
-&lt;a href="https://www.youtube.com/watch?v=Tgu0VTxytYw&amp;amp;index=37&amp;amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db"&gt;Q&amp;amp;A session on YouTube&lt;/a&gt;
-answering general questions about the profession and the course itself. This
-live stream helped popularize the course.&lt;/p&gt;
-&lt;p&gt;At the start we had 30 people and around 13 of them managed to "graduate"
-till the final lesson. The biggest portion of students dropped out after the
-first 5 lessons of Java crash course! Each lesson was around 4 hours with 20-30
-minutes break in the middle.&lt;/p&gt;
-&lt;p&gt;With respect to the criteria find a first job or find a new/better job I consider the
-training successful. To my knowledge all students have found better jobs, many of them
-as software testers!&lt;/p&gt;
-&lt;p&gt;On the practical side of things students managed to find and report 11 interesting
-bugs against Fedora. Mind you that these were all found in the wild:
-&lt;a href="https://fedorahosted.org/fedora-infrastructure/ticket/5323"&gt;fedora-infrastructure #5323&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339701"&gt;RHBZ#1339701&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339709"&gt;RHBZ#1339709&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339713"&gt;RHBZ#1339713&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339719"&gt;RHBZ#1339719&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339731"&gt;RHBZ#1339731&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339739"&gt;RHBZ#1339739&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339742"&gt;RHBZ#1339742&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339746"&gt;RHBZ#1339746&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340541"&gt;RHBZ#1340541&lt;/a&gt;,
-&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340891"&gt;RHBZ#1340891&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Then students also made a few pull requests on GitHub (3 which I know off):
-&lt;a href="https://github.com/apache/commons-math/pull/38"&gt;commons-math #38&lt;/a&gt;,
-&lt;a href="https://github.com/apache/commons-csv/pull/12"&gt;commons-csv #12&lt;/a&gt;,
-&lt;a href="https://github.com/apache/commons-email/pull/1"&gt;commons-email #1&lt;/a&gt;.&lt;/p&gt;
-&lt;h2&gt;Lesson format&lt;/h2&gt;
-&lt;p&gt;For reference most lessons were a mix of short presentation about theory and best practices
-followed by discussions and where appropriate practical sessions with technology or
-projects. The exercises were designed for individual work, work in pairs or small groups (4-5)
-on purpose.&lt;/p&gt;
-&lt;p&gt;By request from the sponsors I've tried to keep a detailed record of each student's
-performance and personality traits as much as I was able to observe them. I really enjoyed
-keeping such a journal but didn't share this info with my students which I consider
-a negative issue. I think knowing where your strong and weak areas are would help you
-become a better expert in your field!&lt;/p&gt;
-&lt;h2&gt;Feedback from students&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;There was little time (to work on the practical examples I guess);&lt;/li&gt;
-&lt;li&gt;Not having particular practical tasks was a problem. For example we didn't have tasks of the
-sort do "X" then "Y";&lt;/li&gt;
-&lt;li&gt;They needed more time and more attention to be given to them;&lt;/li&gt;
-&lt;li&gt;Installing different pieces of software and tools took a lot of time and frustration.
-It was also quite problematic sometimes depending on whether they used Linux, Windows or Mac OS X;&lt;/li&gt;
-&lt;li&gt;Working with Eclipse IDE was horrible. Nobody new what to do and the interface
-wasn't newbie friendly. Also it took quite a lot of time to install dependencies and/or
-import projects to run in Eclipse;&lt;/li&gt;
-&lt;li&gt;There were a few problems with Selenium and its different versions being used.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;I have to point out that while these are valid concerns and major issues students were
-at least partially guilty for the last 3 of them. It was my impression that most of them
-didn't prepare at home, didn't read the next lesson and didn't install prerequisite
-tools and software!&lt;/p&gt;
-&lt;h2&gt;5x Java Crash Course&lt;/h2&gt;
-&lt;p&gt;We've started with a Java crash course as requested by our sponsors which was extended to
-5 instead of the original 3 sessions. RadoRado was teaching Java fundamentals while
-I was assisting him with comments.&lt;/p&gt;
-&lt;p&gt;On the good side is that Rado explains very well and in much details. He also writes code
-to demonstrate what he teaches and while doing so uses only the knowledge he's presented
-so far. For example if there's a repeating logic/functionality he would just write it
-twice instead of refactoring that into a separate function with parameters (assuming
-the students have not learned about functions yet). I think this made it more easier
-to understand the concepts being taught.&lt;/p&gt;
-&lt;p&gt;Another positive thing we did was me going behind Rado's computer and modifying some
-of the code while he was explaining something on screen. If you take the above example
-and have two methods with print out salutations, e.g. "Good morning, Alex" I would go
-and modify one of them to include "Mr." while the other will not. This introduced a
-change in behavior which ultimately results in a bug! This was a nice practical way
-to demonstrate how some classes of bugs get introduced in reality. We did only a few of
-these behind the computer changes and I definitely liked them! They were all ad-hoc,
-not planned for.&lt;/p&gt;
-&lt;p&gt;On the negative side Java seems hard to learn and after these 5 lessons half of the
-students dropped out. Maybe part of the reason is they didn't expect to start a QA
-course with lessons about programming. But that also means they didn't pay enough
-attention to the curriculum, which was announced in advance!&lt;/p&gt;
-&lt;h2&gt;Lesson 01 - QA Fundamentals&lt;/h2&gt;
-&lt;p&gt;I had made a point to assign time constraints to each exercise in the lessons.
-While that mostly worked in the first few lessons, where there is more theory,
-we didn't keep the schedule and were overtime.&lt;/p&gt;
-&lt;p&gt;Explaining testing theory (based on ISTQB fundamentals) took longer than I expected.
-it was also evident that we needed more written examples of what different test
-analysis techniques are (e.g. boundary value analysis). Here Petar Sabev helped
-me deliver few very nice examples.&lt;/p&gt;
-&lt;p&gt;One of the exercises was "when to stop testing" with an example of a Sudoku solving
-function and different environments in which this code operates, e.g. browser, mobile,
-etc. Students appeared to have a hard time understanding what a
-"runtime environment" is and define relevant tests based on that! I believe most
-of the students, due to lack of knowledge and experience, were also having a hard time grasping the
-concept of non-functional testing.&lt;/p&gt;
-&lt;p&gt;A positive thing was that students started explaining to one another and giving
-examples for bugs they've seen outside the course.&lt;/p&gt;
-&lt;h2&gt;Lesson 02 - Software Development Lifecycle&lt;/h2&gt;
-&lt;p&gt;This lesson was designed as role playing game to demonstrate the most common
-software development methodologies - waterfall and agile and discuss the QA role
-in both of them. The format by itself is very hard to conduct successfully and
-this was my first time ever doing this. I've also never taken part of such games
-until then, only heard about them.&lt;/p&gt;
-&lt;p&gt;During the waterfall exercise it was harder for the students to follow the game
-constraints and not exchange information with one another because they were sitting
-on the same table.&lt;/p&gt;
-&lt;p&gt;On the positive side all groups came with unique ideas about software features and how
-they want to develop them. Timewise we managed to do very well. On the negative side
-is that I was the client for all groups and didn't manage to pay enough attention
-to everyone, which btw is what clients usually do in real life.&lt;/p&gt;
-&lt;h2&gt;Lesson 03 - Bug Tracking&lt;/h2&gt;
-&lt;p&gt;This lesson was a practical exercise in writing bug reports and figuring out what
-information needs to be present in a good bug report. Btw this is something I
-always ask junior members at job interviews.&lt;/p&gt;
-&lt;p&gt;First we started with working in pairs to define what a good bug report is
-without actually knowing what that means. Students found it hard to brainstorm
-together and most of them worked alone during this exercise.&lt;/p&gt;
-&lt;p&gt;Next students had to write bug reports for some example bugs, which I've explained briefly
-on purpose and perform peer reviews of their bugs. Reviews took a long time to complete
-but overall students had a good idea of what information to include in a bug report.&lt;/p&gt;
-&lt;p&gt;Then, after learning from their mistakes and hearing what others had done, they've
-learned about some good practices and were tasked to rewrite their bug reports using
-the new knowledge. I really like the approach of letting students make some mistakes
-and then showing them the easier/better way of doing things. This is also on-par with
-&lt;a href="http://atodorov.org/blog/2016/09/25/what-ivan-learned-from-organizing-internships/"&gt;Ivan Nemytchenko's methodology&lt;/a&gt; of
-letting his interns learn by their mistakes.&lt;/p&gt;
-&lt;p&gt;All bug reports can be found in students repositories, which are forked from the
-curriculum. Check out &lt;a href="https://github.com/HackBulgaria/QA-and-Automation-101/network"&gt;https://github.com/HackBulgaria/QA-and-Automation-101/network&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;I should have really asked everyone to file bugs under the curriculum repository so
-it is easier for me to track them. On the other hand I wanted each student to start building
-their own public profile to show potential employers.&lt;/p&gt;
-&lt;h2&gt;Lesson 04 - Test Case Management&lt;/h2&gt;
-&lt;p&gt;This lesson started with an exercise asking students to create accounts for
-Red Hat's OpenShift cloud platform in the form of a test scenario. The scenario intentionally
-left out some details. The idea being that missing information introduces inconsistencies
-during testing and to demonstrate how the same steps were performed slightly differently.&lt;/p&gt;
-&lt;p&gt;We had some troubles explaining exactly "how did you test" because most inexperienced people
-would not remember all details about where they clicked, did they use the mouse or the
-keyboard, was the tab order correct, etc. Regardless students managed to receive different
-results and discover that some email providers were not supported.&lt;/p&gt;
-&lt;p&gt;The homework assignment was to create test plans and test cases in Nitrate at
-&lt;a href="https://nitrate-hackbg.rhcloud.com/"&gt;https://nitrate-hackbg.rhcloud.com/&lt;/a&gt;. Unfortunately the system appears to be down ATM
-and I don't have time to investigate why. This piece of infrastructure was put together
-in 2 hours and I'm surprised it lasted without issues during the entire course.&lt;/p&gt;
-&lt;h2&gt;2x Introduction to Linux&lt;/h2&gt;
-&lt;p&gt;This was a crash course in Linux fundamentals and exercise with most common commands
-and text editors in the console. Most of the students were not prepared with virtual
-machines. We've also used a cloud provider to give students remote shell but the
-provider API was failing and we had to deploy docker containers manually. Overall
-infrastructure was a big problem but we somehow managed. Another problem was with
-ssh clients from Windows who generated keys in a format that our cloud provider
-couldn't understand.&lt;/p&gt;
-&lt;p&gt;Wrt commands and exercises students did well and managed to execute most of them
-on their own. That's very good for people who've never seen a terminal in their lives
-(more or less).&lt;/p&gt;
-&lt;h2&gt;Lesson 05 - Testing Fedora 24(25) Changes&lt;/h2&gt;
-&lt;p&gt;Once again nobody was prepared with a virtual machine with Fedora and students
-were installing software as we go. Because of that we didn't manage to conduct
-the lesson properly and had to repeat it on the next session.&lt;/p&gt;
-&lt;p&gt;Rawhide being the bleeding edge of Fedora means it is full of bugs. Well I couldn't
-keep up with everyone and explain workarounds or how to install/upgrade Fedora.
-That was a major setback. It also became evident that you can't move quickly
-if you have no idea what to do and no instructions about it either.&lt;/p&gt;
-&lt;h2&gt;Lesson 05 - Again&lt;/h2&gt;
-&lt;p&gt;Once prepared with the latest and greatest from Rawhide the task was to analyze the
-proposed feature changes (on the Fedora wiki) and create test plans and design
-test cases for said changes. Then execute the tests in search for bugs. This is where
-some of the bugs above came from. The rest were found during upgrades.&lt;/p&gt;
-&lt;p&gt;This lesson was team work (4-5 students) but the results were mixed. IMO Fedora changes
-are quite hard to grasp, especially if you lack domain knowledge and broader knowledge
-about the structure and operation of a Linux distribution. I don't think most teams
-were able to clearly understand their chosen features and successfully create good
-plans/scenarios for them. On the other hand in real life software you don't necessarily
-understand the domain better and know what to do. I've been in situations where
-whole features have been defined by a single sentence and requested to be tested by QA.&lt;/p&gt;
-&lt;p&gt;One of the teams didn't manage to install Fedora (IIRC they didn't have laptops
-capable of running a VM) and were not able to conduct the exercise.&lt;/p&gt;
-&lt;p&gt;Being able to find real life bugs, some of them serious, and getting traction in Bugzilla
-is the most positive effect of this lesson. I personally wanted to have more output
-(e.g. more bugs, more cases defined, etc) but taking into account the blocking factors
-and setbacks I think this is a good initial result.&lt;/p&gt;
-&lt;h2&gt;Lesson 06 - Unit Testing and Continuous Integration&lt;/h2&gt;
-&lt;p&gt;Here we had a few examples of bad stubs and mocks which were not received very well.
-The topic is hard in itself and wasn't very well explained with practical examples.&lt;/p&gt;
-&lt;p&gt;Another negative thing is that students took a lot of time to fiddle around with
-Eclipse, they were mistyping commands in the terminal and generally not paying enough
-attention to instructions. This caused the exercises to go slowly.&lt;/p&gt;
-&lt;p&gt;We've had an exercise which asks the student to write a new test for a non-existing
-method. Then implement the method and make sure all the tests passed. You guessed it
-this is Test Driven Development.
-IIRC one of the students was having a hard time with that exercise so I popped up
-my editor on the large screen and started typing what she told me, then re-running the
-tests and asking her to show me the errors I've made and tell me how to correct them.
-The exercise was received very well and was fun to do.&lt;/p&gt;
-&lt;p&gt;Due to lack of time we had to go over TravisCI very quickly. The other bad thing about
-TravisCI is that it requires git/GitHub and the students were generally inexperienced
-with that. Both GitHub for Windows and Mac OS suck a big time IMO. What you need is the
-console. However none of the students had any practical experience with git and knew
-how to commit code and push branches to GitHub. git fundamentals however is a separate
-one or two lessons by itself which we didn't do.&lt;/p&gt;
-&lt;h2&gt;Lesson 07 - Writing JUnit tests for Apache Commons&lt;/h2&gt;
-&lt;p&gt;Excluding the problems with Eclipse and the GitHub desktop client and
-missing instructions for Windows the hardest part of this lesson was actually
-selecting a component to work on, understanding what the code does and actually
-writing meaningful tests. On top of that most students were not very proficient
-programmers and Java was completely new to them.&lt;/p&gt;
-&lt;p&gt;Despite having 3 pull requests on GitHub I consider this lesson to be a failure.&lt;/p&gt;
-&lt;h2&gt;Lesson 08 - Integration Testing with Selenium&lt;/h2&gt;
-&lt;p&gt;This lesson starts with an example of what a flaky test it. At the moment I don't
-think this lesson is the best place for that example. To make things even more difficult
-the example is in Python (because that way was the easiest for me to write it) instead
-of Java. Students had problems installing Python on Windows just to make this example work.
-They also were lacking the knowledge how to execute a script in the terminal.&lt;/p&gt;
-&lt;p&gt;One of the students proposed a better flaky example utilizing dates and times and
-executing it during various hours of the day. I have yet to code this and
-prepare environment in which it would be executed. Btw recently I've seen similar behavior
-caused by inconsistent timezone usage in Ruby which resulted in unexpected time offset
-a little after midnight :).&lt;/p&gt;
-&lt;p&gt;Once again I have to point out that students came generally unprepared for the lesson
-and haven't installed prerequisite software and programming languages. This is becoming
-a trend and needs to be split out into a preparation session, possibly with a check
-list.&lt;/p&gt;
-&lt;p&gt;On the Selenium side, starting with Selenium IDE, it was a bit unclear how to use it
-and what needs to be done. This is another negative trend, where students were missing clear
-instructions what they are expected to do. At the end we did resort to live demo
-using Selenium IDE so they can at least get some idea about it.&lt;/p&gt;
-&lt;h2&gt;Lesson 09 and 10 - Writing Selenium tests for Mozilla Add-ons website&lt;/h2&gt;
-&lt;p&gt;IMO these two lessons are the biggest disaster of the entire course. Python &amp;amp; virtualenv
-on Windows was a total no go but on Linux things weren't much easier because students
-had no idea what a virtualenv is.&lt;/p&gt;
-&lt;p&gt;Practice wise they haven't managed to read all the bugs on the Mozilla bug tracker and
-had a very hard time selecting bugs to write tests for. Not to mention that many of the
-reported bugs were administrative tasks to create or remove add-on categories. There
-weren't many functional related bugs to write tests for.&lt;/p&gt;
-&lt;p&gt;The product under test was also hard to understand and most students were seeing it for the first
-time, let alone getting to know the devel and testing environments that Mozilla provides.
-Mozilla's test suite being in Python is just another issue to make contribution harder
-because we've never actually studied Python.&lt;/p&gt;
-&lt;p&gt;Between the two lessons there were students who've missed the Selenium introduction
-lesson and were having even harder time to figure things out. I didn't have the time
-to explain and go back to the previous lesson for them.
-Maybe an attendance policy is needed for dependent lessons.&lt;/p&gt;
-&lt;p&gt;Before the course started I've talked to some guys at Mozilla's IRC channel and
-they agreed to help but at the end we didn't even engage with them. At this point
-I'm skeptical that mentoring over IRC would have worked anyway.&lt;/p&gt;
-&lt;h2&gt;Lesson 11 - Introduction to Performance Testing&lt;/h2&gt;
-&lt;p&gt;This was a more theoretical lesson with less practical examples and exercises.
-I have provided some blog posts of mine related to the topic of performance
-testing but in general they are related to software that I've used which isn't
-generally known to a less experienced audience (Celery, Twisted). These blog posts
-IMO were hard to put into perspective and didn't serve a good purpose as examples.&lt;/p&gt;
-&lt;p&gt;The practical part of the lesson was a discussion with the goal of creating a
-performance testing strategy for GitHub's infrastructure. It was me who was
-doing most of the talking because students have no experience working on such
-a large infrastructure like GitHub and didn't know what components might be
-there, how they might be organized (load balancers, fail overs, etc)
-and what needs to be tested.&lt;/p&gt;
-&lt;p&gt;There was also a more practical example to create a performance test in Java for
-one of the classes found in &lt;code&gt;commons-codec/src/main/java/org/apache/commons/codec/digest&lt;/code&gt;.
-Again the main difficulty here was working fluently with Eclipse, getting the projects to
-build/run and knowing how the software under test was supposed to work and be executed.&lt;/p&gt;
-&lt;h2&gt;Lesson 12 - How to find 1000 bugs in 30 minutes&lt;/h2&gt;
-&lt;p&gt;This was a more relaxed lesson with examples of simple types of bugs found on a
-large scale. Most examples came from my blog and experiments I've made against
-Fedora.&lt;/p&gt;
-&lt;p&gt;While amusing and fun I don't think all of the students understood me and kept
-their attention. Part of that is because Fedora tends to focus on low level
-stuff and my examples were not necessarily easy to understand.&lt;/p&gt;
-&lt;h2&gt;Feedback from the sponsor&lt;/h2&gt;
-&lt;p&gt;Experian Bulgaria was the exclusive sponsor for this course. At the end of the summer
-Rado and I met with them to discuss the results of the training. Here's what they say&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Overall technical knowledge they consider to be weak. What they need are people
-with basic knowledge in the field of object oriented programming, databases, operating
-systems and networking. These are skills candidates need in order to work for Experian.
-It must be noted that most of them were not taught at this course!&lt;/li&gt;
-&lt;li&gt;English language proficiency for all students is low on average;&lt;/li&gt;
-&lt;li&gt;User level experience with Linux was fine but students were missing deeper
-knowledge about the operating system. Once again something we didn't teach;&lt;/li&gt;
-&lt;li&gt;The programming languages favored at Experian are Java and Ruby and students
-had poor knowledge of them. They also had weak understanding of OOP principles;&lt;/li&gt;
-&lt;li&gt;According to Experian students were more ingrained with the development mindset
-and were trying their luck in the QA profession instead of genuinely being interested
-in the field. While this is generally the case I have to point out that as sponsor
-Experian did a poor job at promoting their company and the QA profession
-as a whole. What isn't known to the general public is their big in-house
-QA community which could have served as a source of inspiration for the students!&lt;/li&gt;
-&lt;li&gt;Low motivation and lack of fundamental knowledge from university are other
-traits interviewers at Experian have identified. They argued for a stronger
-acceptance process and a requirement of minimum 2 years of university
-education in computer science.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;On the topic of testing knowledge candidates did mostly OK, however
-we don't have enough information about this. Also the hiring process at
-Experian is more focused on the broader knowledge areas listed above so
-substantial improvement in the testing knowledge of candidates doesn't given
-them much head start.&lt;/p&gt;
-&lt;p&gt;While to my knowledge they didn't hire anyone few people
-received an offer but declined due to various personal reasons. I view this
-as poor performance on our side but Experian thinks otherwise and are willing
-to sponsor another round of training.&lt;/p&gt;
-&lt;h2&gt;Summary&lt;/h2&gt;
-&lt;p&gt;Here is a list of all the things that could be improved&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Take time to develop the curriculum and have it pass QA review by other
-experienced testers (in particular such that also teach students);&lt;/li&gt;
-&lt;li&gt;Make the application process harder to include people with broader IT knowledge;&lt;/li&gt;
-&lt;li&gt;Allow time to review all applicants;&lt;/li&gt;
-&lt;li&gt;Find a co-trainer and additional mentors for some of the exercises;&lt;/li&gt;
-&lt;li&gt;Minimize the number of students accepted in the course so we can handle everyone
-with more care;&lt;/li&gt;
-&lt;li&gt;Give homework assignments and examine them before each lesson;&lt;/li&gt;
-&lt;li&gt;Collect and provide performance review at the end of the course;&lt;/li&gt;
-&lt;li&gt;Minimize the technology stack and tools used;&lt;/li&gt;
-&lt;li&gt;Host a technology preparation session at the beginning paired
-with a check list of all the things that need to be done. Very likely
-make the chosen technology stack a hard requirement to avoid setbacks
-later in the schedule;&lt;/li&gt;
-&lt;li&gt;We need more fundamental lessons like practical git tutorial,
-practical Linux tutorial, databases, networking, etc.&lt;/li&gt;
-&lt;li&gt;Same goes for Java or any other programming language. Each of these technologies
-easily makes a course by itself. Possibly include technology skill assessment
-in the application form and reject candidates who don't meet the minimum level.
-This is to ensure the group is able to move at the same pace.&lt;/li&gt;
-&lt;li&gt;We need to improve the infrastructure used during the course,
-especially exercise bug tracking and test case management systems;&lt;/li&gt;
-&lt;li&gt;Students need clear instructions for every exercise - what is required from them,
-what the expected result is and what they need to be doing, etc;&lt;/li&gt;
-&lt;li&gt;Provide more examples for just about everything. Also make the examples
-easier to understand/simple with the harder examples left for further
-reading;&lt;/li&gt;
-&lt;li&gt;Provide easier projects to work on. This means applications whose domain
-is easier to understand and closer to what experiences the students might have.
-Also projects need clear instructions how to join and how to contribute with tests.&lt;/li&gt;
-&lt;li&gt;The same application/software needs to be used for manual bug finding,
-unit test writing and integration test with Selenium. This will minimize
-both context and technology switches and allow to view various testing
-activities in the context of a single software under test;&lt;/li&gt;
-&lt;li&gt;While using open source projects for the above listed purposes sounds great
-the reality is that they are hard to join and will not move according to our
-schedule. Maybe less focus on open source per-se and more focus on a particular
-application under test. Instructors can then proxy all the tests forward
-to the upstream community;&lt;/li&gt;
-&lt;li&gt;Focus more on practice and less on exotic topics like performance testing
-and large scale bug finding;&lt;/li&gt;
-&lt;li&gt;Seek more active participation from sponsors!&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;If you have suggestions please comment below, especially if you can tell me
-how to implement them in practice.&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>
+&lt;p&gt;Thanks for reading and see you around!&lt;/p&gt;</summary><category term="events"></category><category term="fedora.planet"></category><category term="QA"></category></entry></feed>

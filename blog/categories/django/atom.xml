@@ -1,5 +1,205 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2017-12-26T11:20:00+02:00</updated><entry><title>On Pytest-django and LiveServerTestCase with initial data</title><link href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/" rel="alternate"></link><updated>2017-12-26T11:20:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-26:blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/</id><summary type="html">&lt;p&gt;While working on &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; I've had the opportunity to
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-01-05T13:00:00+02:00</updated><entry><title>How to write pylint checker plugins</title><link href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/" rel="alternate"></link><updated>2018-01-05T13:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-05:blog/2018/01/05/how-to-write-pylint-checker-plugins/</id><summary type="html">&lt;p&gt;In this post I will walk you through the process of learning how to write
+additional checkers for pylint!&lt;/p&gt;
+&lt;h2&gt;Prerequisites&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Read
+   &lt;a href="https://pylint.readthedocs.io/en/latest/development_guide/contribute.html"&gt;Contributing to pylint&lt;/a&gt;
+   to get basic knowledge of how to execute the test suite and how it is structured.
+   Basically call &lt;code&gt;tox -e py36&lt;/code&gt;. Verify that all tests &lt;strong&gt;PASS&lt;/strong&gt; locally!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Read pylint's
+   &lt;a href="https://pylint.readthedocs.io/en/latest/how_tos/index.html"&gt;How To Guides&lt;/a&gt;,
+   in particular the section about writing a new checker. A plugin is usually
+   a Python module that registers a new checker.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Most of pylint checkers are AST based, meaning they operate on the
+   abstract syntax tree of the source code. You will have to familiarize
+   yourself with the AST node reference for the &lt;code&gt;astroid&lt;/code&gt; and &lt;code&gt;ast&lt;/code&gt; modules.
+   Pylint uses Astroid for parsing and augmenting the AST.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; there is compact and excellent documentation provided by the
+   &lt;em&gt;Green Tree Snakes&lt;/em&gt; project. I would recommend the
+   &lt;a href="http://greentreesnakes.readthedocs.io/en/latest/nodes.html"&gt;Meet the Nodes&lt;/a&gt;
+   chapter.&lt;/p&gt;
+&lt;p&gt;Astroid also provides exhaustive documentation and
+   &lt;a href="http://astroid.readthedocs.io/en/latest/api/astroid.nodes.html"&gt;node API reference&lt;/a&gt;.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;WARNING:&lt;/strong&gt; sometimes Astroid node class names don't match the ones from ast!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Your interactive shell weapons are &lt;code&gt;ast.dump()&lt;/code&gt;, &lt;code&gt;ast.parse()&lt;/code&gt;, &lt;code&gt;astroid.parse()&lt;/code&gt; and
+   &lt;code&gt;astroid.extract_node()&lt;/code&gt;. I use them inside an interactive Python shell to
+   figure out how a piece of source code is parsed and converted back to AST nodes!
+   You can also try this
+   &lt;a href="https://bitbucket.org/takluyver/greentreesnakes/src/default/astpp.py?fileviewer=file-view-default"&gt;ast node pretty printer&lt;/a&gt;!
+   I personally haven't used it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;How pylint processes the AST tree&lt;/h2&gt;
+&lt;p&gt;Every checker class may include special methods with names
+&lt;code&gt;visit_xxx(self, node)&lt;/code&gt; and &lt;code&gt;leave_xxx(self, node)&lt;/code&gt; where xxx is the lowercase
+name of the node class (as defined by astroid). These methods are executed
+automatically when the parser iterates over nodes of the respective type.&lt;/p&gt;
+&lt;p&gt;All of the magic happens inside such methods. They are responsible for collecting
+information about the context of specific statements or patterns that you wish to
+detect. The hard part is figuring out how to collect all the information you need
+because sometimes it can be spread across nodes of several different types (e.g.
+more complex code patterns).&lt;/p&gt;
+&lt;p&gt;There is a special decorator called &lt;code&gt;@utils.check_messages&lt;/code&gt;. You have to list
+all message ids that your &lt;code&gt;visit_&lt;/code&gt; or &lt;code&gt;leave_&lt;/code&gt; method will generate!&lt;/p&gt;
+&lt;h2&gt;How to select message codes and IDs&lt;/h2&gt;
+&lt;p&gt;One of the most unclear things for me is message codes. pylint
+&lt;a href="https://pylint.readthedocs.io/en/latest/how_tos/custom_checkers.html"&gt;docs&lt;/a&gt; say&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The message-id should be a 5-digit number, prefixed with a message category.
+There are multiple message categories, these being &lt;code&gt;C&lt;/code&gt;, &lt;code&gt;W&lt;/code&gt;, &lt;code&gt;E&lt;/code&gt;, &lt;code&gt;F&lt;/code&gt;, &lt;code&gt;R&lt;/code&gt;,
+standing for &lt;code&gt;Convention&lt;/code&gt;, &lt;code&gt;Warning&lt;/code&gt;, &lt;code&gt;Error&lt;/code&gt;, &lt;code&gt;Fatal&lt;/code&gt; and &lt;code&gt;Refactoring&lt;/code&gt;.
+The rest of the 5 digits should not conflict with existing checkers and they
+should be consistent across the checker. For instance, the first two digits should
+not be different across the checker.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I'm usually having troubles with the numbering part so you will have to get creative
+or look at existing checker codes.&lt;/p&gt;
+&lt;h2&gt;Practical example&lt;/h2&gt;
+&lt;p&gt;In &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; there's legacy code that looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;add_cases&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_ids&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;case_ids&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;trs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TestRun&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_id__in&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;pre_process_ids&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;run_ids&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;tcs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TestCase&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case_id__in&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;pre_process_ids&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case_ids&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tr&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;trs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iterator&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tc&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;tcs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iterator&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+            &lt;span class="n"&gt;tr&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_case_run&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;case&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tc&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Notice the dangling &lt;code&gt;return&lt;/code&gt; statement at the end! It is useless because when missing
+the default return value of this function will still be &lt;code&gt;None&lt;/code&gt;. So I've decided to
+create a plugin for that.&lt;/p&gt;
+&lt;p&gt;Armed with the knowledge above I first try the ast parser in the console:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Python&lt;/span&gt; &lt;span class="mf"&gt;3.6&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;default&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Oct&lt;/span&gt;  &lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="mi"&gt;2017&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;50&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;GCC&lt;/span&gt; &lt;span class="mf"&gt;4.8&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="mi"&gt;20150623&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Red&lt;/span&gt; &lt;span class="n"&gt;Hat&lt;/span&gt; &lt;span class="mf"&gt;4.8&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;linux&lt;/span&gt;
+&lt;span class="n"&gt;Type&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;help&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;copyright&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;credits&amp;quot;&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;license&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;more&lt;/span&gt; &lt;span class="n"&gt;information&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;ast&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;astroid&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ast&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dump&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ast&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;def func():&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;    return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="s"&gt;&amp;quot;Module(body=[FunctionDef(name=&amp;#39;func&amp;#39;, args=arguments(args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Return(value=None)], decorator_list=[], returns=None)])&amp;quot;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; 
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; 
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;def func():&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;    return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Module&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b04621b38&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;FunctionDef&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;func&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b046219e8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;FunctionDef&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;func&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b046219e8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Return&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f5b04621c18&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As you can see there is a &lt;code&gt;FunctionDef&lt;/code&gt; node representing the function and it has
+a &lt;code&gt;body&lt;/code&gt; attribute which is a list of all statements inside the function. The last
+element is &lt;code&gt;.body[-1]&lt;/code&gt; and it is of type &lt;code&gt;Return&lt;/code&gt;! The &lt;code&gt;Return&lt;/code&gt; node also has an
+attribute called &lt;code&gt;.value&lt;/code&gt; which is the return value! The complete code will look
+like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;uselessreturn.py&lt;/span&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;astroid&lt;/span&gt;
+
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;checkers&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;interfaces&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;pylint.checkers&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;utils&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;UselessReturnChecker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;checkers&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BaseChecker&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;__implements__&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;interfaces&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;IAstroidChecker&lt;/span&gt;
+
+    &lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;
+
+    &lt;span class="n"&gt;msgs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;#39;R2119&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Useless return at end of function or method&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;Emitted when a bare return statement is found at the end of &amp;#39;&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;function or method definition&amp;#39;&lt;/span&gt;
+                  &lt;span class="p"&gt;),&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+
+    &lt;span class="nd"&gt;@utils.check_messages&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;visit_functiondef&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;            Checks for presence of return statement at the end of a function&lt;/span&gt;
+&lt;span class="sd"&gt;            &amp;quot;return&amp;quot; or &amp;quot;return None&amp;quot; are useless because None is the default&lt;/span&gt;
+&lt;span class="sd"&gt;            return type if they are missing&lt;/span&gt;
+&lt;span class="sd"&gt;        &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="c"&gt;# if the function has empty body then return&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+
+        &lt;span class="n"&gt;last&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;isinstance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Return&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="c"&gt;# e.g. &amp;quot;return&amp;quot;&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_message&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="c"&gt;# e.g. &amp;quot;return None&amp;quot;&lt;/span&gt;
+            &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="nb"&gt;isinstance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;astroid&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Const&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_message&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;useless-return&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;node&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;register&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;required method to auto register this checker&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;register_checker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;UselessReturnChecker&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linter&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here's how to execute the new plugin:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ PYTHONPATH&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;./myplugins pylint --load-plugins&lt;span class="o"&gt;=&lt;/span&gt;uselessreturn tcms/xmlrpc/api/testrun.py &lt;span class="p"&gt;|&lt;/span&gt; grep useless-return
+W: 40, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:117, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:242, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+W:495, 0: Useless &lt;span class="k"&gt;return&lt;/span&gt; at end of &lt;span class="k"&gt;function&lt;/span&gt; or method &lt;span class="o"&gt;(&lt;/span&gt;useless-return&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;NOTES:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;If you contribute this code upstream and pylint releases it you will get a traceback:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;pylint.exceptions.InvalidMessageError: Message symbol &amp;#39;useless-return&amp;#39; is already defined
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;this means your checker has been released in the latest version and you can drop the custom
+plugin!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;This is example is fairly simple because the AST tree provides the information we
+  need in a very handy way. Take a look at some of
+  &lt;a href="https://github.com/PyCQA/pylint/pulls/atodorov"&gt;my other checkers&lt;/a&gt; to get a feeling
+  of what a more complex checker looks like!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Write and run tests for your new checkers, especially if contributing upstream.
+  Have in mind that the new checker will be executed against existing code and in
+  combination with other checkers which could lead to some interesting results.
+  I will leave the testing to yourself, all is written in the documentation.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This particular example I've contributed as
+&lt;a href="https://github.com/PyCQA/pylint/pull/1821"&gt;PR #1821&lt;/a&gt; which happened to contradict
+an existing checker. The update, raising warnings only when there's a single return
+statement in the function body, is &lt;a href="https://github.com/PyCQA/pylint/pull/1823"&gt;PR #1823&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Workshop around the corner&lt;/h2&gt;
+&lt;p&gt;I will be working together with &lt;a href="http://hacksoft.io"&gt;HackSoft&lt;/a&gt; on an in-house
+workshop/training for writing pylint plugins. I'm also looking at reviving
+&lt;a href="https://github.com/landscapeio/pylint-django/"&gt;pylint-django&lt;/a&gt; so we can
+write more plugins specifically for Django based projects.&lt;/p&gt;
+&lt;p&gt;If you are interested in workshop and training on the topic let me know!&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Python"></category><category term="Django"></category></entry><entry><title>On Pytest-django and LiveServerTestCase with initial data</title><link href="http://atodorov.org/blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/" rel="alternate"></link><updated>2017-12-26T11:20:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-12-26:blog/2017/12/26/on-pytest-django-and-liveservertestcase-with-initial-data/</id><summary type="html">&lt;p&gt;While working on &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; I've had the opportunity to
 learn in-depth about how the standard test case classes in Django work. This
 is a quick post about creating initial data and order of execution!&lt;/p&gt;
 &lt;h2&gt;Initial test data for TransactionTestCase or LiveServerTestCase&lt;/h2&gt;
@@ -1200,124 +1400,4 @@ if profile.is_subscribed():
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Voila!&lt;/p&gt;</summary><category term="Django"></category></entry><entry><title>Skip or Render Specific Blocks from Jinja2 Templates</title><link href="http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/" rel="alternate"></link><updated>2014-02-21T00:08:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-02-21:blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/</id><summary type="html">&lt;p&gt;I wasn't able to find detailed information on how to skip rendering
-or only render specific blocks from Jinja2 templates so here's my solution.
-Hopefully you find it useful too.&lt;/p&gt;
-&lt;p&gt;With below template I want to be able to render &lt;strong&gt;only&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt; block
-as a single line and then render the rest of the template &lt;strong&gt;excluding&lt;/strong&gt; &lt;em&gt;kernel_options&lt;/em&gt;.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;base.j2&lt;/span&gt;&lt;pre&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;span class="x"&gt;console=tty0&lt;/span&gt;
-&lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;block&lt;/span&gt; &lt;span class="nv"&gt;debug&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;span class="x"&gt;        debug=1&lt;/span&gt;
-&lt;span class="x"&gt;    &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endblock&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endblock&lt;/span&gt; &lt;span class="nv"&gt;kernel_options&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-
-&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;OS_MAJOR&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="m"&gt;5&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;span class="x"&gt;key --skip&lt;/span&gt;
-&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endif&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-
-&lt;span class="x"&gt;%packages&lt;/span&gt;
-&lt;span class="x"&gt;@base&lt;/span&gt;
-&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;OS_MAJOR&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="m"&gt;5&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;span class="x"&gt;%end&lt;/span&gt;
-&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endif&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;To render a particular block you have to use the low level Jinja API
-&lt;em&gt;&lt;a href="http://jinja.pocoo.org/docs/api/#jinja2.Template.blocks"&gt;template.blocks&lt;/a&gt;&lt;/em&gt;.
-This will return a dict of block rendering functions which need a &lt;em&gt;Context&lt;/em&gt; to work with.&lt;/p&gt;
-&lt;p&gt;The second part is trickier. To remove a block we have to create an extension
-which will filter it out. The provided &lt;em&gt;SkipBlockExtension&lt;/em&gt; class does
-exactly this.&lt;/p&gt;
-&lt;p&gt;Last but not least - if you'd like to use both together you have to disable
-caching in the &lt;em&gt;Environment&lt;/em&gt; (so you get a fresh template every time), render
-your blocks first, configure &lt;em&gt;env.skip_blocks&lt;/em&gt; and render the entire template
-without the specified blocks.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;jinja2-render&lt;/span&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
-
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
-&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;jinja2.ext&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Extension&lt;/span&gt;
-&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;jinja2&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Environment&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;FileSystemLoader&lt;/span&gt;
-
-
-&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Extension&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;extend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;[])&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;filter_stream&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-        &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-        &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
-
-        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;token&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block_begin&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;current&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-                    &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-                    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stream&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;look&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;environment&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-                        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;block_level&lt;/span&gt;
-
-            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;endblock&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
-                &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
-
-            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-                &lt;span class="k"&gt;yield&lt;/span&gt; &lt;span class="n"&gt;token&lt;/span&gt;
-
-            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;block_end&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;in_endblock&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-                    &lt;span class="n"&gt;in_endblock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
-                    &lt;span class="n"&gt;block_level&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-
-                    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;block_level&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-                        &lt;span class="n"&gt;skip_level&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-
-
-&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="n"&gt;context&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;OS_MAJOR&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;ARCH&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;x86_64&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
-
-    &lt;span class="n"&gt;abs_path&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;abspath&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
-    &lt;span class="n"&gt;dir_name&lt;/span&gt;  &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dirname&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;abs_path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="n"&gt;base_name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;basename&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;abs_path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-
-    &lt;span class="n"&gt;env&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Environment&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
-                &lt;span class="n"&gt;loader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;FileSystemLoader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dir_name&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
-                &lt;span class="n"&gt;extensions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;SkipBlockExtension&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
-                &lt;span class="n"&gt;cache_size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c"&gt;# disable cache b/c we do 2 get_template()&lt;/span&gt;
-            &lt;span class="p"&gt;)&lt;/span&gt;
-
-    &lt;span class="c"&gt;# first render only the block we want&lt;/span&gt;
-    &lt;span class="n"&gt;template&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_template&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;base_name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="n"&gt;lines&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
-    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;blocks&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;kernel_options&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;](&lt;/span&gt;&lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;new_context&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="p"&gt;)):&lt;/span&gt;
-        &lt;span class="n"&gt;lines&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strip&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
-    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Boot Args:&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lines&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;---------------------------&amp;quot;&lt;/span&gt;
-
-    &lt;span class="c"&gt;# now instruct SkipBlockExtension which blocks we don&amp;#39;t want&lt;/span&gt;
-    &lt;span class="c"&gt;# and get a new instance of the template with these blocks removed&lt;/span&gt;
-    &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;skip_blocks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;kernel_options&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="n"&gt;template&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;env&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_template&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;base_name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;template&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;---------------------------&amp;quot;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;The above code results in the following output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;jinja2&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;j2&lt;/span&gt; 
-&lt;span class="n"&gt;Boot&lt;/span&gt; &lt;span class="nl"&gt;Args&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;console&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;tty0&lt;/span&gt; &lt;span class="n"&gt;debug&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; 
-&lt;span class="o"&gt;---------------------------&lt;/span&gt;
-
-&lt;span class="n"&gt;key&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;skip&lt;/span&gt;
-
-&lt;span class="nf"&gt;%packages&lt;/span&gt;
-&lt;span class="err"&gt;@&lt;/span&gt;&lt;span class="n"&gt;base&lt;/span&gt;
-&lt;span class="o"&gt;---------------------------&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Teaser: this is part of my effort to replace SNAKE with a client side
-kickstart template engine for
-&lt;a href="/blog/2013/11/19/open-source-quality-assurance-infrastructure-for-fedora-qa/"&gt;Beaker&lt;/a&gt;
-so stay tuned!&lt;/p&gt;</summary><category term="Python"></category><category term="Django"></category><category term="Fedora"></category></entry></feed>
+&lt;p&gt;Voila!&lt;/p&gt;</summary><category term="Django"></category></entry></feed>
