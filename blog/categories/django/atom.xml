@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-01-05T13:00:00+02:00</updated><entry><title>How to write pylint checker plugins</title><link href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/" rel="alternate"></link><updated>2018-01-05T13:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-05:blog/2018/01/05/how-to-write-pylint-checker-plugins/</id><summary type="html">&lt;p&gt;In this post I will walk you through the process of learning how to write
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/django/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-01-22T17:00:00+02:00</updated><entry><title>Introducing pylint-django 0.8.0</title><link href="http://atodorov.org/blog/2018/01/22/introducing-pylint-django-080/" rel="alternate"></link><updated>2018-01-22T17:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-22:blog/2018/01/22/introducing-pylint-django-080/</id><summary type="html">&lt;p&gt;Since my previous post was about
+&lt;a href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/"&gt;writing pylint plugins&lt;/a&gt;
+I figured I'd let you know that I've released
+&lt;a href="https://github.com/landscapeio/pylint-django"&gt;pylint-django&lt;/a&gt; version 0.8.0
+over the weekend. This release merges all pull requests which were
+pending till now so make sure to read the change log.&lt;/p&gt;
+&lt;p&gt;Starting with this release Colin Howe and myself are the new
+maintainers of this package. My immediate goal is to triage all of the
+open issue and figure out if they still reproduce. If yes try to
+come up with fixes for them or at least get the conversation going again.&lt;/p&gt;
+&lt;p&gt;My next goal is to integrate pylint-django with
+&lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; and start resolving all the 4000+
+errors and warnings that it produces.&lt;/p&gt;
+&lt;p&gt;You are welcome to contribute of course. I'm also interested in hosting a
+workshop on the topic of pylint plugins.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Python"></category><category term="Django"></category></entry><entry><title>How to write pylint checker plugins</title><link href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/" rel="alternate"></link><updated>2018-01-05T13:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-05:blog/2018/01/05/how-to-write-pylint-checker-plugins/</id><summary type="html">&lt;p&gt;In this post I will walk you through the process of learning how to write
 additional checkers for pylint!&lt;/p&gt;
 &lt;h2&gt;Prerequisites&lt;/h2&gt;
 &lt;ol&gt;
@@ -1320,84 +1335,4 @@ Django which I did for a small site recently.&lt;/p&gt;
 
 
 &lt;p&gt;PINs are only numeric and are stored in the CACHE instead of the database which
-I think is simpler and less expensive in terms of I/O operations.&lt;/p&gt;</summary><category term="Django"></category><category term="cloud"></category><category term="Twilio"></category></entry><entry><title>Mocking Django AUTH_PROFILE_MODULE without a Database</title><link href="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/" rel="alternate"></link><updated>2014-02-27T16:18:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2014-02-27:blog/2014/02/27/mocking-django-auth-profile-module-without-database/</id><summary type="html">&lt;p&gt;&lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt; is a Django based service which uses a profile
-model to provide site-specific, per-user information.
-In the process of &lt;a href="https://github.com/difio/difio"&gt;open sourcing Difio&lt;/a&gt; its core
-functionality becomes available as a Django app. The trouble is that the 
-&lt;code&gt;UserProfile&lt;/code&gt; model contains site-specific and proprietary data which doesn't
-make sense to the public nor I want to release it.&lt;/p&gt;
-&lt;p&gt;The solution is to have a &lt;code&gt;MockProfile&lt;/code&gt; model and work with
-that by default while &lt;a href="http://www.dif.io"&gt;www.dif.io&lt;/a&gt; and other implementations
-override it as needed.
-&lt;strong&gt;How do you do that without creating useless table and records in the database
-but still have the profiles created automatically for every user?&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;It turns out the solution is quite simple. See my comments inside the code below.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;AbstractMockProfile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Model&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;        Any AUTH_PROFILE_MODULE model should inherit this&lt;/span&gt;
-&lt;span class="sd"&gt;        and override the default methods.&lt;/span&gt;
-
-&lt;span class="sd"&gt;        This model provides the FK to User!&lt;/span&gt;
-&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-    &lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ForeignKey&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;User&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unique&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;is_subscribed&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Is this user subscribed for our newsletter? &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
-
-    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Meta&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-        &lt;span class="c"&gt;# no DB table created b/c model is abstract&lt;/span&gt;
-        &lt;span class="n"&gt;abstract&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
-
-&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MockProfileManager&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Manager&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;        This manager creates MockProfile&amp;#39;s on the fly without&lt;/span&gt;
-&lt;span class="sd"&gt;        touching the database. It is needed by User.get_profile()&lt;/span&gt;
-&lt;span class="sd"&gt;        b/c we can&amp;#39;t have an abstract base class as AUTH_PROFILE_MODULE.&lt;/span&gt;
-&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;using&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; It doesn&amp;#39;t matter which database we use! &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;            User.get_profile() calls .using(...).get(user_id__exact=X)&lt;/span&gt;
-&lt;span class="sd"&gt;            so we instrument it here to return a MockProfile() with&lt;/span&gt;
-&lt;span class="sd"&gt;            user_id=X parameter. Anything else may break!!!&lt;/span&gt;
-&lt;span class="sd"&gt;        &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-        &lt;span class="n"&gt;params&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
-        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;p&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keys&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-            &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-
-        &lt;span class="c"&gt;# this creates an object in memory. To save it to DB&lt;/span&gt;
-        &lt;span class="c"&gt;# call obj.save() which we DON&amp;#39;T do anyway!&lt;/span&gt;
-        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;MockProfile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-
-
-&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MockProfile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;AbstractMockProfile&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-&lt;span class="sd"&gt;        In-memory (fake) profile class used by default for&lt;/span&gt;
-&lt;span class="sd"&gt;        the AUTH_PROFILE_MODULE setting.&lt;/span&gt;
-&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-    &lt;span class="n"&gt;objects&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;MockProfileManager&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Meta&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-        &lt;span class="c"&gt;# DB table is NOT created automatically&lt;/span&gt;
-        &lt;span class="c"&gt;# when managed = False&lt;/span&gt;
-        &lt;span class="n"&gt;managed&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;In Difio core the user profile is always used like this&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;profile = request.user.get_profile()
-if profile.is_subscribed():
-    pass
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;and by default&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;AUTH_PROFILE_MODULE = &amp;quot;difio.MockProfile&amp;quot;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Voila!&lt;/p&gt;</summary><category term="Django"></category></entry></feed>
+I think is simpler and less expensive in terms of I/O operations.&lt;/p&gt;</summary><category term="Django"></category><category term="cloud"></category><category term="Twilio"></category></entry></feed>
