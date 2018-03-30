@@ -75,7 +75,7 @@ Dates
 -----
 
 * April, Sofia, Bulgaria for SkyScanner - TBC
-* 19-20 May 2018, Tirana, Albania for [OSCAL'18](https://oscal.openlabs.cc/) - TBA
+* 19-20 May 2018, Tirana, Albania for [OSCAL'18](https://oscal.openlabs.cc/) - confirmed
 * 26-27 May 2018, Heidelberg, Germany for
   [DjangoCon Europe](https://2018.djangocon.eu/news/talk-announcement/) - confirmed
 * 3rd June 2018, Prague, Czech Republic for [PyConCZ](https://cz.pycon.org/2018/) - confirmed
