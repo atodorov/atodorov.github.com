@@ -1,5 +1,274 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-01-22T17:00:00+02:00</updated><entry><title>Introducing pylint-django 0.8.0</title><link href="http://atodorov.org/blog/2018/01/22/introducing-pylint-django-080/" rel="alternate"></link><updated>2018-01-22T17:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-22:blog/2018/01/22/introducing-pylint-django-080/</id><summary type="html">&lt;p&gt;Since my previous post was about
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/fedoraplanet/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-07-06T13:20:00+03:00</updated><entry><title>Upstream rebuilds with Jenkins Job Builder</title><link href="http://atodorov.org/blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/" rel="alternate"></link><updated>2018-07-06T13:20:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-07-06:blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/</id><summary type="html">&lt;p&gt;I have been working on &lt;a href="http://weldr.io/"&gt;Weldr&lt;/a&gt; for some time now.
+It is a multi-component software with several layers built on top of
+each other as seen on the image below.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Weldr components" src="/images/welder_upstream.png" /&gt;&lt;/p&gt;
+&lt;p&gt;One of the risks that we face is introducing changes in
+downstream components which are going to break something up the stack!
+In this post I am going to show you how I have configured
+Jenkins to trigger dependent rebuilds and report all of the statuses
+back to the original GitHub PR. All of the code below is Jenkins Job Builder
+yaml.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;bdcs&lt;/code&gt; is the first layer of our software stack. It provides command line
+utilities. &lt;code&gt;codec-rpm&lt;/code&gt; is a library component that facilitates working
+with RPM packages (in Haskell). &lt;code&gt;bdcs&lt;/code&gt; links to &lt;code&gt;codec-rpm&lt;/code&gt; when it is compiled,
+&lt;code&gt;bdcs&lt;/code&gt; uses some functions and data types from &lt;code&gt;codec-rpm&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;When a pull request is opened against &lt;code&gt;codec-rpm&lt;/code&gt; and testing completes successfully
+I want to reuse that particular version of the &lt;code&gt;codec-rpm&lt;/code&gt; library and
+rebuild/test &lt;code&gt;bdcs&lt;/code&gt; with that.&lt;/p&gt;
+&lt;h2&gt;YAML configuration&lt;/h2&gt;
+&lt;p&gt;All jobs have the following structure: -trigger -&amp;gt; -provision -&amp;gt; -runtest -&amp;gt; -teardown.
+This means that Jenkins will start executing a new job when it gets triggered by
+an event in GitHub (commit to master branch or new pull request), then it will
+provision a slave VM in OpenStack, execute the test suite on the slave and destroy
+all of the resources at the end. This is repeated twice: for master branch and for
+pull requests! Here's how the -runtest jobs look:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;job-template&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-provision&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;node&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;master&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;string&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;PROVIDER&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;scm&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+        &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;git&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;https://github.com/weldr/{repo_name}.git&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;refspec&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{git_refspec}}&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;branches&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+              &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{git_branch}}&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;builders&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;shell&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+            &lt;span class="no"&gt;#!/bin/bash -ex&lt;/span&gt;
+            &lt;span class="no"&gt;# do the openstack provisioning here&lt;/span&gt;
+        &lt;span class="c1"&gt;# NB: runtest_job is passed to us via the -trigger job&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;trigger-builds&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;${{runtest_job}}&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;block&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;current-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;condition&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;SUCCESS&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;fail-on-missing&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+
+
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;job-template&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-master-runtest&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;node&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cinch-slave&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;project-type&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;freestyle&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;description&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Build&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;master&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;branch&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;of&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;{name}!&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;scm&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+        &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;git&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;https://github.com/weldr/{repo_name}.git&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;branches&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+                &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;master&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;builders&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;conditional-step&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;condition-kind&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;regex-match&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;regex&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;^.+$&amp;quot;&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;label&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;${{UPSTREAM_BUILD}}&amp;#39;&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;on-evaluation-failure&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;dont-run&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;steps&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;copyartifact&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+                &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{UPSTREAM_BUILD}}&lt;/span&gt;
+                &lt;span class="l-Scalar-Plain"&gt;which-build&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;specific-build&lt;/span&gt;
+                &lt;span class="l-Scalar-Plain"&gt;build-number&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{UPSTREAM_BUILD_NUMBER}}&lt;/span&gt;
+                &lt;span class="l-Scalar-Plain"&gt;filter&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{UPSTREAM_ARTIFACT}}&lt;/span&gt;
+                &lt;span class="l-Scalar-Plain"&gt;flatten&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;shell&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+            &lt;span class="no"&gt;#!/bin/bash -ex&lt;/span&gt;
+            &lt;span class="no"&gt;make ci&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;publishers&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;trigger-parameterized-builds&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-teardown&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;current-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+
+
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;job-template&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-PR-runtest&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;node&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;cinch-slave&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;description&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Build&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;PRs&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;for&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;{name}!&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;scm&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+        &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;git&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;https://github.com/weldr/{repo_name}.git&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;refspec&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;+refs/pull/*:refs/remotes/origin/pr/*&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;branches&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+                &lt;span class="c1"&gt;# builds the commit hash instead of a branch&lt;/span&gt;
+                &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${{ghprbActualCommit}}&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;builders&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;shell&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+            &lt;span class="no"&gt;#!/bin/bash -ex&lt;/span&gt;
+            &lt;span class="no"&gt;make ci&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;conditional-step&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;condition-kind&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;current-status&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;condition-worst&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;SUCCESS&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;condition-best&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;SUCCESS&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;on-evaluation-failure&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;dont-run&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;steps&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;shell&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+                &lt;span class="no"&gt;#!/bin/bash -ex&lt;/span&gt;
+                &lt;span class="no"&gt;make after_success&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;publishers&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;archive&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;artifacts&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{artifacts_path}&amp;#39;&lt;/span&gt;
+          &lt;span class="l-Scalar-Plain"&gt;allow-empty&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{artifacts_empty}&amp;#39;&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;conditional-publisher&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;condition-kind&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{execute_dependent_job}&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;on-evaluation-failure&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;dont-run&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;action&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+              &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;trigger-parameterized-builds&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+                &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{dependent_job}&amp;#39;&lt;/span&gt;
+                  &lt;span class="l-Scalar-Plain"&gt;current-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+                  &lt;span class="l-Scalar-Plain"&gt;predefined-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+                    &lt;span class="no"&gt;UPSTREAM_ARTIFACT={artifacts_path}&lt;/span&gt;
+                    &lt;span class="no"&gt;UPSTREAM_BUILD=${{JOB_NAME}}&lt;/span&gt;
+                    &lt;span class="no"&gt;UPSTREAM_BUILD_NUMBER=${{build_number}}&lt;/span&gt;
+                  &lt;span class="l-Scalar-Plain"&gt;condition&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;SUCCESS&amp;#39;&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;trigger-parameterized-builds&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-teardown&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;current-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+
+
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;job-group&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-tests&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;jobs&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-provision&amp;#39;&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-teardown&amp;#39;&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-master-trigger&amp;#39;&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-master-runtest&amp;#39;&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-PR-trigger&amp;#39;&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-PR-runtest&amp;#39;&lt;/span&gt;
+
+
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;job&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;codec-rpm-rebuild-bdcs&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;node&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;master&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;project-type&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;freestyle&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;description&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Rebuild&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;bdcs&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;after&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;codec-rpm&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;PR!&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;scm&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+        &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;git&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;https://github.com/weldr/codec-rpm.git&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;refspec&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;+refs/pull/*:refs/remotes/origin/pr/*&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;branches&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+                &lt;span class="c1"&gt;# builds the commit hash instead of a branch&lt;/span&gt;
+                &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;${ghprbActualCommit}&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;builders&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;trigger-builds&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+          &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;bdcs-master-trigger&amp;#39;&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;block&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;true&lt;/span&gt;
+            &lt;span class="l-Scalar-Plain"&gt;predefined-parameters&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;|&lt;/span&gt;
+                &lt;span class="no"&gt;UPSTREAM_ARTIFACT=${UPSTREAM_ARTIFACT}&lt;/span&gt;
+                &lt;span class="no"&gt;UPSTREAM_BUILD=${UPSTREAM_BUILD}&lt;/span&gt;
+                &lt;span class="no"&gt;UPSTREAM_BUILD_NUMBER=${UPSTREAM_BUILD_NUMBER}&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;publishers&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;github-notifier&lt;/span&gt;
+
+
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;project&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;codec-rpm&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;dependent_job&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-rebuild-bdcs&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;execute_dependent_job&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;always&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;artifacts_path&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;dist/{name}-latest.tar.gz&amp;#39;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;artifacts_empty&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;false&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;jobs&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;{name}-tests&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Publishing artifacts&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;make after_success&lt;/code&gt; is responsible for creating a tarball if &lt;code&gt;codec-rpm&lt;/code&gt; test suite
+passed. This tarball gets uploaded as artifact into Jenkins and we can make use of it later!&lt;/p&gt;
+&lt;p&gt;Inside -master-runtest I have a &lt;code&gt;conditional-step&lt;/code&gt; inside the &lt;code&gt;builders&lt;/code&gt; section which
+will copy the artifacts from the previous build if they are present. Notice that I copy
+artifacts for a particular job number, which is the job for codec-rpm PR.&lt;/p&gt;
+&lt;p&gt;Making use of local artifacts is handled inside bdcs' &lt;code&gt;make ci&lt;/code&gt; because it is
+per-project specific and because I'd like to reuse my YAML templates.&lt;/p&gt;
+&lt;h2&gt;Reporting statuses to GitHub&lt;/h2&gt;
+&lt;p&gt;For &lt;code&gt;github-notifier&lt;/code&gt; to be able to report statuses back to the pull request
+the job needs to be configured with the git repository this pull request came from.
+This is done by specifying the same &lt;code&gt;scm&lt;/code&gt; section for all jobs that are related and
+&lt;code&gt;current-parameters: true&lt;/code&gt; to pass the revision information to the other jobs.&lt;/p&gt;
+&lt;p&gt;This also means that if I want to report status from &lt;code&gt;codec-rpm-rebuild-bdcs&lt;/code&gt; then
+it needs to be configured for the &lt;code&gt;codec-rpm&lt;/code&gt; repository (see yaml) but somehow
+it should trigger jobs for another repository!&lt;/p&gt;
+&lt;p&gt;When jobs are started via &lt;code&gt;trigger-parameterized-builds&lt;/code&gt; their statuses are reported
+separately to GitHub. When they are started via &lt;code&gt;trigger-builds&lt;/code&gt; there should be only
+one status reported.&lt;/p&gt;
+&lt;h2&gt;Trigger chain for dependency rebuilds&lt;/h2&gt;
+&lt;p&gt;With all of the above info we can now look at the &lt;code&gt;codec-rpm-rebuild-bdcs&lt;/code&gt; job.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;It is configured for the codec-rpm repository so it will report its status to the PR&lt;/li&gt;
+&lt;li&gt;It is conditionally started after &lt;code&gt;codec-rpm-PR-runtest&lt;/code&gt; finishes successfully&lt;/li&gt;
+&lt;li&gt;It triggers &lt;code&gt;bdcs-master-trigger&lt;/code&gt; which in turn will rebuild &amp;amp; retest the bdcs component.
+  Additional parameters specify whether we're going to use locally built artifacts or
+  attempt to download then from Hackage&lt;/li&gt;
+&lt;li&gt;It uses &lt;code&gt;block: true&lt;/code&gt; so that the status of &lt;code&gt;codec-rpm-rebuild-bdcs&lt;/code&gt; is dependent
+  on the status of &lt;code&gt;bdcs-master-runtest&lt;/code&gt; (everything in the job chain uses &lt;code&gt;block: true&lt;/code&gt; because of this)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;How this looks like in practice&lt;/h2&gt;
+&lt;p&gt;I have opened &lt;a href="https://github.com/weldr/codec-rpm/pull/39"&gt;codec-rpm #39&lt;/a&gt;
+to validate my configuration. The chain of jobs that gets executed in Jenkins is:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gd"&gt;--- console.log for bdcs-master-runtest ---&lt;/span&gt;
+Started by upstream project &amp;quot;bdcs-jslave-1-provision&amp;quot; build number 267
+originally caused by:
+ Started by upstream project &amp;quot;bdcs-master-trigger&amp;quot; build number 133
+ originally caused by:
+  Started by upstream project &amp;quot;codec-rpm-rebuild-bdcs&amp;quot; build number 25
+  originally caused by:
+   Started by upstream project &amp;quot;codec-rpm-PR-runtest&amp;quot; build number 77
+   originally caused by:
+    Started by upstream project &amp;quot;codec-rpm-jslave-1-provision&amp;quot; build number 178
+    originally caused by:
+     Started by upstream project &amp;quot;codec-rpm-PR-trigger&amp;quot; build number 118
+     originally caused by:
+      GitHub pull request #39 of commit b00c923065e367afd5b7a7cc068b049bb1ed25e1, no merge conflicts.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Statuses are reported on GitHub as follows:&lt;/p&gt;
+&lt;p&gt;&lt;img alt="example of PR statuses" src="/images/codec-rpm-pr-39.png" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;default&lt;/code&gt; is coming from the provisioning step and I think this is some sort of a bug
+or misconfiguration of the provisioning job. We don't really care about this.&lt;/p&gt;
+&lt;p&gt;On the picture you can see that &lt;code&gt;codec-rpm-PR-runtest&lt;/code&gt; was successful but
+&lt;code&gt;codec-rpm-rebuild-bdcs&lt;/code&gt; was not. The actual error when compiling bdcs is:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;src&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;BDCS&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;Import&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;RPM&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nl"&gt;hs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;110&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="nl"&gt;error&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;Couldn&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt; &lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="n"&gt;Entry&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="n"&gt;C8&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ByteString&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+      &lt;span class="n"&gt;Expected&lt;/span&gt; &lt;span class="nl"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;conduit&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;1.2.13.1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Conduit&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Internal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Conduit&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ConduitM&lt;/span&gt;
+                       &lt;span class="n"&gt;C8&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ByteString&lt;/span&gt;
+                       &lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Void&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Void&lt;/span&gt;
+                       &lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ContentStore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;CsMonad&lt;/span&gt;
+                       &lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="n"&gt;T&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Text&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Maybe&lt;/span&gt; &lt;span class="n"&gt;ObjectDigest&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="n"&gt;Actual&lt;/span&gt; &lt;span class="nl"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;conduit&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;1.2.13.1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Conduit&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Internal&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Conduit&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ConduitM&lt;/span&gt;
+                       &lt;span class="n"&gt;Entry&lt;/span&gt;
+                       &lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Void&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Void&lt;/span&gt;
+                       &lt;span class="n"&gt;Data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ContentStore&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;CsMonad&lt;/span&gt;
+                       &lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="n"&gt;T&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Text&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Maybe&lt;/span&gt; &lt;span class="n"&gt;ObjectDigest&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+    &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;In&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;second&lt;/span&gt; &lt;span class="n"&gt;argument&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="p"&gt;(.&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;namely&lt;/span&gt;
+        &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="n"&gt;getZipConduit&lt;/span&gt;
+           &lt;span class="p"&gt;((,)&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;filenames&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;*&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;digests&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+      &lt;span class="n"&gt;In&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;second&lt;/span&gt; &lt;span class="n"&gt;argument&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;namely&lt;/span&gt;
+        &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="n"&gt;src&lt;/span&gt;
+           &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+             &lt;span class="n"&gt;getZipConduit&lt;/span&gt;
+               &lt;span class="p"&gt;((,)&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;filenames&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;*&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;digests&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+      &lt;span class="n"&gt;In&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;second&lt;/span&gt; &lt;span class="n"&gt;argument&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;namely&lt;/span&gt;
+        &lt;span class="err"&gt;`&lt;/span&gt;&lt;span class="n"&gt;runConduit&lt;/span&gt;
+           &lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;src&lt;/span&gt;
+               &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+                 &lt;span class="n"&gt;getZipConduit&lt;/span&gt;
+                   &lt;span class="p"&gt;((,)&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;filenames&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;*&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;digests&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;
+    &lt;span class="o"&gt;|&lt;/span&gt;
+&lt;span class="mi"&gt;110&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;                     &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;getZipConduit&lt;/span&gt; &lt;span class="p"&gt;((,)&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ZipConduit&lt;/span&gt; &lt;span class="n"&gt;filenames&lt;/span&gt;
+    &lt;span class="o"&gt;|&lt;/span&gt;                        &lt;span class="o"&gt;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&lt;/span&gt;&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;That is because PR #39 changes the return type of &lt;code&gt;Codec.RPM.Conduit::payloadContentsC&lt;/code&gt;
+from &lt;code&gt;Entry&lt;/code&gt; to &lt;code&gt;C8.ByteString&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Thanks for reading and happy testing!&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;social image CC by https://pxhere.com/en/photo/226978&lt;/em&gt;&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category></entry><entry><title>Introducing pylint-django 0.8.0</title><link href="http://atodorov.org/blog/2018/01/22/introducing-pylint-django-080/" rel="alternate"></link><updated>2018-01-22T17:00:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-01-22:blog/2018/01/22/introducing-pylint-django-080/</id><summary type="html">&lt;p&gt;Since my previous post was about
 &lt;a href="http://atodorov.org/blog/2018/01/05/how-to-write-pylint-checker-plugins/"&gt;writing pylint plugins&lt;/a&gt;
 I figured I'd let you know that I've released
 &lt;a href="https://github.com/landscapeio/pylint-django"&gt;pylint-django&lt;/a&gt; version 0.8.0
@@ -1607,101 +1876,4 @@ and I failed to test them! One of them was &lt;em&gt;Django 1.11.2&lt;/em&gt;.&l
 I would have known about this problem well in advance. Next I'm off to write
 some monitoring tests and also implement better failure detection in
 &lt;a href="https://github.com/MrSenko/strazar"&gt;Strazar&lt;/a&gt; itself!&lt;/p&gt;
-&lt;p&gt;Thanks for reading and happy testing (in production)!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry><entry><title>Can a nested function assign to variables from the parent function</title><link href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="alternate"></link><updated>2017-06-11T23:00:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2017-06-11:blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/</id><summary type="html">&lt;p&gt;While working on a
-&lt;a href="https://github.com/getpelican/pelican/pull/1909"&gt;new feature for Pelican&lt;/a&gt;
-I've put myself in a situation where I have two functions, one nested inside
-the other and I want the nested function to assign to variable from the
-parent function. Turns out this isn't so easy in Python!&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
-    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="k"&gt;return&lt;/span&gt;
-
-        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
-        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;The example above is a recursive &lt;em&gt;Hello World&lt;/em&gt;. Notice the &lt;code&gt;i += 1&lt;/code&gt; line!
-This line causes &lt;code&gt;i&lt;/code&gt; to be considered local to &lt;code&gt;do_print()&lt;/code&gt; and the result
-is that we get the following failure on Python 2.7:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Traceback&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;recent&lt;/span&gt; &lt;span class="n"&gt;call&lt;/span&gt; &lt;span class="n"&gt;last&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;module&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
-    &lt;span class="n"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;World&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;hello&lt;/span&gt;
-    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-  &lt;span class="n"&gt;File&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;./test.py&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;do_print&lt;/span&gt;
-    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-&lt;span class="ne"&gt;UnboundLocalError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;local&lt;/span&gt; &lt;span class="n"&gt;variable&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;i&amp;#39;&lt;/span&gt; &lt;span class="n"&gt;referenced&lt;/span&gt; &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="n"&gt;assignment&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;We can workaround by using a global variable like so:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using global variable&lt;/span&gt;&lt;pre&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
-
-        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="k"&gt;return&lt;/span&gt;
-
-        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
-        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;However I prefer not to expose internal state outside the &lt;code&gt;hello()&lt;/code&gt;
-function. Only if there was a keyword similar to &lt;strong&gt;global&lt;/strong&gt;. In Python 3
-there is &lt;strong&gt;nonlocal&lt;/strong&gt;!&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py using nonlocal, Python 3&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
-    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-        &lt;span class="n"&gt;nonlocal&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
-
-        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="k"&gt;return&lt;/span&gt;
-
-        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;&lt;strong&gt;nonlocal&lt;/strong&gt; is nice but it doesn't exist in Python 2! The workaround is to
-not assign state to the variable itself, but instead use a mutable container.
-That is instead of a scalar use a list or a dictionary like so:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;span class="filename"&gt;hello.py where i is a list, Python 2&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;hello&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;who&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="n"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;Hello&amp;#39;&lt;/span&gt;
-    &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-
-    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
-        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="k"&gt;return&lt;/span&gt;
-
-        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;greeting&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;who&lt;/span&gt;
-        &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
-        &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-
-    &lt;span class="n"&gt;do_print&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;Thanks for reading and happy coding!&lt;/p&gt;</summary><category term="Python"></category><category term="fedora.planet"></category></entry></feed>
+&lt;p&gt;Thanks for reading and happy testing (in production)!&lt;/p&gt;</summary><category term="QA"></category><category term="fedora.planet"></category></entry></feed>

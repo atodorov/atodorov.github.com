@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+            <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <meta name="google-site-verification" content="XynqZtldWNBbmsynVQZremIxaaO8Wgs6AGR8UZ7KIkM">
+
+        <title>Upstream rebuilds with Jenkins Job Builder</title>
+
+        <link href="http://feeds.feedburner.com/atodorov" type="application/atom+xml" rel="alternate" title="atodorov.org Full Atom Feed" />
+        <!-- Bootstrap Core CSS -->
+        <link href="http://atodorov.org/theme/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="http://atodorov.org/theme/css/clean-blog.min.css" rel="stylesheet">
+
+        <!-- Code highlight color scheme -->
+            <link href="http://atodorov.org/theme/css/code_blocks/github.css" rel="stylesheet">
+
+            <!-- CSS specified by the user -->
+            <link href="http://atodorov.org/override.css" rel="stylesheet">
+
+        <!-- Custom Fonts -->
+        <link href="http://atodorov.org/theme/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+
+        <meta name="description" content="for downstream pull requests">
+
+        <meta name="author" content="Alexander Todorov">
+
+        <meta name="tags" content="fedora.planet">
+        <meta name="tags" content="QA">
+
+	                <meta property="fb:admins" content="1616937247" >
+                <meta property="og:locale" content="en_US">
+		<meta property="og:site_name" content="atodorov.org">
+
+	<meta property="og:type" content="article">
+            <meta property="article:author" content="http://atodorov.org/author/alexander-todorov.html">
+	<meta property="og:url" content="http://atodorov.org/blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/">
+	<meta property="og:title" content="Upstream rebuilds with Jenkins Job Builder">
+	<meta property="article:published_time" content="2018-07-06 13:20:00+03:00">
+            <meta property="og:description" content="for downstream pull requests">
+
+                <meta property="og:image" content="http://atodorov.org/images/bricks.jpg">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@atodorov_">
+        <meta name="twitter:title" content="Upstream rebuilds with Jenkins Job Builder">
+
+                <meta property="twitter:image" content="http://atodorov.org/images/bricks.jpg">
+
+            <meta name="twitter:description" content="for downstream pull requests">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://atodorov.org/">atodorov.org</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=menu">Mr. Senko</a></li>
+
+                            <li><a href="http://atodorov.org/pages/pylint-workshop.html">Pylint Workshop</a></li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+        <header class="intro-header" style="background-image: url('/images/header_02.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Upstream rebuilds with Jenkins Job Builder</h1>
+                            <h3 class="subheading">for downstream pull requests</h3>
+                        <span class="meta">Posted by
+                                <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                             on Fri 06 July 2018
+                        </span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <!-- Post Content -->
+    <article>
+        <p>I have been working on <a href="http://weldr.io/">Weldr</a> for some time now.
+It is a multi-component software with several layers built on top of
+each other as seen on the image below.</p>
+<p><img alt="Weldr components" src="/images/welder_upstream.png" /></p>
+<p>One of the risks that we face is introducing changes in
+downstream components which are going to break something up the stack!
+In this post I am going to show you how I have configured
+Jenkins to trigger dependent rebuilds and report all of the statuses
+back to the original GitHub PR. All of the code below is Jenkins Job Builder
+yaml.</p>
+<p><code>bdcs</code> is the first layer of our software stack. It provides command line
+utilities. <code>codec-rpm</code> is a library component that facilitates working
+with RPM packages (in Haskell). <code>bdcs</code> links to <code>codec-rpm</code> when it is compiled,
+<code>bdcs</code> uses some functions and data types from <code>codec-rpm</code>.</p>
+<p>When a pull request is opened against <code>codec-rpm</code> and testing completes successfully
+I want to reuse that particular version of the <code>codec-rpm</code> library and
+rebuild/test <code>bdcs</code> with that.</p>
+<h2>YAML configuration</h2>
+<p>All jobs have the following structure: -trigger -&gt; -provision -&gt; -runtest -&gt; -teardown.
+This means that Jenkins will start executing a new job when it gets triggered by
+an event in GitHub (commit to master branch or new pull request), then it will
+provision a slave VM in OpenStack, execute the test suite on the slave and destroy
+all of the resources at the end. This is repeated twice: for master branch and for
+pull requests! Here's how the -runtest jobs look:</p>
+<div class="highlight"><pre><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-provision&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">string</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">PROVIDER</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{git_refspec}}</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{git_branch}}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no"># do the openstack provisioning here</span>
+        <span class="c1"># NB: runtest_job is passed to us via the -trigger job</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;${{runtest_job}}&#39;</span>
+            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
+            <span class="l-Scalar-Plain">fail-on-missing</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
+    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">master</span><span class="nv"> </span><span class="s">branch</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">regex-match</span>
+          <span class="l-Scalar-Plain">regex</span><span class="p-Indicator">:</span> <span class="s">&quot;^.+$&quot;</span>
+          <span class="l-Scalar-Plain">label</span><span class="p-Indicator">:</span> <span class="s">&#39;${{UPSTREAM_BUILD}}&#39;</span>
+          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">copyartifact</span><span class="p-Indicator">:</span>
+                <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD}}</span>
+                <span class="l-Scalar-Plain">which-build</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">specific-build</span>
+                <span class="l-Scalar-Plain">build-number</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD_NUMBER}}</span>
+                <span class="l-Scalar-Plain">filter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_ARTIFACT}}</span>
+                <span class="l-Scalar-Plain">flatten</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no">make ci</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">PRs</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="c1"># builds the commit hash instead of a branch</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{ghprbActualCommit}}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no">make ci</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">current-status</span>
+          <span class="l-Scalar-Plain">condition-worst</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
+          <span class="l-Scalar-Plain">condition-best</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
+          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                <span class="no">#!/bin/bash -ex</span>
+                <span class="no">make after_success</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">archive</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_path}&#39;</span>
+          <span class="l-Scalar-Plain">allow-empty</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_empty}&#39;</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-publisher</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="s">&#39;{execute_dependent_job}&#39;</span>
+            <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+            <span class="l-Scalar-Plain">action</span><span class="p-Indicator">:</span>
+              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{dependent_job}&#39;</span>
+                  <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+                  <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                    <span class="no">UPSTREAM_ARTIFACT={artifacts_path}</span>
+                    <span class="no">UPSTREAM_BUILD=${{JOB_NAME}}</span>
+                    <span class="no">UPSTREAM_BUILD_NUMBER=${{build_number}}</span>
+                  <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-group</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-tests&#39;</span>
+    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-provision&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-teardown&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-trigger&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-trigger&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;codec-rpm-rebuild-bdcs&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Rebuild</span><span class="nv"> </span><span class="s">bdcs</span><span class="nv"> </span><span class="s">after</span><span class="nv"> </span><span class="s">codec-rpm</span><span class="nv"> </span><span class="s">PR!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/codec-rpm.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="c1"># builds the commit hash instead of a branch</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${ghprbActualCommit}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;bdcs-master-trigger&#39;</span>
+            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                <span class="no">UPSTREAM_ARTIFACT=${UPSTREAM_ARTIFACT}</span>
+                <span class="no">UPSTREAM_BUILD=${UPSTREAM_BUILD}</span>
+                <span class="no">UPSTREAM_BUILD_NUMBER=${UPSTREAM_BUILD_NUMBER}</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">codec-rpm</span>
+    <span class="l-Scalar-Plain">dependent_job</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-rebuild-bdcs&#39;</span>
+    <span class="l-Scalar-Plain">execute_dependent_job</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">always</span>
+    <span class="l-Scalar-Plain">artifacts_path</span><span class="p-Indicator">:</span> <span class="s">&#39;dist/{name}-latest.tar.gz&#39;</span>
+    <span class="l-Scalar-Plain">artifacts_empty</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
+    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="s">&#39;{name}-tests&#39;</span>
+</pre></div>
+
+
+<h2>Publishing artifacts</h2>
+<p><code>make after_success</code> is responsible for creating a tarball if <code>codec-rpm</code> test suite
+passed. This tarball gets uploaded as artifact into Jenkins and we can make use of it later!</p>
+<p>Inside -master-runtest I have a <code>conditional-step</code> inside the <code>builders</code> section which
+will copy the artifacts from the previous build if they are present. Notice that I copy
+artifacts for a particular job number, which is the job for codec-rpm PR.</p>
+<p>Making use of local artifacts is handled inside bdcs' <code>make ci</code> because it is
+per-project specific and because I'd like to reuse my YAML templates.</p>
+<h2>Reporting statuses to GitHub</h2>
+<p>For <code>github-notifier</code> to be able to report statuses back to the pull request
+the job needs to be configured with the git repository this pull request came from.
+This is done by specifying the same <code>scm</code> section for all jobs that are related and
+<code>current-parameters: true</code> to pass the revision information to the other jobs.</p>
+<p>This also means that if I want to report status from <code>codec-rpm-rebuild-bdcs</code> then
+it needs to be configured for the <code>codec-rpm</code> repository (see yaml) but somehow
+it should trigger jobs for another repository!</p>
+<p>When jobs are started via <code>trigger-parameterized-builds</code> their statuses are reported
+separately to GitHub. When they are started via <code>trigger-builds</code> there should be only
+one status reported.</p>
+<h2>Trigger chain for dependency rebuilds</h2>
+<p>With all of the above info we can now look at the <code>codec-rpm-rebuild-bdcs</code> job.</p>
+<ul>
+<li>It is configured for the codec-rpm repository so it will report its status to the PR</li>
+<li>It is conditionally started after <code>codec-rpm-PR-runtest</code> finishes successfully</li>
+<li>It triggers <code>bdcs-master-trigger</code> which in turn will rebuild &amp; retest the bdcs component.
+  Additional parameters specify whether we're going to use locally built artifacts or
+  attempt to download then from Hackage</li>
+<li>It uses <code>block: true</code> so that the status of <code>codec-rpm-rebuild-bdcs</code> is dependent
+  on the status of <code>bdcs-master-runtest</code> (everything in the job chain uses <code>block: true</code> because of this)</li>
+</ul>
+<h2>How this looks like in practice</h2>
+<p>I have opened <a href="https://github.com/weldr/codec-rpm/pull/39">codec-rpm #39</a>
+to validate my configuration. The chain of jobs that gets executed in Jenkins is:</p>
+<div class="highlight"><pre><span class="gd">--- console.log for bdcs-master-runtest ---</span>
+Started by upstream project &quot;bdcs-jslave-1-provision&quot; build number 267
+originally caused by:
+ Started by upstream project &quot;bdcs-master-trigger&quot; build number 133
+ originally caused by:
+  Started by upstream project &quot;codec-rpm-rebuild-bdcs&quot; build number 25
+  originally caused by:
+   Started by upstream project &quot;codec-rpm-PR-runtest&quot; build number 77
+   originally caused by:
+    Started by upstream project &quot;codec-rpm-jslave-1-provision&quot; build number 178
+    originally caused by:
+     Started by upstream project &quot;codec-rpm-PR-trigger&quot; build number 118
+     originally caused by:
+      GitHub pull request #39 of commit b00c923065e367afd5b7a7cc068b049bb1ed25e1, no merge conflicts.
+</pre></div>
+
+
+<p>Statuses are reported on GitHub as follows:</p>
+<p><img alt="example of PR statuses" src="/images/codec-rpm-pr-39.png" /></p>
+<p><code>default</code> is coming from the provisioning step and I think this is some sort of a bug
+or misconfiguration of the provisioning job. We don't really care about this.</p>
+<p>On the picture you can see that <code>codec-rpm-PR-runtest</code> was successful but
+<code>codec-rpm-rebuild-bdcs</code> was not. The actual error when compiling bdcs is:</p>
+<div class="highlight"><pre><span class="n">src</span><span class="o">/</span><span class="n">BDCS</span><span class="o">/</span><span class="n">Import</span><span class="o">/</span><span class="n">RPM</span><span class="p">.</span><span class="nl">hs</span><span class="p">:</span><span class="mi">110</span><span class="o">:</span><span class="mi">24</span><span class="o">:</span> <span class="nl">error</span><span class="p">:</span>
+    <span class="o">*</span> <span class="n">Couldn</span><span class="err">&#39;</span><span class="n">t</span> <span class="n">match</span> <span class="n">type</span> <span class="err">`</span><span class="n">Entry</span><span class="err">&#39;</span> <span class="n">with</span> <span class="err">`</span><span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span><span class="err">&#39;</span>
+      <span class="n">Expected</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+                       <span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
+        <span class="n">Actual</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+                       <span class="n">Entry</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
+    <span class="o">*</span> <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(.</span><span class="o">|</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">getZipConduit</span>
+           <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">src</span>
+           <span class="p">.</span><span class="o">|</span>
+             <span class="n">getZipConduit</span>
+               <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">runConduit</span>
+           <span class="err">$</span> <span class="n">src</span>
+               <span class="p">.</span><span class="o">|</span>
+                 <span class="n">getZipConduit</span>
+                   <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+    <span class="o">|</span>
+<span class="mi">110</span> <span class="o">|</span>                     <span class="p">.</span><span class="o">|</span> <span class="n">getZipConduit</span> <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span>
+    <span class="o">|</span>                        <span class="o">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span><span class="p">...</span>
+</pre></div>
+
+
+<p>That is because PR #39 changes the return type of <code>Codec.RPM.Conduit::payloadContentsC</code>
+from <code>Entry</code> to <code>C8.ByteString</code>.</p>
+<p>Thanks for reading and happy testing!</p>
+<p><em>social image CC by https://pxhere.com/en/photo/226978</em></p>
+    </article>
+
+        <div class="tags">
+            <p>tags: <a href="http://atodorov.org/blog/categories/fedoraplanet/">fedora.planet</a>, <a href="http://atodorov.org/blog/categories/qa/">QA</a></p>
+        </div>
+
+    <div>
+        <span>
+            <small>
+                <em>
+                    Please support this blog by 
+                    <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">
+                    buying something from Amazon with my referral id
+                    </a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+                    .
+                </em>
+            </small>
+        </span>
+    </div>
+
+<hr>
+<div class="sharing">
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style addthis_32x32_style">
+            <a class="addthis_button_preferred_1"></a>
+            <a class="addthis_button_preferred_2"></a>
+            <a class="addthis_button_preferred_3"></a>
+            <a class="addthis_button_preferred_4"></a>
+            <a class="addthis_button_preferred_5"></a>
+            <a class="addthis_button_preferred_6"></a>
+            <a class="addthis_button_preferred_7"></a>
+            <a class="addthis_button_preferred_8"></a>
+            <a class="addthis_button_preferred_9"></a>
+            <a class="addthis_button_compact"></a>
+            <a class="addthis_counter addthis_bubble_style"></a>
+        </div>
+        <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5103cc5a2bc6ba17"></script>
+        <!-- AddThis Button END -->
+</div>
+    <hr>
+
+        <div class="comments">
+            <h2>Comments !</h2>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                var disqus_shortname = 'atodorov';
+                var disqus_identifier = 'blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/';
+                var disqus_url = 'http://atodorov.org/blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/';
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//atodorov.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                            <li>
+                                <a href="https://twitter.com/atodorov_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://bg.linkedin.com/in/alextodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://feeds.feedburner.com/atodorov">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-youtube fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://amzn.to/1ivu2q4">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-user-secret fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                    </ul>
+<section>
+    <p>
+        I am a Senior QA contractor at Red Hat and a general purpose
+        open source hacker! I am the project lead for
+        <a href="http://kiwitcms.org/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=footer">Kiwi TCMS</a>
+        and the current maintainer of <a href="/pages/pylint-workshop.html">pylint_django</a>!
+    </p>
+    <p>
+        <small>
+            <em>
+                Some of the links contained within this site have my referral id (e.g.,
+                <a target="_blank" href="http://www.amazon.com/ref=as_li_ss_tl?_encoding=UTF8&camp=1789&creative=390957&linkCode=ur2&tag=atodorovorg-20&linkId=L6Q34XAXQS5RDMOY">Amazon</a><img src="https://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=ur2&o=1" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />),
+                which provides me with a small commission for each sale. Thank you for your support.
+            </em>
+        </small>
+    </p>
+</section>
+
+<form action="http://google.com/search" method="get" style="width:300px;margin:0 auto;">
+    <fieldset role="search">
+        <input type="hidden" name="sitesearch" value="http://atodorov.org" />
+        <input class="search" type="text" name="q" placeholder="Search" style="width:100%"/>
+    </fieldset>
+</form>
+
+<p class="copyright text-muted">
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">CC-BY-SA</a> &amp;
+    <a rel="license" href="http://opensource.org/licenses/MIT">MIT</a>
+    2011-2018 &diams; Alexander Todorov
+</p>
+
+<script type='text/javascript'>
+window.__lo_site_id = 55936;
+    (function() {
+        var wa = document.createElement('script'); wa.type = 'text/javascript'; wa.async = true;
+        wa.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://cdn') + '.luckyorange.com/w.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(wa, s);
+      })();
+</script>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="http://atodorov.org/theme/js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="http://atodorov.org/theme/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37979549-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+<script type="text/javascript">
+    var disqus_shortname = 'atodorov';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+
+</html>

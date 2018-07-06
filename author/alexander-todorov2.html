@@ -98,6 +98,115 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="bookmark" title="Permalink to Can a nested function assign to variables from the parent function">
+                <h2 class="post-title">
+                    Can a nested function assign to variables from the parent function
+                </h2>
+            </a>
+                <p>While working on a
+<a href="https://github.com/getpelican/pelican/pull/1909">new feature for Pelican</a>
+I've put myself in a situation where I have two functions, one nested inside
+the other and I want the nested function to assign to variable from the
+parent function. Turns out this isn't so easy in Python!</p>
+<div class="highlight"><span class="filename">hello.py</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">do_print</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>The example above is a recursive <em>Hello World</em>. Notice the <code>i += 1</code> line!
+This line causes <code>i</code> to be considered local to <code>do_print()</code> and the result
+is that we get the following failure on Python 2.7:</p>
+<div class="highlight"><pre><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">16</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">13</span><span class="p">,</span> <span class="ow">in</span> <span class="n">hello</span>
+    <span class="n">do_print</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_print</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+<span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s">&#39;i&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
+</pre></div>
+
+
+<p>We can workaround by using a global variable like so:</p>
+<div class="highlight"><span class="filename">hello.py using global variable</span><pre><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
+        <span class="k">global</span> <span class="n">i</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">do_print</span><span class="p">()</span>
+</pre></div>
+
+
+<p>However I prefer not to expose internal state outside the <code>hello()</code>
+function. Only if there was a keyword similar to <strong>global</strong>. In Python 3
+there is <strong>nonlocal</strong>!</p>
+<div class="highlight"><span class="filename">hello.py using nonlocal, Python 3</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
+        <span class="n">nonlocal</span> <span class="n">i</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">do_print</span><span class="p">()</span>
+</pre></div>
+
+
+<p><strong>nonlocal</strong> is nice but it doesn't exist in Python 2! The workaround is to
+not assign state to the variable itself, but instead use a mutable container.
+That is instead of a scalar use a list or a dictionary like so:</p>
+<div class="highlight"><span class="filename">hello.py where i is a list, Python 2</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">print</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">do_print</span><span class="p">()</span>
+
+    <span class="n">do_print</span><span class="p">()</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy coding!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 11 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/10/semantically-invalid-input/" rel="bookmark" title="Permalink to Semantically Invalid Input">
                 <h2 class="post-title">
                     Semantically Invalid Input
@@ -2755,48 +2864,6 @@ need to give them autonomy, transparency and short feedback loop!</p>
                  on Wed 02 November 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/11/02/it-weekend-highlights/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/10/24/animate-automate/" rel="bookmark" title="Permalink to Animate & Automate">
-                <h2 class="post-title">
-                    Animate & Automate
-                </h2>
-            </a>
-                <p>Recently I've attended a presentation by MentorMate where they talked about
-testing CSS animations (
-<a href="https://www.youtube.com/watch?v=MIxzzfFBR8o&amp;list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db&amp;index=6">video in Bulgarian</a>
-). The software under test was an ad tech SDK which
-provides CSS based animations to mobile apps and games. The content
-is displayed inside a webview and they had to make sure animations were
-working correctly on different OS and devices.</p>
-<p>Analyzing the content (aka getting to know the domain) they figured out
-in reality there were about 20 basic movements and transformations. So the
-problem was reduced to "How do we test these 20 basic movements under
-various OSes and devices" or "How do we verify that basic CSS transformations
-are supported under different versions and flavors of the OS"?</p>
-<p>Their test bed included hand crafted web pages with each basic movement
-and then several ones with more complex animations (aka integration testing).
-The idea was to load
-these pages under different devices and inspect whether or not the animations
-were visualized properly.</p>
-<p>A test script (aka their testing framework) was constantly recording the
-coordinates of the elements under test to verify that they were really animated.
-The idea was to use a sample rate of 20ms and expect at lest 20 different changes
-to the element under test. Coordinates along with color and gradient were recorded
-and then returned back and analyzed to report a PASS or FAIL result.</p>
-<p>This simplistic framework has limitations of course. It is not currently checking
-the boundaries of where the elements are rendered on the screen. Thus if everything
-else works as expected this will be a false positive result. On their slides
-this can be seen at <a href="https://youtu.be/MIxzzfFBR8o?t=23m10s">23:10</a>.</p>
-<p>As a side note the entire effort took about 2 days, including research and preparing
-the test content.</p>
-<p>I really like the back to basics approach here and the simplistic framework that
-MentorMate came up with. Sure it misses some problems but for that particular case
-it is good enough, easy and fast to implement.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Mon 24 October 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/10/24/animate-automate/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -2806,7 +2873,7 @@ it is good enough, easy and fast to implement.</p>
                 <a href="http://atodorov.org/author/alexander-todorov.html"> &larr; Newest Posts</a>
         </li>
     </ul>
-    Page 2 / 15
+    Page 2 / 16
     <hr>
             </div>
         </div>

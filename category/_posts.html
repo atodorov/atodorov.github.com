@@ -92,6 +92,287 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/" rel="bookmark" title="Permalink to Upstream rebuilds with Jenkins Job Builder">
+                <h2 class="post-title">
+                    Upstream rebuilds with Jenkins Job Builder
+                </h2>
+            </a>
+                <p>I have been working on <a href="http://weldr.io/">Weldr</a> for some time now.
+It is a multi-component software with several layers built on top of
+each other as seen on the image below.</p>
+<p><img alt="Weldr components" src="/images/welder_upstream.png" /></p>
+<p>One of the risks that we face is introducing changes in
+downstream components which are going to break something up the stack!
+In this post I am going to show you how I have configured
+Jenkins to trigger dependent rebuilds and report all of the statuses
+back to the original GitHub PR. All of the code below is Jenkins Job Builder
+yaml.</p>
+<p><code>bdcs</code> is the first layer of our software stack. It provides command line
+utilities. <code>codec-rpm</code> is a library component that facilitates working
+with RPM packages (in Haskell). <code>bdcs</code> links to <code>codec-rpm</code> when it is compiled,
+<code>bdcs</code> uses some functions and data types from <code>codec-rpm</code>.</p>
+<p>When a pull request is opened against <code>codec-rpm</code> and testing completes successfully
+I want to reuse that particular version of the <code>codec-rpm</code> library and
+rebuild/test <code>bdcs</code> with that.</p>
+<h2>YAML configuration</h2>
+<p>All jobs have the following structure: -trigger -&gt; -provision -&gt; -runtest -&gt; -teardown.
+This means that Jenkins will start executing a new job when it gets triggered by
+an event in GitHub (commit to master branch or new pull request), then it will
+provision a slave VM in OpenStack, execute the test suite on the slave and destroy
+all of the resources at the end. This is repeated twice: for master branch and for
+pull requests! Here's how the -runtest jobs look:</p>
+<div class="highlight"><pre><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-provision&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">string</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">PROVIDER</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{git_refspec}}</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{git_branch}}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no"># do the openstack provisioning here</span>
+        <span class="c1"># NB: runtest_job is passed to us via the -trigger job</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;${{runtest_job}}&#39;</span>
+            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
+            <span class="l-Scalar-Plain">fail-on-missing</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
+    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">master</span><span class="nv"> </span><span class="s">branch</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">regex-match</span>
+          <span class="l-Scalar-Plain">regex</span><span class="p-Indicator">:</span> <span class="s">&quot;^.+$&quot;</span>
+          <span class="l-Scalar-Plain">label</span><span class="p-Indicator">:</span> <span class="s">&#39;${{UPSTREAM_BUILD}}&#39;</span>
+          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">copyartifact</span><span class="p-Indicator">:</span>
+                <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD}}</span>
+                <span class="l-Scalar-Plain">which-build</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">specific-build</span>
+                <span class="l-Scalar-Plain">build-number</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD_NUMBER}}</span>
+                <span class="l-Scalar-Plain">filter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_ARTIFACT}}</span>
+                <span class="l-Scalar-Plain">flatten</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no">make ci</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">PRs</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="c1"># builds the commit hash instead of a branch</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{ghprbActualCommit}}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+            <span class="no">#!/bin/bash -ex</span>
+            <span class="no">make ci</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">current-status</span>
+          <span class="l-Scalar-Plain">condition-worst</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
+          <span class="l-Scalar-Plain">condition-best</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
+          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                <span class="no">#!/bin/bash -ex</span>
+                <span class="no">make after_success</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">archive</span><span class="p-Indicator">:</span>
+          <span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_path}&#39;</span>
+          <span class="l-Scalar-Plain">allow-empty</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_empty}&#39;</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-publisher</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="s">&#39;{execute_dependent_job}&#39;</span>
+            <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
+            <span class="l-Scalar-Plain">action</span><span class="p-Indicator">:</span>
+              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{dependent_job}&#39;</span>
+                  <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+                  <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                    <span class="no">UPSTREAM_ARTIFACT={artifacts_path}</span>
+                    <span class="no">UPSTREAM_BUILD=${{JOB_NAME}}</span>
+                    <span class="no">UPSTREAM_BUILD_NUMBER=${{build_number}}</span>
+                  <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
+            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-group</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-tests&#39;</span>
+    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-provision&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-teardown&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-trigger&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-trigger&#39;</span>
+    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;codec-rpm-rebuild-bdcs&#39;</span>
+    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
+    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Rebuild</span><span class="nv"> </span><span class="s">bdcs</span><span class="nv"> </span><span class="s">after</span><span class="nv"> </span><span class="s">codec-rpm</span><span class="nv"> </span><span class="s">PR!&#39;</span>
+    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/codec-rpm.git&#39;</span>
+            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+                <span class="c1"># builds the commit hash instead of a branch</span>
+                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${ghprbActualCommit}</span>
+    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
+          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;bdcs-master-trigger&#39;</span>
+            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+                <span class="no">UPSTREAM_ARTIFACT=${UPSTREAM_ARTIFACT}</span>
+                <span class="no">UPSTREAM_BUILD=${UPSTREAM_BUILD}</span>
+                <span class="no">UPSTREAM_BUILD_NUMBER=${UPSTREAM_BUILD_NUMBER}</span>
+    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+
+
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">codec-rpm</span>
+    <span class="l-Scalar-Plain">dependent_job</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-rebuild-bdcs&#39;</span>
+    <span class="l-Scalar-Plain">execute_dependent_job</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">always</span>
+    <span class="l-Scalar-Plain">artifacts_path</span><span class="p-Indicator">:</span> <span class="s">&#39;dist/{name}-latest.tar.gz&#39;</span>
+    <span class="l-Scalar-Plain">artifacts_empty</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
+    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
+      <span class="p-Indicator">-</span> <span class="s">&#39;{name}-tests&#39;</span>
+</pre></div>
+
+
+<h2>Publishing artifacts</h2>
+<p><code>make after_success</code> is responsible for creating a tarball if <code>codec-rpm</code> test suite
+passed. This tarball gets uploaded as artifact into Jenkins and we can make use of it later!</p>
+<p>Inside -master-runtest I have a <code>conditional-step</code> inside the <code>builders</code> section which
+will copy the artifacts from the previous build if they are present. Notice that I copy
+artifacts for a particular job number, which is the job for codec-rpm PR.</p>
+<p>Making use of local artifacts is handled inside bdcs' <code>make ci</code> because it is
+per-project specific and because I'd like to reuse my YAML templates.</p>
+<h2>Reporting statuses to GitHub</h2>
+<p>For <code>github-notifier</code> to be able to report statuses back to the pull request
+the job needs to be configured with the git repository this pull request came from.
+This is done by specifying the same <code>scm</code> section for all jobs that are related and
+<code>current-parameters: true</code> to pass the revision information to the other jobs.</p>
+<p>This also means that if I want to report status from <code>codec-rpm-rebuild-bdcs</code> then
+it needs to be configured for the <code>codec-rpm</code> repository (see yaml) but somehow
+it should trigger jobs for another repository!</p>
+<p>When jobs are started via <code>trigger-parameterized-builds</code> their statuses are reported
+separately to GitHub. When they are started via <code>trigger-builds</code> there should be only
+one status reported.</p>
+<h2>Trigger chain for dependency rebuilds</h2>
+<p>With all of the above info we can now look at the <code>codec-rpm-rebuild-bdcs</code> job.</p>
+<ul>
+<li>It is configured for the codec-rpm repository so it will report its status to the PR</li>
+<li>It is conditionally started after <code>codec-rpm-PR-runtest</code> finishes successfully</li>
+<li>It triggers <code>bdcs-master-trigger</code> which in turn will rebuild &amp; retest the bdcs component.
+  Additional parameters specify whether we're going to use locally built artifacts or
+  attempt to download then from Hackage</li>
+<li>It uses <code>block: true</code> so that the status of <code>codec-rpm-rebuild-bdcs</code> is dependent
+  on the status of <code>bdcs-master-runtest</code> (everything in the job chain uses <code>block: true</code> because of this)</li>
+</ul>
+<h2>How this looks like in practice</h2>
+<p>I have opened <a href="https://github.com/weldr/codec-rpm/pull/39">codec-rpm #39</a>
+to validate my configuration. The chain of jobs that gets executed in Jenkins is:</p>
+<div class="highlight"><pre><span class="gd">--- console.log for bdcs-master-runtest ---</span>
+Started by upstream project &quot;bdcs-jslave-1-provision&quot; build number 267
+originally caused by:
+ Started by upstream project &quot;bdcs-master-trigger&quot; build number 133
+ originally caused by:
+  Started by upstream project &quot;codec-rpm-rebuild-bdcs&quot; build number 25
+  originally caused by:
+   Started by upstream project &quot;codec-rpm-PR-runtest&quot; build number 77
+   originally caused by:
+    Started by upstream project &quot;codec-rpm-jslave-1-provision&quot; build number 178
+    originally caused by:
+     Started by upstream project &quot;codec-rpm-PR-trigger&quot; build number 118
+     originally caused by:
+      GitHub pull request #39 of commit b00c923065e367afd5b7a7cc068b049bb1ed25e1, no merge conflicts.
+</pre></div>
+
+
+<p>Statuses are reported on GitHub as follows:</p>
+<p><img alt="example of PR statuses" src="/images/codec-rpm-pr-39.png" /></p>
+<p><code>default</code> is coming from the provisioning step and I think this is some sort of a bug
+or misconfiguration of the provisioning job. We don't really care about this.</p>
+<p>On the picture you can see that <code>codec-rpm-PR-runtest</code> was successful but
+<code>codec-rpm-rebuild-bdcs</code> was not. The actual error when compiling bdcs is:</p>
+<div class="highlight"><pre><span class="n">src</span><span class="o">/</span><span class="n">BDCS</span><span class="o">/</span><span class="n">Import</span><span class="o">/</span><span class="n">RPM</span><span class="p">.</span><span class="nl">hs</span><span class="p">:</span><span class="mi">110</span><span class="o">:</span><span class="mi">24</span><span class="o">:</span> <span class="nl">error</span><span class="p">:</span>
+    <span class="o">*</span> <span class="n">Couldn</span><span class="err">&#39;</span><span class="n">t</span> <span class="n">match</span> <span class="n">type</span> <span class="err">`</span><span class="n">Entry</span><span class="err">&#39;</span> <span class="n">with</span> <span class="err">`</span><span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span><span class="err">&#39;</span>
+      <span class="n">Expected</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+                       <span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
+        <span class="n">Actual</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+                       <span class="n">Entry</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
+    <span class="o">*</span> <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(.</span><span class="o">|</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">getZipConduit</span>
+           <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">src</span>
+           <span class="p">.</span><span class="o">|</span>
+             <span class="n">getZipConduit</span>
+               <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
+        <span class="err">`</span><span class="n">runConduit</span>
+           <span class="err">$</span> <span class="n">src</span>
+               <span class="p">.</span><span class="o">|</span>
+                 <span class="n">getZipConduit</span>
+                   <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+    <span class="o">|</span>
+<span class="mi">110</span> <span class="o">|</span>                     <span class="p">.</span><span class="o">|</span> <span class="n">getZipConduit</span> <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span>
+    <span class="o">|</span>                        <span class="o">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span><span class="p">...</span>
+</pre></div>
+
+
+<p>That is because PR #39 changes the return type of <code>Codec.RPM.Conduit::payloadContentsC</code>
+from <code>Entry</code> to <code>C8.ByteString</code>.</p>
+<p>Thanks for reading and happy testing!</p>
+<p><em>social image CC by https://pxhere.com/en/photo/226978</em></p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 06 July 2018
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2018/07/06/upstream-rebuilds-with-jenkins-job-builder/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2018/01/22/introducing-pylint-django-080/" rel="bookmark" title="Permalink to Introducing pylint-django 0.8.0">
                 <h2 class="post-title">
                     Introducing pylint-django 0.8.0
@@ -1927,115 +2208,6 @@ some monitoring tests and also implement better failure detection in
                  on Mon 12 June 2017
             </p>
 <p>There are <a href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="bookmark" title="Permalink to Can a nested function assign to variables from the parent function">
-                <h2 class="post-title">
-                    Can a nested function assign to variables from the parent function
-                </h2>
-            </a>
-                <p>While working on a
-<a href="https://github.com/getpelican/pelican/pull/1909">new feature for Pelican</a>
-I've put myself in a situation where I have two functions, one nested inside
-the other and I want the nested function to assign to variable from the
-parent function. Turns out this isn't so easy in Python!</p>
-<div class="highlight"><span class="filename">hello.py</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
-        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">do_print</span><span class="p">()</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
-</pre></div>
-
-
-<p>The example above is a recursive <em>Hello World</em>. Notice the <code>i += 1</code> line!
-This line causes <code>i</code> to be considered local to <code>do_print()</code> and the result
-is that we get the following failure on Python 2.7:</p>
-<div class="highlight"><pre><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">16</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">13</span><span class="p">,</span> <span class="ow">in</span> <span class="n">hello</span>
-    <span class="n">do_print</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_print</span>
-    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-<span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s">&#39;i&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
-</pre></div>
-
-
-<p>We can workaround by using a global variable like so:</p>
-<div class="highlight"><span class="filename">hello.py using global variable</span><pre><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
-
-    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
-        <span class="k">global</span> <span class="n">i</span>
-
-        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
-        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
-
-<p>However I prefer not to expose internal state outside the <code>hello()</code>
-function. Only if there was a keyword similar to <strong>global</strong>. In Python 3
-there is <strong>nonlocal</strong>!</p>
-<div class="highlight"><span class="filename">hello.py using nonlocal, Python 3</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
-        <span class="n">nonlocal</span> <span class="n">i</span>
-
-        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
-        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
-
-<p><strong>nonlocal</strong> is nice but it doesn't exist in Python 2! The workaround is to
-not assign state to the variable itself, but instead use a mutable container.
-That is instead of a scalar use a list or a dictionary like so:</p>
-<div class="highlight"><span class="filename">hello.py where i is a list, Python 2</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="k">print</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
-        <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">do_print</span><span class="p">()</span>
-
-    <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
-
-<p>Thanks for reading and happy coding!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sun 11 June 2017
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -2044,7 +2216,7 @@ That is instead of a scalar use a list or a dictionary like so:</p>
                 <a href="http://atodorov.org/category/_posts2.html">Older Posts &rarr;</a>
         </li>
     </ul>
-    Page 1 / 15
+    Page 1 / 16
     <hr>
             </div>
         </div>
