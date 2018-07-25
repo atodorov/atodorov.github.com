@@ -33,9 +33,9 @@ Agenda
 Target audience
 ---------------
 
-Developers who work with Python (and/or Django) and are fans of static analytic tools
-and/or QA engineers who work with the project source code directly! In order to get
-the maximum of this workshop you need to have moderate skills in programming with Python!
+Developers who work with Python (and/or Django) and/or QA engineers who work
+with the project source code directly! In order to get the maximum of this
+workshop you need to have moderate skills in programming with Python!
 
 
 Technical requirements
@@ -45,7 +45,7 @@ Technical requirements
 * Text editor or IDE of your choice – you must know how to use them !
 * virtualenv (virtualenv-wrapper) tools installed and running so you can
   configure a working environment for your pylint plugins
-* pylint >= 1.8 installed inside the virtualenv
+* pylint >= 2.0 installed inside the virtualenv
 
 Try to identify code patterns which are not detected by standard pylint checks
 so that you can write a plugin for them. Practice patters will be provided by
@@ -58,10 +58,10 @@ ones at the bottom.
 Trainer
 -------
 
-Alexander Todorov – a Senior QA engineer at Red Hat with lots of experience in
-test automation and Python. Alex is also the current
-[maintainer of pylint-django](https://github.com/PyCQA/pylint-django/graphs/contributors)
-and a frequent contributor to [pylint](https://github.com/PyCQA/pylint/pulls/atodorov).
+Alexander Todorov – a Senior QA engineer with more than 10 years of experience in
+test automation and development with Python. Alex is also the current maintainer
+[pylint-django](https://github.com/PyCQA/pylint-django/graphs/contributors)
+and a contributor to [pylint](https://github.com/PyCQA/pylint/pulls/atodorov).
 
 
 Pricing
@@ -74,10 +74,8 @@ Pricing
 Dates
 -----
 
-* April, Sofia, Bulgaria for SkyScanner - TBC
-* 19-20 May 2018, Tirana, Albania for [OSCAL'18](https://oscal.openlabs.cc/) - confirmed
+* 19-20 May 2018, Tirana, Albania for [OSCAL'18](https://oscal.openlabs.cc/)
 * 26-27 May 2018, Heidelberg, Germany for
-  [DjangoCon Europe](https://2018.djangocon.eu/news/talk-announcement/) - confirmed
-* 3rd June 2018, Prague, Czech Republic for [PyConCZ](https://cz.pycon.org/2018/) - confirmed
-* July 2018, Edinburgh, UK for EuroPython - TBC
-* September 2018, Belgrade, Serbia - TBC
+  [DjangoCon Europe](https://2018.djangocon.eu/news/talk-announcement/)
+* 3rd June 2018, Prague, Czech Republic for [PyConCZ](https://cz.pycon.org/2018/)
+* 2-3 Nov 2018, Staint Petersburg, Russia for [PiterPy](https://piterpy.com)
