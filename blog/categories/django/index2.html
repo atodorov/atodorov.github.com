@@ -91,6 +91,99 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/03/19/sms-pin-verification-with-twilio-and-django/" rel="bookmark" title="Permalink to SMS PIN Verification with Twilio and Django">
+                <h2 class="post-title">
+                    SMS PIN Verification with Twilio and Django
+                </h2>
+            </a>
+                <p>This is a quick example of SMS PIN verification using Twilio cloud services and
+Django which I did for a small site recently.</p>
+<p><img alt="SMS PIN form" src="/images/sms_pin.png" title="SMS PIN form" /></p>
+<p>The page template contains the following HTML snippet</p>
+<div class="highlight"><pre><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">name=</span><span class="s">&quot;mobile_number&quot;</span> <span class="na">placeholder=</span><span class="s">&quot;111-111-1111&quot;</span> <span class="na">required</span><span class="nt">&gt;</span>
+<span class="nt">&lt;button</span> <span class="na">class=</span><span class="s">&quot;btn&quot;</span> <span class="na">type=</span><span class="s">&quot;button&quot;</span> <span class="na">onClick=</span><span class="s">&quot;send_pin()&quot;</span><span class="nt">&gt;&lt;i</span> <span class="na">class=</span><span class="s">&quot;icon-share&quot;</span><span class="nt">&gt;&lt;/i&gt;</span> Get PIN<span class="nt">&lt;/button&gt;</span>
+</pre></div>
+
+
+<p>and a JavaScript function utilizing jQuery:</p>
+<div class="highlight"><pre><span class="kd">function</span> <span class="nx">send_pin</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+                <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;{% url &#39;ajax_send_pin&#39; %}&quot;</span><span class="p">,</span>
+                <span class="nx">type</span><span class="o">:</span> <span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+                <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">mobile_number</span><span class="o">:</span>  <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#mobile_number&quot;</span><span class="p">).</span><span class="nx">val</span><span class="p">()</span> <span class="p">},</span>
+            <span class="p">})</span>
+            <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;PIN sent via SMS!&quot;</span><span class="p">);</span>
+            <span class="p">})</span>
+            <span class="p">.</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">jqXHR</span><span class="p">,</span> <span class="nx">textStatus</span><span class="p">,</span> <span class="nx">errorThrown</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">alert</span><span class="p">(</span><span class="nx">errorThrown</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nx">jqXHR</span><span class="p">.</span><span class="nx">responseText</span><span class="p">);</span>
+            <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Then create the following views in Django:</p>
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">_get_pin</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a numeric PIN with length digits &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">length</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">10</span><span class="o">**</span><span class="n">length</span><span class="p">),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_verify_pin</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Verify a PIN is correct &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pin</span> <span class="o">==</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">ajax_send_pin</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Sends SMS PIN to the specified number &quot;&quot;&quot;</span>
+    <span class="n">mobile_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;mobile_number&#39;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mobile_number</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;No mobile number&quot;</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="n">pin</span> <span class="o">=</span> <span class="n">_get_pin</span><span class="p">()</span>
+
+    <span class="c"># store the PIN in the cache for later verification.</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="mi">24</span><span class="o">*</span><span class="mi">3600</span><span class="p">)</span> <span class="c"># valid for 24 hrs</span>
+
+    <span class="n">client</span> <span class="o">=</span> <span class="n">TwilioRestClient</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_ACCOUNT_SID</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_AUTH_TOKEN</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                        <span class="n">body</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pin</span><span class="p">,</span>
+                        <span class="n">to</span><span class="o">=</span><span class="n">mobile_number</span><span class="p">,</span>
+                        <span class="n">from_</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">TWILIO_FROM_NUMBER</span><span class="p">,</span>
+                    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Message </span><span class="si">%s</span><span class="s"> sent&quot;</span> <span class="o">%</span> <span class="n">message</span><span class="o">.</span><span class="n">sid</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">process_order</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Process orders made via web form and verified by SMS PIN. &quot;&quot;&quot;</span>
+    <span class="n">form</span> <span class="o">=</span> <span class="n">OrderForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span> <span class="ow">or</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+        <span class="n">pin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;pin&quot;</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">))</span>
+        <span class="n">mobile_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;mobile_number&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_verify_pin</span><span class="p">(</span><span class="n">mobile_number</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
+            <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s">&#39;transaction_complete&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&quot;Invalid PIN!&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+                    <span class="n">request</span><span class="p">,</span>
+                    <span class="s">&#39;order.html&#39;</span><span class="p">,</span>
+                    <span class="p">{</span>
+                        <span class="s">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+</pre></div>
+
+
+<p>PINs are only numeric and are stored in the CACHE instead of the database which
+I think is simpler and less expensive in terms of I/O operations.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 19 March 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/03/19/sms-pin-verification-with-twilio-and-django/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/" rel="bookmark" title="Permalink to Mocking Django AUTH_PROFILE_MODULE without a Database">
                 <h2 class="post-title">
                     Mocking Django AUTH_PROFILE_MODULE without a Database

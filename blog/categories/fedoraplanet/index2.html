@@ -91,6 +91,64 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/" rel="bookmark" title="Permalink to Monitoring behavior via automated tests">
+                <h2 class="post-title">
+                    Monitoring behavior via automated tests
+                </h2>
+            </a>
+                <p>In my last several presentations I briefly talked about
+using your tests as a monitoring tool. I've not been eating my own
+dog food and stuff failed in production!</p>
+<h2>What is monitoring via testing</h2>
+<p>This is a technique I coined 6 months ago while working with Tradeo's team.
+I'm not the first one to figure this out so if you know the proper
+name for it please let me know in the comments.
+So why not take a subset of your automated tests and run them regularly against
+production? Let's say every hour?</p>
+<p>In my particular case we
+started with integration tests which interact with the product (a web app)
+in a way that a living person would do. E.g. login, update their settings,
+follow another user, chat with another user, try to deposit money, etc.
+The results from these tests are logged into a database and then charted
+(using Grafana). This way we can bring lots of data points together and easily
+analyze them.</p>
+<p>This technique has the added bonus that we can cover the most critical
+test paths in a couple of minutes and do so regularly without human intervention.
+Perusing the existing monitoring infrastructure of the devops team we can configure
+alerts if need be. This makes it sort of early detection/warning system plus
+it gives a degree of possibility to spot correlations between data points or
+patterns.</p>
+<p>As simple as it sounds I've heard about a handfull of companies doing this
+sort of continuous testing against production. Maybe you can implement something
+similar in your organization and we can talk more about the results?</p>
+<h2>Why does it matter</h2>
+<p>Anyway, everyone knows
+<a href="http://atodorov.org/blog/2017/05/27/learn-python-selenium-automation-in-8-weeks/">how to write Selenium tests</a>
+so I'm not going to bother you with the details. Why does this kind of
+testing matter?</p>
+<p>Do you remember a recent announcement by GitHub about Travis CI leaking some
+authentication tokens into their public log files? I did receive an email about
+this but didn't pay attention to it because I don't use GitHub tokens for
+anything I do in Travis. However as a safety measure GitHub had went ahead and
+wiped out my security tokens.</p>
+<p>The result from this is that my
+<a href="http://mrsenko.com/blog/mr-senko/2016/05/18/triggering-automatic-dependency-testing/">automated upstream testing infrastructure</a>
+had stopped working! In particular my requests to the GitHub API stopped
+working. And I didn't even know about it!</p>
+<p>This means that since May 24th there have been at least 4 new
+versions of libraries and frameworks on which some of my software depends
+and I failed to test them! One of them was <em>Django 1.11.2</em>.</p>
+<p>I have supplied a new GitHub token for my infra but if I had monitoring
+I would have known about this problem well in advance. Next I'm off to write
+some monitoring tests and also implement better failure detection in
+<a href="https://github.com/MrSenko/strazar">Strazar</a> itself!</p>
+<p>Thanks for reading and happy testing (in production)!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Mon 12 June 2017
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2017/06/12/monitoring-behavior-via-automated-tests/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2017/06/11/can-a-nested-function-assign-to-variables-from-the-parent-function/" rel="bookmark" title="Permalink to Can a nested function assign to variables from the parent function">
                 <h2 class="post-title">
                     Can a nested function assign to variables from the parent function
@@ -2757,65 +2815,6 @@ I'm in a hurry to resolve this and any help is welcome.</p>
                  on Tue 18 October 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/10/18/updated-macbook-air-drivers-for-rhel-7.3/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/" rel="bookmark" title="Permalink to PhantomJS 2.1.1 in Ubuntu different from upstream">
-                <h2 class="post-title">
-                    PhantomJS 2.1.1 in Ubuntu different from upstream
-                </h2>
-            </a>
-                <p>For some time now I've been hitting
-<a href="https://github.com/ariya/phantomjs/issues/12506">PhantomJS #12506</a> with the
-latest 2.1.1 version. The problem is supposedly fixed in 2.1.0 but this is not
-always the case. If you use a .deb package from the latest Ubuntu then the problem
-still exists, see
-<a href="https://bugs.launchpad.net/ubuntu/+source/phantomjs/+bug/1605628">Ubuntu #1605628</a>.</p>
-<p>It turns out the root cause of this, and probably other problems, is the way
-PhantomJS packages are built. Ubuntu builds the package against their stock
-Qt5WebKit libraries which leads to</p>
-<div class="highlight"><pre><span class="nv">$ </span>ldd usr/lib/phantomjs/phantomjs <span class="p">|</span> grep -i qt
-    libQt5WebKitWidgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKitWidgets.so.5 <span class="o">(</span>0x00007f5173ebf000<span class="o">)</span>
-    libQt5PrintSupport.so.5 <span class="o">=</span>&gt; /lib64/libQt5PrintSupport.so.5 <span class="o">(</span>0x00007f5173e4d000<span class="o">)</span>
-    libQt5Widgets.so.5 <span class="o">=</span>&gt; /lib64/libQt5Widgets.so.5 <span class="o">(</span>0x00007f51737b6000<span class="o">)</span>
-    libQt5WebKit.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebKit.so.5 <span class="o">(</span>0x00007f5171342000<span class="o">)</span>
-    libQt5Gui.so.5 <span class="o">=</span>&gt; /lib64/libQt5Gui.so.5 <span class="o">(</span>0x00007f5170df8000<span class="o">)</span>
-    libQt5Network.so.5 <span class="o">=</span>&gt; /lib64/libQt5Network.so.5 <span class="o">(</span>0x00007f5170c9a000<span class="o">)</span>
-    libQt5Core.so.5 <span class="o">=</span>&gt; /lib64/libQt5Core.so.5 <span class="o">(</span>0x00007f517080d000<span class="o">)</span>
-    libQt5Sensors.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sensors.so.5 <span class="o">(</span>0x00007f516b218000<span class="o">)</span>
-    libQt5Positioning.so.5 <span class="o">=</span>&gt; /lib64/libQt5Positioning.so.5 <span class="o">(</span>0x00007f516b1d7000<span class="o">)</span>
-    libQt5OpenGL.so.5 <span class="o">=</span>&gt; /lib64/libQt5OpenGL.so.5 <span class="o">(</span>0x00007f516b17c000<span class="o">)</span>
-    libQt5Sql.so.5 <span class="o">=</span>&gt; /lib64/libQt5Sql.so.5 <span class="o">(</span>0x00007f516b136000<span class="o">)</span>
-    libQt5Quick.so.5 <span class="o">=</span>&gt; /lib64/libQt5Quick.so.5 <span class="o">(</span>0x00007f5169dad000<span class="o">)</span>
-    libQt5Qml.so.5 <span class="o">=</span>&gt; /lib64/libQt5Qml.so.5 <span class="o">(</span>0x00007f5169999000<span class="o">)</span>
-    libQt5WebChannel.so.5 <span class="o">=</span>&gt; /lib64/libQt5WebChannel.so.5 <span class="o">(</span>0x00007f5169978000<span class="o">)</span>
-</pre></div>
-
-
-<p>While building from the upstream sources gives</p>
-<div class="highlight"><pre><span class="nv">$ </span>ldd /tmp/bin/phantomjs <span class="p">|</span> grep -i qt
-</pre></div>
-
-
-<p>If you take a closer look at PhantomJS's sources you will notice there are
-3 git submodules in their repository - <code>3rdparty</code>, <code>qtbase</code> and <code>qtwebkit</code>.
-Then in their <code>build.py</code> you can clearly see that this local fork of <code>QtWebKit</code>
-is built first, then the <code>phantomjs</code> binary is built against it.</p>
-<p>The problem is that these custom forks include additional patches to make
-WebKit suitable for Phantom's needs. And these patches are not available
-in the stock WebKit library that Ubuntu uses.</p>
-<blockquote>
-<p>Yes, that's correct. We need additional functionality that
-vanilla QtWebKit doesn't have. That's why we use custom version.</p>
-<p>Vitaly Slobodin, PhantomJS</p>
-</blockquote>
-<p>At the moment of this writing Vitaly's qtwebkit fork is 28 commits ahead and
-39 commits behind qt:dev. I'm surprised Ubuntu's PhantomJS even works.</p>
-<p>The solution IMO is to bundle the additional sources into the src.deb package
-and use the same building procedure as upstream.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 23 July 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/07/23/phantomjs-211-in-ubuntu-different-from-upstream/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
@@ -2825,7 +2824,7 @@ and use the same building procedure as upstream.</p>
                 <a href="http://atodorov.org/blog/categories/fedoraplanet/index.html"> &larr; Newest Posts</a>
         </li>
     </ul>
-    Page 2 / 5
+    Page 2 / 6
     <hr>
             </div>
         </div>

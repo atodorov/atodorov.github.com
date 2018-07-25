@@ -146,6 +146,60 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/" rel="bookmark" title="Permalink to Changing Rails consider_all_requests_local in RSpec fails">
+                <h2 class="post-title">
+                    Changing Rails consider_all_requests_local in RSpec fails
+                </h2>
+            </a>
+                <p>As many others I've been trying to change
+<code>Rails.application.config.consider_all_requests_local</code> and
+<code>Rails.application.config.action_dispatch.show_exceptions</code> inside my
+RSpec tests in order to test custom error pages in a Rails app. However this
+doesn't work. My code looked like this</p>
+<div class="highlight"><pre><span class="n">feature</span> <span class="s1">&#39;Exceptions&#39;</span> <span class="k">do</span>
+  <span class="n">before</span> <span class="k">do</span>
+    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">action_dispatch</span><span class="o">.</span><span class="n">show_exceptions</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">consider_all_requests_local</span> <span class="o">=</span> <span class="kp">false</span>
+  <span class="k">end</span>
+</pre></div>
+
+
+<p>This works only if I execute <code>exceptions_spec.rb</code> alone. However when something
+else executes before that it fails. The config values are
+correctly updated but that doesn't seem to have effect.</p>
+<p>The answer and solution comes from
+<a href="http://thepugautomatic.com/2014/08/404-with-rails-4/#comment-1714338343">Henrik N</a>.</p>
+<blockquote>
+<p>action_dispatch.show_exceptions gets copied and cached in
+Rails.application.env_config, so even if you change
+Rails.application.config.action_dispatch.show_exceptions in this
+before block the value isn't what you expect when it's used in
+ActionDispatch::DebugExceptions.</p>
+</blockquote>
+<p>In fact <code>DebugExceptions</code> uses <code>env['action_dispatch.show_exceptions']</code>. The
+correct code should look like this</p>
+<div class="highlight"><pre><span class="n">before</span> <span class="k">do</span>
+  <span class="nb">method</span> <span class="o">=</span> <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span>
+  <span class="n">expect</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span><span class="o">.</span><span class="n">with</span><span class="p">(</span><span class="n">no_args</span><span class="p">)</span> <span class="k">do</span>
+    <span class="nb">method</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+      <span class="s1">&#39;action_dispatch.show_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
+      <span class="s1">&#39;action_dispatch.show_detailed_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
+      <span class="s1">&#39;consider_all_requests_local&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span>
+    <span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>This allows the test to work regardless of the order of execution
+of spec files. I don't know why but I also had to leave
+<code>show_detailed_exceptions</code> otherwise I wasn't getting the desired results.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 27 April 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/04/27/changing-rails-consider_all_requests_local-in-rspec-fails/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/04/26/mismatch-in-pyparted-interfaces/" rel="bookmark" title="Permalink to Mismatch in Pyparted Interfaces">
                 <h2 class="post-title">
                     Mismatch in Pyparted Interfaces
@@ -1859,37 +1913,6 @@ that I didn't need, added the <code>write()</code> method and removed the origin
                  on Thu 14 January 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/" rel="bookmark" title="Permalink to Capture Terminal Output From Other Processes">
-                <h2 class="post-title">
-                    Capture Terminal Output From Other Processes
-                </h2>
-            </a>
-                <p>I've been working on a test case to verify that Anaconda will print its EULA
-notice at the end of a text mode installation. The problem is how do you capture
-all the text which is printed to the terminal from processes outside your control ?
-The answer is surprisingly simple - using strace! </p>
-<div class="highlight"><pre><span class="nf">%post</span> <span class="o">--</span><span class="n">nochroot</span>
-<span class="n">PID</span><span class="o">=</span><span class="err">`</span><span class="n">ps</span> <span class="n">aux</span> <span class="o">|</span> <span class="n">grep</span> <span class="s">&quot;/usr/bin/python /sbin/anaconda&quot;</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">v</span> <span class="s">&quot;grep&quot;</span> <span class="o">|</span> <span class="n">tr</span> <span class="o">-</span><span class="n">s</span> <span class="sc">&#39; &#39;</span> <span class="o">|</span> <span class="n">cut</span> <span class="o">-</span><span class="n">f2</span> <span class="o">-</span><span class="n">d</span><span class="sc">&#39; &#39;</span><span class="err">`</span>
-<span class="n">STRACE_LOG</span><span class="o">=</span><span class="s">&quot;/mnt/sysimage/root/anaconda.strace&quot;</span>
-
-<span class="cp"># see https:</span><span class="c1">//fedoraproject.org/wiki/Features/SELinuxDenyPtrace</span>
-<span class="n">setsebool</span> <span class="n">deny_ptrace</span> <span class="mi">0</span>
-
-<span class="cp"># EULA notice is printed after post-scripts are run</span>
-<span class="n">strace</span> <span class="o">-</span><span class="n">e</span> <span class="n">read</span><span class="p">,</span><span class="n">write</span> <span class="o">-</span><span class="n">s16384</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">x</span> <span class="o">-</span><span class="n">o</span> <span class="n">$STRACE_LOG</span> <span class="o">-</span><span class="n">p</span> <span class="n">$PID</span> <span class="o">-</span><span class="n">f</span> <span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">&amp;</span>
-</pre></div>
-
-
-<p>strace is tracing only read and write events (we really only need write) and
-extending the maximum string size printed in the log file. For a simple grep
-this is sufficient. If you need to pretty-print the strace output have a look
-at the <a href="http://search.cpan.org/~bbb/ttylog/ttylog">ttylog</a> utility.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Fri 25 December 2015
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2015/12/25/capture-terminal-output-from-other-processes/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
