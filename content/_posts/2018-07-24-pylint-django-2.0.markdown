@@ -16,7 +16,7 @@ there are bugs. All the existing test cases pass but you never know what sort
 of edge case there could be.
 
 I'm also hosting a workshop/corporate training about writing pylint plugins.
-If you are interested see this [page](/pages/pylint-workshop.html)!
+If you are interested see this [page](http://MrSenko.com/pylint-workshop/)!
 
 
 Thanks for reading and happy testing!
