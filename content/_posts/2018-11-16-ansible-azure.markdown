@@ -1,5 +1,5 @@
 Title: How to authenticate Ansible with Azure
-date: 2018-11-16 10:00
+date: 2018-11-16 09:30
 comments: true
 Tags: fedora.planet
 og_image: images/ansible-azure.png
