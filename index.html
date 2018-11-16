@@ -145,6 +145,96 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2018/11/16/how-to-authenticate-ansible-with-azure/" rel="bookmark" title="Permalink to How to authenticate Ansible with Azure">
+                <h2 class="post-title">
+                    How to authenticate Ansible with Azure
+                </h2>
+            </a>
+                <p>As I am working on cloud image testing for
+<a href="http://weldr.io">Composer</a> I need to create scripts that can provision
+virtual machines in multiple cloud platforms. Instead of using their API directly
+I can reuse the vast majority of
+<a href="https://docs.ansible.com/ansible/2.6/modules/list_of_cloud_modules.html">Ansible cloud modules</a>.</p>
+<p>There are modules for Azure of course however they poorly explain
+how to configure authentication. Ansible docs say:</p>
+<div class="highlight"><pre>For authentication with Azure you can pass parameters,
+set environment variables or use a profile stored in
+~/.azure/credentials. Authentication is possible using
+a service principal or Active Directory user. To authenticate
+via service principal, pass subscription_id, client_id, secret
+and tenant or set environment variables AZURE_SUBSCRIPTION_ID,
+AZURE_CLIENT_ID, AZURE_SECRET and AZURE_TENANT.
+</pre></div>
+
+
+<p>This is how you go about configuring these variables.</p>
+<p>First install <code>azure-cli</code> tools:</p>
+<div class="highlight"><pre><span class="c"># rpm --import https://packages.microsoft.com/keys/microsoft.asc</span>
+<span class="c"># echo -e &quot;[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc&quot; &gt; /etc/yum.repos.d/azure-cli.repo</span>
+<span class="c"># yum install azure-cli</span>
+</pre></div>
+
+
+<p>then login:</p>
+<div class="highlight"><pre><span class="nv">$ </span>az login
+To sign in, use a web browser to open the page
+https://microsoft.com/devicelogin and enter the code XXXXXXXXX to authenticate.
+<span class="o">[</span>
+  <span class="o">{</span>
+    <span class="s2">&quot;cloudName&quot;</span>: <span class="s2">&quot;AzureCloud&quot;</span>,
+    <span class="s2">&quot;id&quot;</span>: <span class="s2">&quot;8d026bb1-.....&quot;</span>,
+    <span class="s2">&quot;isDefault&quot;</span>: <span class="nb">true</span>,
+    <span class="s2">&quot;name&quot;</span>: <span class="s2">&quot;Pay-as-you-go&quot;</span>,
+    <span class="s2">&quot;state&quot;</span>: <span class="s2">&quot;Enabled&quot;</span>,
+    <span class="s2">&quot;tenantId&quot;</span>: <span class="s2">&quot;9f340302-......&quot;</span>,
+    <span class="s2">&quot;user&quot;</span>: <span class="o">{</span>
+      <span class="s2">&quot;name&quot;</span>: <span class="s2">&quot;atodorov@....&quot;</span>,
+      <span class="s2">&quot;type&quot;</span>: <span class="s2">&quot;user&quot;</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">]</span>
+</pre></div>
+
+
+<p>Here <code>id==AZURE_SUBSCRITION_ID</code> and <code>tenantId==AZURE_TENANT</code>! Next you need
+client id and secret before Ansible can be able to authenticate with Azure!
+In fact you need to register an Active Directory Service Principal
+which will authenticate with the Azure REST API, in other words when
+executing Ansible commands in your shell (or via test script) that will be
+treated as an application which must be allowed access to Azure resources.</p>
+<p>From the command line this is done by:</p>
+<div class="highlight"><pre><span class="nv">$ </span>az ad sp create-for-rbac --name http://ansible-atodorov --role owner --scopes <span class="s2">&quot;/subscriptions/</span><span class="nv">$ANSIBLE_SUBSCRIPTION_ID</span><span class="s2">/resourceGroups/</span><span class="nv">$RESOURCE_GROUP_NAME</span><span class="s2">&quot;</span>
+<span class="o">{</span>
+  <span class="s2">&quot;appId&quot;</span>: <span class="s2">&quot;f86af23a-......&quot;</span>,
+  <span class="s2">&quot;displayName&quot;</span>: <span class="s2">&quot;ansible-atodorov&quot;</span>,
+  <span class="s2">&quot;name&quot;</span>: <span class="s2">&quot;http://ansible-atodorov&quot;</span>,
+  <span class="s2">&quot;password&quot;</span>: <span class="s2">&quot;37d908aa-.......&quot;</span>,
+  <span class="s2">&quot;tenant&quot;</span>: <span class="s2">&quot;9f340302-.........&quot;</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p>Note: resource group is an Azure term, you can find more about it
+<a href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview">here</a>.</p>
+<p>In this example <code>appId==ANSIBLE_CLIENT_ID</code> and <code>password==ANSIBLE_SECRET</code>. After exporting
+these environment variables you should be able to use Ansible to upload blobs to
+Azure or start virtual machines:</p>
+<div class="highlight"><pre><span class="nv">$ </span><span class="nb">export </span><span class="nv">ANSIBLE_SUBSCRIPTION_ID</span><span class="o">=</span>8d026bb1-.....
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">ANSIBLE_TENANT</span><span class="o">=</span>9f340302-..............
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">ANSIBLE_CLIENT_ID</span><span class="o">=</span>f86af23a-...........
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">ANSIBLE_SECRET</span><span class="o">=</span>37d908aa-..............
+
+<span class="nv">$ </span>ansible localhost -m azure_rm_storageblob -a <span class="s2">&quot;resource_group=composer storage_account_name=composerredhat container=composerredhat blob=linux.vhd src=linux.vhd blob_type=page&quot;</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy testing!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 16 November 2018
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2018/11/16/how-to-authenticate-ansible-with-azure/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2018/07/24/introducing-pylint-django-20/" rel="bookmark" title="Permalink to Introducing pylint-django 2.0">
                 <h2 class="post-title">
                     Introducing pylint-django 2.0
@@ -2108,122 +2198,6 @@ scales, color palettes and icon sets and apply them. This is what Zaharenia does
                  on Thu 15 June 2017
             </p>
 <p>There are <a href="http://atodorov.org/blog/2017/06/15/design-for-developers-in-5-steps/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/" rel="bookmark" title="Permalink to VMware's favorite login form">
-                <h2 class="post-title">
-                    VMware's favorite login form
-                </h2>
-            </a>
-                <p><em>How do you test a login form?</em> is one of my favorite questions when
-screening candidates for QA positions and also a good brain exercise
-even for experienced testers. I've written about it
-<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">last year</a>. In this
-blog post I'd like to share a different perspective on this same question,
-this time courtesy of my friend Rayna Stankova.</p>
-<p><img alt="Login form" src="/images/login_form_vmware.png" title="Login form" /></p>
-<h2>What bugs do you see above</h2>
-<p>The series of images above is from a
-<a href="https://www.meetup.com/Women-Who-Code-Sofia/events/239480974/">Women Who Code Sofia</a>
-workshop where the participants were given printed copies and asked to find
-as much defects as possible. Here they are (counting clock-wise from the top-left corner):</p>
-<ol>
-<li>Typo in "Registr" link at the bottom;</li>
-<li>UI components are not aligned;</li>
-<li>Missing "Forgot your password?" link</li>
-<li>Backend credentials validation with empty password;
-   plain text password field; Too specific information about incorrect credentials;</li>
-<li>Too specific information about incorrect credentials with visual hint
-   as to what exactly is not correct. In this case it looks like the password
-   is OK, maybe it was one of
-   <a href="https://www.youtube.com/watch?v=0Jx8Eay5fWQ">the 4 most commonly used passwords</a>,
-   but the username is wrong which we can easily figure out;</li>
-<li>In this case the error handling appears to be correct, not disclosing what
-   exactly is wrong. The placement is somewhat wrong, it looks like an error
-   message for one of the fields instead for the entire form. I'd move that to the top
-   and even slightly update the wording to be more like <em>Login failed, bad credentials,
-   try again</em>.</li>
-</ol>
-<h2>How do you test this</h2>
-<p>Here is a list of possible test scenarios, proposed by Rayna. Notes are mine.</p>
-<p><strong>UI Layer</strong></p>
-<ul>
-<li>Test 1: Verify Email (User ID) field has focus on page load</li>
-<li>Test 2: Verify Empty Email (User ID) field and Password field</li>
-<li>Test 3: Verify Empty Email (User ID) field</li>
-<li>Test 4: Verify Empty Password field</li>
-<li>Test 5: Verify Correct sign in</li>
-<li>Test 6: Verify Incorrect sign in</li>
-<li>Test 7: Verify Password Reset - working link</li>
-<li>Test 8: Verify Password Reset - invalid emails</li>
-<li>Test 9: Verify Password Reset - valid email</li>
-<li>Test 10: Verify Password Reset - using new password</li>
-<li>Test 11: Verify Password Reset - using old password</li>
-<li>Test 12: Verify whether password text is hidden</li>
-<li>Test 13: Verify text field limits - whether the browser accepts more than the allowed database limits</li>
-<li>Test 14: Verify that validation message is displayed in case user exceeds the character limit of the username and password fields</li>
-<li>Test 15: Verify if there is checkbox with label "remember password" in the login page</li>
-<li>Test 16: Verify if it’s allowed the username to contain non printable characters? If not, this is invalid on the 'create user' section.</li>
-<li>Test 17: Verify if the user must be logged in to access any other area of the site.</li>
-</ul>
-<p>Tests 10 and 11 are particularly relevant for Fedora Account System where
-you need a really strong password and (at least in the past) had to change it more often
-and couldn't reuse any of your old passwords. As a user I really hate this b/c I can't remember
-my own password but it makes for a good test scenario.</p>
-<p>13 and 14 are also something I rarely see and could make a nice case for
-property based testing.</p>
-<p>16 would have been the bread and butter of testing Emoj.li (the first emoji-only
-social network).</p>
-<p><strong>Keyboard Specific</strong></p>
-<ul>
-<li>Test 18: Verify Navigate to all fields</li>
-<li>Test 19: Verify Enter submits on password focus</li>
-<li>Test 20: Verify Space submits on login focus</li>
-<li>Test 21: Verify Enter submits</li>
-</ul>
-<p>These are all so relevant with beautifully styled websites nowadays. The one I hate the most
-is when space key doesn't trigger select/unselect for checkboxes which are actually
-images!</p>
-<p><strong>Security:</strong></p>
-<ul>
-<li>Test 22: Verify SQL Injections testing - password field</li>
-<li>Test 23: Verify SQL Injections testing - username field</li>
-<li>Test 24: Verify SQL Injections testing - reset password</li>
-<li>Test 25: Verify Password/username not visible from URL login</li>
-<li>Test 26: Verify For security point of view, in case of incorrect credentials user is displayed the message like
-  "incorrect username or password" instead of exact message pointing at the field that is incorrect.
-  As message like "incorrect username" will aid hacker in brute-forcing the fields one by one</li>
-<li>Test 27: Verify the timeout of the login session</li>
-<li>Test 28: Verify if the password can be copy-pasted or not</li>
-<li>Test 29: Verify that once logged in, clicking back button doesn't logout user</li>
-</ul>
-<p>22, 23 and 24 are a bit generic and I guess can be collapsed into one. Better yet make
-them more specific instead.</p>
-<p>Test 28 may sound like nonsense but is not. I remember back in the days that
-it was possible to copy and paste the password out of Windows dial-up credentials screen.
-With heavily styled form fields it is possible to have this problem again so it is
-a valid check IMO.</p>
-<p><strong>Others:</strong></p>
-<ul>
-<li>Test 30: Verify that the password is in encrypted form when entered</li>
-<li>Test 31: Verify the user must be logged in to call any web services.</li>
-<li>Test 32: Verify if the username is allowed to contain non printable characters,
-  the code handling login can deal with them and no error is thrown.</li>
-</ul>
-<p>I think Test 30 means to validate that the backend doesn't store passwords in plain text
-but rather stores their hashes.</p>
-<p>32 is a duplicate of 16. I also say why only the username? Password field is also
-a good candidate for this.</p>
-<p>If you check how I
-<a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">would test a login form</a> you will find
-some similarities but there are also scenarios which are different. I'm interested to
-see what other scenarios we've both missed, especially ones which have manifested themselves
-as bugs in actual applications.</p>
-<p>Thanks for reading and happy testing!</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 14 June 2017
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2017/06/14/vmwares-favorite-login-form/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
