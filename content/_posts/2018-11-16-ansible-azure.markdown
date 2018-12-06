@@ -63,7 +63,7 @@ treated as an application which must be allowed access to Azure resources.
 From the command line this is done by:
 
     :::
-    $ az ad sp create-for-rbac --name http://ansible-atodorov --role owner --scopes "/subscriptions/$ANSIBLE_SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_NAME"
+    $ az ad sp create-for-rbac --name http://ansible-atodorov --role owner --scopes "/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_NAME"
     {
       "appId": "f86af23a-......",
       "displayName": "ansible-atodorov",
@@ -76,7 +76,7 @@ From the command line this is done by:
 Note: resource group is an Azure term, you can find more about it
 [here](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview).
 
-In this example `appId==ANSIBLE_CLIENT_ID` and `password==ANSIBLE_SECRET`. After exporting
+In this example `appId==AZURE_CLIENT_ID` and `password==AZURE_SECRET`. After exporting
 these environment variables you should be able to use Ansible to upload blobs to
 Azure or start virtual machines:
 
