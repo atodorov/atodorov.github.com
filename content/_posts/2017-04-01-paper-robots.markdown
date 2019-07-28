@@ -2,7 +2,7 @@ Title: Building cardboard robots
 Headline: you have 5 minutes to surrender
 date: 2017-04-01 01:08
 comments: true
-Tags: fedora.planet
+Tags: fedora.planet, adriana
 og_image: images/robots.jpg
 twitter_image: images/robots.jpg
 
