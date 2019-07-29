@@ -97,6 +97,98 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/" rel="bookmark" title="Permalink to Mocking Django AUTH_PROFILE_MODULE without a Database">
+                <h2 class="post-title">
+                    Mocking Django AUTH_PROFILE_MODULE without a Database
+                </h2>
+            </a>
+                <p><a href="http://www.dif.io">Difio</a> is a Django based service which uses a profile
+model to provide site-specific, per-user information.
+In the process of <a href="https://github.com/difio/difio">open sourcing Difio</a> its core
+functionality becomes available as a Django app. The trouble is that the 
+<code>UserProfile</code> model contains site-specific and proprietary data which doesn't
+make sense to the public nor I want to release it.</p>
+<p>The solution is to have a <code>MockProfile</code> model and work with
+that by default while <a href="http://www.dif.io">www.dif.io</a> and other implementations
+override it as needed.
+<strong>How do you do that without creating useless table and records in the database
+but still have the profiles created automatically for every user?</strong></p>
+<p>It turns out the solution is quite simple. See my comments inside the code below.</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Any AUTH_PROFILE_MODULE model should inherit this</span>
+<span class="sd">        and override the default methods.</span>
+
+<span class="sd">        This model provides the FK to User!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c"># no DB table created b/c model is abstract</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">class</span> <span class="nc">MockProfileManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This manager creates MockProfile&#39;s on the fly without</span>
+<span class="sd">        touching the database. It is needed by User.get_profile()</span>
+<span class="sd">        b/c we can&#39;t have an abstract base class as AUTH_PROFILE_MODULE.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            User.get_profile() calls .using(...).get(user_id__exact=X)</span>
+<span class="sd">            so we instrument it here to return a MockProfile() with</span>
+<span class="sd">            user_id=X parameter. Anything else may break!!!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+
+        <span class="c"># this creates an object in memory. To save it to DB</span>
+        <span class="c"># call obj.save() which we DON&#39;T do anyway!</span>
+        <span class="k">return</span> <span class="n">MockProfile</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MockProfile</span><span class="p">(</span><span class="n">AbstractMockProfile</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        In-memory (fake) profile class used by default for</span>
+<span class="sd">        the AUTH_PROFILE_MODULE setting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">MockProfileManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c"># DB table is NOT created automatically</span>
+        <span class="c"># when managed = False</span>
+        <span class="n">managed</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+
+
+<p>In Difio core the user profile is always used like this</p>
+<div class="highlight"><pre>profile = request.user.get_profile()
+if profile.is_subscribed():
+    pass
+</pre></div>
+
+
+<p>and by default</p>
+<div class="highlight"><pre>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
+</pre></div>
+
+
+<p>Voila!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Thu 27 February 2014
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2014/02/21/skip-or-render-specific-blocks-from-jinja2-templates/" rel="bookmark" title="Permalink to Skip or Render Specific Blocks from Jinja2 Templates">
                 <h2 class="post-title">
                     Skip or Render Specific Blocks from Jinja2 Templates
@@ -1522,42 +1614,6 @@ I wasn't aware of. Need to RTFM a little bit.</p>
                  on Tue 19 November 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/11/19/tip-cut-leading-or-trailing-fields-from-strings-in-bash/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/" rel="bookmark" title="Permalink to Keeping Backwards Compatibility for pykickstart">
-                <h2 class="post-title">
-                    Keeping Backwards Compatibility for pykickstart
-                </h2>
-            </a>
-                <p>Consider the following scenario:</p>
-<ul>
-<li>I'm using <a href="https://fedorahosted.org/snake/">SNAKE</a> templates as part of my
-installation testing work;</li>
-<li>SNAKE has a dependency on pykickstart;</li>
-<li>To test the latest and greatest kickstart features in Fedora we need the
-latest version of pykickstart;</li>
-<li>Latest pykickstart needs Python 2.7</li>
-<li>Python 2.7 is not available on RHEL 6 which is used to host the test
-infrastructure.</li>
-</ul>
-<p>Just yesterday I hit an issue with the above setup and figured Fedora QA is
-in a kind of strange situation - we always need the latest but need it
-conservative enough to run on RHEL 6. See the original thread at
-<a href="https://www.redhat.com/archives/kickstart-list/2013-November/msg00001.html">kickstart-list</a>.</p>
-<p>In this particular case the solution will be to remove the offending code
-and implement the same functionality in backward-compatible manner. Also add
-more tests. I will be working on this tomorrow (there's an older patch already).</p>
-<p>The BIG question remains though - how do you manage software evolution and still
-keep it compatible with older execution stacks? Please share your experience in
-the comments section.</p>
-<hr />
-<p>PP: Spoiler - this is part of an ongoing effort to bring open source installation
-testing expertise (my domain) into Fedora world, plus establish a community supported
-test infrastructure. More info TBA soon.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 13 November 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/11/13/keeping-backwards-compatibility-for-pykickstart/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

@@ -145,6 +145,147 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/" rel="bookmark" title="Permalink to Performance test: Amazon ElastiCache vs Amazon S3">
+                <h2 class="post-title">
+                    Performance test: Amazon ElastiCache vs Amazon S3
+                </h2>
+            </a>
+                <p>Which Django cache backend is faster? Amazon ElastiCache or Amazon S3 ?</p>
+<p>Previously I've mentioned about
+<a href="/blog/2013/06/19/django-tips-using-cache-for-stateful-http/">using Django's cache to keep state between HTTP requests</a>.
+In my demo described there I was using <a href="http://github.com/atodorov/django-s3-cache">django-s3-cache</a>.
+It is time to move to production so I decided to measure the performance difference between the two
+cache options available at Amazon Web Services.</p>
+<p><strong>Update 2013-07-01</strong>: my initial test may have been false since I had not configured
+ElastiCache access properly. I saw no errors but discovered the issue today on another
+system which was failing to store the cache keys but didn't show any errors either. 
+I've re-run the tests and updated times are shown below.</p>
+<h2>Test infrastructure</h2>
+<ul>
+<li>One Amazon S3 bucket, located in US Standard (aka US East) region;</li>
+<li>One Amazon ElastiCache cluster with one Small Cache Node (cache.m1.small) with Moderate I/O capacity;</li>
+<li>One Amazon Elasticache cluster with one Large Cache Node (cache.m1.large) with High I/O Capacity;</li>
+<li><strong>Update:</strong> I've tested both <code>python-memcached</code> and <code>pylibmc</code> client libraries for Django;</li>
+<li><strong>Update:</strong> Test is executed from an EC2 node in the us-east-1a availability zone;</li>
+<li><strong>Update:</strong> Cache clusters are in the us-east-1a availability zone.</li>
+</ul>
+<h2>Test Scenario</h2>
+<p>The test platform is Django. I've created a
+<a href="https://github.com/atodorov/Amazon-ElastiCache-vs-Amazon-S3-Django">skeleton project</a>
+with only <code>CACHES</code> settings
+defined and necessary dependencies installed. A file called <code>test.py</code> holds the
+test cases, which use the standard timeit module. The object which is stored in cache
+is very small - it holds a phone/address identifiers and couple of user made selections.
+The code looks like this:</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">timeit</span>
+
+<span class="n">s3_set</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">for i in range(1000):</span>
+<span class="sd">    my_cache.set(i, MyObject)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">,</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from django.core import cache</span>
+
+<span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+
+<span class="sd">MyObject = {</span>
+<span class="sd">    &#39;from&#39; : &#39;359123456789&#39;,</span>
+<span class="sd">    &#39;address&#39; : &#39;6afce9f7-acff-49c5-9fbe-14e238f73190&#39;,</span>
+<span class="sd">    &#39;hour&#39; : &#39;12:30&#39;,</span>
+<span class="sd">    &#39;weight&#39; : 5,</span>
+<span class="sd">    &#39;type&#39; : 1,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">)</span>
+
+<span class="n">s3_get</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">for i in range(1000):</span>
+<span class="sd">    MyObject = my_cache.get(i)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">,</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from django.core import cache</span>
+
+<span class="sd">my_cache = cache.get_cache(&#39;default&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">)</span>
+</pre></div>
+
+
+<p>Tests were executed from the Django shell <del>on my laptop</del>
+on an EC2 instance in the us-east-1a availability zone. ElastiCache nodes
+were freshly created/rebooted before test execution. S3 bucket had no objects.</p>
+<div class="highlight"><pre><span class="err">$</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell</span>
+<span class="n">Python</span> <span class="mf">2.6</span><span class="o">.</span><span class="mi">8</span> <span class="p">(</span><span class="n">unknown</span><span class="p">,</span> <span class="n">Mar</span> <span class="mi">14</span> <span class="mi">2013</span><span class="p">,</span> <span class="mi">09</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">22</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span> <span class="mi">20111027</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux2</span>
+<span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="p">(</span><span class="n">InteractiveConsole</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">test</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">s3_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">68.089607000350952</span><span class="p">,</span> <span class="mf">70.806712865829468</span><span class="p">,</span> <span class="mf">72.49261999130249</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">s3_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">43.778793096542358</span><span class="p">,</span> <span class="mf">43.054368019104004</span><span class="p">,</span> <span class="mf">36.19232702255249</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.40637087821960449</span><span class="p">,</span> <span class="mf">0.3568730354309082</span><span class="p">,</span> <span class="mf">0.35815882682800293</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pymc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.35759496688842773</span><span class="p">,</span> <span class="mf">0.35180497169494629</span><span class="p">,</span> <span class="mf">0.39198613166809082</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.3902890682220459</span><span class="p">,</span> <span class="mf">0.30157709121704102</span><span class="p">,</span> <span class="mf">0.30596804618835449</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.28874802589416504</span><span class="p">,</span> <span class="mf">0.30520200729370117</span><span class="p">,</span> <span class="mf">0.29050207138061523</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_set</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">1.0291709899902344</span><span class="p">,</span> <span class="mf">0.31709098815917969</span><span class="p">,</span> <span class="mf">0.32010698318481445</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">libmc_large_get</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">[</span><span class="mf">0.2957158088684082</span><span class="p">,</span> <span class="mf">0.29067802429199219</span><span class="p">,</span> <span class="mf">0.29692888259887695</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<h2>Results</h2>
+<p>As expected ElastiCache is much faster (10x) compared to S3. However the difference
+between the two ElastiCache node types is subtle. I will stay with the smallest
+possible node to minimize costs. Also as seen, pylibmc is a bit faster compared to
+the pure Python implementation. </p>
+<p>Depending on your objects size or how many set/get operations you perform per
+second you may need to go with the larger nodes. Just test it!</p>
+<p><del>It surprised me how slow django-s3-cache is.</del>
+The false test showed django-s3-cache to be 100x slower but new results are better.
+10x decrease in performance sounds about right for a filesystem backed cache.</p>
+<p>A quick look at the code
+of the two backends shows some differences. The one I immediately see is that
+for every cache key django-s3-cache creates an sha1 hash which is used as the
+storage file name. This was modeled after the filesystem backend but I think the
+design is wrong - the memcached backends don't do this.</p>
+<p>Another one is that django-s3-cache time-stamps all objects and uses pickle to serialize them. 
+I wonder if it can't just write them as binary blobs directly. There's definitely lots
+of room for improvement of django-s3-cache. I will let you know my findings once I
+get to it. </p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Wed 26 June 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/06/26/performance-test-amazon-elasticache-vs-amazon-s3/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/06/24/twilio-is-located-in-amazon-web-services-us-east/" rel="bookmark" title="Permalink to Twilio is Located in Amazon Web Services US East">
                 <h2 class="post-title">
                     Twilio is Located in Amazon Web Services US East
@@ -1393,89 +1534,6 @@ gets copied it won't be able to generate the right passcode.</p>
                  on Fri 26 April 2013
             </p>
 <p>There are <a href="http://atodorov.org/blog/2013/04/26/personal-experience-with-credit-card-fraud/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/" rel="bookmark" title="Permalink to How to Deploy Python Hotfix on RedHat OpenShift Cloud">
-                <h2 class="post-title">
-                    How to Deploy Python Hotfix on RedHat OpenShift Cloud
-                </h2>
-            </a>
-                <p>In this article I will show you how to deploy hotfix versions for
-Python packages on the RedHat <a href="http://openshift.com">OpenShift</a> PaaS cloud.</p>
-<h2>Background</h2>
-<p>You are already running a Python application on your OpenShift instance.
-You are using some 3rd party dependencies when you find a bug in one of them.
-You go forward, fix the bug and submit a
-<a href="https://github.com/ahupp/python-magic/pull/31">pull request</a>.
-You don't want to wait for upstream to release a new version but rather
-build a hotfix package yourself and deploy to production immediately.</p>
-<h2>Solution</h2>
-<p>There are two basic approaches to solving this problem: </p>
-<ol>
-<li>Include the hotfix package source code in your application, i.e.
-add it to your git tree or;</li>
-<li>Build the hotfix separately and deploy as a dependency. Don't
-include it in your git tree, just add a requirement on the hotfix version. </li>
-</ol>
-<p>I will talk about the later. The tricky part here is to instruct the cloud environment
-to use your package (including the proper location) and not upstream or their local
-mirror.</p>
-<p>Python applications hosted at <a href="http://openshift.com">OpenShift</a> don't support
-<code>requirements.txt</code> which can point to various package sources and even install
-packages directly from GitHub. They support <code>setup.py</code> which fetches packages
-from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexible enough to support other locations.</p>
-<h2>Building the hotfix</h2>
-<p>First of all we'd like to build a hotfix package. This will be the upstream
-version that we are currently using plus the patch for our critical issue:</p>
-<div class="highlight"><pre><span class="nv">$ </span>wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
-<span class="nv">$ </span>tar -xzvf python-magic-0.4.3.tar.gz 
-<span class="nv">$ </span><span class="nb">cd </span>python-magic-0.4.3
-<span class="nv">$ </span>curl https://github.com/ahupp/python-magic/pull/31.patch <span class="p">|</span> patch
-</pre></div>
-
-
-<p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
-increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
-<p>Then build the new package using <code>python setup.py sdist</code> and upload it to a web server.</p>
-<h2>Deploying to OpenShift</h2>
-<p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
-and will not be on OpenShift's local mirror you need to provide the location where it can
-be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
-<div class="highlight"><pre><span class="gh">diff --git a/setup.py b/setup.py</span>
-<span class="gh">index c6e837c..2daa2a9 100644</span>
-<span class="gd">--- a/setup.py</span>
-<span class="gi">+++ b/setup.py</span>
-<span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
-       author=&#39;Your Name&#39;,
-       author_email=&#39;example@example.com&#39;,
-       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
-<span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
-<span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
-<span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
-      )
-</pre></div>
-
-
-<p>Now just git push to OpenShift and observe the console output:</p>
-<div class="highlight"><pre><span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">dependencies</span> <span class="k">for</span> <span class="n">YourAppName</span><span class="o">==</span><span class="mf">1.0</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Searching</span> <span class="k">for</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">==</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Best</span> <span class="n">match</span><span class="o">:</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Downloading</span> <span class="n">https</span><span class="o">://</span><span class="n">s3</span><span class="o">.</span><span class="na">amazonaws</span><span class="o">.</span><span class="na">com</span><span class="sr">/atodorov/blog/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Running</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="sr">/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/</span><span class="n">egg</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="n">tmp</span><span class="o">-</span><span class="n">R_Nxie</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">zip_safe</span> <span class="n">flag</span> <span class="n">not</span> <span class="kd">set</span><span class="o">;</span> <span class="n">analyzing</span> <span class="n">archive</span> <span class="n">contents</span><span class="o">...</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Removing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mi">3</span> <span class="n">from</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Adding</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span> <span class="n">to</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
-</pre></div>
-
-
-<p>Congratulations! Your hotfix package has just been deployed.</p>
-<p>This approach should work for other cloud providers and other programming languages
-as well. Let me know if you have any experience with that.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Wed 24 April 2013
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

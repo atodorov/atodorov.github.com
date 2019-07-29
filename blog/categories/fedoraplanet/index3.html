@@ -90,6 +90,104 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/" rel="bookmark" title="Permalink to Overridden let() causes segfault with RSpec">
+                <h2 class="post-title">
+                    Overridden let() causes segfault with RSpec
+                </h2>
+            </a>
+                <p>Last week <a href="https://github.com/syndbg">Anton</a> asked me to take a look at one of
+his RSpec test suites. He was able to consistently reproduce a segfault which
+looked like this:</p>
+<div class="highlight"><pre><span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span><span class="s-Atom">:</span> <span class="p">[</span><span class="nv">BUG</span><span class="p">]</span> <span class="s-Atom">vm_call_cfunc</span> <span class="o">-</span> <span class="s-Atom">cfp</span> <span class="s-Atom">consistency</span> <span class="s-Atom">error</span>
+<span class="s-Atom">ruby</span> <span class="mf">2.3.2</span><span class="nf">p217</span> <span class="p">(</span><span class="mi">2016</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">15</span> <span class="s-Atom">revision</span> <span class="mi">56796</span><span class="p">)</span> <span class="p">[</span><span class="s-Atom">x86_64</span><span class="o">-</span><span class="s-Atom">linux</span><span class="p">]</span>
+
+<span class="s-Atom">--</span> <span class="nv">Control</span> <span class="s-Atom">frame</span> <span class="s-Atom">information</span> <span class="s-Atom">-----------------------------------------------</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0013</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0048</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000047</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:map</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0045</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000044</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">113</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0035</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0043</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000042</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">configuration</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">1835</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0011</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0040</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000039</span> <span class="nv">BLOCK</span>  <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">112</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0009</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0018</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0037</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000036</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">reporter</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">77</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0008</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0022</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0033</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000032</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">111</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0007</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0028</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000027</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">87</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0006</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0085</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0023</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000022</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">71</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0005</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0026</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0016</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000015</span> <span class="nv">METHOD</span> <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">/</span><span class="s-Atom">core</span><span class="o">/</span><span class="s-Atom">runner</span><span class="p">.</span><span class="nn">rb</span><span class="p">:</span><span class="mi">45</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0004</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0025</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0012</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000011</span> <span class="nv">TOP</span>    <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">lib</span><span class="o">/</span><span class="s-Atom">ruby</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="mf">2.3.0</span><span class="o">/</span><span class="s-Atom">gems</span><span class="o">/</span><span class="s-Atom">rspec</span><span class="o">-</span><span class="s-Atom">core</span><span class="o">-</span><span class="mf">3.5.4</span><span class="o">/</span><span class="s-Atom">exe</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">4</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0003</span> <span class="nn">p</span><span class="p">:</span><span class="s-Atom">----</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0010</span> <span class="nn">e</span><span class="p">:</span><span class="mi">000009</span> <span class="nv">CFUNC</span>  <span class="s-Atom">:load</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0002</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0136</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0006</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">001</span><span class="s-Atom">e10</span> <span class="nv">EVAL</span>   <span class="o">/</span><span class="s-Atom">home</span><span class="o">/</span><span class="s-Atom">atodorov/.rbenv</span><span class="o">/</span><span class="s-Atom">versions</span><span class="o">/</span><span class="mf">2.3.2</span><span class="o">/</span><span class="s-Atom">bin</span><span class="o">/</span><span class="nn">rspec</span><span class="p">:</span><span class="mi">22</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+<span class="nn">c</span><span class="p">:</span><span class="mi">0001</span> <span class="nn">p</span><span class="p">:</span><span class="mi">0000</span> <span class="nn">s</span><span class="p">:</span><span class="mi">0002</span> <span class="nv">E</span><span class="s-Atom">:</span><span class="mi">0000</span><span class="nf">a0</span> <span class="p">(</span><span class="s-Atom">none</span><span class="p">)</span> <span class="p">[</span><span class="nv">FINISH</span><span class="p">]</span>
+</pre></div>
+
+
+<p>Googling for <code>vm_call_cfunc - cfp consistency error</code> yields
+<a href="https://bugs.ruby-lang.org/issues/10460">Ruby #10460</a>. Comments on the bug and
+particularly this one point towards the error:</p>
+<div class="highlight"><pre>&gt; Ruby is trying to be nice about reporting the error; but in the end,
+&gt; your code is still broken if it overflows stack.
+</pre></div>
+
+
+<p>Somewhere in the test suite was a piece of code that was overflowing the stack.
+It was somewhere along the lines of</p>
+<div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
+  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
+    <span class="n">it_behaves_like</span> <span class="s1">&#39;manager authentication&#39;</span> <span class="k">do</span>
+      <span class="n">include_examples</span> <span class="s1">&#39;active client for user with existing user&#39;</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>Considering the examples in the bug I started looking for patterns where a variable
+was defined and later redefined, possibly circling back to the previous definition.
+Expanding the shared examples by hand transformed the code into</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">describe</span> <span class="s1">&#39;#active_client_for_user&#39;</span> <span class="k">do</span>
+  <span class="n">context</span> <span class="s1">&#39;matching an existing user&#39;</span> <span class="k">do</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span> <span class="ss">:manager</span><span class="p">)</span> <span class="p">}</span>
+    <span class="n">let!</span><span class="p">(</span><span class="ss">:api_user_authentication</span><span class="p">)</span> <span class="p">{</span> <span class="n">create</span><span class="p">(</span><span class="ss">:user_authentication</span><span class="p">,</span> <span class="ss">user</span><span class="p">:</span> <span class="n">user</span><span class="p">)</span> <span class="p">}</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:user</span><span class="p">)</span> <span class="p">{</span> <span class="n">api_user_authentication</span><span class="o">.</span><span class="n">user</span> <span class="p">}</span>
+
+    <span class="n">context</span> <span class="s1">&#39;with an `active_assigned_client`&#39;</span> <span class="k">do</span>
+      <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+    <span class="k">end</span>
+
+    <span class="o">...</span> <span class="n">skip</span> <span class="o">...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>Line 5. overrode line 3. When line 4. was executed first because of lazy execution
+and the call execution path became: 4-5-4-5-4-5 ... <strong>NOTE:</strong> I think we need a
+warning about that in RuboCop, see
+<a href="https://github.com/bbatsov/rubocop/issues/3769">RuboCop #3769</a>.
+The fix however is a no brainer:</p>
+<div class="highlight"><pre><span class="gd">-  let(:user) { create(:user, :manager) }</span>
+<span class="gd">-  let!(:api_user_authentication) { create(:user_authentication, user: user) }</span>
+<span class="gi">+  let(:manager) { create(:user, :manager) }</span>
+<span class="gi">+  let!(:api_user_authentication) { create(:user_authentication, user: manager) }</span>
+</pre></div>
+
+
+<p>Thanks for reading and happy testing.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Sun 04 December 2016
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2016/12/04/overridden-let-causes-segfault-with-rspec/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2016/11/30/highlights-from-ista-and-gtac-2016/" rel="bookmark" title="Permalink to Highlights from ISTA and GTAC 2016">
                 <h2 class="post-title">
                     Highlights from ISTA and GTAC 2016
@@ -1910,124 +2008,6 @@ and I hope to see you next year in Sofia.</p>
                  on Tue 23 February 2016
             </p>
 <p>There are <a href="http://atodorov.org/blog/2016/02/23/bulgaria-web-summit-2016-report-videos/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/" rel="bookmark" title="Permalink to FOSDEM 2016 Report">
-                <h2 class="post-title">
-                    FOSDEM 2016 Report
-                </h2>
-            </a>
-                <p>Hello everyone, this year I've been to FOSDEM again. Here is a quick report
-of what I did, saw and liked during the event.</p>
-<h2>Day 0 - Elixir &amp; Erlang</h2>
-<p>Friday started with an unexpected shopping trip. The airline broke
-my luggage and I had to buy a replacement. The irony is that just before taking off
-I saw a guy with an
-<a rel="nofollow" href="http://www.amazon.com/gp/product/B006P65P1W/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=B006P65P1W&linkCode=as2&tag=atodorovorg-20&linkId=4VNFFQEDPY5JXCLP">Osprey Meridian</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=B006P65P1W" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-and thought how cool that was. The next day I was running around Brussels to
-find the exact same model! I also searched to buy the book
-<a rel="nofollow" href="http://www.amazon.com/gp/product/0140238301/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0140238301&linkCode=as2&tag=atodorovorg-20&linkId=3I6DMH5CC6ZGNX5A">Teach Your Child How to Think</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=atodorovorg-20&l=as2&o=1&a=0140238301" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
-by Edward De Bono but all 4 bookstores I checked were out of stock.</p>
-<p>With the luggage problem solved I headed to
-<a href="http://betacowork.com">BetaCowork</a> for
-<a href="http://www.erlang-factory.com/brussels2016/">Brussels Erlang Factory Lite</a>
-where I learned a bit about Erlang and Elixir. I also managed to squeeze a meeting
-with <a href="http://www.betacowork.com/profile/122/gilbert-west/">Gilbert West</a> talking about
-open source bugs.</p>
-<p>I found particularly interesting the Elixir workshop and the talk
-<a href="http://www.erlang-factory.com/brussels2016/pieterjan-montens">Erlang In The Wild: A Governmental Web Application</a>
-by Pieterjan Montens. Later I've managed to get a hold of him and talk some more
-about his experiences working for the government. As I figured out later we
-are likely to have mutual friends.</p>
-<p>BetaCowork was hosting FOSDEM related events during the entire week.
-There was a GNOME event and the Libre Office Italian team was there as well.
-Next time definitely worth a longer visit.</p>
-<p>Friday night was reserved for a dinner with the Red Hat Eclipse team and
-a fair amount of beer at Delirium afterwards where I've met my friend
-<a href="https://fedoraproject.org/wiki/User:Giannisk">Giannis Konstantinidis</a>
-and the new Fedora Ambassador for Albania -
-<a href="https://fedoraproject.org/wiki/User:Jonatoni">Jona Azizai</a>.</p>
-<p>All-in-all pretty good Friday!</p>
-<h2>Day 1 - Testing and Automation</h2>
-<p><img alt="Testing and Automation" src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation" /></p>
-<p>FOSDEM was hosting the
-<a href="https://fosdem.org/2016/schedule/track/testing_and_automation/">Testing and automation devroom</a>
-again. I've spent the entire Saturday there.</p>
-<p>Definitely the most interesting talk was
-<a href="https://fosdem.org/2016/schedule/event/closed_source_interop/">Testing interoperability with closed-source software through scriptable diplomacy</a>
-which introduced <a href="http://frida.re">Frida</a>. Frida is a testing tool which injects
-a JavaScript VM into your process and you can write scripts driving the
-application automatically. It was designed as means to control closed source
-software but can definitely be used for open source apps as well.</p>
-<p>I've talked to both Karl and Ole about Frida and my use-case for
-<a href="http://atodorov.org/blog/2016/01/14/controlling-interactive-terminal-programs/">testing interactive terminal programs</a>.
-That should be easy to do with Frida - just hook into the read and write
-functions and write some JavaScript or Python to run the test.
-Later we talked about how exactly Frida attaches to the running process
-and what external dependencies are needed if I'm to inject Frida
-into the Fedora installation environment.</p>
-<p>In <em>Testing embedded systems</em> Itamar Hassin talked about testing medical devices
-and made a point about regulation, security and compliance. Basically you are not
-allowed to ship non-application code on production system. However that code
-is necessary instrumentation to allow external integration testing. I suspect most
-developers and QA engineers will never have to deal with so strict
-regulations but that is something to have in mind if you test software
-in a heavily regulated industry.</p>
-<p><em>Testing complex software in CI</em> was essentially a presentation about <em>cwrap</em> which
-I've seen at
-<a href="http://atodorov.org/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/">FOSDEM 2014</a>.
-It touched the topic from a slightly different angle though. Tests in any open source
-project should have the following properties</p>
-<ul>
-<li>Be able to execute without the need of a complex environment;</li>
-<li>Enable full CI during code review (dependent on previous property);</li>
-<li>Be able to create complete integration tests.</li>
-</ul>
-<p>The demo showed how you can execute Samba's test suite locally without
-preparing a domain controller for example. This helps both devel and external
-contributors. Now contrast this with how Red Hat QE will do the testing - 
-they will create a bunch of virtual and bare metal machines, configure all
-related services and then execute the same test scripts to verify that indeed
-Samba works as expected.</p>
-<p>Btw I've been thinking what if I patch <em>cwrap</em> to overwrite read and write ?
-That will also make it possible to test interactive console programs,
-wouldn't it?</p>
-<p><em>Jenkins as Code</em> by Marcin and Lukasz was a blast. I think there were
-people standing alongside the walls. The guys shared their experience
-with <a href="https://github.com/jenkinsci/job-dsl-plugin">Jenkins Job DSL</a>
-plugin. The plugin is very flexible and powerful,
-using Groovy as its programming language. The only drawback is that it is
-sometimes too complex to use and requires a steep learning curve. Maybe
-<a href="http://docs.openstack.org/infra/jenkins-job-builder/">Jenkins Job Builder</a>
-is better suited if you don't need all that flexibility
-and complexity. I've met both of them afterwards and talked a bit more
-about open source bugs.</p>
-<p>At Saturday evening I've visited a panel discussion about
-<a href="https://www.eventbrite.com/e/startupbusaccelerate-the-impact-of-open-source-software-on-the-tech-industry-tickets-20869395925">the impact of open source on the tech industry</a>
-at <a href="http://co-station.com">Co.Station</a> organized by <a href="http://europe.startupbus.com">The Startup Bus</a>.
-There was beer, pizza, entrepreneur networking and talking about startups
-and open source. Do I need to say more? I will post a separate blog post
-about the interesting start-ups I've found so stay tuned.</p>
-<h2>Day 2 - Ping-pong with BBC Open Source</h2>
-<p><img alt="ping-pong" src="/images/bbc_ping_pong.jpg" title="ping-pong" /></p>
-<p>Sunday was my lazy day. I've attended a few talks but nothing too interesting.
-I've managed to go around the project stands, 
-<a href="https://fedorahosted.org/fedora-infrastructure/ticket/5085">filed a bug against FAS</a>
-and scored the highest ping-pong score for the day at the BBC Open Source stand.</p>
-<p>BBC has a long history of being involved with education in the UK and the
-<a href="https://www.microbit.co.uk">micro:bit</a> is their latest project. I will love to
-see this (or similar) delivered by the thousands here in Bulgaria so if you
-think about sponsoring let me know.</p>
-<p>Accidentally I met
-<a href="https://fedoraproject.org/wiki/User:Msivak">Martin Sivak</a> - a former
-Anaconda developer whom I've worked with in the past. He is now at the
-Virtualization Development team at Red Hat and we briefly talked about
-the need for more oVirt testing. I have something in mind about this
-which will be announced in the next 2 months so stay tuned.</p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Tue 02 February 2016
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2016/02/02/fosdem-2016-report/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->

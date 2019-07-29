@@ -90,6 +90,116 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/" rel="bookmark" title="Permalink to Performance Test: Amazon EBS vs. Instance Storage, Pt.1">
+                <h2 class="post-title">
+                    Performance Test: Amazon EBS vs. Instance Storage, Pt.1
+                </h2>
+            </a>
+                <p>I'm exploring the possibility to speed-up my cloud database so I've run some
+basic tests against storage options available to Amazon EC2 instances.
+The instance was <a href="http://aws.amazon.com/ec2/instance-types/">m1.large</a>
+with High I/O performance and two additional disks with the same size:</p>
+<ul>
+<li>/dev/xvdb - type EBS</li>
+<li>/dev/xvdc - type instance storage</li>
+</ul>
+<p>Both are Xen para-virtual disks. The difference is that EBS is persistent
+across reboots while instance storage is ephemeral.</p>
+<h2>hdparm</h2>
+<p>For a quick test I used <code>hdparm</code>. The manual says:</p>
+<div class="highlight"><pre>-T  Perform timings of cache reads for benchmark and comparison purposes.
+    This displays the speed of reading directly from the Linux buffer cache
+    without disk access. This measurement is essentially an indication of
+    the throughput of the processor, cache, and memory of the system under test.
+
+-t  Perform timings of device reads for benchmark and comparison purposes.
+    This displays the speed of reading through the buffer cache to the disk
+    without any prior caching of data. This measurement is an indication of how
+    fast the drive can sustain sequential data reads under Linux, without any
+    filesystem overhead.
+</pre></div>
+
+
+<p>The results of 3 runs of hdparm are shown below:</p>
+<div class="highlight"><pre># hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11984 MB in  1.98 seconds = 6038.36 MB/sec
+ Timing buffered disk reads:  158 MB in  3.01 seconds =  52.52 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   11988 MB in  1.98 seconds = 6040.01 MB/sec
+ Timing buffered disk reads:  1810 MB in  3.00 seconds = 603.12 MB/sec
+
+
+# hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11892 MB in  1.98 seconds = 5991.51 MB/sec
+ Timing buffered disk reads:  172 MB in  3.00 seconds =  57.33 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   12056 MB in  1.98 seconds = 6075.29 MB/sec
+ Timing buffered disk reads:  1972 MB in  3.00 seconds = 657.11 MB/sec
+
+
+# hdparm -tT /dev/xvdb /dev/xvdc
+
+/dev/xvdb:
+ Timing cached reads:   11994 MB in  1.98 seconds = 6042.39 MB/sec
+ Timing buffered disk reads:  254 MB in  3.02 seconds =  84.14 MB/sec
+
+/dev/xvdc:
+ Timing cached reads:   11890 MB in  1.99 seconds = 5989.70 MB/sec
+ Timing buffered disk reads:  1962 MB in  3.00 seconds = 653.65 MB/sec
+</pre></div>
+
+
+<p><strong>Result:</strong>
+Sequential reads from instance storage are 10x faster compared to EBS on average.</p>
+<h2>IOzone</h2>
+<p>I'm running MySQL and sequential data reads are probably over idealistic scenario.
+So I found another benchmark suite, called <a href="http://iozone.org">IOzone</a>.
+I used the 3-414 version built from the official SRPM.</p>
+<p>IOzone performs multiple tests. I'm interested in read/re-read, random-read/write,
+read-backwards and stride-read.</p>
+<p>For this round of testing I've tested with ext4 filesystem with and without journal
+on both types of disks. I also experimented running Iozone inside a ramfs mounted
+directory. However I didn't have the time to run the test suite multiple times.</p>
+<p>Then I used
+<a href="http://code.google.com/p/iozone-results-comparator/">iozone-results-comparator</a> to
+visualize the results. (I had to do a minor fix to the code to run inside virtualenv
+and install all missing dependencies).</p>
+<p>Raw IOzone output, data visualization and the modified tools are available in the
+<a href="http://s3.amazonaws.com/atodorov/blog/aws_disk_benchmark_w_iozone.tar.bz2">aws_disk_benchmark_w_iozone.tar.bz2</a>
+file (size 51M).</p>
+<p><strong>Graphics</strong></p>
+<p>EBS without journal(Baseline) vs. Instance Storage without journal(Set1)
+<img alt="EBS vs. Instance Storage" src="/images/aws_iozone/ebs_woj_vs_is_woj.png" title="EBS vs. Instance Storage" /></p>
+<p>Instance Storage without journal(Baseline) vs. Ramfs(Set1)
+<img alt="IS vs. Ramfs" src="/images/aws_iozone/is_woj_vs_ramfs.png" title="IS vs. Ramfs" /></p>
+<p><strong>Results</strong></p>
+<ul>
+<li>ext4 journal has no effect on reads, causes slow down when writing to disk. This
+is expected;</li>
+<li>Instance storage is faster compared to EBS but not much.
+If I understand the results correctly, read performance is similar in some cases;</li>
+<li>Ramfs is definitely the fastest but read performance compared to instance storage
+is not two-fold (or more) as I expected;</li>
+</ul>
+<p><strong>Conclusion</strong></p>
+<p>Instance storage appears to be faster (and this is expected) but I'm still not sure if
+my application will gain any speed improvement or how much if migrated to read from
+instance storage (or ramfs) instead of EBS. I will be performing more real-world
+test next time, by comparing execution time for some of my largest SQL queries.</p>
+<p>If you have other ideas how to adequately measure I/O performance in the AWS cloud,
+please use the comments below.</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Tue 26 February 2013
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2013/02/26/performance-test-amazon-ebs-vs-instance-storage-pt1/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/" rel="bookmark" title="Permalink to Performance test of MD5, SHA1, SHA256 and SHA512">
                 <h2 class="post-title">
                     Performance test of MD5, SHA1, SHA256 and SHA512
