@@ -1,5 +1,333 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2018-07-24T09:50:00+03:00</updated><entry><title>Introducing pylint-django 2.0</title><link href="http://atodorov.org/blog/2018/07/24/introducing-pylint-django-20/" rel="alternate"></link><updated>2018-07-24T09:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-07-24:blog/2018/07/24/introducing-pylint-django-20/</id><summary type="html">&lt;p&gt;Today I have released pylint-django version 2.0 on PyPI.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>atodorov.org</title><link href="http://atodorov.org/" rel="alternate"></link><link href="http://atodorov.org/blog/categories/python/atom.xml" rel="self"></link><id>http://atodorov.org/</id><updated>2019-12-06T22:19:00+02:00</updated><entry><title>Comparing equivalent Python statements</title><link href="http://atodorov.org/blog/2019/12/06/comparing-equivalent-python-statements/" rel="alternate"></link><updated>2019-12-06T22:19:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2019-12-06:blog/2019/12/06/comparing-equivalent-python-statements/</id><summary type="html">&lt;p&gt;&lt;img alt="Equivalent Python statements" src="/images/equivalent_python_statements.jpg" title="Equivalent Python statements" /&gt;&lt;/p&gt;
+&lt;p&gt;While teaching one of my Python classes yesterday I noticed a conditional expression
+which can be written in several ways. All of these are equivalent in their behavior:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;pass&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;pass&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;pass&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;pass&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;pass&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;My preferred style of writing is the last one (&lt;code&gt;not os.path.isdir()&lt;/code&gt;) because it
+looks the most pythonic of all. However the 5 expressions are slightly different
+behind the scenes so they must also have different speed of execution
+(click operator for link to documentation):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/reference/expressions.html#is"&gt;&lt;code&gt;is&lt;/code&gt;&lt;/a&gt; - identity operator,
+  e.g. both arguments are the same object as determined by the
+  &lt;a href="https://docs.python.org/3/library/functions.html#id"&gt;&lt;code&gt;id()&lt;/code&gt;&lt;/a&gt; function. In CPython
+  that means both arguments point to the same address in memory&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/reference/expressions.html#is"&gt;&lt;code&gt;is not&lt;/code&gt;&lt;/a&gt; -
+  yields the inverse truth value of &lt;code&gt;is&lt;/code&gt;, e.g. both arguments are not the same
+  object (address) in memory&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/library/stdtypes.html#comparisons"&gt;&lt;code&gt;==&lt;/code&gt;&lt;/a&gt; - equality
+  operator, e.g. both arguments have the same value&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/library/stdtypes.html#comparisons"&gt;&lt;code&gt;!=&lt;/code&gt;&lt;/a&gt; - non-equality
+  operator, e.g. both arguments have different values&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not"&gt;&lt;code&gt;not&lt;/code&gt;&lt;/a&gt; -
+  boolean operator&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In my &lt;a href="https://twitter.com/atodorov_/status/1202504284400750592"&gt;initial tweet&lt;/a&gt; I mentioned
+that I think &lt;code&gt;is False&lt;/code&gt; should be the fastest. &lt;a href="http://kiwitcms.org"&gt;Kiwi TCMS&lt;/a&gt; team
+member &lt;a href="https://twitter.com/real_zahari"&gt;Zahari&lt;/a&gt; countered with &lt;code&gt;not&lt;/code&gt; to be the fastest
+but didn't provide any reasoning!&lt;/p&gt;
+&lt;p&gt;My initial reasoning was as follows:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;is&lt;/code&gt; is essentially comparing addresses in memory so it should be as fast as it gets&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;==&lt;/code&gt; and &lt;code&gt;!=&lt;/code&gt; should be roughly the same but they do need to "read" values
+  from memory which would take additional time before the actual comparison of
+  these values&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;not&lt;/code&gt; is a boolean operator but honestly I have no idea how it is implemented
+  so I don't have any opinion as to its performance&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Using the following performance test script we get the average of 100 repetitions
+from executing the conditional statement 1 million times:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;statistics&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
+
+&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;if False:&lt;/span&gt;
+&lt;span class="sd"&gt;#if not result:&lt;/span&gt;
+&lt;span class="sd"&gt;#if result is False:&lt;/span&gt;
+&lt;span class="sd"&gt;#if result is not True:&lt;/span&gt;
+&lt;span class="sd"&gt;#if result != True:&lt;/span&gt;
+&lt;span class="sd"&gt;#if result == False:&lt;/span&gt;
+&lt;span class="sd"&gt;    pass&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;import os&lt;/span&gt;
+&lt;span class="sd"&gt;result = os.path.isdir(&amp;#39;/tmp&amp;#39;)&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;execution_times&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;repeat&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;average_time&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;statistics&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mean&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;execution_times&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;average_time&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; in none of these variants the body of the if statement is executed so
+the results must be pretty close to how long it takes to calculate the
+conditional expression itself!&lt;/p&gt;
+&lt;p&gt;Results (ordered by speed of execution):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;False _______ 0.009309015863109380&lt;/code&gt; - baseline&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;not result __ 0.011714859132189304&lt;/code&gt; - +25.84%&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;is False ____ 0.018575656899483876&lt;/code&gt; - +99.54%&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;is not True _ 0.018815848254598680&lt;/code&gt; - +102.1%&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;!= True _____ 0.024881873669801280&lt;/code&gt; - +167.2%&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;== False ____ 0.026119318689452484&lt;/code&gt; - +180.5%&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now these results weren't exactly what I was expecting. I thought &lt;code&gt;not&lt;/code&gt; will come in
+last but instead it came in first! Although &lt;code&gt;is False&lt;/code&gt; came in second it is almost
+twice as slow compared to baseline. Why is that ?&lt;/p&gt;
+&lt;p&gt;After digging around in
+&lt;a href="https://github.com/python/cpython"&gt;CPython&lt;/a&gt; I found the following definition
+for comparison operators:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;Python/ceval.c&lt;/span&gt;&lt;pre&gt;&lt;span class="k"&gt;static&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nf"&gt;cmp_outcome&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;switch&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="nl"&gt;PyCmp_IS&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="nl"&gt;PyCmp_IS_NOT&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="cm"&gt;/* ... skip PyCmp_IN, PyCmp_NOT_IN, PyCmp_EXC_MATCH ... */&lt;/span&gt;
+    &lt;span class="k"&gt;default&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;PyObject_RichCompare&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="nl"&gt;Py_True&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Py_False&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;Py_INCREF&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;where &lt;code&gt;PyObject_RichCompare&lt;/code&gt; is defined as follows (definition order reversed
+in actual sources):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;Objects/object.c&lt;/span&gt;&lt;pre&gt;&lt;span class="cm"&gt;/* Perform a rich comparison with object result.  This wraps do_richcompare()&lt;/span&gt;
+&lt;span class="cm"&gt;   with a check for NULL arguments and a recursion check. */&lt;/span&gt;
+&lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nf"&gt;PyObject_RichCompare&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+    &lt;span class="n"&gt;assert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Py_LT&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="n"&gt;Py_GE&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="n"&gt;PyErr_Occurred&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+            &lt;span class="n"&gt;PyErr_BadInternalCall&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Py_EnterRecursiveCall&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot; in comparison&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;do_richcompare&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;Py_LeaveRecursiveCall&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/* Perform a rich comparison, raising TypeError when the requested comparison&lt;/span&gt;
+&lt;span class="cm"&gt;   operator is not supported. */&lt;/span&gt;
+&lt;span class="k"&gt;static&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nf"&gt;do_richcompare&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;richcmpfunc&lt;/span&gt; &lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;checked_reverse_op&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt;
+        &lt;span class="n"&gt;PyType_IsSubtype&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;tp_richcompare&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;checked_reverse_op&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;_Py_SwappedOp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;Py_NotImplemented&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;Py_DECREF&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;tp_richcompare&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;Py_NotImplemented&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;Py_DECREF&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="n"&gt;checked_reverse_op&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;tp_richcompare&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;_Py_SwappedOp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;Py_NotImplemented&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;Py_DECREF&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="cm"&gt;/**********************************************************************&lt;/span&gt;
+
+&lt;span class="cm"&gt;        IMPORTANT: actual execution enters the next block because the bool&lt;/span&gt;
+&lt;span class="cm"&gt;        type doesn&amp;#39;t implement it&amp;#39;s own `tp_richcompare` function, see:&lt;/span&gt;
+&lt;span class="cm"&gt;        Objects/boolobject.c PyBool_Type (near the bottom of that file)&lt;/span&gt;
+
+&lt;span class="cm"&gt;    ***********************************************************************/&lt;/span&gt;
+
+    &lt;span class="cm"&gt;/* If neither object implements it, provide a sensible default&lt;/span&gt;
+&lt;span class="cm"&gt;       for == and !=, but raise an exception for ordering. */&lt;/span&gt;
+    &lt;span class="k"&gt;switch&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="nl"&gt;Py_EQ&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="nl"&gt;Py_True&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Py_False&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="nl"&gt;Py_NE&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="nl"&gt;Py_True&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Py_False&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;default&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;PyErr_Format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PyExc_TypeError&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                     &lt;span class="s"&gt;&amp;quot;&amp;#39;%s&amp;#39; not supported between instances of &amp;#39;%.100s&amp;#39; and &amp;#39;%.100s&amp;#39;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                     &lt;span class="n"&gt;opstrings&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;
+                     &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;tp_name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                     &lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ob_type&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;tp_name&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;Py_INCREF&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The &lt;code&gt;not&lt;/code&gt; operator is defined in &lt;code&gt;Objects/object.c&lt;/code&gt; as follows (definition order
+reverse in actual sources):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;span class="filename"&gt;Objects/object.c&lt;/span&gt;&lt;pre&gt;&lt;span class="cm"&gt;/* equivalent of &amp;#39;not v&amp;#39;&lt;/span&gt;
+&lt;span class="cm"&gt;   Return -1 if an error occurred */&lt;/span&gt;
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nf"&gt;PyObject_Not&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;PyObject_IsTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/* Test a value used as condition, e.g., in a for or if statement.&lt;/span&gt;
+&lt;span class="cm"&gt;   Return -1 if an error occurred */&lt;/span&gt;
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nf"&gt;PyObject_IsTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;PyObject&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;Py_ssize_t&lt;/span&gt; &lt;span class="n"&gt;res&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;Py_True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;Py_False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;Py_None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;        IMPORTANT: skip the rest because we are working with bool so this&lt;/span&gt;
+&lt;span class="cm"&gt;        function will return after the first or the second if statement!&lt;/span&gt;
+&lt;span class="cm"&gt;    */&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So a rough overview of calculating the above expressions is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;not&lt;/code&gt; - call 1 function which compares the argument with &lt;code&gt;Py_True/Py_False&lt;/code&gt;,
+  compare its result with 0&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;is/is not&lt;/code&gt; - do a switch/case/break, compare the result to &lt;code&gt;Py_True/Py_False&lt;/code&gt;,
+   call 1 function (&lt;code&gt;Py_INCREF&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;==/!=&lt;/code&gt; - switch/default (that is evaluate all case conditions before that),
+   call 1 function (&lt;code&gt;PyObject_RichCompare&lt;/code&gt;), which performs couple of
+   checks and calls another function (&lt;code&gt;do_richcompare&lt;/code&gt;), which does a few more checks
+   before executing switch/case/compare to &lt;code&gt;Py_True/Py_False&lt;/code&gt;, call &lt;code&gt;Py_INCREF&lt;/code&gt;
+   and return the result.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Obviously &lt;code&gt;not&lt;/code&gt; has the shortest code which needs to be executed.&lt;/p&gt;
+&lt;p&gt;We can also invoke the &lt;code&gt;dis&lt;/code&gt; module, aka disassembler of Python byte code into mnemonics
+like so (it needs a function to dissasemble):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;dis&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;f&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;pass&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dis&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dis&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;From the results below you can see that all expression variants are very similar:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;--------------- if False -------------------------
+
+              0 LOAD_GLOBAL              0 (False)
+              3 POP_JUMP_IF_FALSE        9
+
+              6 JUMP_FORWARD             0 (to 9)
+        &amp;gt;&amp;gt;    9 LOAD_CONST               0 (None)
+             12 RETURN_VALUE            None
+--------------- if not result --------------------
+              0 LOAD_FAST                0 (result)
+              3 POP_JUMP_IF_TRUE         9
+
+              6 JUMP_FORWARD             0 (to 9)
+        &amp;gt;&amp;gt;    9 LOAD_CONST               0 (None)
+             12 RETURN_VALUE            None
+--------------- if result is False ---------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (False)
+              6 COMPARE_OP               8 (is)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &amp;gt;&amp;gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result is not True ------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (True)
+              6 COMPARE_OP               9 (is not)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &amp;gt;&amp;gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result != True ----------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (True)
+              6 COMPARE_OP               3 (!=)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &amp;gt;&amp;gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result == False ---------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (False)
+              6 COMPARE_OP               2 (==)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &amp;gt;&amp;gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------------------------------------------
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The last 3 instructions are the same (that is the implicit &lt;code&gt;return None&lt;/code&gt; of the function).
+&lt;code&gt;LOAD_GLOBAL&lt;/code&gt; is to "read" the &lt;code&gt;True&lt;/code&gt; or &lt;code&gt;False&lt;/code&gt; boolean constants and
+&lt;code&gt;LOAD_FAST&lt;/code&gt; is to "read" the function parameter in this example.
+All of them &lt;code&gt;_JUMP_&lt;/code&gt; outside the if statement and the only difference is
+which comparison operator is executed (if any in the case of &lt;code&gt;not&lt;/code&gt;).&lt;/p&gt;
+&lt;h2&gt;P.S.&lt;/h2&gt;
+&lt;p&gt;When I teach Python I try to explain what is going on under the hood. Sometimes
+I draw squares on the whiteboard to represent various cells in memory and visualize
+things. One of my students asked me how do I know all of this? The essentials
+(for any programming language) are always documented in its official documentation.
+The rest is hacking around in its source code and learning how it works. This is
+also what I expect people working with/for me to be doing!&lt;/p&gt;
+&lt;p&gt;See you soon and Happy learning!&lt;/p&gt;</summary><category term="fedora.planet"></category><category term="QA"></category><category term="Python"></category></entry><entry><title>Introducing pylint-django 2.0</title><link href="http://atodorov.org/blog/2018/07/24/introducing-pylint-django-20/" rel="alternate"></link><updated>2018-07-24T09:50:00+03:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2018-07-24:blog/2018/07/24/introducing-pylint-django-20/</id><summary type="html">&lt;p&gt;Today I have released pylint-django version 2.0 on PyPI.
 The changes are centered around compatibility with the latest pylint 2.0 and
 astroid 2.0 versions. I've also bumped pylint-django's version number to reflact
 that.&lt;/p&gt;
@@ -1506,21 +1834,4 @@ was mostly about non-technical stuff which was nice.&lt;/p&gt;
 re-united with &lt;a href="http://akurtakov.blogspot.com"&gt;Alexander Kurtakov&lt;/a&gt; and other folks from
 Red Hat for more cherry beer!&lt;/p&gt;
 &lt;p&gt;Report of the second day of FOSDEM'14 on Sunday is
-&lt;a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="events"></category><category term="Fedora"></category><category term="Python"></category></entry><entry><title>Idempotent Django Email Sender with Amazon SQS and Memcache</title><link href="http://atodorov.org/blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/" rel="alternate"></link><updated>2013-12-11T23:29:00+02:00</updated><author><name>Alexander Todorov</name></author><id>tag:atodorov.org,2013-12-11:blog/2013/12/11/idempotent-django-email-sender-with-amazon-sqs-and-memcache/</id><summary type="html">&lt;p&gt;Recently I wrote about my problem with
-&lt;a href="/blog/2013/12/06/duplicate-amazon-sqs-messages-cause-multiple-emails/"&gt;duplicate Amazon SQS messages causing multiple emails&lt;/a&gt;
-for &lt;a href="http://www.dif.io"&gt;Difio&lt;/a&gt;. After considering several options and
-feedback from 
-&lt;a href="https://twitter.com/atodorov_/status/409429840820199424"&gt;@Answers4AWS&lt;/a&gt;
-I wrote a small decorator to fix this.&lt;/p&gt;
-&lt;p&gt;It uses the cache backend to prevent the task from executing twice
-during the specified time frame. The code is available at
-&lt;a href="https://djangosnippets.org/snippets/3010/"&gt;https://djangosnippets.org/snippets/3010/&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;As stated on Twitter you should use Memcache (or ElastiCache) for this.
-If using Amazon S3 with my
-&lt;a href="https://github.com/atodorov/django-s3-cache"&gt;django-s3-cache&lt;/a&gt; don't use the
-&lt;code&gt;us-east-1&lt;/code&gt; region because it is eventually consistent.&lt;/p&gt;
-&lt;p&gt;The solution is fast and simple on the development side and uses my existing
-cache infrastructure so it doesn't cost anything more!&lt;/p&gt;
-&lt;p&gt;There is still a race condition between marking the message as processed
-and the second check but nevertheless this should minimize the possibility of
-receiving duplicate emails to an accepted level. Only time will tell though!&lt;/p&gt;</summary><category term="cloud"></category><category term="Amazon"></category><category term="SQS"></category><category term="Django"></category><category term="Python"></category></entry></feed>
+&lt;a href="/blog/2014/02/03/fosdem-2014-report-day-2-testing-and-automation/"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="events"></category><category term="Fedora"></category><category term="Python"></category></entry></feed>

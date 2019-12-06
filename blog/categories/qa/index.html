@@ -90,6 +90,346 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
         <div class="post-preview">
+            <a href="http://atodorov.org/blog/2019/12/06/comparing-equivalent-python-statements/" rel="bookmark" title="Permalink to Comparing equivalent Python statements">
+                <h2 class="post-title">
+                    Comparing equivalent Python statements
+                </h2>
+            </a>
+                <p><img alt="Equivalent Python statements" src="/images/equivalent_python_statements.jpg" title="Equivalent Python statements" /></p>
+<p>While teaching one of my Python classes yesterday I noticed a conditional expression
+which can be written in several ways. All of these are equivalent in their behavior:</p>
+<div class="highlight"><pre><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+
+<p>My preferred style of writing is the last one (<code>not os.path.isdir()</code>) because it
+looks the most pythonic of all. However the 5 expressions are slightly different
+behind the scenes so they must also have different speed of execution
+(click operator for link to documentation):</p>
+<ul>
+<li><a href="https://docs.python.org/3/reference/expressions.html#is"><code>is</code></a> - identity operator,
+  e.g. both arguments are the same object as determined by the
+  <a href="https://docs.python.org/3/library/functions.html#id"><code>id()</code></a> function. In CPython
+  that means both arguments point to the same address in memory</li>
+<li><a href="https://docs.python.org/3/reference/expressions.html#is"><code>is not</code></a> -
+  yields the inverse truth value of <code>is</code>, e.g. both arguments are not the same
+  object (address) in memory</li>
+<li><a href="https://docs.python.org/3/library/stdtypes.html#comparisons"><code>==</code></a> - equality
+  operator, e.g. both arguments have the same value</li>
+<li><a href="https://docs.python.org/3/library/stdtypes.html#comparisons"><code>!=</code></a> - non-equality
+  operator, e.g. both arguments have different values</li>
+<li><a href="https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not"><code>not</code></a> -
+  boolean operator</li>
+</ul>
+<p>In my <a href="https://twitter.com/atodorov_/status/1202504284400750592">initial tweet</a> I mentioned
+that I think <code>is False</code> should be the fastest. <a href="http://kiwitcms.org">Kiwi TCMS</a> team
+member <a href="https://twitter.com/real_zahari">Zahari</a> countered with <code>not</code> to be the fastest
+but didn't provide any reasoning!</p>
+<p>My initial reasoning was as follows:</p>
+<ul>
+<li><code>is</code> is essentially comparing addresses in memory so it should be as fast as it gets</li>
+<li><code>==</code> and <code>!=</code> should be roughly the same but they do need to "read" values
+  from memory which would take additional time before the actual comparison of
+  these values</li>
+<li><code>not</code> is a boolean operator but honestly I have no idea how it is implemented
+  so I don't have any opinion as to its performance</li>
+</ul>
+<p>Using the following performance test script we get the average of 100 repetitions
+from executing the conditional statement 1 million times:</p>
+<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">statistics</span>
+<span class="kn">import</span> <span class="nn">timeit</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">if False:</span>
+<span class="sd">#if not result:</span>
+<span class="sd">#if result is False:</span>
+<span class="sd">#if result is not True:</span>
+<span class="sd">#if result != True:</span>
+<span class="sd">#if result == False:</span>
+<span class="sd">    pass</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">,</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">import os</span>
+<span class="sd">result = os.path.isdir(&#39;/tmp&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="p">)</span>
+
+<span class="n">execution_times</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1000000</span><span class="p">)</span>
+<span class="n">average_time</span> <span class="o">=</span> <span class="n">statistics</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">execution_times</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">average_time</span><span class="p">)</span>
+</pre></div>
+
+
+<p><strong>Note:</strong> in none of these variants the body of the if statement is executed so
+the results must be pretty close to how long it takes to calculate the
+conditional expression itself!</p>
+<p>Results (ordered by speed of execution):</p>
+<ul>
+<li><code>False _______ 0.009309015863109380</code> - baseline</li>
+<li><code>not result __ 0.011714859132189304</code> - +25.84%</li>
+<li><code>is False ____ 0.018575656899483876</code> - +99.54%</li>
+<li><code>is not True _ 0.018815848254598680</code> - +102.1%</li>
+<li><code>!= True _____ 0.024881873669801280</code> - +167.2%</li>
+<li><code>== False ____ 0.026119318689452484</code> - +180.5%</li>
+</ul>
+<p>Now these results weren't exactly what I was expecting. I thought <code>not</code> will come in
+last but instead it came in first! Although <code>is False</code> came in second it is almost
+twice as slow compared to baseline. Why is that ?</p>
+<p>After digging around in
+<a href="https://github.com/python/cpython">CPython</a> I found the following definition
+for comparison operators:</p>
+<div class="highlight"><span class="filename">Python/ceval.c</span><pre><span class="k">static</span> <span class="n">PyObject</span> <span class="o">*</span> <span class="nf">cmp_outcome</span><span class="p">(</span><span class="kt">int</span> <span class="n">op</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">v</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">w</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nl">PyCmp_IS</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">w</span><span class="p">);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="nl">PyCmp_IS_NOT</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">!=</span> <span class="n">w</span><span class="p">);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="cm">/* ... skip PyCmp_IN, PyCmp_NOT_IN, PyCmp_EXC_MATCH ... */</span>
+    <span class="k">default</span><span class="o">:</span>
+        <span class="k">return</span> <span class="n">PyObject_RichCompare</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">op</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">res</span> <span class="o">?</span> <span class="nl">Py_True</span> <span class="p">:</span> <span class="n">Py_False</span><span class="p">;</span>
+    <span class="n">Py_INCREF</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">v</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>where <code>PyObject_RichCompare</code> is defined as follows (definition order reversed
+in actual sources):</p>
+<div class="highlight"><span class="filename">Objects/object.c</span><pre><span class="cm">/* Perform a rich comparison with object result.  This wraps do_richcompare()</span>
+<span class="cm">   with a check for NULL arguments and a recursion check. */</span>
+<span class="n">PyObject</span> <span class="o">*</span> <span class="nf">PyObject_RichCompare</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">v</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">w</span><span class="p">,</span> <span class="kt">int</span> <span class="n">op</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">PyObject</span> <span class="o">*</span><span class="n">res</span><span class="p">;</span>
+
+    <span class="n">assert</span><span class="p">(</span><span class="n">Py_LT</span> <span class="o">&lt;=</span> <span class="n">op</span> <span class="o">&amp;&amp;</span> <span class="n">op</span> <span class="o">&lt;=</span> <span class="n">Py_GE</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">w</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">PyErr_Occurred</span><span class="p">())</span>
+            <span class="n">PyErr_BadInternalCall</span><span class="p">();</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Py_EnterRecursiveCall</span><span class="p">(</span><span class="s">&quot; in comparison&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">do_richcompare</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">op</span><span class="p">);</span>
+    <span class="n">Py_LeaveRecursiveCall</span><span class="p">();</span>
+    <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Perform a rich comparison, raising TypeError when the requested comparison</span>
+<span class="cm">   operator is not supported. */</span>
+<span class="k">static</span> <span class="n">PyObject</span> <span class="o">*</span> <span class="nf">do_richcompare</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">v</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">w</span><span class="p">,</span> <span class="kt">int</span> <span class="n">op</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">richcmpfunc</span> <span class="n">f</span><span class="p">;</span>
+    <span class="n">PyObject</span> <span class="o">*</span><span class="n">res</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">checked_reverse_op</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span><span class="o">-&gt;</span><span class="n">ob_type</span> <span class="o">!=</span> <span class="n">w</span><span class="o">-&gt;</span><span class="n">ob_type</span> <span class="o">&amp;&amp;</span>
+        <span class="n">PyType_IsSubtype</span><span class="p">(</span><span class="n">w</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="p">,</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+        <span class="p">(</span><span class="n">f</span> <span class="o">=</span> <span class="n">w</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="o">-&gt;</span><span class="n">tp_richcompare</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">checked_reverse_op</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">f</span><span class="p">)(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">_Py_SwappedOp</span><span class="p">[</span><span class="n">op</span><span class="p">]);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="n">Py_NotImplemented</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+        <span class="n">Py_DECREF</span><span class="p">(</span><span class="n">res</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">f</span> <span class="o">=</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="o">-&gt;</span><span class="n">tp_richcompare</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">f</span><span class="p">)(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">op</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="n">Py_NotImplemented</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+        <span class="n">Py_DECREF</span><span class="p">(</span><span class="n">res</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">checked_reverse_op</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">f</span> <span class="o">=</span> <span class="n">w</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="o">-&gt;</span><span class="n">tp_richcompare</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">f</span><span class="p">)(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">_Py_SwappedOp</span><span class="p">[</span><span class="n">op</span><span class="p">]);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="n">Py_NotImplemented</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+        <span class="n">Py_DECREF</span><span class="p">(</span><span class="n">res</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="cm">/**********************************************************************</span>
+
+<span class="cm">        IMPORTANT: actual execution enters the next block because the bool</span>
+<span class="cm">        type doesn&#39;t implement it&#39;s own `tp_richcompare` function, see:</span>
+<span class="cm">        Objects/boolobject.c PyBool_Type (near the bottom of that file)</span>
+
+<span class="cm">    ***********************************************************************/</span>
+
+    <span class="cm">/* If neither object implements it, provide a sensible default</span>
+<span class="cm">       for == and !=, but raise an exception for ordering. */</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nl">Py_EQ</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">w</span><span class="p">)</span> <span class="o">?</span> <span class="nl">Py_True</span> <span class="p">:</span> <span class="n">Py_False</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="nl">Py_NE</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">!=</span> <span class="n">w</span><span class="p">)</span> <span class="o">?</span> <span class="nl">Py_True</span> <span class="p">:</span> <span class="n">Py_False</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+        <span class="n">PyErr_Format</span><span class="p">(</span><span class="n">PyExc_TypeError</span><span class="p">,</span>
+                     <span class="s">&quot;&#39;%s&#39; not supported between instances of &#39;%.100s&#39; and &#39;%.100s&#39;&quot;</span><span class="p">,</span>
+                     <span class="n">opstrings</span><span class="p">[</span><span class="n">op</span><span class="p">],</span>
+                     <span class="n">v</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="o">-&gt;</span><span class="n">tp_name</span><span class="p">,</span>
+                     <span class="n">w</span><span class="o">-&gt;</span><span class="n">ob_type</span><span class="o">-&gt;</span><span class="n">tp_name</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">Py_INCREF</span><span class="p">(</span><span class="n">res</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The <code>not</code> operator is defined in <code>Objects/object.c</code> as follows (definition order
+reverse in actual sources):</p>
+<div class="highlight"><span class="filename">Objects/object.c</span><pre><span class="cm">/* equivalent of &#39;not v&#39;</span>
+<span class="cm">   Return -1 if an error occurred */</span>
+<span class="kt">int</span> <span class="nf">PyObject_Not</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">v</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">res</span><span class="p">;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">PyObject_IsTrue</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">res</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Test a value used as condition, e.g., in a for or if statement.</span>
+<span class="cm">   Return -1 if an error occurred */</span>
+<span class="kt">int</span> <span class="nf">PyObject_IsTrue</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">v</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">Py_ssize_t</span> <span class="n">res</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">Py_True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">Py_False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">Py_None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="cm">/*</span>
+<span class="cm">        IMPORTANT: skip the rest because we are working with bool so this</span>
+<span class="cm">        function will return after the first or the second if statement!</span>
+<span class="cm">    */</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>So a rough overview of calculating the above expressions is:</p>
+<ul>
+<li><code>not</code> - call 1 function which compares the argument with <code>Py_True/Py_False</code>,
+  compare its result with 0</li>
+<li><code>is/is not</code> - do a switch/case/break, compare the result to <code>Py_True/Py_False</code>,
+   call 1 function (<code>Py_INCREF</code>)</li>
+<li><code>==/!=</code> - switch/default (that is evaluate all case conditions before that),
+   call 1 function (<code>PyObject_RichCompare</code>), which performs couple of
+   checks and calls another function (<code>do_richcompare</code>), which does a few more checks
+   before executing switch/case/compare to <code>Py_True/Py_False</code>, call <code>Py_INCREF</code>
+   and return the result.</li>
+</ul>
+<p>Obviously <code>not</code> has the shortest code which needs to be executed.</p>
+<p>We can also invoke the <code>dis</code> module, aka disassembler of Python byte code into mnemonics
+like so (it needs a function to dissasemble):</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">dis</span>
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">pass</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+</pre></div>
+
+
+<p>From the results below you can see that all expression variants are very similar:</p>
+<div class="highlight"><pre>--------------- if False -------------------------
+
+              0 LOAD_GLOBAL              0 (False)
+              3 POP_JUMP_IF_FALSE        9
+
+              6 JUMP_FORWARD             0 (to 9)
+        &gt;&gt;    9 LOAD_CONST               0 (None)
+             12 RETURN_VALUE            None
+--------------- if not result --------------------
+              0 LOAD_FAST                0 (result)
+              3 POP_JUMP_IF_TRUE         9
+
+              6 JUMP_FORWARD             0 (to 9)
+        &gt;&gt;    9 LOAD_CONST               0 (None)
+             12 RETURN_VALUE            None
+--------------- if result is False ---------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (False)
+              6 COMPARE_OP               8 (is)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &gt;&gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result is not True ------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (True)
+              6 COMPARE_OP               9 (is not)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &gt;&gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result != True ----------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (True)
+              6 COMPARE_OP               3 (!=)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &gt;&gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------- if result == False ---------------
+              0 LOAD_FAST                0 (result)
+              3 LOAD_GLOBAL              0 (False)
+              6 COMPARE_OP               2 (==)
+              9 POP_JUMP_IF_FALSE       15
+
+             12 JUMP_FORWARD             0 (to 15)
+        &gt;&gt;   15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE            None
+--------------------------------------------------
+</pre></div>
+
+
+<p>The last 3 instructions are the same (that is the implicit <code>return None</code> of the function).
+<code>LOAD_GLOBAL</code> is to "read" the <code>True</code> or <code>False</code> boolean constants and
+<code>LOAD_FAST</code> is to "read" the function parameter in this example.
+All of them <code>_JUMP_</code> outside the if statement and the only difference is
+which comparison operator is executed (if any in the case of <code>not</code>).</p>
+<h2>P.S.</h2>
+<p>When I teach Python I try to explain what is going on under the hood. Sometimes
+I draw squares on the whiteboard to represent various cells in memory and visualize
+things. One of my students asked me how do I know all of this? The essentials
+(for any programming language) are always documented in its official documentation.
+The rest is hacking around in its source code and learning how it works. This is
+also what I expect people working with/for me to be doing!</p>
+<p>See you soon and Happy learning!</p>
+            <p class="post-meta">Posted by
+                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
+                 on Fri 06 December 2019
+            </p>
+<p>There are <a href="http://atodorov.org/blog/2019/12/06/comparing-equivalent-python-statements/#disqus_thread">comments</a>.</p>        </div>
+        <div class="post-preview">
             <a href="http://atodorov.org/blog/2019/07/29/how-to-start-solving-problems-in-the-qa-profession/" rel="bookmark" title="Permalink to How to start solving problems in the QA profession">
                 <h2 class="post-title">
                     How to start solving problems in the QA profession
@@ -2855,153 +3195,6 @@ data in real software please let me know in the comments below!</p>
                  on Sat 10 June 2017
             </p>
 <p>There are <a href="http://atodorov.org/blog/2017/06/10/semantically-invalid-input/#disqus_thread">comments</a>.</p>        </div>
-        <div class="post-preview">
-            <a href="http://atodorov.org/blog/2017/05/27/learn-python-selenium-automation-in-8-weeks/" rel="bookmark" title="Permalink to Learn Python & Selenium Automation in 8 weeks">
-                <h2 class="post-title">
-                    Learn Python &amp; Selenium Automation in 8 weeks
-                </h2>
-            </a>
-                <p>Couple of months ago I conducted a practical,
-instructor lead training in Python and Selenium automation for
-manual testers. You can find the materials at
-<a href="https://github.com/atodorov/qa-automation-python-selenium-101">GitHub</a>.</p>
-<p>The training consists of several basic modules and practical homework
-assignments. The modules explain</p>
-<ol>
-<li>The basic structure of a Python program and functions</li>
-<li>Commonly used data types</li>
-<li>If statements and (for) loops</li>
-<li>Classes and objects</li>
-<li>The Python unit testing framework and its assertions</li>
-<li>High-level introduction to Selenium with Python</li>
-<li>High-level introduction to the Page Objects design pattern</li>
-<li>Writing automated tests for real world scenarios
-   without any help from the instructor.</li>
-</ol>
-<p>Every module is intended to be taken in the course of 1 week and begins with
-links to preparatory materials and lots of reading. Then I help the students
-understand the basics and explain with more examples, often writing code as
-we go along. At the end there is the homework assignment for which I expect
-a solution presented by the end of the week so I can comment and code-review it.</p>
-<p>All assignments which require the student to implement functionality, not tests,
-are paired with a test suite, which the student should use to validate their
-solution.</p>
-<h2>What worked well</h2>
-<p>Despite everything I've written below I had 2 students (from a group of 8)
-which showed very good progress. One of them was the absolute star, taking
-active participation in every class and doing almost all homework assignments
-on time, pretty much without errors. I think she'd had some previous training
-or experience though.
-She was in the USA, training was done remotely via Google Hangouts.</p>
-<p>The other student was in Sofia, training was done in person. He is not on the
-same level as the US student but is the best from the Bulgarian team. IMO he
-lacks a little bit of motivation. He "cheated" a bit on some tasks providing
-non-standard, easier solutions and made most of his assignments. After the first
-Selenium session he started creating small scripts to extract results from
-football sites or as helpers to be applied in the daily job.
-The interesting
-fact for me was that he created his programs as <code>unittest.TestCase</code> classes.
-I guess because this was the way he knew how to run them!?!</p>
-<p>There were another few students which had had some prior experience with
-programming but weren't very active in class so I can't tell how their
-careers will progress. If they put some more effort into it I'm sure they
-can turn out to have decent programming skills.</p>
-<h2>What didn't work well</h2>
-<p>Starting from the beginning most students failed to read the preparatory
-materials. Some of the students did read a little bit, others didn't read at all.
-At the times when they came prepared I had the feeling the sessions progressed
-more smoothly. I also had students joining late in the process, which for the
-most part didn't participate at all in the training. I'd like to avoid that in
-the future if possible.</p>
-<p>Sometimes students complained about lack of example code, although
-<em>Dive into Python</em> includes tons of examples. I've resorted to sending them
-the example.py files which I produced during class.</p>
-<p>The practical part of the training was mostly myself programming on a big
-TV screen in front of everyone else. Several times someone from the students
-took my place. There wasn't much active participation on their part and
-unfortunately they didn't want to bring personal laptops to the training
-(or maybe weren't allowed)! We did have a company provided laptop though.</p>
-<p>When practicing functions and arithmetic operations the students struggled
-with basic maths like breaking down a number into its digits or vice versa,
-working with Fibonacci sequences and the like. In some cases they cheated
-by converting to/from strings and then iterating over them. Also some
-hard-coded the first few numbers of the Fibonacci sequence and returned
-it directly. Maybe an in-place
-explanation of the underlying maths would have been helpful but honestly
-I was surprised by this. Somebody please explain or give me an advise here!</p>
-<p>I am completely missing examples of the <code>datetime</code> and <code>timedelta</code> classes
-which tuned out to be very handy in the practical Selenium tasks and we had
-to go over them on the fly.</p>
-<p>The OOP assignments went mostly undone, not to mention one of them had
-bonus tasks which are easily solved using recursion. I think we could
-skip some of the OOP practice (not sure how safe that is) because I really
-need classes only for constructing the tests and we don't do anything fancy
-there.</p>
-<p>Page Object design pattern is also OOP based and I think that went somewhat
-well granted that we are only passing values around and performing some actions.
-I didn't put constraints nor provided guidance on what the classes should
-look like and which methods go where. Maybe I should have made it easier.</p>
-<p>Anyway, given that Page Objects is being replaced by Screenplay pattern,
-I think we can safely stick to the all-in-one functional based Selenium
-tests. Maybe utilize helper functions for repeated tasks (like login).
-Indeed this is what I was using last year with Rspec &amp; Capybara!</p>
-<h2>What students didn't understand</h2>
-<p>Right until the end I had people who had troubles understanding function
-signatures, function instances and calling/executing a function. Also
-returning a value from a function vs. printing the (same) value on screen
-or assigning to the same global variable (e.g. FIB_NUMBERS).</p>
-<p>In the same category falls using method parameters vs. using global variables
-(which happened to have the same value), using the parameters as arguments to
-another function inside the body of the current function, using class attributes
-(e.g. <code>self.name</code>) to store and pass values around vs. local variables in methods
-vs. method parameters which have the same names.</p>
-<p>I think there was some confusion about lists, dictionaries and tuples but
-we did practice mostly with list structures so I don't have enough information.</p>
-<p>I have the impression that object oriented programming (classes and instances,
-we didn't go into inheritance) are generally confusing to beginners with zero
-programming experience. The classical way to explain them is by using some
-abstractions like animal -&gt; dog -&gt; a particular dog breed -&gt; a particular pet.
-OOP was explained to me in a similar way back in school so these kinds of
-abstractions are very natural for me. I have no idea if my explanation sucks or students are having hard time
-wrapping their heads around the abstraction. I'd love to hear some feedback
-from other instructors on this one.</p>
-<p>I think there is some misunderstanding between a class (a definition of behavior)
-and an instance/object of this class (something which exists into memory). This
-may also explain the difficulty remembering or figuring out what <code>self</code> points to
-and why do we need to use it inside method bodies.</p>
-<p>For <code>unittest.TestCase</code> we didn't do lots of practice which is my fault.
-The homework assignments request the students to go back to solutions
-of previous modules and implement more tests for them. Next time I should
-provide a module (possibly with non-obvious bugs) and request to write
-a comprehensive test suite for it.</p>
-<p>Because of the missing practice there was some confusion/misunderstanding
-about the <code>setUpClass/tearDownClass</code> and the <code>setUp/tearDown</code> methods.
-Also add to the mix that the first are <code>@classmethod</code> while the later
-are not. "To be safe" students always defined both as class methods!</p>
-<p>I have since corrected the training materials but we didn't have
-good examples (nor practiced) explaining the difference between
-<code>setUpClass</code> (executed once aka before suite) and <code>setUp</code>
-(possibly executed multiple times aka before test method).</p>
-<p>On the Selenium side I think it is mostly practice which students lack,
-not understanding. The entire Selenium framework (any web test framework
-for that matter) boils down to</p>
-<ul>
-<li>Load a page</li>
-<li>Find element(s)</li>
-<li>Click or hover (that one was tricky) element</li>
-<li>Get element's attribute value or text</li>
-<li>Wait for the proper page to load (or worst case AJAX calls)</li>
-</ul>
-<p>IMO finding the correct element on the page is on-par with waiting
-(which also relies on locating elements) and took 80% of the time we spent
-working with Selenium.</p>
-<p>Thanks for reading and don't forget to comment and give me your feedback!</p>
-<p><em>Image source: https://www.udemy.com/selenium-webdriver-with-python/</em></p>
-            <p class="post-meta">Posted by
-                    <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
-                 on Sat 27 May 2017
-            </p>
-<p>There are <a href="http://atodorov.org/blog/2017/05/27/learn-python-selenium-automation-in-8-weeks/#disqus_thread">comments</a>.</p>        </div>
 
     <hr>
     <!-- Pager -->
