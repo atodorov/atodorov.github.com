@@ -340,6 +340,13 @@ The last 3 instructions are the same (that is the implicit `return None` of the 
 All of them `_JUMP_` outside the if statement and the only difference is
 which comparison operator is executed (if any in the case of `not`).
 
+**UPDATE:**
+as I was publishing this blog post I read the following comments from
+Ammar Askar who also gave me a few pointers on IRC:
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Note that this code path also has a direct inlined check for booleans, which should help too: <a href="https://t.co/YJ0az3q3qu">https://t.co/YJ0az3q3qu</a></p>&mdash; Ammar Askar (@__ammar2__) <a href="https://twitter.com/__ammar2__/status/1203012870386139137?ref_src=twsrc%5Etfw">December 6, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> 
+
+So go ahead and take a look at
+[`case TARGET(POP_JUMP_IF_TRUE)`](https://github.com/python/cpython/blob/e76ee1a72b9e3f5da287663ea3daec4bb3f67612/Python/ceval.c#L2989-L3001).
 
 P.S.
 ----
