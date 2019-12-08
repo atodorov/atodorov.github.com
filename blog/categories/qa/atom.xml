@@ -320,12 +320,49 @@ like so (it needs a function to dissasemble):&lt;/p&gt;
 &lt;code&gt;LOAD_FAST&lt;/code&gt; is to "read" the function parameter in this example.
 All of them &lt;code&gt;_JUMP_&lt;/code&gt; outside the if statement and the only difference is
 which comparison operator is executed (if any in the case of &lt;code&gt;not&lt;/code&gt;).&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;UPDATE:&lt;/strong&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 1:&lt;/strong&gt;
 as I was publishing this blog post I read the following comments from
 Ammar Askar who also gave me a few pointers on IRC:
 &lt;blockquote class="twitter-tweet"&gt;&lt;p lang="en" dir="ltr"&gt;Note that this code path also has a direct inlined check for booleans, which should help too: &lt;a href="https://t.co/YJ0az3q3qu"&gt;https://t.co/YJ0az3q3qu&lt;/a&gt;&lt;/p&gt;&amp;mdash; Ammar Askar (@&lt;strong&gt;ammar2&lt;/strong&gt;) &lt;a href="https://twitter.com/__ammar2__/status/1203012870386139137?ref_src=twsrc%5Etfw"&gt;December 6, 2019&lt;/a&gt;&lt;/blockquote&gt; &lt;script async src="https://platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt; &lt;/p&gt;
 &lt;p&gt;So go ahead and take a look at
 &lt;a href="https://github.com/python/cpython/blob/e76ee1a72b9e3f5da287663ea3daec4bb3f67612/Python/ceval.c#L2989-L3001"&gt;&lt;code&gt;case TARGET(POP_JUMP_IF_TRUE)&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UPDATE 2:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;After the above comments from Ammar Askar on Twitter and from
+Kevin Kofler below I decided to try and change one of the expressions a bit:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;result = not result&lt;/span&gt;
+&lt;span class="sd"&gt;if result:&lt;/span&gt;
+&lt;span class="sd"&gt;    pass&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;import os&lt;/span&gt;
+&lt;span class="sd"&gt;result = os.path.isdir(&amp;#39;/tmp&amp;#39;)&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;that is, calculate the &lt;code&gt;not operation&lt;/code&gt;, assign to variable and then evaluate the
+conditional statement in an attempt to bypass the built-in compiler optimization.
+The dissasembled code looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;0 LOAD_FAST                0 (result)
+2 UNARY_NOT
+4 STORE_FAST               0 (result)
+
+6 LOAD_FAST                0 (result)
+8 POP_JUMP_IF_FALSE       10
+10 LOAD_CONST              0 (None)
+12 RETURN_VALUE            None
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The execution time was around &lt;code&gt;0.022&lt;/code&gt; which is between &lt;code&gt;is&lt;/code&gt; and &lt;code&gt;==&lt;/code&gt;. However the
+&lt;code&gt;not result&lt;/code&gt; operation itself (without assignment) appears to execute for &lt;code&gt;0.017&lt;/code&gt;
+which still makes the &lt;code&gt;not&lt;/code&gt; operator faster than the &lt;code&gt;is&lt;/code&gt; operator, but only just!&lt;/p&gt;
+&lt;p&gt;Like already pointed out this is a fairly complex topic and it is evident
+that not everything can be compared directly in the same context (expression).&lt;/p&gt;
 &lt;h2&gt;P.S.&lt;/h2&gt;
 &lt;p&gt;When I teach Python I try to explain what is going on under the hood. Sometimes
 I draw squares on the whiteboard to represent various cells in memory and visualize
