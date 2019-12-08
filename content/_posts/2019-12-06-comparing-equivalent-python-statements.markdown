@@ -340,13 +340,52 @@ The last 3 instructions are the same (that is the implicit `return None` of the 
 All of them `_JUMP_` outside the if statement and the only difference is
 which comparison operator is executed (if any in the case of `not`).
 
-**UPDATE:**
+**UPDATE 1:**
 as I was publishing this blog post I read the following comments from
 Ammar Askar who also gave me a few pointers on IRC:
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Note that this code path also has a direct inlined check for booleans, which should help too: <a href="https://t.co/YJ0az3q3qu">https://t.co/YJ0az3q3qu</a></p>&mdash; Ammar Askar (@__ammar2__) <a href="https://twitter.com/__ammar2__/status/1203012870386139137?ref_src=twsrc%5Etfw">December 6, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> 
 
 So go ahead and take a look at
 [`case TARGET(POP_JUMP_IF_TRUE)`](https://github.com/python/cpython/blob/e76ee1a72b9e3f5da287663ea3daec4bb3f67612/Python/ceval.c#L2989-L3001).
+
+**UPDATE 2:**
+
+After the above comments from Ammar Askar on Twitter and from
+Kevin Kofler below I decided to try and change one of the expressions a bit:
+
+    :::python
+    t = timeit.Timer(
+    """
+    result = not result
+    if result:
+        pass
+    """
+    ,
+    """
+    import os
+    result = os.path.isdir('/tmp')
+    """
+    )
+
+that is, calculate the `not operation`, assign to variable and then evaluate the
+conditional statement in an attempt to bypass the built-in compiler optimization.
+The dissasembled code looks like this:
+
+    0 LOAD_FAST                0 (result)
+    2 UNARY_NOT
+    4 STORE_FAST               0 (result)
+    
+    6 LOAD_FAST                0 (result)
+    8 POP_JUMP_IF_FALSE       10
+    10 LOAD_CONST              0 (None)
+    12 RETURN_VALUE            None
+
+The execution time was around `0.022` which is between `is` and `==`. However the
+`not result` operation itself (without assignment) appears to execute for `0.017`
+which still makes the `not` operator faster than the `is` operator, but only just!
+
+Like already pointed out this is a fairly complex topic and it is evident
+that not everything can be compared directly in the same context (expression).
 
 P.S.
 ----
