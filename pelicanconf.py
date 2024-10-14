@@ -103,7 +103,7 @@ SOCIAL = (
             ('linkedin', "https://bg.linkedin.com/in/alextodorov"),
             ('rss',      "http://feeds.feedburner.com/atodorov"),
             ('youtube', "https://www.youtube.com/playlist?list=PLFjlI7p-h1hxBP3cIjEqePSeoBDHud5Db"),
-            ('amazon',   "http://amzn.to/1ivu2q4"),
+            ('amazon',   "https://amzn.to/4dKB8VJ"),
             ('user-secret', "http://mrsenko.com/?utm_source=atodorov.org&utm_medium=blog&utm_campaign=social_icon"),
         )
 
