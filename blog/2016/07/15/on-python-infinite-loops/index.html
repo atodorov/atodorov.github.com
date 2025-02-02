@@ -126,10 +126,9 @@ was missing a boolean replacement operator, that is an operator which will switc
 <code>True</code> to <code>False</code> and vice versa, so I wrote one. I've also added some tests to
 Cosmic Ray's test suite and then I hit the infinite loop problem.
 CR's test suite contains the following code inside a module called <code>adam.py</code></p>
-<div class="highlight"><pre><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
     <span class="k">break</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>The test suite executes mutations on <code>adam.py</code> and then runs some tests which
 it expects to fail. During execution one of the mutations is
@@ -138,27 +137,25 @@ times out after a while and kills the mutation. Everything fails as expected and
 we're good.</p>
 <p>Adding my boolean replacement operator broke this function. All of the other mutations
 work as expected but then the loop becomes</p>
-<div class="highlight"><pre><span class="k">while</span> <span class="bp">False</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="k">while</span> <span class="kc">False</span><span class="p">:</span>
     <span class="k">break</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>When we test this particular mutation there is no infinite loop so Cosmic Ray's
 test suite doesn't time out like it should and an error is reported.</p>
-<div class="highlight"><pre>job ID 25:Outcome.SURVIVED:adam
+<div class="highlight"><pre><span></span><code>job ID 25:Outcome.SURVIVED:adam
 command: cosmic-ray worker adam boolean_replacer 2 unittest -- tests
 <span class="gd">--- mutation diff ---</span>
 <span class="gd">--- a/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py</span>
 <span class="gi">+++ b/home/travis/build/MrSenko/cosmic-ray/test_project/adam.py</span>
 <span class="gu">@@ -32,6 +32,6 @@</span>
-     return x
- 
- def trigger_infinite_loop():
+<span class="w"> </span>    return x
+<span class="w"> </span>
+<span class="w"> </span>def trigger_infinite_loop():
 <span class="gd">-    while True:</span>
 <span class="gi">+    while False:</span>
-         break
-</pre></div>
-
+<span class="w"> </span>        break
+</code></pre></div>
 
 <p>So the question becomes how to write the loop condition in such a way that nothing
 will mutate it but it will still remain true so that when <code>break</code> becomes <code>continue</code>
@@ -169,10 +166,9 @@ break the loop condition.</p>
 <p>So I took a look at the docs for
 <a href="https://docs.python.org/2.4/lib/truth.html">truth value testing</a> and discovered
 <a href="https://github.com/sixty-north/cosmic-ray/pull/155">my solution</a>:</p>
-<div class="highlight"><pre><span class="k">while</span> <span class="nb">object</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><code><span class="k">while</span> <span class="nb">object</span><span class="p">():</span>
     <span class="k">break</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>I'm creating an object instance here which will not be mutated by any of the
 existing mutation operators.</p>
@@ -272,7 +268,7 @@ existing mutation operators.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

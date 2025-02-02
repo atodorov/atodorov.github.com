@@ -123,13 +123,12 @@
 <code>Rails.application.config.action_dispatch.show_exceptions</code> inside my
 RSpec tests in order to test custom error pages in a Rails app. However this
 doesn't work. My code looked like this</p>
-<div class="highlight"><pre><span class="n">feature</span> <span class="s1">&#39;Exceptions&#39;</span> <span class="k">do</span>
-  <span class="n">before</span> <span class="k">do</span>
-    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">action_dispatch</span><span class="o">.</span><span class="n">show_exceptions</span> <span class="o">=</span> <span class="kp">true</span>
-    <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">consider_all_requests_local</span> <span class="o">=</span> <span class="kp">false</span>
-  <span class="k">end</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">feature</span><span class="w"> </span><span class="s1">&#39;Exceptions&#39;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="n">before</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">action_dispatch</span><span class="o">.</span><span class="n">show_exceptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">true</span>
+<span class="w">    </span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">consider_all_requests_local</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">false</span>
+<span class="w">  </span><span class="k">end</span>
+</code></pre></div>
 
 <p>This works only if I execute <code>exceptions_spec.rb</code> alone. However when something
 else executes before that it fails. The config values are
@@ -145,18 +144,17 @@ ActionDispatch::DebugExceptions.</p>
 </blockquote>
 <p>In fact <code>DebugExceptions</code> uses <code>env['action_dispatch.show_exceptions']</code>. The
 correct code should look like this</p>
-<div class="highlight"><pre><span class="n">before</span> <span class="k">do</span>
-  <span class="nb">method</span> <span class="o">=</span> <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span>
-  <span class="n">expect</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">receive</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span><span class="o">.</span><span class="n">with</span><span class="p">(</span><span class="n">no_args</span><span class="p">)</span> <span class="k">do</span>
-    <span class="nb">method</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-      <span class="s1">&#39;action_dispatch.show_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
-      <span class="s1">&#39;action_dispatch.show_detailed_exceptions&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
-      <span class="s1">&#39;consider_all_requests_local&#39;</span> <span class="o">=&gt;</span> <span class="kp">false</span>
-    <span class="p">)</span>
-  <span class="k">end</span>
+<div class="highlight"><pre><span></span><code><span class="n">before</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span>
+<span class="w">  </span><span class="n">expect</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="w"> </span><span class="n">receive</span><span class="p">(</span><span class="ss">:env_config</span><span class="p">)</span><span class="o">.</span><span class="n">with</span><span class="p">(</span><span class="n">no_args</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">method</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+<span class="w">      </span><span class="s1">&#39;action_dispatch.show_exceptions&#39;</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span>
+<span class="w">      </span><span class="s1">&#39;action_dispatch.show_detailed_exceptions&#39;</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="kp">false</span><span class="p">,</span>
+<span class="w">      </span><span class="s1">&#39;consider_all_requests_local&#39;</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="kp">false</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="k">end</span>
 <span class="k">end</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>This allows the test to work regardless of the order of execution
 of spec files. I don't know why but I also had to leave
@@ -256,7 +254,7 @@ of spec files. I don't know why but I also had to leave
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

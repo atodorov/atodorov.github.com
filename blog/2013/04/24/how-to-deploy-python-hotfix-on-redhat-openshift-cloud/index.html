@@ -37,7 +37,7 @@
 
 
 
-        <meta name="description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are ...">
+        <meta name="description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are...">
 
         <meta name="author" content="Alexander Todorov">
 
@@ -55,7 +55,7 @@
 	<meta property="og:url" content="http://atodorov.org/blog/2013/04/24/how-to-deploy-python-hotfix-on-redhat-openshift-cloud/">
 	<meta property="og:title" content="How to Deploy Python Hotfix on RedHat OpenShift Cloud">
 	<meta property="article:published_time" content="2013-04-24 11:58:00+03:00">
-            <meta property="og:description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are ...">
+            <meta property="og:description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are...">
 
             <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
         <meta name="twitter:card" content="summary_large_image">
@@ -64,7 +64,7 @@
 
             <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
 
-            <meta name="twitter:description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are ...">
+            <meta name="twitter:description" content="In this article I will show you how to deploy hotfix versions for Python packages on the RedHat OpenShift PaaS cloud. Background You are...">
 </head>
 
 <body>
@@ -146,12 +146,11 @@ from <a href="http://pypi.python.org">http://pypi.python.org</a> but it is flexi
 <h2>Building the hotfix</h2>
 <p>First of all we'd like to build a hotfix package. This will be the upstream
 version that we are currently using plus the patch for our critical issue:</p>
-<div class="highlight"><pre><span class="nv">$ </span>wget https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
-<span class="nv">$ </span>tar -xzvf python-magic-0.4.3.tar.gz 
-<span class="nv">$ </span><span class="nb">cd </span>python-magic-0.4.3
-<span class="nv">$ </span>curl https://github.com/ahupp/python-magic/pull/31.patch <span class="p">|</span> patch
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>wget<span class="w"> </span>https://pypi.python.org/packages/source/p/python-magic/python-magic-0.4.3.tar.gz
+$<span class="w"> </span>tar<span class="w"> </span>-xzvf<span class="w"> </span>python-magic-0.4.3.tar.gz<span class="w"> </span>
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>python-magic-0.4.3
+$<span class="w"> </span>curl<span class="w"> </span>https://github.com/ahupp/python-magic/pull/31.patch<span class="w"> </span><span class="p">|</span><span class="w"> </span>patch
+</code></pre></div>
 
 <p>Verify the patch has been applied correctly and then modify <code>setup.py</code> to
 increase the version string. In this case I will set it to <code>version='0.4.3.1'</code>.</p>
@@ -160,33 +159,31 @@ increase the version string. In this case I will set it to <code>version='0.4.3.
 <p>Modify <code>setup.py</code> and specify the hotfix version. Because this version is not on PyPI
 and will not be on OpenShift's local mirror you need to provide the location where it can
 be found. This is done with the <code>dependency_links</code> parameter to <code>setup()</code>. Here's how it looks:</p>
-<div class="highlight"><pre><span class="gh">diff --git a/setup.py b/setup.py</span>
+<div class="highlight"><pre><span></span><code><span class="gh">diff --git a/setup.py b/setup.py</span>
 <span class="gh">index c6e837c..2daa2a9 100644</span>
 <span class="gd">--- a/setup.py</span>
 <span class="gi">+++ b/setup.py</span>
 <span class="gu">@@ -6,5 +6,6 @@ setup(name=&#39;YourAppName&#39;,</span>
-       author=&#39;Your Name&#39;,
-       author_email=&#39;example@example.com&#39;,
-       url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
+<span class="w"> </span>      author=&#39;Your Name&#39;,
+<span class="w"> </span>      author_email=&#39;example@example.com&#39;,
+<span class="w"> </span>      url=&#39;http://www.python.org/sigs/distutils-sig/&#39;,
 <span class="gd">-      install_requires=[&#39;python-magic==0.4.3&#39;],</span>
 <span class="gi">+      dependency_links=[&#39;https://s3.amazonaws.com/atodorov/blog/python-magic-0.4.3.1.tar.gz&#39;],</span>
 <span class="gi">+      install_requires=[&#39;python-magic==0.4.3.1&#39;],</span>
-      )
-</pre></div>
-
+<span class="w"> </span>     )
+</code></pre></div>
 
 <p>Now just git push to OpenShift and observe the console output:</p>
-<div class="highlight"><pre><span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">dependencies</span> <span class="k">for</span> <span class="n">YourAppName</span><span class="o">==</span><span class="mf">1.0</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Searching</span> <span class="k">for</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">==</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Best</span> <span class="n">match</span><span class="o">:</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Downloading</span> <span class="n">https</span><span class="o">://</span><span class="n">s3</span><span class="o">.</span><span class="na">amazonaws</span><span class="o">.</span><span class="na">com</span><span class="sr">/atodorov/blog/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Processing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="na">tar</span><span class="o">.</span><span class="na">gz</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Running</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="sr">/setup.py -q bdist_egg --dist-dir /tmp/easy_install-ZRVMBg/python-magic-0.4.3.1/</span><span class="n">egg</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="n">tmp</span><span class="o">-</span><span class="n">R_Nxie</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">zip_safe</span> <span class="n">flag</span> <span class="n">not</span> <span class="kd">set</span><span class="o">;</span> <span class="n">analyzing</span> <span class="n">archive</span> <span class="n">contents</span><span class="o">...</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Removing</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mi">3</span> <span class="n">from</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
-<span class="n">remote</span><span class="o">:</span> <span class="n">Adding</span> <span class="n">python</span><span class="o">-</span><span class="n">magic</span> <span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span> <span class="n">to</span> <span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="na">pth</span> <span class="n">file</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Processing</span><span class="w"> </span><span class="n">dependencies</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">YourAppName</span><span class="o">==</span><span class="mf">1.0</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Searching</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">==</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Best</span><span class="w"> </span><span class="k">match</span><span class="p">:</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="w"> </span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Downloading</span><span class="w"> </span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">s3</span><span class="o">.</span><span class="n">amazonaws</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">atodorov</span><span class="o">/</span><span class="n">blog</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Processing</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Running</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="o">-</span><span class="n">q</span><span class="w"> </span><span class="n">bdist_egg</span><span class="w"> </span><span class="o">--</span><span class="n">dist</span><span class="o">-</span><span class="n">dir</span><span class="w"> </span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">easy_install</span><span class="o">-</span><span class="n">ZRVMBg</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="o">/</span><span class="n">egg</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="n">tmp</span><span class="o">-</span><span class="n">R_Nxie</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">zip_safe</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">set</span><span class="p">;</span><span class="w"> </span><span class="n">analyzing</span><span class="w"> </span><span class="n">archive</span><span class="w"> </span><span class="n">contents</span><span class="o">...</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Removing</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="w"> </span><span class="mf">0.4</span><span class="o">.</span><span class="mi">3</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="n">pth</span><span class="w"> </span><span class="n">file</span>
+<span class="k">remote</span><span class="p">:</span><span class="w"> </span><span class="n">Adding</span><span class="w"> </span><span class="n">python</span><span class="o">-</span><span class="n">magic</span><span class="w"> </span><span class="mf">0.4</span><span class="o">.</span><span class="mf">3.1</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">easy</span><span class="o">-</span><span class="n">install</span><span class="o">.</span><span class="n">pth</span><span class="w"> </span><span class="n">file</span>
+</code></pre></div>
 
 <p>Congratulations! Your hotfix package has just been deployed.</p>
 <p>This approach should work for other cloud providers and other programming languages
@@ -286,7 +283,7 @@ as well. Let me know if you have any experience with that.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

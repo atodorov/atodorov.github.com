@@ -210,7 +210,7 @@ not be different across the checker.</p>
 or look at existing checker codes.</p>
 <h2>Practical example</h2>
 <p>In <a href="http://kiwitcms.org">Kiwi TCMS</a> there's legacy code that looks like this:</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">add_cases</span><span class="p">(</span><span class="n">run_ids</span><span class="p">,</span> <span class="n">case_ids</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">add_cases</span><span class="p">(</span><span class="n">run_ids</span><span class="p">,</span> <span class="n">case_ids</span><span class="p">):</span>
     <span class="n">trs</span> <span class="o">=</span> <span class="n">TestRun</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">run_id__in</span><span class="o">=</span><span class="n">pre_process_ids</span><span class="p">(</span><span class="n">run_ids</span><span class="p">))</span>
     <span class="n">tcs</span> <span class="o">=</span> <span class="n">TestCase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">case_id__in</span><span class="o">=</span><span class="n">pre_process_ids</span><span class="p">(</span><span class="n">case_ids</span><span class="p">))</span>
 
@@ -219,40 +219,38 @@ or look at existing checker codes.</p>
             <span class="n">tr</span><span class="o">.</span><span class="n">add_case_run</span><span class="p">(</span><span class="n">case</span><span class="o">=</span><span class="n">tc</span><span class="p">)</span>
 
     <span class="k">return</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Notice the dangling <code>return</code> statement at the end! It is useless because when missing
 the default return value of this function will still be <code>None</code>. So I've decided to
 create a plugin for that.</p>
 <p>Armed with the knowledge above I first try the ast parser in the console:</p>
-<div class="highlight"><pre><span class="n">Python</span> <span class="mf">3.6</span><span class="o">.</span><span class="mi">3</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Oct</span>  <span class="mi">5</span> <span class="mi">2017</span><span class="p">,</span> <span class="mi">20</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">50</span><span class="p">)</span> 
-<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">5</span> <span class="mi">20150623</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.8</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mi">11</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux</span>
-<span class="n">Type</span> <span class="s">&quot;help&quot;</span><span class="p">,</span> <span class="s">&quot;copyright&quot;</span><span class="p">,</span> <span class="s">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<div class="highlight"><pre><span></span><code><span class="n">Python</span> <span class="mf">3.6.3</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Oct</span>  <span class="mi">5</span> <span class="mi">2017</span><span class="p">,</span> <span class="mi">20</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">50</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.8.5</span> <span class="mi">20150623</span> <span class="p">(</span><span class="n">Red</span> <span class="n">Hat</span> <span class="mf">4.8.5</span><span class="o">-</span><span class="mi">11</span><span class="p">)]</span> <span class="n">on</span> <span class="n">linux</span>
+<span class="n">Type</span> <span class="s2">&quot;help&quot;</span><span class="p">,</span> <span class="s2">&quot;copyright&quot;</span><span class="p">,</span> <span class="s2">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s2">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">ast</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">astroid</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">ast</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;def func():</span><span class="se">\n</span><span class="s">    return&#39;</span><span class="p">))</span>
-<span class="s">&quot;Module(body=[FunctionDef(name=&#39;func&#39;, args=arguments(args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Return(value=None)], decorator_list=[], returns=None)])&quot;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ast</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;def func():</span><span class="se">\n</span><span class="s1">    return&#39;</span><span class="p">))</span>
+<span class="s2">&quot;Module(body=[FunctionDef(name=&#39;func&#39;, args=arguments(args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Return(value=None)], decorator_list=[], returns=None)])&quot;</span>
 <span class="o">&gt;&gt;&gt;</span> 
 <span class="o">&gt;&gt;&gt;</span> 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;def func():</span><span class="se">\n</span><span class="s">    return&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;def func():</span><span class="se">\n</span><span class="s1">    return&#39;</span><span class="p">)</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">node</span>
-<span class="o">&lt;</span><span class="n">Module</span> <span class="n">l</span><span class="o">.</span><span class="mi">0</span> <span class="n">at</span> <span class="mh">0x7f5b04621b38</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="n">Module</span> <span class="n">l</span><span class="mf">.0</span> <span class="n">at</span> <span class="mh">0x7f5b04621b38</span><span class="o">&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span>
-<span class="p">[</span><span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="o">.</span><span class="mi">1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span><span class="p">]</span>
+<span class="p">[</span><span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="mf">.1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span><span class="p">]</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="o">.</span><span class="mi">1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="n">FunctionDef</span><span class="o">.</span><span class="n">func</span> <span class="n">l</span><span class="mf">.1</span> <span class="n">at</span> <span class="mh">0x7f5b046219e8</span><span class="o">&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">body</span>
-<span class="p">[</span><span class="o">&lt;</span><span class="n">Return</span> <span class="n">l</span><span class="o">.</span><span class="mi">2</span> <span class="n">at</span> <span class="mh">0x7f5b04621c18</span><span class="o">&gt;</span><span class="p">]</span>
-</pre></div>
-
+<span class="p">[</span><span class="o">&lt;</span><span class="n">Return</span> <span class="n">l</span><span class="mf">.2</span> <span class="n">at</span> <span class="mh">0x7f5b04621c18</span><span class="o">&gt;</span><span class="p">]</span>
+</code></pre></div>
 
 <p>As you can see there is a <code>FunctionDef</code> node representing the function and it has
 a <code>body</code> attribute which is a list of all statements inside the function. The last
 element is <code>.body[-1]</code> and it is of type <code>Return</code>! The <code>Return</code> node also has an
 attribute called <code>.value</code> which is the return value! The complete code will look
 like this:</p>
-<div class="highlight"><span class="filename">uselessreturn.py</span><pre><span class="kn">import</span> <span class="nn">astroid</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">astroid</span>
 
 <span class="kn">from</span> <span class="nn">pylint</span> <span class="kn">import</span> <span class="n">checkers</span>
 <span class="kn">from</span> <span class="nn">pylint</span> <span class="kn">import</span> <span class="n">interfaces</span>
@@ -262,60 +260,57 @@ like this:</p>
 <span class="k">class</span> <span class="nc">UselessReturnChecker</span><span class="p">(</span><span class="n">checkers</span><span class="o">.</span><span class="n">BaseChecker</span><span class="p">):</span>
     <span class="n">__implements__</span> <span class="o">=</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">IAstroidChecker</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;useless-return&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;useless-return&#39;</span>
 
     <span class="n">msgs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;R2119&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s">&quot;Useless return at end of function or method&quot;</span><span class="p">,</span>
-                  <span class="s">&#39;useless-return&#39;</span><span class="p">,</span>
-                  <span class="s">&#39;Emitted when a bare return statement is found at the end of &#39;</span>
-                  <span class="s">&#39;function or method definition&#39;</span>
+        <span class="s1">&#39;R2119&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;Useless return at end of function or method&quot;</span><span class="p">,</span>
+                  <span class="s1">&#39;useless-return&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Emitted when a bare return statement is found at the end of &#39;</span>
+                  <span class="s1">&#39;function or method definition&#39;</span>
                   <span class="p">),</span>
         <span class="p">}</span>
 
 
-    <span class="nd">@utils.check_messages</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">)</span>
+    <span class="nd">@utils</span><span class="o">.</span><span class="n">check_messages</span><span class="p">(</span><span class="s1">&#39;useless-return&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">visit_functiondef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Checks for presence of return statement at the end of a function</span>
 <span class="sd">            &quot;return&quot; or &quot;return None&quot; are useless because None is the default</span>
 <span class="sd">            return type if they are missing</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># if the function has empty body then return</span>
+        <span class="c1"># if the function has empty body then return</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">astroid</span><span class="o">.</span><span class="n">Return</span><span class="p">):</span>
-            <span class="c"># e.g. &quot;return&quot;</span>
-            <span class="k">if</span> <span class="n">last</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
-            <span class="c"># e.g. &quot;return None&quot;</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">astroid</span><span class="o">.</span><span class="n">Const</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+            <span class="c1"># e.g. &quot;return&quot;</span>
+            <span class="k">if</span> <span class="n">last</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s1">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+            <span class="c1"># e.g. &quot;return None&quot;</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">astroid</span><span class="o">.</span><span class="n">Const</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s1">&#39;useless-return&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">linter</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;required method to auto register this checker&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;required method to auto register this checker&quot;&quot;&quot;</span>
     <span class="n">linter</span><span class="o">.</span><span class="n">register_checker</span><span class="p">(</span><span class="n">UselessReturnChecker</span><span class="p">(</span><span class="n">linter</span><span class="p">))</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Here's how to execute the new plugin:</p>
-<div class="highlight"><pre><span class="nv">$ PYTHONPATH</span><span class="o">=</span>./myplugins pylint --load-plugins<span class="o">=</span>uselessreturn tcms/xmlrpc/api/testrun.py <span class="p">|</span> grep useless-return
-W: 40, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
-W:117, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
-W:242, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
-W:495, 0: Useless <span class="k">return</span> at end of <span class="k">function</span> or method <span class="o">(</span>useless-return<span class="o">)</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="o">$</span><span class="w"> </span><span class="n">PYTHONPATH</span><span class="o">=./</span><span class="n">myplugins</span><span class="w"> </span><span class="n">pylint</span><span class="w"> </span><span class="o">--</span><span class="nb">load</span><span class="o">-</span><span class="n">plugins</span><span class="o">=</span><span class="n">uselessreturn</span><span class="w"> </span><span class="n">tcms</span><span class="o">/</span><span class="n">xmlrpc</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">testrun</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">grep</span><span class="w"> </span><span class="n">useless</span><span class="o">-</span><span class="k">return</span>
+<span class="n">W</span><span class="p">:</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="w"> </span><span class="n">Useless</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="p">(</span><span class="n">useless</span><span class="o">-</span><span class="k">return</span><span class="p">)</span>
+<span class="n">W</span><span class="p">:</span><span class="mi">117</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="w"> </span><span class="n">Useless</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="p">(</span><span class="n">useless</span><span class="o">-</span><span class="k">return</span><span class="p">)</span>
+<span class="n">W</span><span class="p">:</span><span class="mi">242</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="w"> </span><span class="n">Useless</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="p">(</span><span class="n">useless</span><span class="o">-</span><span class="k">return</span><span class="p">)</span>
+<span class="n">W</span><span class="p">:</span><span class="mi">495</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="w"> </span><span class="n">Useless</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="p">(</span><span class="n">useless</span><span class="o">-</span><span class="k">return</span><span class="p">)</span>
+</code></pre></div>
 
 <p><strong>NOTES:</strong></p>
 <ul>
 <li>
 <p>If you contribute this code upstream and pylint releases it you will get a traceback:</p>
-<div class="highlight"><pre>pylint.exceptions.InvalidMessageError: Message symbol &#39;useless-return&#39; is already defined
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="nv">pylint</span>.<span class="nv">exceptions</span>.<span class="nv">InvalidMessageError</span>:<span class="w"> </span><span class="nv">Message</span><span class="w"> </span><span class="nv">symbol</span><span class="w"> </span><span class="s1">&#39;useless-return&#39;</span><span class="w"> </span><span class="nv">is</span><span class="w"> </span><span class="nv">already</span><span class="w"> </span><span class="nv">defined</span>
+</code></pre></div>
 
 <p>this means your checker has been released in the latest version and you can drop the custom
 plugin!</p>
@@ -433,22 +428,19 @@ Django 1.10.7. Here is the reason why this happened.</p>
 <p>After migrating to Django 1.10 all tests appeared to be working locally
 on SQLite however they
 <a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309883">failed on MySQL</a> with</p>
-<div class="highlight"><pre><span class="n">TransactionManagementError</span><span class="o">:</span> <span class="n">An</span> <span class="n">error</span> <span class="n">occurred</span> <span class="k">in</span> <span class="n">the</span> <span class="n">current</span> <span class="n">transaction</span><span class="o">.</span> <span class="n">You</span> <span class="n">can</span><span class="s1">&#39;t execute queries until the end of the &#39;</span><span class="n">atomic</span><span class="err">&#39;</span> <span class="n">block</span><span class="o">.</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">TransactionManagementError</span><span class="o">:</span><span class="w"> </span><span class="n">An</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="n">occurred</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">transaction</span><span class="o">.</span><span class="w"> </span><span class="n">You</span><span class="w"> </span><span class="n">can</span><span class="s1">&#39;t execute queries until the end of the &#39;</span><span class="n">atomic</span><span class="err">&#39;</span><span class="w"> </span><span class="n">block</span><span class="o">.</span>
+</code></pre></div>
 
 <p>The exact same test cases
 <a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309884">failed on PostgreSQL</a> with:</p>
-<div class="highlight"><pre><span class="n">InterfaceError</span><span class="o">:</span> <span class="n">connection</span> <span class="n">already</span> <span class="n">closed</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">InterfaceError</span><span class="o">:</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="n">closed</span>
+</code></pre></div>
 
 <p>Since version 1.10 Django executes all tests inside transactions so my first
 thoughts were related to the auto-commit mode. However upon closer inspection
 we can see that the line which triggers the failure is</p>
-<div class="highlight"><pre>self.assertTrue(users.exists())
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>self.assertTrue(users.exists())
+</code></pre></div>
 
 <p>which is essentially a <code>SELECT</code> query aka
 <code>User.objects.filter(username=username).exists()</code>!</p>
@@ -460,12 +452,11 @@ a couple of places where it used <code>transaction.atomic()</code> as well. No l
 <p>Then, after numerous experiments and tons of logging inside Django's own code I was
 able to figure out when the failure occurred and what events were in place. The test
 code looked like this:</p>
-<div class="highlight"><pre><span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/confirm/&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/confirm/&#39;</span><span class="p">)</span>
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">new_user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><strong>The failure was happening after the view had been rendered upon the
 first time I do a SELECT against the database!</strong></p>
@@ -484,21 +475,20 @@ midway during the transaction!</strong></p>
 <li>execute <code>response = wrapped_callback()</code> while still inside <code>BaseHandler._get_response()</code></li>
 <li>
 <p>execute <code>django/http/response.py::HttpResponseBase::close()</code> which looks like</p>
-<div class="highlight"><pre><span class="c"># These methods partially implement the file-like object interface.</span>
-<span class="c"># See https://docs.python.org/3/library/io.html#io.IOBase</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># These methods partially implement the file-like object interface.</span>
+<span class="c1"># See https://docs.python.org/3/library/io.html#io.IOBase</span>
  
-<span class="c"># The WSGI server must call this method upon completion of the request.</span>
-<span class="c"># See http://blog.dscpl.com.au/2012/10/obligations-for-calling-close-on.html</span>
+<span class="c1"># The WSGI server must call this method upon completion of the request.</span>
+<span class="c1"># See http://blog.dscpl.com.au/2012/10/obligations-for-calling-close-on.html</span>
 <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">closable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closable_objects</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">closable</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">signals</span><span class="o">.</span><span class="n">request_finished</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_handler_class</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 </li>
 <li>
@@ -517,28 +507,26 @@ we assign to <code>self.content</code> inside <code>HttpResponse::__init__()</co
 <p>The root cause of my problem was precisely this <code>HttpResponse::__init__()</code> method
 or rather the way we arrive at it inside the application. </p>
 <p>The offending view last line was</p>
-<div class="highlight"><pre><span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">Prompt</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">Prompt</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
      <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span>
      <span class="n">info_type</span><span class="o">=</span><span class="n">Prompt</span><span class="o">.</span><span class="n">Info</span><span class="p">,</span>
      <span class="n">info</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
-     <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;next&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s">&#39;core-views-index&#39;</span><span class="p">))</span>
+     <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;next&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;core-views-index&#39;</span><span class="p">))</span>
 <span class="p">))</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>and the Prompt class looks like this</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
 
 <span class="k">class</span> <span class="nc">Prompt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">info_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;prompt.html&#39;</span><span class="p">,</span> <span class="p">{</span>
-            <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="n">info_type</span><span class="p">,</span>
-            <span class="s">&#39;info&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">,</span>
-            <span class="s">&#39;next&#39;</span><span class="p">:</span> <span class="nb">next</span>
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">info_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;prompt.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">info_type</span><span class="p">,</span>
+            <span class="s1">&#39;info&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">,</span>
+            <span class="s1">&#39;next&#39;</span><span class="p">:</span> <span class="nb">next</span>
         <span class="p">})</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Looking back at the internals of <code>HttpResponse</code> we see that</p>
 <ul>
@@ -604,7 +592,7 @@ of them crates a test matrix. This is exactly what I'm doing.
 package version. After commit new build is triggered which includes the expanded
 test matrix.</p>
 <h2>Example</h2>
-<p><img alt="Travis-CI build log" src="http://atodorov.org/images/travisci_matrix.png" title="Travis-CI build log" /></p>
+<p><img alt="Travis-CI build log" src="http://atodorov.org/images/travisci_matrix.png" title="Travis-CI build log"></p>
 <p>Imagine that our <em>Project 2501</em> depends on FOO version <em>0.3.1</em>. The
 <a href="https://travis-ci.org/atodorov/bztest/builds">build log</a> illustrates what
 happened:</p>
@@ -637,7 +625,7 @@ came from OpenShit, my hosting environment.</p>
 and will also add it to <a href="https://github.com/atodorov/django-s3-cache">django-s3-cache</a>
 once it migrates to Travis-CI (it uses drone.io now).</p>
 <h2>Enough Talk, Show me the Code</h2>
-<div class="highlight"><span class="filename">monitor.py</span><pre><span class="c">#!/usr/bin/env python</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -648,50 +636,50 @@ once it migrates to Travis-CI (it uses drone.io now).</p>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">xml.dom.minidom</span> <span class="kn">import</span> <span class="n">parseString</span>
 
-<span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">post_data</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
-    <span class="c"># GitHub requires a valid UA string</span>
+<span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">post_data</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># GitHub requires a valid UA string</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;User-Agent&#39;</span> <span class="p">:</span> <span class="s">&#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120601 Firefox/10.0.5&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;User-Agent&#39;</span> <span class="p">:</span> <span class="s1">&#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120601 Firefox/10.0.5&#39;</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="c"># shortcut for GitHub API calls</span>
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="s">&quot;https://api.github.com</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">url</span>
+    <span class="c1"># shortcut for GitHub API calls</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://api.github.com</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">url</span>
 
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;api.github.com&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&quot;GITHUB_TOKEN&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Set the GITHUB_TOKEN variable&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;api.github.com&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s2">&quot;GITHUB_TOKEN&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Set the GITHUB_TOKEN variable&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-                <span class="s">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s">&#39;token </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;GITHUB_TOKEN&#39;</span><span class="p">]</span>
+                <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;token </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;GITHUB_TOKEN&#39;</span><span class="p">]</span>
             <span class="p">})</span>
 
-    <span class="p">(</span><span class="n">proto</span><span class="p">,</span> <span class="n">host_path</span><span class="p">)</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;//&#39;</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">host_port</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">=</span> <span class="n">host_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">path</span>
+    <span class="p">(</span><span class="n">proto</span><span class="p">,</span> <span class="n">host_path</span><span class="p">)</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;//&#39;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">host_port</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">=</span> <span class="n">host_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">path</span>
 
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;https&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;https&#39;</span><span class="p">):</span>
         <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPSConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPConnection</span><span class="p">(</span><span class="n">host_port</span><span class="p">)</span>
 
 
-    <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;GET&#39;</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;GET&#39;</span>
     <span class="k">if</span> <span class="n">post_data</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;POST&#39;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;POST&#39;</span>
         <span class="n">post_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_data</span><span class="p">)</span>
 
     <span class="n">conn</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">post_data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">getresponse</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;404 - </span><span class="si">%s</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;404 - </span><span class="si">%s</span><span class="s2"> not found&quot;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="s">&#39;replace&#39;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="s1">&#39;replace&#39;</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="c"># not a JSON response</span>
+        <span class="c1"># not a JSON response</span>
         <span class="k">return</span> <span class="n">result</span>
 
 <span class="k">def</span> <span class="nf">post_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
@@ -699,7 +687,7 @@ once it migrates to Travis-CI (it uses drone.io now).</p>
 
 
 <span class="k">def</span> <span class="nf">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Scan the PyPI RSS feeds to look for new packages.</span>
 <span class="sd">        If name is found in config then execute the specified callback.</span>
 
@@ -710,183 +698,183 @@ once it migrates to Travis-CI (it uses drone.io now).</p>
 <span class="sd">                &#39;args&#39; : dict</span>
 <span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">rss</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;https://pypi.python.org/pypi?:action=rss&quot;</span><span class="p">)</span>
+    <span class="n">rss</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s2">&quot;https://pypi.python.org/pypi?:action=rss&quot;</span><span class="p">)</span>
     <span class="n">dom</span> <span class="o">=</span> <span class="n">parseString</span><span class="p">(</span><span class="n">rss</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">pub_date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s">&quot;pubDate&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pub_date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;pubDate&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">=</span> <span class="n">title</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
-            <span class="n">released_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">pub_date</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">=</span> <span class="n">title</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">released_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">pub_date</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">wholeText</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="k">print</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="s">&quot;found in config&quot;</span>
+                <span class="nb">print</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="s2">&quot;found in config&quot;</span>
                 <span class="k">for</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">args</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;args&#39;</span><span class="p">]</span>
+                        <span class="n">args</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span>
                         <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-                            <span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="n">name</span><span class="p">,</span>
-                            <span class="s">&#39;version&#39;</span> <span class="p">:</span> <span class="n">version</span><span class="p">,</span>
-                            <span class="s">&#39;released_on&#39;</span> <span class="p">:</span> <span class="n">released_on</span>
+                            <span class="s1">&#39;name&#39;</span> <span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                            <span class="s1">&#39;version&#39;</span> <span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                            <span class="s1">&#39;released_on&#39;</span> <span class="p">:</span> <span class="n">released_on</span>
                         <span class="p">})</span>
 
-                        <span class="c"># execute the call back</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="s">&#39;cb&#39;</span><span class="p">](</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                        <span class="c1"># execute the call back</span>
+                        <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;cb&#39;</span><span class="p">](</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
-                        <span class="k">print</span> <span class="n">e</span>
+                        <span class="nb">print</span> <span class="n">e</span>
                         <span class="k">continue</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">print</span> <span class="n">e</span>
+            <span class="nb">print</span> <span class="n">e</span>
             <span class="k">continue</span>
 
 <span class="k">def</span> <span class="nf">update_travis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">new_version</span><span class="p">):</span>
     <span class="n">travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-    <span class="n">new_ver_line</span> <span class="o">=</span> <span class="s">&quot;  - VERSION=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">new_version</span>
+    <span class="n">new_ver_line</span> <span class="o">=</span> <span class="s2">&quot;  - VERSION=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">new_version</span>
     <span class="k">if</span> <span class="n">travis</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">new_ver_line</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="n">travis</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="n">new_ver_line</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">travis</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">new_ver_line</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
     <span class="k">return</span> <span class="n">travis</span>
 
 
 <span class="k">def</span> <span class="nf">update_github</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update GitHub via API</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">GITHUB_REPO</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_REPO&#39;</span><span class="p">)</span>
-    <span class="n">GITHUB_BRANCH</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_BRANCH&#39;</span><span class="p">)</span>
-    <span class="n">GITHUB_FILE</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;GITHUB_FILE&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_REPO</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GITHUB_REPO&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_BRANCH</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GITHUB_BRANCH&#39;</span><span class="p">)</span>
+    <span class="n">GITHUB_FILE</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GITHUB_FILE&#39;</span><span class="p">)</span>
 
-    <span class="c"># step 1: Get a reference to HEAD</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">))</span>
+    <span class="c1"># step 1: Get a reference to HEAD</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="s2">&quot;/repos/</span><span class="si">%s</span><span class="s2">/git/refs/heads/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">))</span>
     <span class="n">HEAD</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
-        <span class="s">&#39;url&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;url&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="c"># step 2: Grab the commit that HEAD points to</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
-    <span class="c"># remove what we don&#39;t need for clarity</span>
+    <span class="c1"># step 2: Grab the commit that HEAD points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+    <span class="c1"># remove what we don&#39;t need for clarity</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">,</span> <span class="s">&#39;tree&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;sha&#39;</span><span class="p">,</span> <span class="s1">&#39;tree&#39;</span><span class="p">]:</span>
             <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
 
-    <span class="c"># step 4: Get a hold of the tree that the commit points to</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;url&#39;</span><span class="p">])</span>
-    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="c1"># step 4: Get a hold of the tree that the commit points to</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;commit&#39;</span><span class="p">][</span><span class="s1">&#39;tree&#39;</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
 
-    <span class="c"># intermediate step: get the latest content from GitHub and make an updated version</span>
-    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">GITHUB_FILE</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">])</span> <span class="c"># get the blob from the tree</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;content&#39;</span><span class="p">])</span>
+    <span class="c1"># intermediate step: get the latest content from GitHub and make an updated version</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tree&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">GITHUB_FILE</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span> <span class="c1"># get the blob from the tree</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">])</span>
             <span class="k">break</span>
 
     <span class="n">old_travis</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-    <span class="n">new_travis</span> <span class="o">=</span> <span class="n">update_travis</span><span class="p">(</span><span class="n">old_travis</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;version&#39;</span><span class="p">))</span>
+    <span class="n">new_travis</span> <span class="o">=</span> <span class="n">update_travis</span><span class="p">(</span><span class="n">old_travis</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">))</span>
 
-    <span class="c"># bail out if nothing changed</span>
+    <span class="c1"># bail out if nothing changed</span>
     <span class="k">if</span> <span class="n">new_travis</span> <span class="o">==</span> <span class="n">old_travis</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;new == old, bailing out&quot;</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="nb">print</span> <span class="s2">&quot;new == old, bailing out&quot;</span><span class="p">,</span> <span class="n">kwargs</span>
         <span class="k">return</span>
 
-    <span class="c">####</span>
-    <span class="c">#### WARNING WRITE OPERATIONS BELOW</span>
-    <span class="c">####</span>
+    <span class="c1">####</span>
+    <span class="c1">#### WARNING WRITE OPERATIONS BELOW</span>
+    <span class="c1">####</span>
 
-    <span class="c"># step 3: Post your new file to the server</span>
+    <span class="c1"># step 3: Post your new file to the server</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
-                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/blobs&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="s2">&quot;/repos/</span><span class="si">%s</span><span class="s2">/git/blobs&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
                 <span class="p">{</span>
-                    <span class="s">&#39;content&#39;</span> <span class="p">:</span> <span class="n">new_travis</span><span class="p">,</span>
-                    <span class="s">&#39;encoding&#39;</span> <span class="p">:</span> <span class="s">&#39;utf-8&#39;</span>
+                    <span class="s1">&#39;content&#39;</span> <span class="p">:</span> <span class="n">new_travis</span><span class="p">,</span>
+                    <span class="s1">&#39;encoding&#39;</span> <span class="p">:</span> <span class="s1">&#39;utf-8&#39;</span>
                 <span class="p">}</span>
             <span class="p">)</span>
-    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
 
-    <span class="c"># step 5: Create a tree containing your new file</span>
+    <span class="c1"># step 5: Create a tree containing your new file</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
-                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/trees&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="s2">&quot;/repos/</span><span class="si">%s</span><span class="s2">/git/trees&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
                 <span class="p">{</span>
-                    <span class="s">&quot;base_tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">],</span>
-                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="p">[{</span>
-                        <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="n">GITHUB_FILE</span><span class="p">,</span>
-                        <span class="s">&quot;mode&quot;</span><span class="p">:</span> <span class="s">&quot;100644&quot;</span><span class="p">,</span>
-                        <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;blob&quot;</span><span class="p">,</span>
-                        <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                    <span class="s2">&quot;base_tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;tree&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;tree&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">GITHUB_FILE</span><span class="p">,</span>
+                        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;100644&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;blob&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span>
                     <span class="p">}]</span>
                 <span class="p">}</span>
             <span class="p">)</span>
-    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s1">&#39;tree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
 
-    <span class="c"># step 6: Create a new commit</span>
+    <span class="c1"># step 6: Create a new commit</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
-                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/commits&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
+                <span class="s2">&quot;/repos/</span><span class="si">%s</span><span class="s2">/git/commits&quot;</span> <span class="o">%</span> <span class="n">GITHUB_REPO</span><span class="p">,</span>
                 <span class="p">{</span>
-                    <span class="s">&quot;message&quot;</span><span class="p">:</span> <span class="s">&quot;New upstream dependency found! Auto update .travis.yml&quot;</span><span class="p">,</span>
-                    <span class="s">&quot;parents&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]],</span>
-                    <span class="s">&quot;tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;tree&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;New upstream dependency found! Auto update .travis.yml&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;parents&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;commit&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">]],</span>
+                    <span class="s2">&quot;tree&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s1">&#39;tree&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">)</span>
-    <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s1">&#39;commit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;sha&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span> <span class="p">}</span>
 
-    <span class="c"># step 7: Update HEAD, but don&#39;t force it!</span>
+    <span class="c1"># step 7: Update HEAD, but don&#39;t force it!</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">post_url</span><span class="p">(</span>
-                <span class="s">&quot;/repos/</span><span class="si">%s</span><span class="s">/git/refs/heads/</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">),</span>
+                <span class="s2">&quot;/repos/</span><span class="si">%s</span><span class="s2">/git/refs/heads/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">GITHUB_REPO</span><span class="p">,</span> <span class="n">GITHUB_BRANCH</span><span class="p">),</span>
                 <span class="p">{</span>
-                    <span class="s">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s">&#39;commit&#39;</span><span class="p">][</span><span class="s">&#39;sha&#39;</span><span class="p">]</span>
+                    <span class="s2">&quot;sha&quot;</span><span class="p">:</span> <span class="n">HEAD</span><span class="p">[</span><span class="s1">&#39;UPDATE&#39;</span><span class="p">][</span><span class="s1">&#39;commit&#39;</span><span class="p">][</span><span class="s1">&#39;sha&#39;</span><span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">):</span> <span class="c"># PASS</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;object&#39;</span><span class="p">):</span> <span class="c1"># PASS</span>
         <span class="k">pass</span>
-    <span class="k">else</span><span class="p">:</span> <span class="c"># FAIL</span>
-        <span class="k">print</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># FAIL</span>
+        <span class="nb">print</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span>
 
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&quot;atodorov-test&quot;</span> <span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;atodorov-test&quot;</span> <span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span>
-                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
-                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/bztest&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="s1">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s1">&#39;atodorov/bztest&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s1">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s1">&#39;.travis.yml&#39;</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">],</span>
-        <span class="s">&quot;Markdown&quot;</span> <span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;Markdown&quot;</span> <span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span>
-                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
-                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s">&#39;atodorov/Markdown-Bugzilla-Extension&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="s1">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span> <span class="s1">&#39;atodorov/Markdown-Bugzilla-Extension&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s1">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s1">&#39;.travis.yml&#39;</span>
                 <span class="p">}</span>
             <span class="p">},</span>
             <span class="p">{</span>
-                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
-                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-Code-Extension&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="s1">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s1">&#39;atodorov/Markdown-No-Lazy-Code-Extension&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s1">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s1">&#39;.travis.yml&#39;</span>
                 <span class="p">}</span>
             <span class="p">},</span>
             <span class="p">{</span>
-                <span class="s">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
-                <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s">&#39;atodorov/Markdown-No-Lazy-BlockQuote-Extension&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s">&#39;master&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s">&#39;.travis.yml&#39;</span>
+                <span class="s1">&#39;cb&#39;</span> <span class="p">:</span> <span class="n">update_github</span><span class="p">,</span>
+                <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;GITHUB_REPO&#39;</span> <span class="p">:</span>  <span class="s1">&#39;atodorov/Markdown-No-Lazy-BlockQuote-Extension&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_BRANCH&#39;</span> <span class="p">:</span> <span class="s1">&#39;master&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;GITHUB_FILE&#39;</span> <span class="p">:</span> <span class="s1">&#39;.travis.yml&#39;</span>
                 <span class="p">}</span>
             <span class="p">},</span>
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="c"># check the RSS to see if we have something new</span>
+    <span class="c1"># check the RSS to see if we have something new</span>
     <span class="n">monitor_rss</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-</pre></div>
+</code></pre></div>
             <p class="post-meta">Posted by
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Wed 02 December 2015
@@ -1040,7 +1028,7 @@ How do they look like ?</p>
             </a>
                 <p>It's been a busy week after <a href="http://devitconf.org/">DEVit conf</a> took place in
 Thessaloniki. Here are my impressions.</p>
-<p><img alt="Crack, Train, Fix, Release" src="/images/devit2015.jpg" title="Crack, Train, Fix, Release" /></p>
+<p><img alt="Crack, Train, Fix, Release" src="/images/devit2015.jpg" title="Crack, Train, Fix, Release"></p>
 <h2>Sessions</h2>
 <p>I've started the day with the session called "Crack, Train, Fix, Release" by 
 Chris Heilmann. While it was very interesting for some unknown reason I
@@ -1086,7 +1074,7 @@ patching and upgrading their services. The lesson: everything fails, be prepared
 <p>The last talk I visited was "GitHub Automation" by Forbes Lindesay. It was more of an
 inspirational talk, rather than technical one. GitHub provides cool API so why not use it?</p>
 <h2>Organization</h2>
-<p><img alt="DEVit team" src="/images/devit2015team.jpg" title="DEVit team" /></p>
+<p><img alt="DEVit team" src="/images/devit2015team.jpg" title="DEVit team"></p>
 <p>From what I know this is the first year of DEVit. For a first timer the team did great!
 I particularly liked the two coffee breaks before lunch and in the early afternoon and the
 sponsors pitches in between the main talks.</p>
@@ -1125,7 +1113,7 @@ online. The list can be found
                     Videos from Bulgaria Web Summit 2015
                 </h2>
             </a>
-                <p><img alt="We're full" src="/images/bgws2015.jpg" title="We're full" /></p>
+                <p><img alt="We're full" src="/images/bgws2015.jpg" title="We're full"></p>
 <p><a href="http://bulgariawebsummit.com">Bulgaria Web Summit</a> 2015 is over. The event was
 incredible and I had a lot of fun moderating the main room. We had many people
 coming from other countries and I've made lots of new friends.
@@ -1164,13 +1152,12 @@ Now let's explore what happens inside and see if we can't speed things up.</p>
 call graph visualizations of my application. It has the nice feature to also show
 execution time and use different colors for fast and slow operations.</p>
 <p>Full command line is:</p>
-<div class="highlight"><pre>pycallgraph -v --stdlib --include ... graphviz -o calls.png -- ./manage.py celery_load_test
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">pycallgraph</span><span class="w"> </span><span class="o">-</span><span class="n">v</span><span class="w"> </span><span class="o">--</span><span class="n">stdlib</span><span class="w"> </span><span class="o">--</span><span class="n">include</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="n">graphviz</span><span class="w"> </span><span class="o">-</span><span class="n">o</span><span class="w"> </span><span class="n">calls</span><span class="o">.</span><span class="n">png</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="n">celery_load_test</span>
+</code></pre></div>
 
 <p>where the <code>--include</code> is used to limit the graph to a particular Python module(s).</p>
 <h2>General findings</h2>
-<p><img alt="call graph" src="/images/celery/general.png" title="call graph" /></p>
+<p><img alt="call graph" src="/images/celery/general.png" title="call graph"></p>
 <ul>
 <li>The first four calls is where most of the time is spent as seen on the picture. </li>
 <li>As it seems most of the slow down comes from Celery itself, not the underlying messaging
@@ -1182,31 +1169,28 @@ rewrites the code.</li>
 </ul>
 <h2>More findings</h2>
 <p>In <code>celery.app.base.Celery.send_task</code> there is this block of code:</p>
-<div class="highlight"><pre>349         with self.producer_or_acquire(producer) as P:
-350             self.backend.on_task_call(P, task_id)
-351             task_id = P.publish_task(
-352                 name, args, kwargs, countdown=countdown, eta=eta,
-353                 task_id=task_id, expires=expires,
-354                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
-355                 reply_to=reply_to or self.oid, **options
-356             )
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="mf">349</span><span class="w">         </span><span class="n">with</span><span class="w"> </span><span class="n">self</span><span class="mf">.</span><span class="n">producer_or_acquire</span><span class="p">(</span><span class="n">producer</span><span class="p">)</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">P</span><span class="p">:</span>
+<span class="mf">350</span><span class="w">             </span><span class="n">self</span><span class="mf">.</span><span class="n">backend</span><span class="mf">.</span><span class="kr">on</span><span class="n">_task_call</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="w"> </span><span class="n">task_id</span><span class="p">)</span>
+<span class="mf">351</span><span class="w">             </span><span class="n">task_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">P</span><span class="mf">.</span><span class="n">publish_task</span><span class="p">(</span>
+<span class="mf">352</span><span class="w">                 </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="n">kwargs</span><span class="p">,</span><span class="w"> </span><span class="n">countdown</span><span class="o">=</span><span class="n">countdown</span><span class="p">,</span><span class="w"> </span><span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span>
+<span class="mf">353</span><span class="w">                 </span><span class="n">task_id</span><span class="o">=</span><span class="n">task_id</span><span class="p">,</span><span class="w"> </span><span class="nb">exp</span><span class="n">ires</span><span class="o">=</span><span class="nb">exp</span><span class="n">ires</span><span class="p">,</span>
+<span class="mf">354</span><span class="w">                 </span><span class="n">callbacks</span><span class="o">=</span><span class="n">maybe_list</span><span class="p">(</span><span class="n">link</span><span class="p">),</span><span class="w"> </span><span class="n">errbacks</span><span class="o">=</span><span class="n">maybe_list</span><span class="p">(</span><span class="n">link_error</span><span class="p">),</span>
+<span class="mf">355</span><span class="w">                 </span><span class="n">reply_to</span><span class="o">=</span><span class="n">reply_to</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">self</span><span class="mf">.</span><span class="n">oid</span><span class="p">,</span><span class="w"> </span><span class="o">**</span><span class="n">options</span>
+<span class="mf">356</span><span class="w">             </span><span class="p">)</span>
+</code></pre></div>
 
 <p><code>producer</code> is always None because delay() doesn't pass it as argument.
 I've tried passing it explicitly to apply_async() as so:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">djapp.celery</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">djapp.celery</span><span class="w"> </span><span class="kn">import</span><span class="w"> </span><span class="o">*</span>
 
-<span class="c"># app = debug_task._get_app() # if not defined in djapp.celery</span>
-<span class="n">producer</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="c1"># app = debug_task._get_app() # if not defined in djapp.celery</span>
+<span class="n">producer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">app</span><span class="o">.</span><span class="n">amqp</span><span class="o">.</span><span class="n">producer_pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">debug_task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">producer</span><span class="o">=</span><span class="n">producer</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>However this doesn't speedup anything. If we replace the above code block like this:</p>
-<div class="highlight"><pre>349         with producer as P:
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="mf">349</span><span class="w">         </span><span class="n">with</span><span class="w"> </span><span class="n">producer</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">P</span><span class="p">:</span>
+</code></pre></div>
 
 <p>it blows up on the second iteration because producer and its channel is already None !?!</p>
 <p>If you are unfamiliar with the with statement in Python please read
@@ -1273,10 +1257,9 @@ execution.</p>
 loop 1 000 000 times I got 1908.0 tasks created per sec.</li>
 </ul>
 <p>Another interesting this worth outlining - in the kombu test there are these lines:</p>
-<div class="highlight"><pre>with producers[connection].acquire(block=True) as producer:
-    for j in range(1000000):
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">producers</span><span class="o">[</span><span class="n">connection</span><span class="o">]</span><span class="p">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="k">True</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nl">producer</span><span class="p">:</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="k">range</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span><span class="err">:</span>
+</code></pre></div>
 
 <p>If we swap them the performance drops down to 3875 msg/sec which is comparable with the
 Celery results. Indeed inside Celery there's the same <code>with producer.acquire(block=True)</code>
@@ -1314,11 +1297,10 @@ was able to pin-point some problematic areas:</p>
 <p><code>kombu/transports/virtual/__init__.py</code>: class Channel.basic_publish() - does
 self.encode_body() into base64 encoded string. Fixed with custom transport backend
 I called fastmemory which redefines the body_encoding property:</p>
-<div class="highlight"><pre><span class="nd">@cached_property</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@cached_property</span>
 <span class="k">def</span> <span class="nf">body_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">None</span>
-</pre></div>
-
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
 
 </li>
 <li>
@@ -1326,7 +1308,7 @@ I called fastmemory which redefines the body_encoding property:</p>
 While json yields between 2000-3000 tasks/sec, pickle does around 3500 tasks/sec.
 Replacing with a custom serializer which just returns
 the objects (since we read/write from/to memory) yields about 4000 tasks/sec tops:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">kombu.serialization</span> <span class="kn">import</span> <span class="n">register</span>
 
 <span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">s</span>
@@ -1334,11 +1316,10 @@ the objects (since we read/write from/to memory) yields about 4000 tasks/sec top
 <span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">s</span>
 
-<span class="n">register</span><span class="p">(</span><span class="s">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
-        <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/x-memory&#39;</span><span class="p">,</span>
-        <span class="n">content_encoding</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
-</pre></div>
-
+<span class="n">register</span><span class="p">(</span><span class="s1">&#39;mem_serializer&#39;</span><span class="p">,</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/x-memory&#39;</span><span class="p">,</span>
+        <span class="n">content_encoding</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
+</code></pre></div>
 
 </li>
 <li>
@@ -1378,58 +1359,56 @@ from the comments of a WordPress.com blog and the UserVoice feedback/ticketing s
 Settings -&gt; Webhooks and add a new webhook with action <code>comment_post</code>
 and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
 Django view that handles the input is shown below.</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Not a POST</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hook&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s2">&quot;comment_post&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Go away</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">last_name</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
 
     <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
-        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
+        <span class="s1">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
+        <span class="s1">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;OK</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div>
 
 <h2>UserVoice</h2>
 <p>For UserVoice navigate to Admin Dashboard -&gt; Settings -&gt; Integrations -&gt; 
 Service Hooks and add a custom web hook for the New Ticket notification.
 Then use a sample code like that:</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Not a POST</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s2">&quot;new_ticket&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Go away</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ticket&#39;</span><span class="p">][</span><span class="s1">&#39;contact&#39;</span><span class="p">][</span><span class="s1">&#39;email&#39;</span><span class="p">],</span>
     <span class="p">}</span>
 
     <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;OK</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div>
 
 <p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
 possibly adding them to a database or anything else.</p>
@@ -1471,47 +1450,46 @@ the core of their Kendo UI framework on the
 which presented multiple choice selection for filtering, where the filter keys
 are read from the database. They've solved the problem by simply building up the
 HTML required inside the view. I was wondering if this can be done with forms.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
 <span class="o">...</span>     <span class="k">pass</span>
 <span class="o">...</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;base_fields&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;base_fields&#39;</span><span class="p">][</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s2">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s2">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;number&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">POST</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;name&#39;</span> <span class="p">:</span> <span class="s">&#39;Alex&#39;</span><span class="p">,</span> <span class="s">&#39;age&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">POST</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span> <span class="p">:</span> <span class="s1">&#39;Alex&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">(</span><span class="n">POST</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;Alex&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s2">&quot;id_name&quot;</span><span class="o">&gt;</span><span class="n">Name</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;id_name&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;name&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Alex&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s2">&quot;id_age&quot;</span><span class="o">&gt;</span><span class="n">Age</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;id_age&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;age&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;number&quot;</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;0&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-<span class="bp">True</span>
+<span class="kc">True</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_bound</span>
-<span class="bp">True</span>
+<span class="kc">True</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">errors</span>
 <span class="p">{}</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-<span class="p">{</span><span class="s">&#39;age&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Alex&#39;</span><span class="p">}</span>
-</pre></div>
-
+<span class="p">{</span><span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;Alex&#39;</span><span class="p">}</span>
+</code></pre></div>
 
 <p>So if we were to query all names from the database then we could build up the
 class by adding a BooleanField using the object primary key as the name.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;base_fields&#39;</span><span class="p">][</span><span class="s">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
-<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s">&#39;123&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">MyForm</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;base_fields&#39;</span><span class="p">][</span><span class="s1">&#39;123&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">MyForm</span><span class="p">())</span>
+<span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;&lt;</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">label</span> <span class="k">for</span><span class="o">=</span><span class="s2">&quot;id_123&quot;</span><span class="o">&gt;</span><span class="mi">123</span><span class="p">:</span><span class="o">&lt;/</span><span class="n">label</span><span class="o">&gt;&lt;/</span><span class="n">th</span><span class="o">&gt;&lt;</span><span class="n">td</span><span class="o">&gt;&lt;</span><span class="nb">input</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;id_123&quot;</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;123&quot;</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;checkbox&quot;</span> <span class="o">/&gt;&lt;/</span><span class="n">td</span><span class="o">&gt;&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">MyForm</span><span class="p">({</span><span class="s1">&#39;123&#39;</span> <span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">is_valid</span><span class="p">()</span>
-<span class="bp">True</span>
+<span class="kc">True</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">cleaned_data</span>
-<span class="p">{</span><span class="s">&#39;123&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
-</pre></div>
+<span class="p">{</span><span class="s1">&#39;123&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</code></pre></div>
             <p class="post-meta">Posted by
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Sat 03 May 2014
@@ -1555,31 +1533,28 @@ I'm writing a longer version of this article so stay tuned!</p>
                 </h2>
             </a>
                 <p>Beware if you are using code like this:</p>
-<div class="highlight"><pre>models.DateTimeField(default=datetime.now())
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>models.DateTimeField(default=datetime.now())
+</code></pre></div>
 
 <p>i.e. passing a function return value as the default option for a model field in Django.
 In some cases the value will be calculated once when the application starts or
 the module is imported and will not be updated later. The most common scenario
 is DateTime fields which default to now(). The correct way is to use a callable:</p>
-<div class="highlight"><pre>models.DateTimeField(default=datetime.now)
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>models.DateTimeField(default=datetime.now)
+</code></pre></div>
 
 <p>I've hit this issue on a low volume application which uses cron to collect its own
 metrics by calling an internal URL. The app was running as WSGI app and I wondered
 why I got records with duplicate dates in the DB. A more detailed (correct) example follows:</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_strftime</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Metrics</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">value</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
-    <span class="n">added_on</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">added_on</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
     <span class="n">added_on_as_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_strftime</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><a href="http://www.dif.io">Difio</a> also had the same bug but didn't exhibit the problem
 because all objects with default date-time values were created on the backend nodes
@@ -1656,7 +1631,7 @@ For general info on Django, please check out
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

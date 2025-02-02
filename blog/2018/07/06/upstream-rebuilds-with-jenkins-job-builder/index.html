@@ -121,7 +121,7 @@
         <p>I have been working on <a href="http://weldr.io/">Weldr</a> for some time now.
 It is a multi-component software with several layers built on top of
 each other as seen on the image below.</p>
-<p><img alt="Weldr components" src="/images/welder_upstream.png" /></p>
+<p><img alt="Weldr components" src="/images/welder_upstream.png"></p>
 <p>One of the risks that we face is introducing changes in
 downstream components which are going to break something up the stack!
 In this post I am going to show you how I have configured
@@ -142,159 +142,158 @@ an event in GitHub (commit to master branch or new pull request), then it will
 provision a slave VM in OpenStack, execute the test suite on the slave and destroy
 all of the resources at the end. This is repeated twice: for master branch and for
 pull requests! Here's how the -runtest jobs look:</p>
-<div class="highlight"><pre><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-provision&#39;</span>
-    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
-    <span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">string</span><span class="p-Indicator">:</span>
-          <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">PROVIDER</span>
-    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
-        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
-            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
-            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{git_refspec}}</span>
-            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{git_branch}}</span>
-    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-            <span class="no">#!/bin/bash -ex</span>
-            <span class="no"># do the openstack provisioning here</span>
-        <span class="c1"># NB: runtest_job is passed to us via the -trigger job</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;${{runtest_job}}&#39;</span>
-            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-            <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
-            <span class="l-Scalar-Plain">fail-on-missing</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job-template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-provision&#39;</span>
+<span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">master</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">string</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PROVIDER</span>
+<span class="w">    </span><span class="nt">scm</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">git</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+<span class="w">            </span><span class="nt">refspec</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{git_refspec}}</span>
+<span class="w">            </span><span class="nt">branches</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{git_branch}}</span>
+<span class="w">    </span><span class="nt">builders</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">shell</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">#!/bin/bash -ex</span>
+<span class="w">            </span><span class="no"># do the openstack provisioning here</span>
+<span class="w">        </span><span class="c1"># NB: runtest_job is passed to us via the -trigger job</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">trigger-builds</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;${{runtest_job}}&#39;</span>
+<span class="w">            </span><span class="nt">block</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">            </span><span class="nt">current-parameters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">            </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;SUCCESS&#39;</span>
+<span class="w">            </span><span class="nt">fail-on-missing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
 
-<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
-    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
-    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
-    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">master</span><span class="nv"> </span><span class="s">branch</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
-    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
-        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
-            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
-            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
-    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
-          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">regex-match</span>
-          <span class="l-Scalar-Plain">regex</span><span class="p-Indicator">:</span> <span class="s">&quot;^.+$&quot;</span>
-          <span class="l-Scalar-Plain">label</span><span class="p-Indicator">:</span> <span class="s">&#39;${{UPSTREAM_BUILD}}&#39;</span>
-          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
-          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
-            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">copyartifact</span><span class="p-Indicator">:</span>
-                <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD}}</span>
-                <span class="l-Scalar-Plain">which-build</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">specific-build</span>
-                <span class="l-Scalar-Plain">build-number</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_BUILD_NUMBER}}</span>
-                <span class="l-Scalar-Plain">filter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">${{UPSTREAM_ARTIFACT}}</span>
-                <span class="l-Scalar-Plain">flatten</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-            <span class="no">#!/bin/bash -ex</span>
-            <span class="no">make ci</span>
-    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
-            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job-template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-master-runtest&#39;</span>
+<span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cinch-slave</span>
+<span class="w">    </span><span class="nt">project-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">freestyle</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Build</span><span class="nv"> </span><span class="s">master</span><span class="nv"> </span><span class="s">branch</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+<span class="w">    </span><span class="nt">scm</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">git</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+<span class="w">            </span><span class="nt">branches</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">master</span>
+<span class="w">    </span><span class="nt">builders</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">conditional-step</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">condition-kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">regex-match</span>
+<span class="w">          </span><span class="nt">regex</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;^.+$&quot;</span>
+<span class="w">          </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;${{UPSTREAM_BUILD}}&#39;</span>
+<span class="w">          </span><span class="nt">on-evaluation-failure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dont-run</span>
+<span class="w">          </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">copyartifact</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{UPSTREAM_BUILD}}</span>
+<span class="w">                </span><span class="nt">which-build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">specific-build</span>
+<span class="w">                </span><span class="nt">build-number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{UPSTREAM_BUILD_NUMBER}}</span>
+<span class="w">                </span><span class="nt">filter</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{UPSTREAM_ARTIFACT}}</span>
+<span class="w">                </span><span class="nt">flatten</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">shell</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">#!/bin/bash -ex</span>
+<span class="w">            </span><span class="no">make ci</span>
+<span class="w">    </span><span class="nt">publishers</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">trigger-parameterized-builds</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-teardown&#39;</span>
+<span class="w">            </span><span class="nt">current-parameters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
 
 
-<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-template</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
-    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">cinch-slave</span>
-    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Build</span><span class="nv"> </span><span class="s">PRs</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
-    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
-        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
-            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
-            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
-            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-                <span class="c1"># builds the commit hash instead of a branch</span>
-                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${{ghprbActualCommit}}</span>
-    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-            <span class="no">#!/bin/bash -ex</span>
-            <span class="no">make ci</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-step</span><span class="p-Indicator">:</span>
-          <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">current-status</span>
-          <span class="l-Scalar-Plain">condition-worst</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
-          <span class="l-Scalar-Plain">condition-best</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SUCCESS</span>
-          <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
-          <span class="l-Scalar-Plain">steps</span><span class="p-Indicator">:</span>
-            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shell</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-                <span class="no">#!/bin/bash -ex</span>
-                <span class="no">make after_success</span>
-    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">archive</span><span class="p-Indicator">:</span>
-          <span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_path}&#39;</span>
-          <span class="l-Scalar-Plain">allow-empty</span><span class="p-Indicator">:</span> <span class="s">&#39;{artifacts_empty}&#39;</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">conditional-publisher</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">condition-kind</span><span class="p-Indicator">:</span> <span class="s">&#39;{execute_dependent_job}&#39;</span>
-            <span class="l-Scalar-Plain">on-evaluation-failure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">dont-run</span>
-            <span class="l-Scalar-Plain">action</span><span class="p-Indicator">:</span>
-              <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
-                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{dependent_job}&#39;</span>
-                  <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-                  <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-                    <span class="no">UPSTREAM_ARTIFACT={artifacts_path}</span>
-                    <span class="no">UPSTREAM_BUILD=${{JOB_NAME}}</span>
-                    <span class="no">UPSTREAM_BUILD_NUMBER=${{build_number}}</span>
-                  <span class="l-Scalar-Plain">condition</span><span class="p-Indicator">:</span> <span class="s">&#39;SUCCESS&#39;</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-parameterized-builds</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-teardown&#39;</span>
-            <span class="l-Scalar-Plain">current-parameters</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job-template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-PR-runtest&#39;</span>
+<span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cinch-slave</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Build</span><span class="nv"> </span><span class="s">PRs</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">{name}!&#39;</span>
+<span class="w">    </span><span class="nt">scm</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">git</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://github.com/weldr/{repo_name}.git&#39;</span>
+<span class="w">            </span><span class="nt">refspec</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+<span class="w">            </span><span class="nt">branches</span><span class="p">:</span>
+<span class="w">                </span><span class="c1"># builds the commit hash instead of a branch</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ghprbActualCommit}}</span>
+<span class="w">    </span><span class="nt">builders</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">shell</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">#!/bin/bash -ex</span>
+<span class="w">            </span><span class="no">make ci</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">conditional-step</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">condition-kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">current-status</span>
+<span class="w">          </span><span class="nt">condition-worst</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SUCCESS</span>
+<span class="w">          </span><span class="nt">condition-best</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SUCCESS</span>
+<span class="w">          </span><span class="nt">on-evaluation-failure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dont-run</span>
+<span class="w">          </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">shell</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                </span><span class="no">#!/bin/bash -ex</span>
+<span class="w">                </span><span class="no">make after_success</span>
+<span class="w">    </span><span class="nt">publishers</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">archive</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">artifacts</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{artifacts_path}&#39;</span>
+<span class="w">          </span><span class="nt">allow-empty</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{artifacts_empty}&#39;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">conditional-publisher</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">condition-kind</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{execute_dependent_job}&#39;</span>
+<span class="w">            </span><span class="nt">on-evaluation-failure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dont-run</span>
+<span class="w">            </span><span class="nt">action</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">trigger-parameterized-builds</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{dependent_job}&#39;</span>
+<span class="w">                  </span><span class="nt">current-parameters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">                  </span><span class="nt">predefined-parameters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                    </span><span class="no">UPSTREAM_ARTIFACT={artifacts_path}</span>
+<span class="w">                    </span><span class="no">UPSTREAM_BUILD=${{JOB_NAME}}</span>
+<span class="w">                    </span><span class="no">UPSTREAM_BUILD_NUMBER=${{build_number}}</span>
+<span class="w">                  </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;SUCCESS&#39;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">trigger-parameterized-builds</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-teardown&#39;</span>
+<span class="w">            </span><span class="nt">current-parameters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
 
 
-<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job-group</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-tests&#39;</span>
-    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-provision&#39;</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-teardown&#39;</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-trigger&#39;</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-master-runtest&#39;</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-trigger&#39;</span>
-    <span class="p-Indicator">-</span> <span class="s">&#39;{name}-PR-runtest&#39;</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job-group</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-tests&#39;</span>
+<span class="w">    </span><span class="nt">jobs</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-provision&#39;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-teardown&#39;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-master-trigger&#39;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-master-runtest&#39;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-PR-trigger&#39;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-PR-runtest&#39;</span>
 
 
-<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">job</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&#39;codec-rpm-rebuild-bdcs&#39;</span>
-    <span class="l-Scalar-Plain">node</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
-    <span class="l-Scalar-Plain">project-type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">freestyle</span>
-    <span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span> <span class="s">&#39;Rebuild</span><span class="nv"> </span><span class="s">bdcs</span><span class="nv"> </span><span class="s">after</span><span class="nv"> </span><span class="s">codec-rpm</span><span class="nv"> </span><span class="s">PR!&#39;</span>
-    <span class="l-Scalar-Plain">scm</span><span class="p-Indicator">:</span>
-        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">git</span><span class="p-Indicator">:</span>
-            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="s">&#39;https://github.com/weldr/codec-rpm.git&#39;</span>
-            <span class="l-Scalar-Plain">refspec</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
-            <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-                <span class="c1"># builds the commit hash instead of a branch</span>
-                <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">${ghprbActualCommit}</span>
-    <span class="l-Scalar-Plain">builders</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">trigger-builds</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span> <span class="s">&#39;bdcs-master-trigger&#39;</span>
-            <span class="l-Scalar-Plain">block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-            <span class="l-Scalar-Plain">predefined-parameters</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-                <span class="no">UPSTREAM_ARTIFACT=${UPSTREAM_ARTIFACT}</span>
-                <span class="no">UPSTREAM_BUILD=${UPSTREAM_BUILD}</span>
-                <span class="no">UPSTREAM_BUILD_NUMBER=${UPSTREAM_BUILD_NUMBER}</span>
-    <span class="l-Scalar-Plain">publishers</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">github-notifier</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;codec-rpm-rebuild-bdcs&#39;</span>
+<span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">master</span>
+<span class="w">    </span><span class="nt">project-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">freestyle</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Rebuild</span><span class="nv"> </span><span class="s">bdcs</span><span class="nv"> </span><span class="s">after</span><span class="nv"> </span><span class="s">codec-rpm</span><span class="nv"> </span><span class="s">PR!&#39;</span>
+<span class="w">    </span><span class="nt">scm</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">git</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://github.com/weldr/codec-rpm.git&#39;</span>
+<span class="w">            </span><span class="nt">refspec</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">+refs/pull/*:refs/remotes/origin/pr/*</span>
+<span class="w">            </span><span class="nt">branches</span><span class="p">:</span>
+<span class="w">                </span><span class="c1"># builds the commit hash instead of a branch</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${ghprbActualCommit}</span>
+<span class="w">    </span><span class="nt">builders</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">trigger-builds</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;bdcs-master-trigger&#39;</span>
+<span class="w">            </span><span class="nt">block</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">            </span><span class="nt">predefined-parameters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                </span><span class="no">UPSTREAM_ARTIFACT=${UPSTREAM_ARTIFACT}</span>
+<span class="w">                </span><span class="no">UPSTREAM_BUILD=${UPSTREAM_BUILD}</span>
+<span class="w">                </span><span class="no">UPSTREAM_BUILD_NUMBER=${UPSTREAM_BUILD_NUMBER}</span>
+<span class="w">    </span><span class="nt">publishers</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">github-notifier</span>
 
 
-<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">project</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">codec-rpm</span>
-    <span class="l-Scalar-Plain">dependent_job</span><span class="p-Indicator">:</span> <span class="s">&#39;{name}-rebuild-bdcs&#39;</span>
-    <span class="l-Scalar-Plain">execute_dependent_job</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">always</span>
-    <span class="l-Scalar-Plain">artifacts_path</span><span class="p-Indicator">:</span> <span class="s">&#39;dist/{name}-latest.tar.gz&#39;</span>
-    <span class="l-Scalar-Plain">artifacts_empty</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
-    <span class="l-Scalar-Plain">jobs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="s">&#39;{name}-tests&#39;</span>
-</pre></div>
-
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">project</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codec-rpm</span>
+<span class="w">    </span><span class="nt">dependent_job</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{name}-rebuild-bdcs&#39;</span>
+<span class="w">    </span><span class="nt">execute_dependent_job</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<span class="w">    </span><span class="nt">artifacts_path</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;dist/{name}-latest.tar.gz&#39;</span>
+<span class="w">    </span><span class="nt">artifacts_empty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">jobs</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;{name}-tests&#39;</span>
+</code></pre></div>
 
 <h2>Publishing artifacts</h2>
 <p><code>make after_success</code> is responsible for creating a tarball if <code>codec-rpm</code> test suite
@@ -329,60 +328,58 @@ one status reported.</p>
 <h2>How this looks like in practice</h2>
 <p>I have opened <a href="https://github.com/weldr/codec-rpm/pull/39">codec-rpm #39</a>
 to validate my configuration. The chain of jobs that gets executed in Jenkins is:</p>
-<div class="highlight"><pre><span class="gd">--- console.log for bdcs-master-runtest ---</span>
+<div class="highlight"><pre><span></span><code><span class="gd">--- console.log for bdcs-master-runtest ---</span>
 Started by upstream project &quot;bdcs-jslave-1-provision&quot; build number 267
 originally caused by:
- Started by upstream project &quot;bdcs-master-trigger&quot; build number 133
- originally caused by:
-  Started by upstream project &quot;codec-rpm-rebuild-bdcs&quot; build number 25
-  originally caused by:
-   Started by upstream project &quot;codec-rpm-PR-runtest&quot; build number 77
-   originally caused by:
-    Started by upstream project &quot;codec-rpm-jslave-1-provision&quot; build number 178
-    originally caused by:
-     Started by upstream project &quot;codec-rpm-PR-trigger&quot; build number 118
-     originally caused by:
-      GitHub pull request #39 of commit b00c923065e367afd5b7a7cc068b049bb1ed25e1, no merge conflicts.
-</pre></div>
-
+<span class="w"> </span>Started by upstream project &quot;bdcs-master-trigger&quot; build number 133
+<span class="w"> </span>originally caused by:
+<span class="w"> </span> Started by upstream project &quot;codec-rpm-rebuild-bdcs&quot; build number 25
+<span class="w"> </span> originally caused by:
+<span class="w"> </span>  Started by upstream project &quot;codec-rpm-PR-runtest&quot; build number 77
+<span class="w"> </span>  originally caused by:
+<span class="w"> </span>   Started by upstream project &quot;codec-rpm-jslave-1-provision&quot; build number 178
+<span class="w"> </span>   originally caused by:
+<span class="w"> </span>    Started by upstream project &quot;codec-rpm-PR-trigger&quot; build number 118
+<span class="w"> </span>    originally caused by:
+<span class="w"> </span>     GitHub pull request #39 of commit b00c923065e367afd5b7a7cc068b049bb1ed25e1, no merge conflicts.
+</code></pre></div>
 
 <p>Statuses are reported on GitHub as follows:</p>
-<p><img alt="example of PR statuses" src="/images/codec-rpm-pr-39.png" /></p>
+<p><img alt="example of PR statuses" src="/images/codec-rpm-pr-39.png"></p>
 <p><code>default</code> is coming from the provisioning step and I think this is some sort of a bug
 or misconfiguration of the provisioning job. We don't really care about this.</p>
 <p>On the picture you can see that <code>codec-rpm-PR-runtest</code> was successful but
 <code>codec-rpm-rebuild-bdcs</code> was not. The actual error when compiling bdcs is:</p>
-<div class="highlight"><pre><span class="n">src</span><span class="o">/</span><span class="n">BDCS</span><span class="o">/</span><span class="n">Import</span><span class="o">/</span><span class="n">RPM</span><span class="p">.</span><span class="nl">hs</span><span class="p">:</span><span class="mi">110</span><span class="o">:</span><span class="mi">24</span><span class="o">:</span> <span class="nl">error</span><span class="p">:</span>
-    <span class="o">*</span> <span class="n">Couldn</span><span class="err">&#39;</span><span class="n">t</span> <span class="n">match</span> <span class="n">type</span> <span class="err">`</span><span class="n">Entry</span><span class="err">&#39;</span> <span class="n">with</span> <span class="err">`</span><span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span><span class="err">&#39;</span>
-      <span class="n">Expected</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
-                       <span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span>
-                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
-                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
-                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
-        <span class="n">Actual</span> <span class="nl">type</span><span class="p">:</span> <span class="n">conduit</span><span class="o">-</span><span class="mf">1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
-                       <span class="n">Entry</span>
-                       <span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
-                       <span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
-                       <span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span> <span class="p">[</span><span class="n">Maybe</span> <span class="n">ObjectDigest</span><span class="p">])</span>
-    <span class="o">*</span> <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(.</span><span class="o">|</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
-        <span class="err">`</span><span class="n">getZipConduit</span>
-           <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
-      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
-        <span class="err">`</span><span class="n">src</span>
-           <span class="p">.</span><span class="o">|</span>
-             <span class="n">getZipConduit</span>
-               <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
-      <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">argument</span> <span class="n">of</span> <span class="err">`</span><span class="p">(</span><span class="err">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">namely</span>
-        <span class="err">`</span><span class="n">runConduit</span>
-           <span class="err">$</span> <span class="n">src</span>
-               <span class="p">.</span><span class="o">|</span>
-                 <span class="n">getZipConduit</span>
-                   <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span> <span class="o">&lt;*&gt;</span> <span class="n">ZipConduit</span> <span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
-    <span class="o">|</span>
-<span class="mi">110</span> <span class="o">|</span>                     <span class="p">.</span><span class="o">|</span> <span class="n">getZipConduit</span> <span class="p">((,)</span> <span class="o">&lt;</span><span class="err">$</span><span class="o">&gt;</span> <span class="n">ZipConduit</span> <span class="n">filenames</span>
-    <span class="o">|</span>                        <span class="o">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span><span class="p">...</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">src</span><span class="o">/</span><span class="n">BDCS</span><span class="o">/</span><span class="n">Import</span><span class="o">/</span><span class="n">RPM</span><span class="p">.</span><span class="n">hs</span><span class="o">:</span><span class="mi">110</span><span class="o">:</span><span class="mi">24</span><span class="o">:</span><span class="w"> </span><span class="n">error</span><span class="o">:</span>
+<span class="w">    </span><span class="o">*</span><span class="w"> </span><span class="n">Couldn</span><span class="err">&#39;</span><span class="n">t</span><span class="w"> </span><span class="n">match</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="err">`</span><span class="n">Entry</span><span class="err">&#39;</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="err">`</span><span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span><span class="err">&#39;</span>
+<span class="w">      </span><span class="n">Expected</span><span class="w"> </span><span class="n">type</span><span class="o">:</span><span class="w"> </span><span class="n">conduit</span><span class="mf">-1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+<span class="w">                       </span><span class="n">C8</span><span class="p">.</span><span class="n">ByteString</span>
+<span class="w">                       </span><span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+<span class="w">                       </span><span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+<span class="w">                       </span><span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="n">Maybe</span><span class="w"> </span><span class="n">ObjectDigest</span><span class="p">])</span>
+<span class="w">        </span><span class="n">Actual</span><span class="w"> </span><span class="n">type</span><span class="o">:</span><span class="w"> </span><span class="n">conduit</span><span class="mf">-1.2.13.1</span><span class="o">:</span><span class="n">Data</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">Internal</span><span class="p">.</span><span class="n">Conduit</span><span class="p">.</span><span class="n">ConduitM</span>
+<span class="w">                       </span><span class="n">Entry</span>
+<span class="w">                       </span><span class="n">Data</span><span class="p">.</span><span class="n">Void</span><span class="p">.</span><span class="n">Void</span>
+<span class="w">                       </span><span class="n">Data</span><span class="p">.</span><span class="n">ContentStore</span><span class="p">.</span><span class="n">CsMonad</span>
+<span class="w">                       </span><span class="p">([</span><span class="n">T</span><span class="p">.</span><span class="n">Text</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="n">Maybe</span><span class="w"> </span><span class="n">ObjectDigest</span><span class="p">])</span>
+<span class="w">    </span><span class="o">*</span><span class="w"> </span><span class="n">In</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">second</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="err">`</span><span class="p">(.</span><span class="o">|</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">namely</span>
+<span class="w">        </span><span class="err">`</span><span class="n">getZipConduit</span>
+<span class="w">           </span><span class="p">((,)</span><span class="w"> </span><span class="o">&lt;</span><span class="n">$</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">filenames</span><span class="w"> </span><span class="o">&lt;*&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+<span class="w">      </span><span class="n">In</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">second</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="err">`</span><span class="p">(</span><span class="n">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">namely</span>
+<span class="w">        </span><span class="err">`</span><span class="n">src</span>
+<span class="w">           </span><span class="p">.</span><span class="o">|</span>
+<span class="w">             </span><span class="n">getZipConduit</span>
+<span class="w">               </span><span class="p">((,)</span><span class="w"> </span><span class="o">&lt;</span><span class="n">$</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">filenames</span><span class="w"> </span><span class="o">&lt;*&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+<span class="w">      </span><span class="n">In</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">second</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="err">`</span><span class="p">(</span><span class="n">$</span><span class="p">)</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">namely</span>
+<span class="w">        </span><span class="err">`</span><span class="n">runConduit</span>
+<span class="w">           </span><span class="n">$</span><span class="w"> </span><span class="n">src</span>
+<span class="w">               </span><span class="p">.</span><span class="o">|</span>
+<span class="w">                 </span><span class="n">getZipConduit</span>
+<span class="w">                   </span><span class="p">((,)</span><span class="w"> </span><span class="o">&lt;</span><span class="n">$</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">filenames</span><span class="w"> </span><span class="o">&lt;*&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">digests</span><span class="p">)</span><span class="err">&#39;</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="mi">110</span><span class="w"> </span><span class="o">|</span><span class="w">                     </span><span class="p">.</span><span class="o">|</span><span class="w"> </span><span class="n">getZipConduit</span><span class="w"> </span><span class="p">((,)</span><span class="w"> </span><span class="o">&lt;</span><span class="n">$</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ZipConduit</span><span class="w"> </span><span class="n">filenames</span>
+<span class="w">    </span><span class="o">|</span><span class="w">                        </span><span class="o">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span><span class="p">...</span>
+</code></pre></div>
 
 <p>That is because PR #39 changes the return type of <code>Codec.RPM.Conduit::payloadContentsC</code>
 from <code>Entry</code> to <code>C8.ByteString</code>.</p>
@@ -483,7 +480,7 @@ from <code>Entry</code> to <code>C8.ByteString</code>.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

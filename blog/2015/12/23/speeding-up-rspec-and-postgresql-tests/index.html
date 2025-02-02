@@ -37,7 +37,7 @@
 
 
 
-        <meta name="description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests ...">
+        <meta name="description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests...">
 
         <meta name="author" content="Alexander Todorov">
 
@@ -53,7 +53,7 @@
 	<meta property="og:url" content="http://atodorov.org/blog/2015/12/23/speeding-up-rspec-and-postgresql-tests/">
 	<meta property="og:title" content="Speeding up RSpec and PostgreSQL tests">
 	<meta property="article:published_time" content="2015-12-23 11:34:00+02:00">
-            <meta property="og:description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests ...">
+            <meta property="og:description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests...">
 
             <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
         <meta name="twitter:card" content="summary_large_image">
@@ -62,7 +62,7 @@
 
             <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
 
-            <meta name="twitter:description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests ...">
+            <meta name="twitter:description" content="I've been working with Tradeo on testing one of their applications. The app is standard Ruby on Rails application with over 1200 tests...">
 </head>
 
 <body>
@@ -127,54 +127,49 @@ Locally it takes around 11 minutes!</p>
 <p>I've measured the speed (with Time.now) at which individual examples execute
 and it was quickly apparent they were taking a lot of time cleaning the DB. The
 offending code in question was:</p>
-<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<div class="highlight"><pre><span></span><code><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span><span class="w"> </span><span class="ss">:truncation</span>
 <span class="k">end</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>This is truncating the tables quite often but it turns out this is a very
 expensive operation on tables with small number of records. I've measured it
 locally around 2.5 seconds. Check out this
 <a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/">SO thread</a>
 which describes pretty much the same symptoms:</p>
-<div class="highlight"><pre>Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
+<div class="highlight"><pre><span></span><code>Right now, locally (on a Macbook Air) a full test suite takes 28 minutes....
 Tailing the logs on our CI server (Ubuntu 10.04 LTS) .... a build takes 84 minutes.
-</pre></div>
-
+</code></pre></div>
 
 <p>This
 <a href="http://stackoverflow.com/questions/11419536/postgresql-truncation-speed/11423886#11423886">excellent answer</a>
 explains why this is happening:</p>
-<div class="highlight"><pre>(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
+<div class="highlight"><pre><span></span><code>(a) The bigger shared_buffers may be why TRUNCATE is slower on the CI server.
     Different fsync configuration or the use of rotational media instead of
     SSDs could also be at fault.
 
 (b) TRUNCATE has a fixed cost, but not necessarily slower than DELETE,
     plus it does more work.
-</pre></div>
-
+</code></pre></div>
 
 <h2>The Fix</h2>
-<div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:truncation</span>
+<div class="highlight"><pre><span></span><code><span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span><span class="w"> </span><span class="ss">:truncation</span>
 <span class="k">end</span>
 
-<span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
-  <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span> <span class="ss">:deletion</span>
+<span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean_with</span><span class="w"> </span><span class="ss">:deletion</span>
 <span class="k">end</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><code>before(:suite)</code> will truncate tables every time we run rspec, which is when we
 launch the entire test suite. This is to account for the possible side effects
 of DELETE in the future (see the SO thread). Then <code>before(:all)</code> aka
 <code>before(:context)</code> simply deletes the records which is significantly faster!</p>
 <p>Also updated the CI servers <code>postgresql.conf</code> to</p>
-<div class="highlight"><pre>fsync=off
+<div class="highlight"><pre><span></span><code>fsync=off
 full_page_writes=off
-</pre></div>
-
+</code></pre></div>
 
 <p>The entire build/test process now takes only 15 minutes! Only one test broke
 due to PostgreSQL returning records in a different order, but it's the test
@@ -292,7 +287,7 @@ This is 50% of the execution time and is also worth looking into!</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

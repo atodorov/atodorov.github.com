@@ -123,38 +123,36 @@ to instruct <code>cargo</code>, the Rust package manager, to build only the depe
 of the software you are compiling! This means you can't easily pre-install
 build dependencies. Luckily you can workaround this with <code>cargo build -p</code>!
 I've been using this Python script to parse <code>Cargo.toml</code>:</p>
-<div class="highlight"><span class="filename">parse-cargo-toml.py</span><pre><span class="c">#!/usr/bin/env python</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">toml</span>
 
-<span class="n">_pwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
-<span class="n">cargo</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_pwd</span><span class="p">,</span> <span class="s">&#39;Cargo.toml&#39;</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<span class="n">_pwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="n">cargo</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_pwd</span><span class="p">,</span> <span class="s1">&#39;Cargo.toml&#39;</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 
-<span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dependencies&#39;</span><span class="p">,</span> <span class="s">&#39;dev-dependencies&#39;</span><span class="p">]:</span>
+<span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;dependencies&#39;</span><span class="p">,</span> <span class="s1">&#39;dev-dependencies&#39;</span><span class="p">]:</span>
     <span class="k">for</span> <span class="n">dep</span><span class="p">,</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">cargo</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&#39;cargo build -p </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">dep</span><span class="p">)</span>
-</pre></div>
-
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;cargo build -p </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">dep</span><span class="p">)</span>
+</code></pre></div>
 
 <p>and then inside my <code>Dockerfile</code>:</p>
-<div class="highlight"><pre><span class="x">RUN mkdir /bdcs-api-rs/</span>
-<span class="x">COPY parse-cargo-toml.py /bdcs-api-rs/</span>
+<div class="highlight"><pre><span></span><code><span class="nt">RUN</span><span class="w"> </span><span class="nt">mkdir</span><span class="w"> </span><span class="o">/</span><span class="nt">bdcs-api-rs</span><span class="o">/</span>
+<span class="nt">COPY</span><span class="w"> </span><span class="nt">parse-cargo-toml</span><span class="p">.</span><span class="nc">py</span><span class="w"> </span><span class="o">/</span><span class="nt">bdcs-api-rs</span><span class="o">/</span>
 
-<span class="err">#</span><span class="x"> Manually install cargo dependencies before building</span>
-<span class="err">#</span><span class="x"> so we can have a reusable intermediate container.</span>
-<span class="err">#</span><span class="x"> This workaround is needed until cargo can do this by itself:</span>
-<span class="err">#</span><span class="x"> https://github.com/rust-lang/cargo/issues/2644</span>
-<span class="err">#</span><span class="x"> https://github.com/rust-lang/cargo/pull/3567</span>
-<span class="x">COPY Cargo.toml /bdcs-api-rs/</span>
-<span class="x">WORKDIR /bdcs-api-rs/</span>
-<span class="x">RUN python ./parse-cargo-toml.py | while read cmd; do \</span>
-<span class="x">        </span><span class="p">$</span><span class="nv">cmd</span><span class="x">;                                    \</span>
-<span class="x">    done</span>
-</pre></div>
-
+<span class="err">#</span><span class="w"> </span><span class="nt">Manually</span><span class="w"> </span><span class="nt">install</span><span class="w"> </span><span class="nt">cargo</span><span class="w"> </span><span class="nt">dependencies</span><span class="w"> </span><span class="nt">before</span><span class="w"> </span><span class="nt">building</span>
+<span class="err">#</span><span class="w"> </span><span class="nt">so</span><span class="w"> </span><span class="nt">we</span><span class="w"> </span><span class="nt">can</span><span class="w"> </span><span class="nt">have</span><span class="w"> </span><span class="nt">a</span><span class="w"> </span><span class="nt">reusable</span><span class="w"> </span><span class="nt">intermediate</span><span class="w"> </span><span class="nt">container</span><span class="o">.</span>
+<span class="err">#</span><span class="w"> </span><span class="nt">This</span><span class="w"> </span><span class="nt">workaround</span><span class="w"> </span><span class="nt">is</span><span class="w"> </span><span class="nt">needed</span><span class="w"> </span><span class="nt">until</span><span class="w"> </span><span class="nt">cargo</span><span class="w"> </span><span class="nt">can</span><span class="w"> </span><span class="nt">do</span><span class="w"> </span><span class="nt">this</span><span class="w"> </span><span class="nt">by</span><span class="w"> </span><span class="nt">itself</span><span class="o">:</span>
+<span class="err">#</span><span class="w"> </span><span class="nt">https</span><span class="o">://</span><span class="nt">github</span><span class="p">.</span><span class="nc">com</span><span class="o">/</span><span class="nt">rust-lang</span><span class="o">/</span><span class="nt">cargo</span><span class="o">/</span><span class="nt">issues</span><span class="o">/</span><span class="nt">2644</span>
+<span class="err">#</span><span class="w"> </span><span class="nt">https</span><span class="o">://</span><span class="nt">github</span><span class="p">.</span><span class="nc">com</span><span class="o">/</span><span class="nt">rust-lang</span><span class="o">/</span><span class="nt">cargo</span><span class="o">/</span><span class="nt">pull</span><span class="o">/</span><span class="nt">3567</span>
+<span class="nt">COPY</span><span class="w"> </span><span class="nt">Cargo</span><span class="p">.</span><span class="nc">toml</span><span class="w"> </span><span class="o">/</span><span class="nt">bdcs-api-rs</span><span class="o">/</span>
+<span class="nt">WORKDIR</span><span class="w"> </span><span class="o">/</span><span class="nt">bdcs-api-rs</span><span class="o">/</span>
+<span class="nt">RUN</span><span class="w"> </span><span class="nt">python</span><span class="w"> </span><span class="o">./</span><span class="nt">parse-cargo-toml</span><span class="p">.</span><span class="nc">py</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nt">while</span><span class="w"> </span><span class="nt">read</span><span class="w"> </span><span class="nt">cmd</span><span class="o">;</span><span class="w"> </span><span class="nt">do</span><span class="w"> </span><span class="err">\</span>
+<span class="w">        </span><span class="o">$</span><span class="nt">cmd</span><span class="o">;</span><span class="w">                                    </span><span class="err">\</span>
+<span class="w">    </span><span class="nt">done</span>
+</code></pre></div>
 
 <p>It doesn't take into account the version constraints specified in <code>Cargo.toml</code> but
 is still able to produce an intermediate docker layer which I can use to
@@ -260,7 +258,7 @@ Docker caching. This would be even less if the cache is kept locally!</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

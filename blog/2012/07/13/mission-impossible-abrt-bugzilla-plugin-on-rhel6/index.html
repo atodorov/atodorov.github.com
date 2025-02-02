@@ -37,7 +37,7 @@
 
 
 
-        <meta name="description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets ...">
+        <meta name="description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets...">
 
         <meta name="author" content="Alexander Todorov">
 
@@ -53,7 +53,7 @@
 	<meta property="og:url" content="http://atodorov.org/blog/2012/07/13/mission-impossible-abrt-bugzilla-plugin-on-rhel6/">
 	<meta property="og:title" content="Mission Impossible - ABRT Bugzilla Plugin on RHEL6">
 	<meta property="article:published_time" content="2012-07-13 13:21:00+03:00">
-            <meta property="og:description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets ...">
+            <meta property="og:description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets...">
 
             <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
         <meta name="twitter:card" content="summary_large_image">
@@ -62,7 +62,7 @@
 
             <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
 
-            <meta name="twitter:description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets ...">
+            <meta name="twitter:description" content="Some time ago Red Hat introduced Automatic Bug Reporting Tool to their Red Hat Enterprise Linux platform. This is a nice tool which lets...">
 </head>
 
 <body>
@@ -126,50 +126,46 @@ because customers are supposed to report issues to Support first - this is why t
 If you are a tech savvy user though, you may want to skip Support and go straight to the developers.</p>
 <p>To enable Bugzilla plugin: </p>
 <ul>
-<li>Edit the file <code>/etc/libreport/events.d/bugzilla_event.conf</code> change the line<div class="highlight"><pre>EVENT=report_Bugzilla analyzer=libreport reporter-bugzilla -b
-</pre></div>
-
+<li>Edit the file <code>/etc/libreport/events.d/bugzilla_event.conf</code> change the line<div class="highlight"><pre><span></span><code>EVENT=report_Bugzilla analyzer=libreport reporter-bugzilla -b
+</code></pre></div>
 
 </li>
 </ul>
 <p>to</p>
-<div class="highlight"><pre>    EVENT=report_Bugzilla reporter-bugzilla -b
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>    EVENT=report_Bugzilla reporter-bugzilla -b
+</code></pre></div>
 
 <ul>
 <li>
 <p>Make sure ABRT will collect meaningful backtrace. If debuginfo is missing it will not let you continue.
 Edit the file <code>/etc/libreport/events.d/ccpp_event.conf</code>. There should be something like this:</p>
-<div class="highlight"><pre><span class="x">EVENT=analyze_LocalGDB analyzer=CCpp</span>
-<span class="x">        abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;</span>
-<span class="x">        abrt-action-generate-backtrace &amp;&amp;</span>
-<span class="x">        abrt-action-analyze-backtrace</span>
-<span class="x">        (</span>
-<span class="x">            bug_id=</span><span class="p">$(</span><span class="err">reporter-bugzilla</span> <span class="err">-h</span> <span class="err">`cat</span> <span class="err">duphash`</span><span class="p">)</span><span class="x"> &amp;&amp;</span>
-<span class="x">            if test -n &quot;</span><span class="p">$</span><span class="nv">bug_id</span><span class="x">&quot;; then</span>
-<span class="x">                abrt-bodhi -r -b </span><span class="p">$</span><span class="nv">bug_id</span><span class="x"></span>
-<span class="x">            fi</span>
-<span class="x">        )</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>EVENT=analyze_LocalGDB analyzer=CCpp
+        abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+        abrt-action-generate-backtrace &amp;&amp;
+        abrt-action-analyze-backtrace
+        (
+            bug_id=$(reporter-bugzilla -h <span class="sb">`cat duphash`</span>) &amp;&amp;
+            if test -n &quot;$bug_id&quot;; then
+                abrt-bodhi -r -b $bug_id
+            fi
+        )
+</code></pre></div>
 
 </li>
 <li>
 <p>Change it to look like this - i.e. add the missing <code>/usr/libexec/</code> line:</p>
-<div class="highlight"><pre><span class="x">EVENT=analyze_LocalGDB analyzer=CCpp</span>
-<span class="x">        abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;</span>
-<span class="x">        /usr/libexec/abrt-action-install-debuginfo-to-abrt-cache --size_mb=4096 &amp;&amp;</span>
-<span class="x">        abrt-action-generate-backtrace &amp;&amp;</span>
-<span class="x">        abrt-action-analyze-backtrace &amp;&amp;</span>
-<span class="x">        (</span>
-<span class="x">            bug_id=</span><span class="p">$(</span><span class="err">reporter-bugzilla</span> <span class="err">-h</span> <span class="err">`cat</span> <span class="err">duphash`</span><span class="p">)</span><span class="x"> &amp;&amp;</span>
-<span class="x">            if test -n &quot;</span><span class="p">$</span><span class="nv">bug_id</span><span class="x">&quot;; then</span>
-<span class="x">                abrt-bodhi -r -b </span><span class="p">$</span><span class="nv">bug_id</span><span class="x"></span>
-<span class="x">            fi</span>
-<span class="x">        )</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>EVENT=analyze_LocalGDB analyzer=CCpp
+        abrt-action-analyze-core --core=coredump -o build_ids &amp;&amp;
+        /usr/libexec/abrt-action-install-debuginfo-to-abrt-cache --size_mb=4096 &amp;&amp;
+        abrt-action-generate-backtrace &amp;&amp;
+        abrt-action-analyze-backtrace &amp;&amp;
+        (
+            bug_id=$(reporter-bugzilla -h <span class="sb">`cat duphash`</span>) &amp;&amp;
+            if test -n &quot;$bug_id&quot;; then
+                abrt-bodhi -r -b $bug_id
+            fi
+        )
+</code></pre></div>
 
 </li>
 </ul>
@@ -179,9 +175,8 @@ generate the backtrace and let you report it to Bugzilla. Because of
 <p>To work around the problem you can try to manually install the missing debuginfo packages.
 Go to your system profile in RHN and subscribe the system to all appropriate debuginfo channels.
 Then install the packages. In my case:</p>
-<div class="highlight"><pre>    # debuginfo-install firefox
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>    # debuginfo-install firefox
+</code></pre></div>
 
 <p>And finally - <a href="https://bugzilla.redhat.com/show_bug.cgi?id=800754">bug 800754</a> which was already reported!</p>
     </article>
@@ -279,7 +274,7 @@ Then install the packages. In my case:</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

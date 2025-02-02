@@ -102,22 +102,19 @@ Django 1.10.7. Here is the reason why this happened.</p>
 <p>After migrating to Django 1.10 all tests appeared to be working locally
 on SQLite however they
 <a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309883">failed on MySQL</a> with</p>
-<div class="highlight"><pre><span class="n">TransactionManagementError</span><span class="o">:</span> <span class="n">An</span> <span class="n">error</span> <span class="n">occurred</span> <span class="k">in</span> <span class="n">the</span> <span class="n">current</span> <span class="n">transaction</span><span class="o">.</span> <span class="n">You</span> <span class="n">can</span><span class="s1">&#39;t execute queries until the end of the &#39;</span><span class="n">atomic</span><span class="err">&#39;</span> <span class="n">block</span><span class="o">.</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">TransactionManagementError</span><span class="o">:</span><span class="w"> </span><span class="n">An</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="n">occurred</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">transaction</span><span class="o">.</span><span class="w"> </span><span class="n">You</span><span class="w"> </span><span class="n">can</span><span class="s1">&#39;t execute queries until the end of the &#39;</span><span class="n">atomic</span><span class="err">&#39;</span><span class="w"> </span><span class="n">block</span><span class="o">.</span>
+</code></pre></div>
 
 <p>The exact same test cases
 <a href="https://travis-ci.org/MrSenko/Kiwi/jobs/258309884">failed on PostgreSQL</a> with:</p>
-<div class="highlight"><pre><span class="n">InterfaceError</span><span class="o">:</span> <span class="n">connection</span> <span class="n">already</span> <span class="n">closed</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">InterfaceError</span><span class="o">:</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="n">closed</span>
+</code></pre></div>
 
 <p>Since version 1.10 Django executes all tests inside transactions so my first
 thoughts were related to the auto-commit mode. However upon closer inspection
 we can see that the line which triggers the failure is</p>
-<div class="highlight"><pre>self.assertTrue(users.exists())
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>self.assertTrue(users.exists())
+</code></pre></div>
 
 <p>which is essentially a <code>SELECT</code> query aka
 <code>User.objects.filter(username=username).exists()</code>!</p>
@@ -129,12 +126,11 @@ a couple of places where it used <code>transaction.atomic()</code> as well. No l
 <p>Then, after numerous experiments and tons of logging inside Django's own code I was
 able to figure out when the failure occurred and what events were in place. The test
 code looked like this:</p>
-<div class="highlight"><pre><span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/confirm/&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/confirm/&#39;</span><span class="p">)</span>
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">new_user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><strong>The failure was happening after the view had been rendered upon the
 first time I do a SELECT against the database!</strong></p>
@@ -153,21 +149,20 @@ midway during the transaction!</strong></p>
 <li>execute <code>response = wrapped_callback()</code> while still inside <code>BaseHandler._get_response()</code></li>
 <li>
 <p>execute <code>django/http/response.py::HttpResponseBase::close()</code> which looks like</p>
-<div class="highlight"><pre><span class="c"># These methods partially implement the file-like object interface.</span>
-<span class="c"># See https://docs.python.org/3/library/io.html#io.IOBase</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># These methods partially implement the file-like object interface.</span>
+<span class="c1"># See https://docs.python.org/3/library/io.html#io.IOBase</span>
  
-<span class="c"># The WSGI server must call this method upon completion of the request.</span>
-<span class="c"># See http://blog.dscpl.com.au/2012/10/obligations-for-calling-close-on.html</span>
+<span class="c1"># The WSGI server must call this method upon completion of the request.</span>
+<span class="c1"># See http://blog.dscpl.com.au/2012/10/obligations-for-calling-close-on.html</span>
 <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">closable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closable_objects</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">closable</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">signals</span><span class="o">.</span><span class="n">request_finished</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_handler_class</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 </li>
 <li>
@@ -186,28 +181,26 @@ we assign to <code>self.content</code> inside <code>HttpResponse::__init__()</co
 <p>The root cause of my problem was precisely this <code>HttpResponse::__init__()</code> method
 or rather the way we arrive at it inside the application. </p>
 <p>The offending view last line was</p>
-<div class="highlight"><pre><span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">Prompt</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">Prompt</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
      <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span>
      <span class="n">info_type</span><span class="o">=</span><span class="n">Prompt</span><span class="o">.</span><span class="n">Info</span><span class="p">,</span>
      <span class="n">info</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
-     <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;next&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s">&#39;core-views-index&#39;</span><span class="p">))</span>
+     <span class="nb">next</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;next&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;core-views-index&#39;</span><span class="p">))</span>
 <span class="p">))</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>and the Prompt class looks like this</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
 
 <span class="k">class</span> <span class="nc">Prompt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">info_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;prompt.html&#39;</span><span class="p">,</span> <span class="p">{</span>
-            <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="n">info_type</span><span class="p">,</span>
-            <span class="s">&#39;info&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">,</span>
-            <span class="s">&#39;next&#39;</span><span class="p">:</span> <span class="nb">next</span>
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">info_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">next</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;prompt.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">info_type</span><span class="p">,</span>
+            <span class="s1">&#39;info&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">,</span>
+            <span class="s1">&#39;next&#39;</span><span class="p">:</span> <span class="nb">next</span>
         <span class="p">})</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Looking back at the internals of <code>HttpResponse</code> we see that</p>
 <ul>
@@ -270,15 +263,13 @@ coverage report in the current directory (e.g. main.tix).</p>
 <li>Copy the <code>binary.tix</code> file under <code>dist/hpc/vanilla/binary/binary.tix</code>!</li>
 </ol>
 <p>Produce coverage report with hpc:</p>
-<div class="highlight"><pre>hpc markup --hpcdir=dist/hpc/vanilla/mix/lib --hpcdir=dist/hpc/vanilla/mix/binary  dist/hpc/vanilla/tix/binary/binary.tix
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>hpc markup --hpcdir=dist/hpc/vanilla/mix/lib --hpcdir=dist/hpc/vanilla/mix/binary  dist/hpc/vanilla/tix/binary/binary.tix
+</code></pre></div>
 
 <p>Convert the coverage report to JSON and send it to Coveralls.io:</p>
-<div class="highlight"><pre>cabal install hpc-coveralls
+<div class="highlight"><pre><span></span><code>cabal install hpc-coveralls
 ~/.cabal/bin/hpc-coveralls --display-report tests binary
-</pre></div>
-
+</code></pre></div>
 
 <h2>Example</h2>
 <p>Check out the <a href="https://github.com/weldr/haskell-rpm/pull/18">haskell-rpm</a> repository
@@ -288,28 +279,27 @@ Also notice that in
 <a href="https://coveralls.io/builds/12131112/source?filename=.%2FRPM%2FParse.hs">RPM/Parse.hs</a>
 the function <code>parseRPMC</code> is now covered, while it was not covered in the
 <a href="https://coveralls.io/builds/12102486/source?filename=.%2FRPM%2FParse.hs">previous job #42</a>!</p>
-<div class="highlight"><span class="filename">.travis.yml snippet</span><pre><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hlint .</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install --dependencies-only --enable-tests</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal configure --enable-tests --enable-coverage --ghc-option=-DTEST</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal build</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal test --show-details=always</span>
+<div class="highlight"><pre><span></span><code><span class="nt">script</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">~/.cabal/bin/hlint .</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cabal install --dependencies-only --enable-tests</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cabal configure --enable-tests --enable-coverage --ghc-option=-DTEST</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cabal build</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cabal test --show-details=always</span>
 
-  <span class="c1"># tests to produce coverage for binaries</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/x86_64/efivar-0.14-1.el7.x86_64.rpm</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">./tests/test_binaries.sh ./efivar-0.14-1.el7.x86_64.rpm</span>
+<span class="w">  </span><span class="c1"># tests to produce coverage for binaries</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wget https://s3.amazonaws.com/atodorov/rpms/macbook/el7/x86_64/efivar-0.14-1.el7.x86_64.rpm</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./tests/test_binaries.sh ./efivar-0.14-1.el7.x86_64.rpm</span>
 
-  <span class="c1"># move .tix files in appropriate directories</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mkdir ./dist/hpc/vanilla/tix/inspect/ ./dist/hpc/vanilla/tix/unrpm/ ./dist/hpc/vanilla/tix/rpm2json/</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv inspect.tix ./dist/hpc/vanilla/tix/inspect/</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv rpm2json.tix ./dist/hpc/vanilla/tix/rpm2json/</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">mv unrpm.tix ./dist/hpc/vanilla/tix/unrpm/</span>
+<span class="w">  </span><span class="c1"># move .tix files in appropriate directories</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdir ./dist/hpc/vanilla/tix/inspect/ ./dist/hpc/vanilla/tix/unrpm/ ./dist/hpc/vanilla/tix/rpm2json/</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mv inspect.tix ./dist/hpc/vanilla/tix/inspect/</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mv rpm2json.tix ./dist/hpc/vanilla/tix/rpm2json/</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mv unrpm.tix ./dist/hpc/vanilla/tix/unrpm/</span>
 
-<span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cabal install hpc-coveralls</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">~/.cabal/bin/hpc-coveralls --display-report tests inspect rpm2json unrpm</span>
-</pre></div>
-
+<span class="nt">after_success</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cabal install hpc-coveralls</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">~/.cabal/bin/hpc-coveralls --display-report tests inspect rpm2json unrpm</span>
+</code></pre></div>
 
 <p>Thanks for reading and happy testing!</p>
             <p class="post-meta">Posted by
@@ -323,7 +313,7 @@ the function <code>parseRPMC</code> is now covered, while it was not covered in 
                     What's the bug in this pseudo-code
                 </h2>
             </a>
-                <p><img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker" /></p>
+                <p><img alt="Rails Girls Vratsa sticker" src="/images/bug_rails_girls_vratsa.jpg" title="Rails Girls Vratsa sticker"></p>
 <p>This is one of the stickers for the second edition of Rails Girls Vratsa which
 was held yesterday. Let's explore some of the bug proposals submitted by the Bulgarian QA group:</p>
 <blockquote>
@@ -351,29 +341,28 @@ post on the subject.</p>
 <p>Then Tsveta says the answer is to use <code>sad().stop()</code> with the warning that it may return
 nil. In this context the <code>sad()</code> method returns on object indicating that the person
 is feeling sad. If the method returns nil then the person is feeling OK.</p>
-<div class="highlight"><span class="filename">example by Tsveta</span><pre><span class="k">class</span> <span class="nc">Csad</span>
-  <span class="k">def</span> <span class="nf">stop</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stop</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-  <span class="k">end</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Csad</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">()</span>
+<span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stop</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">end</span>
 <span class="k">end</span>
 
-<span class="k">def</span> <span class="nf">sad</span><span class="p">()</span>
-  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-  <span class="no">Csad</span><span class="o">.</span><span class="n">new</span><span class="p">();</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sad</span><span class="p">()</span>
+<span class="w">  </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="no">Csad</span><span class="o">.</span><span class="n">new</span><span class="p">();</span>
 <span class="k">end</span>
 
-<span class="k">def</span> <span class="nf">beAwesome</span><span class="p">()</span>
-  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;beAwesome</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">beAwesome</span><span class="p">()</span>
+<span class="w">  </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;beAwesome</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
 <span class="k">end</span>
 
 <span class="c1"># notice == true was removed</span>
 <span class="k">if</span><span class="p">(</span><span class="n">sad</span><span class="p">())</span>
-  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Yes, I am sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-  <span class="n">sad</span><span class="o">.</span><span class="n">stop</span><span class="p">();</span>
-  <span class="n">beAwesome</span><span class="p">(</span> <span class="p">);</span>
+<span class="w">  </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Yes, I am sad</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="n">sad</span><span class="o">.</span><span class="n">stop</span><span class="p">();</span>
+<span class="w">  </span><span class="n">beAwesome</span><span class="p">(</span><span class="w"> </span><span class="p">);</span>
 <span class="k">end</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>While this is coming closer to a functioning solution something about it is bugging me.
 In the if statement the developer has typed more characters than required (<code>== true</code>).
@@ -386,7 +375,7 @@ method twice, first time in the if statement, the second time in the body of the
 if statement, which may have unwanted side effects. It is best to assign the return
 value to some variable instead.</p>
 <p>IMO if we are to use this OOP approach the code should look something like:</p>
-<div class="highlight"><pre><span class="k">class</span> <span class="n">Person</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="n">Person</span>
   <span class="n">def</span> <span class="n">sad</span>?()
   <span class="nb">end</span>
 
@@ -402,8 +391,7 @@ value to some variable instead.</p>
     <span class="n">p</span>.<span class="n">stopBeingSad</span>
     <span class="n">p</span>.<span class="n">beAwesome</span>
 <span class="nb">end</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Let me return back to assuming we don't use classes here.
 The first <em>obvious</em> mistake is the space in <code>sad stop();</code> first spotted by Peter Sabev*.
@@ -442,7 +430,7 @@ education, not a graphics designer and she thinks otherwise. This
 blog post will summarize her workshop held at the DEVit conference last month.</p>
 <p>We are going to build a site called DevMatch, which is like Tinder for
 developers. The initial version doesn't look bad but we can do better:
-<img alt="initial version of DevMatch" src="/images/design4devs/step0.png" title="initial version of DevMatch" /></p>
+<img alt="initial version of DevMatch" src="/images/design4devs/step0.png" title="initial version of DevMatch"></p>
 <h2>Step 1: Layout</h2>
 <p>Layout is grids and the most popular designs use grids with 12, 16 or 24 columns. The
 idea is to make everything align to the grid which allows the eyes to follow a straight
@@ -458,7 +446,7 @@ buttons align at the bottom.</p>
 double width!</p>
 <p>Finally we remove the stock images because they are distracting!</p>
 <p>Here's how everything looks now:
-<img alt="DevMatch after aligning" src="/images/design4devs/step1.png" title="DevMatch after aligning" /></p>
+<img alt="DevMatch after aligning" src="/images/design4devs/step1.png" title="DevMatch after aligning"></p>
 <h2>Step 2: Typography</h2>
 <p>The web is 95% typography. Serif fonts are good for reading long passages of text
 because they allow the eyes to follow. Sans-serif fonts look great on screens,
@@ -477,7 +465,7 @@ Keep line length short, between 45 and 75 characters.</p>
 <p>Layout and Typography are the two most important design steps and you will
 achieve very good results if you apply only the two of them.
 Here's how everything looks now:
-<img alt="DevMatch after typography changes" src="/images/design4devs/step2.png" title="DevMatch after typography changes" /></p>
+<img alt="DevMatch after typography changes" src="/images/design4devs/step2.png" title="DevMatch after typography changes"></p>
 <h2>Step 3: Color</h2>
 <p>Find a color palette generator and use it. For new projects start with
 competitor analysis, a logo or a picture you like or something that conveys
@@ -498,7 +486,7 @@ a known meaning to the customer. Zaharenia's tips include:</p>
 <li>Need link color;</li>
 </ul>
 <p>Here's how everything looks now:
-<img alt="DevMatch after applying color" src="/images/design4devs/step3.png" title="DevMatch after applying color" /></p>
+<img alt="DevMatch after applying color" src="/images/design4devs/step3.png" title="DevMatch after applying color"></p>
 <h2>Step 4: Visual elements</h2>
 <p>Here we talk about icons and images which are to be used only as
 visual aid, not alone (especially for navigation). The best thing you can do
@@ -507,7 +495,7 @@ combine several icons together if need be, instead of using stock photos.</p>
 <p>It is best to use SVG for all icons because we can use CSS to modify the colors
 inside the SVG. For example the features icons below are all gray and some SVG paths
 have been styled with the accent color. Here's how it looks now:
-<img alt="DevMatch after applying icons" src="/images/design4devs/step4.png" title="DevMatch after applying icons" /></p>
+<img alt="DevMatch after applying icons" src="/images/design4devs/step4.png" title="DevMatch after applying icons"></p>
 <p>Other tips include</p>
 <ul>
 <li>Use logo and header images for the headers;</li>
@@ -532,7 +520,7 @@ have been styled with the accent color. Here's how it looks now:
 </ul>
 <p>And this is the final version of our website (note: the header logo mishap
 is probably from my side, not intentional):
-<img alt="DevMatch after copyright changes" src="/images/design4devs/step5.png" title="DevMatch after copyright changes" /></p>
+<img alt="DevMatch after copyright changes" src="/images/design4devs/step5.png" title="DevMatch after copyright changes"></p>
 <p>These are the 5 basic design steps. You don't need to be a trained designer to be
 able to apply them. Now that you know what the steps are simply search for fonts,
 scales, color palettes and icon sets and apply them. This is what Zaharenia does
@@ -556,7 +544,7 @@ even for experienced testers. I've written about it
 <a href="http://atodorov.org/blog/2016/04/12/how-to-hire-software-testers-pt-1/">last year</a>. In this
 blog post I'd like to share a different perspective on this same question,
 this time courtesy of my friend Rayna Stankova.</p>
-<p><img alt="Login form" src="/images/login_form_vmware.png" title="Login form" /></p>
+<p><img alt="Login form" src="/images/login_form_vmware.png" title="Login form"></p>
 <h2>What bugs do you see above</h2>
 <p>The series of images above is from a
 <a href="https://www.meetup.com/Women-Who-Code-Sofia/events/239480974/">Women Who Code Sofia</a>
@@ -729,43 +717,41 @@ some monitoring tests and also implement better failure detection in
 I've put myself in a situation where I have two functions, one nested inside
 the other and I want the nested function to assign to variable from the
 parent function. Turns out this isn't so easy in Python!</p>
-<div class="highlight"><span class="filename">hello.py</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="nb">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">do_print</span><span class="p">()</span>
 
     <span class="n">do_print</span><span class="p">()</span>
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
-</pre></div>
-
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">hello</span><span class="p">(</span><span class="s1">&#39;World&#39;</span><span class="p">)</span>
+</code></pre></div>
 
 <p>The example above is a recursive <em>Hello World</em>. Notice the <code>i += 1</code> line!
 This line causes <code>i</code> to be considered local to <code>do_print()</code> and the result
 is that we get the following failure on Python 2.7:</p>
-<div class="highlight"><pre><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">16</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-    <span class="n">hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">13</span><span class="p">,</span> <span class="ow">in</span> <span class="n">hello</span>
+<div class="highlight"><pre><span></span><code><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">16</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">hello</span><span class="p">(</span><span class="s1">&#39;World&#39;</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s2">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">13</span><span class="p">,</span> <span class="ow">in</span> <span class="n">hello</span>
     <span class="n">do_print</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_print</span>
+  <span class="n">File</span> <span class="s2">&quot;./test.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_print</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
-<span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s">&#39;i&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
-</pre></div>
-
+<span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s1">&#39;i&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
+</code></pre></div>
 
 <p>We can workaround by using a global variable like so:</p>
-<div class="highlight"><span class="filename">hello.py using global variable</span><pre><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="highlight"><pre><span></span><code><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>
 
     <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
         <span class="k">global</span> <span class="n">i</span>
@@ -773,53 +759,50 @@ is that we get the following failure on Python 2.7:</p>
         <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="nb">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">do_print</span><span class="p">()</span>
 
     <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>However I prefer not to expose internal state outside the <code>hello()</code>
 function. Only if there was a keyword similar to <strong>global</strong>. In Python 3
 there is <strong>nonlocal</strong>!</p>
-<div class="highlight"><span class="filename">hello.py using nonlocal, Python 3</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
-        <span class="n">nonlocal</span> <span class="n">i</span>
+        <span class="k">nonlocal</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">do_print</span><span class="p">()</span>
 
     <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
+</code></pre></div>
 
 <p><strong>nonlocal</strong> is nice but it doesn't exist in Python 2! The workaround is to
 not assign state to the variable itself, but instead use a mutable container.
 That is instead of a scalar use a list or a dictionary like so:</p>
-<div class="highlight"><span class="filename">hello.py where i is a list, Python 2</span><pre><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
-    <span class="n">greeting</span> <span class="o">=</span> <span class="s">&#39;Hello&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">greeting</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>
     <span class="n">i</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">do_print</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">print</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
+        <span class="nb">print</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">greeting</span><span class="p">,</span> <span class="n">who</span>
         <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">do_print</span><span class="p">()</span>
 
     <span class="n">do_print</span><span class="p">()</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Thanks for reading and happy coding!</p>
             <p class="post-meta">Posted by
@@ -833,7 +816,7 @@ That is instead of a scalar use a list or a dictionary like so:</p>
                     Semantically Invalid Input
                 </h2>
             </a>
-                <div class="highlight"><span class="filename">Unsolvable Square example</span><pre><span class="o">.</span> <span class="o">.</span> <span class="mi">9</span> <span class="o">|</span> <span class="o">.</span> <span class="mi">2</span> <span class="mi">8</span> <span class="o">|</span> <span class="mi">7</span> <span class="o">.</span> <span class="o">.</span>
+                <div class="highlight"><pre><span></span><code><span class="o">.</span> <span class="o">.</span> <span class="mi">9</span> <span class="o">|</span> <span class="o">.</span> <span class="mi">2</span> <span class="mi">8</span> <span class="o">|</span> <span class="mi">7</span> <span class="o">.</span> <span class="o">.</span>
 <span class="mi">8</span> <span class="o">.</span> <span class="mi">6</span> <span class="o">|</span> <span class="o">.</span> <span class="o">.</span> <span class="mi">4</span> <span class="o">|</span> <span class="o">.</span> <span class="o">.</span> <span class="mi">5</span>
 <span class="o">.</span> <span class="o">.</span> <span class="mi">3</span> <span class="o">|</span> <span class="o">.</span> <span class="o">.</span> <span class="o">.</span> <span class="o">|</span> <span class="o">.</span> <span class="o">.</span> <span class="mi">4</span>
 <span class="o">------+-------+------</span>
@@ -844,8 +827,7 @@ That is instead of a scalar use a list or a dictionary like so:</p>
 <span class="mi">3</span> <span class="o">.</span> <span class="o">.</span> <span class="o">|</span> <span class="o">.</span> <span class="o">.</span> <span class="o">.</span> <span class="o">|</span> <span class="mi">5</span> <span class="o">.</span> <span class="o">.</span>
 <span class="mi">9</span> <span class="o">.</span> <span class="o">.</span> <span class="o">|</span> <span class="mi">4</span> <span class="o">.</span> <span class="o">.</span> <span class="o">|</span> <span class="mi">8</span> <span class="o">.</span> <span class="mi">7</span>
 <span class="o">.</span> <span class="o">.</span> <span class="mi">1</span> <span class="o">|</span> <span class="mi">2</span> <span class="mi">5</span> <span class="o">.</span> <span class="o">|</span> <span class="mi">3</span> <span class="o">.</span> <span class="o">.</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>In a comment to a
 <a href="http://atodorov.org/blog/2016/04/16/how-to-hire-software-testers-pt-2/">previous post</a>
@@ -1039,7 +1021,7 @@ working with Selenium.</p>
                     Quality Assurance According 2 Einstein
                 </h2>
             </a>
-                <p><img alt="logo" src="/images/qa_einstein.png" title="logo" /></p>
+                <p><img alt="logo" src="/images/qa_einstein.png" title="logo"></p>
 <p><a href="https://www.facebook.com/events/1887550261534408/">Quality Assurance According 2 Einstein</a>
 is a talk which introduces several different ideas about how we need to think
 and approach software testing. It touches on subjects like mutation testing,
@@ -1191,43 +1173,42 @@ create a pull request for the update (in <code>Cargo.lock</code>). All of this u
 of course!</p>
 <p>To start create a cron job in Travis CI which will execute once per day and call your
 test script. The script looks like this:</p>
-<div class="highlight"><span class="filename">cargo-update-and-pr</span><pre><span class="c">#!/bin/bash</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 
-<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;</span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> <span class="s2">&quot;GITHUB_TOKEN is not defined&quot;</span>
-    <span class="nb">exit </span>1
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;GITHUB_TOKEN is not defined&quot;</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
 <span class="k">fi</span>
 
 <span class="nv">BRANCH_NAME</span><span class="o">=</span><span class="s2">&quot;automated_cargo_update&quot;</span>
 
-git checkout -b <span class="nv">$BRANCH_NAME</span>
-cargo update <span class="o">&amp;&amp;</span> cargo <span class="nb">test</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span><span class="nv">$BRANCH_NAME</span>
+cargo<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cargo<span class="w"> </span><span class="nb">test</span>
 
-<span class="nv">DIFF</span><span class="o">=</span><span class="sb">`</span>git diff<span class="sb">`</span>
-<span class="c"># NOTE: we don&#39;t really check the result from testing here. Only that</span>
-<span class="c"># something has been changed, e.g. Cargo.lock</span>
-<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;</span><span class="nv">$DIFF</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="c"># configure git authorship</span>
-    git config --global user.email <span class="s2">&quot;atodorov@MrSenko.com&quot;</span>
-    git config --global user.name <span class="s2">&quot;Alexander Todorov&quot;</span>
+<span class="nv">DIFF</span><span class="o">=</span><span class="sb">`</span>git<span class="w"> </span>diff<span class="sb">`</span>
+<span class="c1"># NOTE: we don&#39;t really check the result from testing here. Only that</span>
+<span class="c1"># something has been changed, e.g. Cargo.lock</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DIFF</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="c1"># configure git authorship</span>
+<span class="w">    </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;atodorov@MrSenko.com&quot;</span>
+<span class="w">    </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;Alexander Todorov&quot;</span>
 
-    <span class="c"># add a remote with read/write permissions!</span>
-    <span class="c"># use token authentication instead of password</span>
-    git remote add authenticated https://atodorov:<span class="nv">$GITHUB_TOKEN</span>@github.com/atodorov/bdcs-api-rs.git
+<span class="w">    </span><span class="c1"># add a remote with read/write permissions!</span>
+<span class="w">    </span><span class="c1"># use token authentication instead of password</span>
+<span class="w">    </span>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>authenticated<span class="w"> </span>https://atodorov:<span class="nv">$GITHUB_TOKEN</span>@github.com/atodorov/bdcs-api-rs.git
 
-    <span class="c"># commit the changes to Cargo.lock</span>
-    git commit -a -m <span class="s2">&quot;Auto-update cargo crates&quot;</span>
+<span class="w">    </span><span class="c1"># commit the changes to Cargo.lock</span>
+<span class="w">    </span>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Auto-update cargo crates&quot;</span>
 
-    <span class="c"># push the changes so that PR API has something to compare against</span>
-    git push authenticated <span class="nv">$BRANCH_NAME</span>
+<span class="w">    </span><span class="c1"># push the changes so that PR API has something to compare against</span>
+<span class="w">    </span>git<span class="w"> </span>push<span class="w"> </span>authenticated<span class="w"> </span><span class="nv">$BRANCH_NAME</span>
 
-    <span class="c"># finally create the PR</span>
-    curl -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> -H <span class="s2">&quot;Authorization: token </span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
-         --data <span class="s1">&#39;{&quot;title&quot;:&quot;Auto-update cargo crates&quot;,&quot;head&quot;:&quot;automated_cargo_update&quot;,&quot;base&quot;:&quot;master&quot;, &quot;body&quot;:&quot;@atodorov review&quot;}&#39;</span> <span class="se">\</span>
-         https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
+<span class="w">    </span><span class="c1"># finally create the PR</span>
+<span class="w">    </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: token </span><span class="nv">$GITHUB_TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">         </span>--data<span class="w"> </span><span class="s1">&#39;{&quot;title&quot;:&quot;Auto-update cargo crates&quot;,&quot;head&quot;:&quot;automated_cargo_update&quot;,&quot;base&quot;:&quot;master&quot;, &quot;body&quot;:&quot;@atodorov review&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">         </span>https://api.github.com/repos/atodorov/bdcs-api-rs/pulls
 <span class="k">fi</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>A few notes here:</p>
 <ul>
@@ -1266,7 +1247,7 @@ of useful techniques I will be presenting very soon.</p>
                     Testing Red Hat Enterprise Linux the Microsoft way
                 </h2>
             </a>
-                <p><img alt="Microsoft and Red Hat logos" src="/images/microsoft-redhat-puzzle.jpg" title="Microsoft and Red Hat logos" /></p>
+                <p><img alt="Microsoft and Red Hat logos" src="/images/microsoft-redhat-puzzle.jpg" title="Microsoft and Red Hat logos"></p>
 <p>Pairwise (a.k.a. all-pairs) testing is an effective test case generation
 technique that is based on the observation that most faults are caused by
 interactions of at most two factors! Pairwise-generated test suites cover
@@ -1350,11 +1331,10 @@ execute all of them at least once!</p>
 </li>
 <li>
 <p>Then we have the group of test cases with input parameters. For example:</p>
-<div class="highlight"><pre>storage / iBFT / No authentication / Network init script
+<div class="highlight"><pre><span></span><code>storage / iBFT / No authentication / Network init script
 storage / iBFT / CHAP authentication / Network Manager
 storage / iBFT / Reverse CHAP authentication / Network Manager
-</pre></div>
-
+</code></pre></div>
 
 <p>In this example the test is <code>storage / iBFT</code> and the parameters are</p>
 <ul>
@@ -1394,43 +1374,42 @@ schedule test execution and it doesn't update the
 with actual results. It just tells you what to do! Obviously this script
 will need to integrate with other systems and processes as defined by the organization!</p>
 <p>Example results:</p>
-<div class="highlight"><pre>RHEL 6.9 Tier #2 and #3 testing
-  Test case w/o parameters can&#39;t be reduced via pairwise
-    x86_64 Server - partitioning / swap on LVM
-    x86_64 Workstation - partitioning / swap on LVM
-    x86_64 Client - partitioning / swap on LVM
-    x86_64 ComputeNode - partitioning / swap on LVM
-    i386 Server - partitioning / swap on LVM
-    i386 Workstation - partitioning / swap on LVM
-    i386 Client - partitioning / swap on LVM
-    ppc64 Server - partitioning / swap on LVM
-    s390x Server - partitioning / swap on LVM
-  Test case(s) with parameters can be reduced by pairwise
-    x86_64 Server - rescue mode / LVM / plain
-    x86_64 ComputeNode - rescue mode / RAID / encrypted
-    x86_64 Client - rescue mode / RAID / plain
-    x86_64 Workstation - rescue mode / LVM / encrypted
-    x86_64 Server - rescue mode / RAID / encrypted
-    x86_64 Workstation - rescue mode / RAID / plain
-    x86_64 Client - rescue mode / LVM / encrypted
-    x86_64 ComputeNode - rescue mode / LVM / plain
-    i386 Server - rescue mode / LVM / plain
-    i386 Client - rescue mode / RAID / encrypted
-    i386 Workstation - rescue mode / RAID / plain
-    i386 Workstation - rescue mode / LVM / encrypted
-    i386 Server - rescue mode / RAID / encrypted
-    i386 Workstation - rescue mode / RAID / encrypted
-    i386 Client - rescue mode / LVM / plain
-    ppc64 Server - rescue mode / LVM / plain
-    s390x Server - rescue mode / RAID / encrypted
-    s390x Server - rescue mode / RAID / plain
-    s390x Server - rescue mode / LVM / encrypted
-    ppc64 Server - rescue mode / RAID / encrypted
+<div class="highlight"><pre><span></span><code><span class="n">RHEL</span><span class="w"> </span><span class="mf">6.9</span><span class="w"> </span><span class="n">Tier</span><span class="w"> </span><span class="c1">#2 and #3 testing</span>
+<span class="w">  </span><span class="n">Test</span><span class="w"> </span><span class="n">case</span><span class="w"> </span><span class="n">w</span><span class="o">/</span><span class="n">o</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="n">can</span><span class="s1">&#39;t be reduced via pairwise</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">ComputeNode</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">ppc64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">    </span><span class="n">s390x</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">partitioning</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">swap</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">LVM</span>
+<span class="w">  </span><span class="n">Test</span><span class="w"> </span><span class="n">case</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">reduced</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">pairwise</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">ComputeNode</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">x86_64</span><span class="w"> </span><span class="n">ComputeNode</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Workstation</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">i386</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">ppc64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">s390x</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">s390x</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">plain</span>
+<span class="w">    </span><span class="n">s390x</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">LVM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
+<span class="w">    </span><span class="n">ppc64</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rescue</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">RAID</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">encrypted</span>
 
-Finished in 0.00602 seconds (files took 0.10734 seconds to load)
-29 examples, 0 failures
-</pre></div>
-
+<span class="n">Finished</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="mf">0.00602</span><span class="w"> </span><span class="n">seconds</span><span class="w"> </span><span class="p">(</span><span class="n">files</span><span class="w"> </span><span class="n">took</span><span class="w"> </span><span class="mf">0.10734</span><span class="w"> </span><span class="n">seconds</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="nb">load</span><span class="p">)</span>
+<span class="mi">29</span><span class="w"> </span><span class="n">examples</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="n">failures</span>
+</code></pre></div>
 
 <p>In this example there are 9 (variants) * 2 (partitioning type) * 2 (encryption type) == 32
 total combinations! As you can see pairwise reduced them to 20! Also notice that
@@ -1562,45 +1541,44 @@ example here.</p>
 <p>This example comes from one of my training courses. The task is to write a
 class which represents a bank account with methods to deposit, withdraw and
 transfer money. The solution looks like this</p>
-<div class="highlight"><span class="filename">bank.py</span><pre><span class="k">class</span> <span class="nc">BankAccount</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">balance</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BankAccount</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">balance</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">=</span> <span class="n">balance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="nf">deposit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Deposit amount must be positive!&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Deposit amount must be positive!&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">+=</span> <span class="n">amount</span>
 
     <span class="k">def</span> <span class="nf">withdraw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Withdraw amount must be positive!&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Withdraw amount must be positive!&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_balance</span> <span class="o">-=</span> <span class="n">amount</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;Withdraw for </span><span class="si">%d</span><span class="s"> failed&quot;</span> <span class="o">%</span> <span class="n">amount</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Withdraw for </span><span class="si">%d</span><span class="s2"> failed&quot;</span> <span class="o">%</span> <span class="n">amount</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">transfer_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_account</span><span class="p">,</span> <span class="n">how_much</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
         <span class="n">other_account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Notice that if withdrawal is not possible then the function returns <code>False</code>. The tests
 look like this</p>
-<div class="highlight"><span class="filename">test.py</span><pre><span class="kn">import</span> <span class="nn">unittest</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">unittest</span>
 <span class="kn">from</span> <span class="nn">solution</span> <span class="kn">import</span> <span class="n">BankAccount</span>
 
 
 <span class="k">class</span> <span class="nc">TestBankAccount</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">account</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&quot;Rado&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">account</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s2">&quot;Rado&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">test_deposit_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -1633,7 +1611,7 @@ look like this</p>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">assertIsNotNone</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="s">&quot;Withdraw for 50 failed&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_history</span>
+        <span class="k">assert</span> <span class="s2">&quot;Withdraw for 50 failed&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">_history</span>
 
     <span class="k">def</span> <span class="nf">test_withdraw_non_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
@@ -1643,8 +1621,8 @@ look like this</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">test_transfer_negative_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
             <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="p">)</span>
@@ -1654,8 +1632,8 @@ look like this</p>
 
 
     <span class="k">def</span> <span class="nf">test_transfer_positive_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
         <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
 
@@ -1663,56 +1641,51 @@ look like this</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_2</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Try the following commands to verify that you have 100% coverage</p>
-<div class="highlight"><pre>coverage run test.py
+<div class="highlight"><pre><span></span><code>coverage run test.py
 coverage report
 
 cosmic-ray run --test-runner nose --baseline 10 example.json bank.py -- test.py`
 cosmic-ray report example.json
-</pre></div>
-
+</code></pre></div>
 
 <p>Can you tell where the bug is ? How about I try to transfer more money than is
 available from one account to the other</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">test_transfer_more_than_available_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-    <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_transfer_more_than_available_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">account_1</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;For testing&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">account_2</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="s1">&#39;In dollars&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
-    <span class="c"># transfer more than available</span>
+    <span class="c1"># transfer more than available</span>
     <span class="n">account_1</span><span class="o">.</span><span class="n">transfer_to</span><span class="p">(</span><span class="n">account_2</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_1</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">account_2</span><span class="o">.</span><span class="n">_balance</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>If you execute the above test it will fail</p>
-<div class="highlight"><pre><span class="n">FAIL</span><span class="o">:</span> <span class="n">test_transfer_more_than_available_balance</span> <span class="o">(</span><span class="n">__main__</span><span class="o">.</span><span class="na">TestBankAccount</span><span class="o">)</span>
-<span class="o">----------------------------------------------------------------------</span>
-<span class="n">Traceback</span> <span class="o">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="o">):</span>
-  <span class="n">File</span> <span class="s2">&quot;./test.py&quot;</span><span class="o">,</span> <span class="n">line</span> <span class="mi">79</span><span class="o">,</span> <span class="k">in</span> <span class="n">test_transfer_more_than_available_balance</span>
-    <span class="n">self</span><span class="o">.</span><span class="na">assertEqual</span><span class="o">(</span><span class="n">account_2</span><span class="o">.</span><span class="na">_balance</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
-<span class="n">AssertionError</span><span class="o">:</span> <span class="mi">160</span> <span class="o">!=</span> <span class="mi">10</span>
+<div class="highlight"><pre><span></span><code><span class="c">FAIL: test_transfer_more_than_available_balance (__main__</span><span class="nt">.</span><span class="c">TestBankAccount)</span>
+<span class="nb">----------------------------------------------------------------------</span>
+<span class="c">Traceback (most recent call last):</span>
+<span class="c">  File &quot;</span><span class="nt">.</span><span class="c">/test</span><span class="nt">.</span><span class="c">py&quot;</span><span class="nt">,</span><span class="c"> line 79</span><span class="nt">,</span><span class="c"> in test_transfer_more_than_available_balance</span>
+<span class="c">    self</span><span class="nt">.</span><span class="c">assertEqual(account_2</span><span class="nt">.</span><span class="c">_balance</span><span class="nt">,</span><span class="c"> 10)</span>
+<span class="c">AssertionError: 160 != 10</span>
 
-<span class="o">----------------------------------------------------------------------</span>
-</pre></div>
-
+<span class="nb">----------------------------------------------------------------------</span>
+</code></pre></div>
 
 <p>The problem is that when <code>self.withdraw(how_much)</code> fails <code>transfer_to()</code> ignores
 the result and tries to deposit the money into the other account! A better
 implementation would be</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">transfer_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_account</span><span class="p">,</span> <span class="n">how_much</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">transfer_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_account</span><span class="p">,</span> <span class="n">how_much</span><span class="p">):</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">withdraw</span><span class="p">(</span><span class="n">how_much</span><span class="p">):</span>
         <span class="n">other_account</span><span class="o">.</span><span class="n">deposit</span><span class="p">(</span><span class="n">how_much</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Transfer failed!&#39;</span><span class="p">)</span>
-</pre></div>
-
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Transfer failed!&#39;</span><span class="p">)</span>
+</code></pre></div>
 
 <p>In my earlier article the bugs were caused by external environment
 and tools/metrics like code coverage and mutation score are not affected by it.
@@ -1735,7 +1708,7 @@ the <code>test_withdraw...()</code> test methods, which already assert on the re
                     Article about Nitrate in Methods &amp; Tools
                 </h2>
             </a>
-                <p><img alt="Nitrate" src="/images/nitrate3.png" title="Nitrate" /></p>
+                <p><img alt="Nitrate" src="/images/nitrate3.png" title="Nitrate"></p>
 <p><a href="https://github.com/MrSenko/Nitrate">Nitrate</a> is an open source test plan,
 test run and test case management system I have been working on for a while now.
 I have been maintaining a custom fork over at <a href="http://MrSenko.com">Mr. Senko</a>
@@ -1754,7 +1727,7 @@ You can find it <a href="http://www.methodsandtools.com/tools/nitrate.php">here<
                     Building cardboard robots
                 </h2>
             </a>
-                <p><img alt="Adi with robots" src="/images/adi_robots.jpg" title="Adi and her robots" /></p>
+                <p><img alt="Adi with robots" src="/images/adi_robots.jpg" title="Adi and her robots"></p>
 <p>My <a href="http://atodorov.org/blog/2017/01/13/a-5-year-old-girl-vs-coderdojo/">previous blog post</a> was about
 the <em>Hello Ruby</em> book, <em>Coder Dojo</em> and making computers out of paper - all cool
 things for a 5 year old girl. This week I have discovered the
@@ -1789,7 +1762,7 @@ comfortable around technology!</p>
                     A 5 year old girl vs. CoderDojo
                 </h2>
             </a>
-                <p><img alt="Adi @ Hello Ruby" src="/images/adi_hello_ruby_twitter.jpg" title="Adi @ Hello Ruby" /></p>
+                <p><img alt="Adi @ Hello Ruby" src="/images/adi_hello_ruby_twitter.jpg" title="Adi @ Hello Ruby"></p>
 <p>In early December'16 together with my 5 year old daughter we visited an introductory workshop
 about the <a href="http://amzn.to/2ijQlBD">Hello Ruby</a> book and another
 workshop organized by <a href="http://coderdojobulgaria.com/">Coder Dojo Bulgaria</a>.
@@ -1914,7 +1887,7 @@ introduce them to <a href="http://amzn.to/2ijQlBD">Hello Ruby</a> and
                     Circo loco 2017
                 </h2>
             </a>
-                <p><img alt="HackConf 2016" src="/images/hack_conf.jpg" title="HackConf 2016" /></p>
+                <p><img alt="HackConf 2016" src="/images/hack_conf.jpg" title="HackConf 2016"></p>
 <p>Due to popular demand I'm sharing my plans for the upcoming conference season.
 Here is a list of events I plan to visit and speak at (hopefully). The list
 will be updated throughout the year so please subscribe to the comments section
@@ -2112,7 +2085,7 @@ intention is to present this at ISTA 2017 so stay tuned.</p>
                     QA & Automation 101 Retrospective
                 </h2>
             </a>
-                <p><img alt="QA 101 graduation" src="/images/qa101_final.jpg" title="QA 101 graduation" /></p>
+                <p><img alt="QA 101 graduation" src="/images/qa101_final.jpg" title="QA 101 graduation"></p>
 <p>At the beginning of this year I've hosted the first QA related course at
 <a href="http://hackbulgaria.com/">HackBulgaria</a>. This is a long overdue post about
 how the course went, what worked well and what didn't. Brace yourself because
@@ -2142,16 +2115,16 @@ as software testers!</p>
 <p>On the practical side of things students managed to find and report 11 interesting
 bugs against Fedora. Mind you that these were all found in the wild:
 <a href="https://fedorahosted.org/fedora-infrastructure/ticket/5323">fedora-infrastructure #5323</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339701">RHBZ#1339701</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339709">RHBZ#1339709</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339713">RHBZ#1339713</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339719">RHBZ#1339719</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339731">RHBZ#1339731</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339739">RHBZ#1339739</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339742">RHBZ#1339742</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339746">RHBZ#1339746</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340541">RHBZ#1340541</a>,
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340891">RHBZ#1340891</a>.</p>
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339701">RHBZ #1339701</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339709">RHBZ #1339709</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339713">RHBZ #1339713</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339719">RHBZ #1339719</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339731">RHBZ #1339731</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339739">RHBZ #1339739</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339742">RHBZ #1339742</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1339746">RHBZ #1339746</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340541">RHBZ #1340541</a>,
+<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1340891">RHBZ #1340891</a>.</p>
 <p>Then students also made a few pull requests on GitHub (3 which I know off):
 <a href="https://github.com/apache/commons-math/pull/38">commons-math #38</a>,
 <a href="https://github.com/apache/commons-csv/pull/12">commons-csv #12</a>,
@@ -2485,10 +2458,9 @@ how to implement them in practice.</p>
                     4 Quick Wins to Manage the Cost of Software Testing
                 </h2>
             </a>
-                <div class="highlight"><pre>Every activity in software development has a cost and a value. Getting cost to
-trend down while increasing value, is the ultimate goal.
-</pre></div>
-
+                <div class="highlight"><pre><span></span><code><span class="nv">Every</span><span class="w"> </span><span class="nv">activity</span><span class="w"> </span><span class="nv">in</span><span class="w"> </span><span class="nv">software</span><span class="w"> </span><span class="nv">development</span><span class="w"> </span><span class="nv">has</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">cost</span><span class="w"> </span><span class="nv">and</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">value</span>.<span class="w"> </span><span class="nv">Getting</span><span class="w"> </span><span class="nv">cost</span><span class="w"> </span><span class="nv">to</span>
+<span class="nv">trend</span><span class="w"> </span><span class="nv">down</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="nv">increasing</span><span class="w"> </span><span class="nv">value</span>,<span class="w"> </span><span class="nv">is</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">ultimate</span><span class="w"> </span><span class="nv">goal</span>.
+</code></pre></div>
 
 <p>This is the introduction of an e-book called
 <a href="http://pi.qasymphony.com/four-quick-wins-thank-you">4 Quick Wins to Manage the Cost of Software Testing</a>.
@@ -2578,11 +2550,10 @@ are supporters of the CoP approach. This is a bottoms-up approach which is open 
 everyone to join in and harnesses the team creative abilities. It also takes into
 account that different teams use different methods and tools and that
 "one size doesn't fit all"!</p>
-<div class="highlight"><pre>Skilled teams find important bugs faster, discover innovative solutions to hard
+<div class="highlight"><pre><span></span><code>Skilled teams find important bugs faster, discover innovative solutions to hard
 testing problems and know how to communicate their value. Sometimes, a few super
 testers can replace an army of average testers.
-</pre></div>
-
+</code></pre></div>
 
 <p>While I consider myself to be a "super tester" with thousands of bugs reported there
 is a very important note to make here. Communities of Practice are successful when
@@ -2624,18 +2595,17 @@ into different directories and adjusting URL paths based on the experiment name.
 <p>Absolutely <strong>NOT</strong>! In version 0.2.1,
 <a href="https://github.com/MrSenko/pelican-ab/commit/ef1e2117ad8ffa5b9fa8470d32d54a36ccb140bb">commit ef1e211</a>,
 pelican-ab had the following bug:</p>
-<div class="highlight"><pre><span class="n">Given</span><span class="o">:</span> <span class="n">Pelican</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">DELETE_OUTPUT_DIRECTORY</span> <span class="k">is</span> <span class="kd">set</span> <span class="n">to</span> <span class="n">True</span> <span class="o">(</span><span class="n">which</span> <span class="n">it</span> <span class="k">is</span> <span class="n">by</span> <span class="k">default</span><span class="o">)</span>
-<span class="n">When</span><span class="o">:</span> <span class="n">we</span> <span class="n">generate</span> <span class="n">several</span> <span class="n">experiments</span> <span class="n">using</span> <span class="n">the</span> <span class="n">commands</span><span class="o">:</span>
-    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;control&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
-    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;123&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
-    <span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span> <span class="n">make</span> <span class="n">regenerate</span>
-    <span class="n">make</span> <span class="n">publish</span>
-<span class="n">Actual</span> <span class="n">result</span><span class="o">:</span> <span class="n">only</span> <span class="n">the</span> <span class="s2">&quot;xy&quot;</span> <span class="n">experiment</span> <span class="o">(</span><span class="n">the</span> <span class="n">last</span> <span class="n">one</span><span class="o">)</span> <span class="n">would</span> <span class="n">be</span> <span class="n">published</span> <span class="n">online</span><span class="o">.</span>
-<span class="n">And</span><span class="o">:</span> <span class="n">all</span> <span class="n">of</span> <span class="n">the</span> <span class="n">other</span> <span class="n">contents</span> <span class="n">will</span> <span class="n">be</span> <span class="n">deleted</span><span class="o">.</span>
+<div class="highlight"><pre><span></span><code><span class="n">Given</span><span class="o">:</span><span class="w"> </span><span class="n">Pelican</span><span class="err">&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">DELETE_OUTPUT_DIRECTORY</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="kd">set</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">True</span><span class="w"> </span><span class="o">(</span><span class="n">which</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="k">default</span><span class="o">)</span>
+<span class="n">When</span><span class="o">:</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">generate</span><span class="w"> </span><span class="n">several</span><span class="w"> </span><span class="n">experiments</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">commands</span><span class="o">:</span>
+<span class="w">    </span><span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">regenerate</span>
+<span class="w">    </span><span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;123&quot;</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">regenerate</span>
+<span class="w">    </span><span class="n">AB_EXPERIMENT</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">regenerate</span>
+<span class="w">    </span><span class="n">make</span><span class="w"> </span><span class="n">publish</span>
+<span class="n">Actual</span><span class="w"> </span><span class="n">result</span><span class="o">:</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="s2">&quot;xy&quot;</span><span class="w"> </span><span class="n">experiment</span><span class="w"> </span><span class="o">(</span><span class="n">the</span><span class="w"> </span><span class="n">last</span><span class="w"> </span><span class="n">one</span><span class="o">)</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">published</span><span class="w"> </span><span class="n">online</span><span class="o">.</span>
+<span class="n">And</span><span class="o">:</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="n">contents</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">deleted</span><span class="o">.</span>
 
-<span class="n">Expected</span> <span class="n">result</span><span class="o">:</span> <span class="n">content</span> <span class="n">from</span> <span class="n">all</span> <span class="n">experiments</span> <span class="n">will</span> <span class="n">be</span> <span class="n">available</span> <span class="n">under</span> <span class="n">the</span> <span class="n">output</span> <span class="n">directory</span><span class="o">.</span>
-</pre></div>
-
+<span class="n">Expected</span><span class="w"> </span><span class="n">result</span><span class="o">:</span><span class="w"> </span><span class="n">content</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">experiments</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">available</span><span class="w"> </span><span class="n">under</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">output</span><span class="w"> </span><span class="n">directory</span><span class="o">.</span>
+</code></pre></div>
 
 <p>This is because before each invocation Pelican deletes the output directory and
 re-creates the entire content structure. The bug was not caught regardless of
@@ -2647,7 +2617,7 @@ info.</p>
 <a href="https://github.com/MrSenko/pelican-ab/commits/mutation_testing_vs_coverage_experiment">mutation_testing_vs_coverage_experiment branch</a>
 (requires Pelican==3.6.3).</p>
 <p>After initial execution of Cosmic Ray I have 2 mutants left:</p>
-<div class="highlight"><pre>$ cosmic-ray run --baseline=10 --test-runner=unittest example.json pelican_ab -- tests/
+<div class="highlight"><pre><span></span><code>$ cosmic-ray run --baseline=10 --test-runner=unittest example.json pelican_ab -- tests/
 $ cosmic-ray report example.json 
 job ID 29:Outcome.SURVIVED:pelican_ab
 command: cosmic-ray worker pelican_ab mutate_comparison_operator 3 unittest -- tests/
@@ -2655,14 +2625,14 @@ command: cosmic-ray worker pelican_ab mutate_comparison_operator 3 unittest -- t
 <span class="gd">--- a/home/senko/pelican-ab/pelican_ab/__init__.py</span>
 <span class="gi">+++ b/home/senko/pelican-ab/pelican_ab/__init__.py</span>
 <span class="gu">@@ -14,7 +14,7 @@</span>
-     def __init__(self, output_path, settings=None):
-         super(self.__class__, self).__init__(output_path, settings)
-         experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
+<span class="w"> </span>    def __init__(self, output_path, settings=None):
+<span class="w"> </span>        super(self.__class__, self).__init__(output_path, settings)
+<span class="w"> </span>        experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
 <span class="gd">-        if (experiment != jinja_ab._ENV_DEFAULT):</span>
 <span class="gi">+        if (experiment &gt; jinja_ab._ENV_DEFAULT):</span>
-             self.output_path = os.path.join(self.output_path, experiment)
-             Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
-             URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
+<span class="w"> </span>            self.output_path = os.path.join(self.output_path, experiment)
+<span class="w"> </span>            Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
+<span class="w"> </span>            URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
 
 job ID 33:Outcome.SURVIVED:pelican_ab
 command: cosmic-ray worker pelican_ab mutate_comparison_operator 7 unittest -- tests/
@@ -2670,20 +2640,19 @@ command: cosmic-ray worker pelican_ab mutate_comparison_operator 7 unittest -- t
 <span class="gd">--- a/home/senko/pelican-ab/pelican_ab/__init__.py</span>
 <span class="gi">+++ b/home/senko/pelican-ab/pelican_ab/__init__.py</span>
 <span class="gu">@@ -14,7 +14,7 @@</span>
-     def __init__(self, output_path, settings=None):
-         super(self.__class__, self).__init__(output_path, settings)
-         experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
+<span class="w"> </span>    def __init__(self, output_path, settings=None):
+<span class="w"> </span>        super(self.__class__, self).__init__(output_path, settings)
+<span class="w"> </span>        experiment = os.environ.get(jinja_ab._ENV, jinja_ab._ENV_DEFAULT)
 <span class="gd">-        if (experiment != jinja_ab._ENV_DEFAULT):</span>
 <span class="gi">+        if (experiment not in jinja_ab._ENV_DEFAULT):</span>
-             self.output_path = os.path.join(self.output_path, experiment)
-             Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
-             URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
+<span class="w"> </span>            self.output_path = os.path.join(self.output_path, experiment)
+<span class="w"> </span>            Content.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_content_url.fget(s))))
+<span class="w"> </span>            URLWrapper.url = property((lambda s: ((experiment + &#39;/&#39;) + _orig_urlwrapper_url.fget(s))))
 
 total jobs: 33
 complete: 33 (100.00%)
 survival rate: 6.06%
-</pre></div>
-
+</code></pre></div>
 
 <p>The last one, job 33 is equivalent mutation. The first one, job 29 is killed by the test
 added in
@@ -2713,22 +2682,20 @@ and discovered two bugs which went unnoticed for years. The first one is
 constructor parameter not passed to parent constructor,
 see
 <a href="https://github.com/rhinstaller/pykickstart/pull/96/files#diff-f4294048719aeac4da7a86eee0fbdfd3">PR#96, pykickstart/commands/authconfig.py</a></p>
-<div class="highlight"><pre>     def __init__(self, writePriority=0, *args, **kwargs):
+<div class="highlight"><pre><span></span><code><span class="w"> </span>    def __init__(self, writePriority=0, *args, **kwargs):
 <span class="gd">-        KickstartCommand.__init__(self, *args, **kwargs)</span>
 <span class="gi">+        KickstartCommand.__init__(self, writePriority, *args, **kwargs)</span>
-         self.authconfig = kwargs.get(&quot;authconfig&quot;, &quot;&quot;)
-</pre></div>
-
+<span class="w"> </span>        self.authconfig = kwargs.get(&quot;authconfig&quot;, &quot;&quot;)
+</code></pre></div>
 
 <p>The second bug is parameter being passed to parent class constructor,
 but the parent class doesn't care about this parameter. For example
 <a href="https://github.com/rhinstaller/pykickstart/pull/96/files#diff-7d2833450b6e1c9a94eb90e7f171ff52">PR#96, pykickstart/commands/driverdisk.py</a></p>
-<div class="highlight"><pre><span class="gd">-    def __init__(self, writePriority=0, *args, **kwargs):</span>
+<div class="highlight"><pre><span></span><code><span class="gd">-    def __init__(self, writePriority=0, *args, **kwargs):</span>
 <span class="gd">-        BaseData.__init__(self, writePriority, *args, **kwargs)</span>
 <span class="gi">+    def __init__(self, *args, **kwargs):</span>
 <span class="gi">+        BaseData.__init__(self, *args, **kwargs)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Also note that pykickstart has nearly 100% test coverage as a whole
 and the affected files were 100% covered as well.</p>
@@ -2765,153 +2732,152 @@ an unexpectedly big impact somewhere down the line.</p>
 <h2>Bonus: What others think</h2>
 <p>As a bonus to this article let me share a transcript from the
 <a href="https://mutation-testing.slack.com">mutation-testing.slack.com</a> community:</p>
-<div class="highlight"><pre>atodorov 2:28 PM
-Hello everyone, I&#39;d like to kick-off a discussion / interested in what you think about
-Rahul Gopinath&#39;s talk at GTAC this year. What he argues is that test coverage is still
-the best metric for how good a test suite is and that mutation coverage doesn&#39;t add much
-additional value. His talk is basically the opposite of what @lminozem presented last year
-at GTAC. Obviously the community here and especially tools authors will have an opinion on
-these two presentations.
+<div class="highlight"><pre><span></span><code><span class="n">atodorov</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="mi">28</span><span class="w"> </span><span class="n">PM</span>
+<span class="n">Hello</span><span class="w"> </span><span class="n">everyone</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="s1">&#39;d like to kick-off a discussion / interested in what you think about</span>
+<span class="n">Rahul</span><span class="w"> </span><span class="n">Gopinath</span><span class="s1">&#39;s talk at GTAC this year. What he argues is that test coverage is still</span>
+<span class="n">the</span><span class="w"> </span><span class="n">best</span><span class="w"> </span><span class="n">metric</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">how</span><span class="w"> </span><span class="n">good</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">suite</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="n">doesn</span><span class="s1">&#39;t add much</span>
+<span class="n">additional</span><span class="w"> </span><span class="n">value</span><span class="o">.</span><span class="w"> </span><span class="n">His</span><span class="w"> </span><span class="n">talk</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">basically</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">opposite</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="err">@</span><span class="n">lminozem</span><span class="w"> </span><span class="n">presented</span><span class="w"> </span><span class="n">last</span><span class="w"> </span><span class="n">year</span>
+<span class="n">at</span><span class="w"> </span><span class="n">GTAC</span><span class="o">.</span><span class="w"> </span><span class="n">Obviously</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">community</span><span class="w"> </span><span class="n">here</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">especially</span><span class="w"> </span><span class="n">tools</span><span class="w"> </span><span class="n">authors</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">opinion</span><span class="w"> </span><span class="n">on</span>
+<span class="n">these</span><span class="w"> </span><span class="n">two</span><span class="w"> </span><span class="n">presentations</span><span class="o">.</span>
 
-tjchambers 12:37 AM
-@atodorov I have had the &quot;pleasure&quot; of working on a couple projects lately that illustrate
-why LOC test coverage is a misnomer. I am a **strong** proponent of mutation testing so will
-declare my bias.
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">12</span><span class="p">:</span><span class="mi">37</span><span class="w"> </span><span class="n">AM</span>
+<span class="err">@</span><span class="n">atodorov</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="s2">&quot;pleasure&quot;</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">working</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">couple</span><span class="w"> </span><span class="n">projects</span><span class="w"> </span><span class="n">lately</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">illustrate</span>
+<span class="n">why</span><span class="w"> </span><span class="n">LOC</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">misnomer</span><span class="o">.</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">am</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">**</span><span class="n">strong</span><span class="o">**</span><span class="w"> </span><span class="n">proponent</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">so</span><span class="w"> </span><span class="n">will</span>
+<span class="n">declare</span><span class="w"> </span><span class="n">my</span><span class="w"> </span><span class="n">bias</span><span class="o">.</span>
 
-The projects I have worked on have had a mix of test coverage - one about 50% and
-another &gt; 90%.
+<span class="n">The</span><span class="w"> </span><span class="n">projects</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">worked</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">about</span><span class="w"> </span><span class="mi">50</span><span class="o">%</span><span class="w"> </span><span class="ow">and</span>
+<span class="n">another</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">90</span><span class="o">%.</span>
 
-In both cases however there was a significant difference IMO relative to mutation coverage
-(which I have more faith in as representative of true tested code).
+<span class="n">In</span><span class="w"> </span><span class="n">both</span><span class="w"> </span><span class="n">cases</span><span class="w"> </span><span class="n">however</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">significant</span><span class="w"> </span><span class="n">difference</span><span class="w"> </span><span class="n">IMO</span><span class="w"> </span><span class="n">relative</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">coverage</span>
+<span class="p">(</span><span class="n">which</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">faith</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">representative</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="bp">true</span><span class="w"> </span><span class="n">tested</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="o">.</span>
 
-Critical factors I see when I look at the difference:
+<span class="n">Critical</span><span class="w"> </span><span class="n">factors</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">see</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">look</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">difference</span><span class="p">:</span>
 
-- Line length: in both projects the line lengths FAR exceeded visible line lengths that are
-&quot;acceptable&quot;. Many LONGER lines had inline conditionals at the end, or had ternary operators
-and therefore were in fact only 50% or not at all covered, but were &quot;traversed&quot;
+<span class="o">-</span><span class="w"> </span><span class="n">Line</span><span class="w"> </span><span class="n">length</span><span class="p">:</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">both</span><span class="w"> </span><span class="n">projects</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">lengths</span><span class="w"> </span><span class="n">FAR</span><span class="w"> </span><span class="n">exceeded</span><span class="w"> </span><span class="n">visible</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">lengths</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">are</span>
+<span class="s2">&quot;acceptable&quot;</span><span class="o">.</span><span class="w"> </span><span class="n">Many</span><span class="w"> </span><span class="n">LONGER</span><span class="w"> </span><span class="n">lines</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="n">inline</span><span class="w"> </span><span class="n">conditionals</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="n">ternary</span><span class="w"> </span><span class="n">operators</span>
+<span class="ow">and</span><span class="w"> </span><span class="n">therefore</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">fact</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="mi">50</span><span class="o">%</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">covered</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="s2">&quot;traversed&quot;</span>
 
-- Code Conviction (my term): Most of the code in these projects (Rails applications) had
-significant Hash references all of which were declared in &quot;traditional&quot; format hhh[:symbol].
-So it was nearly impossible for the code in execution to confirm the expectation of the
-existence of a hash entry as would be the case with stronger code such as &quot;hhh.fetch(:symbol)&quot;
+<span class="o">-</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="n">Conviction</span><span class="w"> </span><span class="p">(</span><span class="n">my</span><span class="w"> </span><span class="n">term</span><span class="p">):</span><span class="w"> </span><span class="n">Most</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">these</span><span class="w"> </span><span class="n">projects</span><span class="w"> </span><span class="p">(</span><span class="n">Rails</span><span class="w"> </span><span class="n">applications</span><span class="p">)</span><span class="w"> </span><span class="n">had</span>
+<span class="n">significant</span><span class="w"> </span><span class="n">Hash</span><span class="w"> </span><span class="n">references</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="n">declared</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="s2">&quot;traditional&quot;</span><span class="w"> </span><span class="n">format</span><span class="w"> </span><span class="n">hhh</span><span class="p">[:</span><span class="n">symbol</span><span class="p">]</span><span class="o">.</span>
+<span class="n">So</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">nearly</span><span class="w"> </span><span class="n">impossible</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">execution</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">confirm</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">expectation</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span>
+<span class="n">existence</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="nb">hash</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">case</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">stronger</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">such</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="s2">&quot;hhh.fetch(:symbol)&quot;</span>
 
-- Instance variables abound: As with most of Rails code the number of instance variables
-in a controller are extreme. This pattern of reference leaked into all other code as well,
-making it nearly impossible with the complex code flow to ascertain proper reference
-patterns that ensured the use of the instance variables, so there were numerous cases
-of instance variable typos that went unnoticed for years. (edited)
+<span class="o">-</span><span class="w"> </span><span class="n">Instance</span><span class="w"> </span><span class="n">variables</span><span class="w"> </span><span class="n">abound</span><span class="p">:</span><span class="w"> </span><span class="n">As</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">most</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">Rails</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="n">variables</span>
+<span class="ow">in</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">controller</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">extreme</span><span class="o">.</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">reference</span><span class="w"> </span><span class="n">leaked</span><span class="w"> </span><span class="n">into</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">well</span><span class="p">,</span>
+<span class="n">making</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">nearly</span><span class="w"> </span><span class="n">impossible</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">complex</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">flow</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">ascertain</span><span class="w"> </span><span class="n">proper</span><span class="w"> </span><span class="n">reference</span>
+<span class="n">patterns</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">ensured</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">use</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="n">variables</span><span class="p">,</span><span class="w"> </span><span class="n">so</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="n">numerous</span><span class="w"> </span><span class="n">cases</span>
+<span class="n">of</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="n">variable</span><span class="w"> </span><span class="n">typos</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">went</span><span class="w"> </span><span class="n">unnoticed</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">years</span><span class="o">.</span><span class="w"> </span><span class="p">(</span><span class="n">edited</span><span class="p">)</span>
 
-- .save and .update: yes again a Rails issue, but use of these &quot;weak&quot; operations showed again
-that although they were traversed, in many cases those method references could be removed
-during mutation and the tests would still pass - a clear indication that save or update was
-silently failing.
+<span class="o">-</span><span class="w"> </span><span class="o">.</span><span class="n">save</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="o">.</span><span class="n">update</span><span class="p">:</span><span class="w"> </span><span class="n">yes</span><span class="w"> </span><span class="n">again</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">Rails</span><span class="w"> </span><span class="n">issue</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">use</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">these</span><span class="w"> </span><span class="s2">&quot;weak&quot;</span><span class="w"> </span><span class="n">operations</span><span class="w"> </span><span class="n">showed</span><span class="w"> </span><span class="n">again</span>
+<span class="n">that</span><span class="w"> </span><span class="n">although</span><span class="w"> </span><span class="n">they</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="n">traversed</span><span class="p">,</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">many</span><span class="w"> </span><span class="n">cases</span><span class="w"> </span><span class="n">those</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="n">references</span><span class="w"> </span><span class="n">could</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">removed</span>
+<span class="n">during</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">tests</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">still</span><span class="w"> </span><span class="k">pass</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">clear</span><span class="w"> </span><span class="n">indication</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">save</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">update</span><span class="w"> </span><span class="n">was</span>
+<span class="n">silently</span><span class="w"> </span><span class="n">failing</span><span class="o">.</span>
 
-I could go on and on, but the mere traversal of a line of code in Ruby is far from an indication
-of anything more than it may be &quot;typed in correctly&quot;.
+<span class="n">I</span><span class="w"> </span><span class="n">could</span><span class="w"> </span><span class="n">go</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">on</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mere</span><span class="w"> </span><span class="n">traversal</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">Ruby</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">far</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">indication</span>
+<span class="n">of</span><span class="w"> </span><span class="n">anything</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">than</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">may</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="s2">&quot;typed in correctly&quot;</span><span class="o">.</span>
 
-@atodorov Hope that helps.
+<span class="err">@</span><span class="n">atodorov</span><span class="w"> </span><span class="n">Hope</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">helps</span><span class="o">.</span>
 
-LOC test coverage is a place to begin - NOT a place to end.
+<span class="n">LOC</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">place</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">begin</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">NOT</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">place</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">end</span><span class="o">.</span>
 
-atodorov 1:01 AM
-@tjchambers: thanks for your answer. It&#39;s too late for me here to read it carefully but
-I&#39;ll do it tomorrow and ping you back
+<span class="n">atodorov</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">01</span><span class="w"> </span><span class="n">AM</span>
+<span class="err">@</span><span class="n">tjchambers</span><span class="p">:</span><span class="w"> </span><span class="n">thanks</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">answer</span><span class="o">.</span><span class="w"> </span><span class="n">It</span><span class="s1">&#39;s too late for me here to read it carefully but</span>
+<span class="n">I</span><span class="s1">&#39;ll do it tomorrow and ping you back</span>
 
-dkubb 1:13 AM
-As a practice mutation testing is less widely used. The tooling is still maturing. Depending on your
-language and environment you might have widely different experiences with mutation testing
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">13</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">As</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">practice</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">less</span><span class="w"> </span><span class="n">widely</span><span class="w"> </span><span class="n">used</span><span class="o">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">tooling</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">still</span><span class="w"> </span><span class="n">maturing</span><span class="o">.</span><span class="w"> </span><span class="n">Depending</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">your</span>
+<span class="n">language</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">environment</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">might</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">widely</span><span class="w"> </span><span class="n">different</span><span class="w"> </span><span class="n">experiences</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span>
 
-I have not watched the video, but it is conceivable that someone could try out mutation testing tools
-for their language and conclude it doesn’t add very much
+<span class="n">I</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">watched</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">video</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">conceivable</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">someone</span><span class="w"> </span><span class="n">could</span><span class="w"> </span><span class="n">try</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">tools</span>
+<span class="k">for</span><span class="w"> </span><span class="n">their</span><span class="w"> </span><span class="n">language</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">conclude</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">doesn</span><span class="err">’</span><span class="n">t</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="n">very</span><span class="w"> </span><span class="n">much</span>
 
-mbj 1:14 AM
-Yeah, I recall talking with @lminozem here and we identified that the tools she used likely
-show high rates of false positives / false coverage (as the tools likely do not protect against
-certain types of integration errors)
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">14</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Yeah</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">recall</span><span class="w"> </span><span class="n">talking</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="err">@</span><span class="n">lminozem</span><span class="w"> </span><span class="n">here</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">identified</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">tools</span><span class="w"> </span><span class="n">she</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="n">likely</span>
+<span class="n">show</span><span class="w"> </span><span class="n">high</span><span class="w"> </span><span class="n">rates</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="bp">false</span><span class="w"> </span><span class="n">positives</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="bp">false</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="p">(</span><span class="k">as</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">tools</span><span class="w"> </span><span class="n">likely</span><span class="w"> </span><span class="n">do</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">protect</span><span class="w"> </span><span class="n">against</span>
+<span class="n">certain</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">integration</span><span class="w"> </span><span class="n">errors</span><span class="p">)</span>
 
-dkubb 1:15 AM
-IME, having done TDD for about 15+ years or so, and mutation testing for about 6 years, I think
-when it is done well it can be far superior to using line coverage as a measurement of test quality
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">15</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">IME</span><span class="p">,</span><span class="w"> </span><span class="n">having</span><span class="w"> </span><span class="n">done</span><span class="w"> </span><span class="n">TDD</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">about</span><span class="w"> </span><span class="mi">15</span><span class="o">+</span><span class="w"> </span><span class="n">years</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">so</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">about</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="n">years</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">think</span>
+<span class="n">when</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">done</span><span class="w"> </span><span class="n">well</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">far</span><span class="w"> </span><span class="n">superior</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">measurement</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">quality</span>
 
-mbj 1:16 AM
-Any talk pro/against mutation testing must, as the tool basis is not very homogeneous, show a non consistent result.
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">16</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Any</span><span class="w"> </span><span class="n">talk</span><span class="w"> </span><span class="n">pro</span><span class="o">/</span><span class="n">against</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">must</span><span class="p">,</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">tool</span><span class="w"> </span><span class="n">basis</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">very</span><span class="w"> </span><span class="n">homogeneous</span><span class="p">,</span><span class="w"> </span><span class="n">show</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">non</span><span class="w"> </span><span class="n">consistent</span><span class="w"> </span><span class="n">result</span><span class="o">.</span>
 
-dkubb 1:16 AM
-Like @tjchambers says though, if you have really poor line coverage you’re not going to
-get as much of a benefit from mutation testing, since it’s going to be telling you what
-you already know — that your project is poorly tested and lots of code is never exercised
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">16</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Like</span><span class="w"> </span><span class="err">@</span><span class="n">tjchambers</span><span class="w"> </span><span class="n">says</span><span class="w"> </span><span class="n">though</span><span class="p">,</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">really</span><span class="w"> </span><span class="n">poor</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="n">you</span><span class="err">’</span><span class="n">re</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">going</span><span class="w"> </span><span class="n">to</span>
+<span class="n">get</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">much</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">benefit</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="p">,</span><span class="w"> </span><span class="n">since</span><span class="w"> </span><span class="n">it</span><span class="err">’</span><span class="n">s</span><span class="w"> </span><span class="n">going</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">telling</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">what</span>
+<span class="n">you</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="n">know</span><span class="w"> </span><span class="err">—</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">project</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">poorly</span><span class="w"> </span><span class="n">tested</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">lots</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">never</span><span class="w"> </span><span class="n">exercised</span>
 
-mbj 1:19 AM
-Thats a good and likely the core point. I consider that mutation testing only makes sense
-when aiming for 100% (and this is to my experience not impractical).
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">19</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Thats</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">good</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">likely</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">core</span><span class="w"> </span><span class="n">point</span><span class="o">.</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">consider</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="n">makes</span><span class="w"> </span><span class="n">sense</span>
+<span class="n">when</span><span class="w"> </span><span class="n">aiming</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="mi">100</span><span class="o">%</span><span class="w"> </span><span class="p">(</span><span class="ow">and</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">my</span><span class="w"> </span><span class="n">experience</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">impractical</span><span class="p">)</span><span class="o">.</span>
 
-tjchambers 1:20 AM
-I don&#39;t discount the fact that tool quality in any endeavor can bring pro/con judgements
-based on particular outcomes
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">20</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">I</span><span class="w"> </span><span class="n">don</span><span class="s1">&#39;t discount the fact that tool quality in any endeavor can bring pro/con judgements</span>
+<span class="n">based</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">particular</span><span class="w"> </span><span class="n">outcomes</span>
 
-dkubb 1:20 AM
-What is really interesting for people is to get to 100% line coverage, and then try mutation
-testing. You think you’ve done a good job, but I guarantee mutation testing will find dozens
-if not hundreds of untested cases .. even in something with 100% line coverage
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">20</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">What</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">really</span><span class="w"> </span><span class="n">interesting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">people</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">get</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="mi">100</span><span class="o">%</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">then</span><span class="w"> </span><span class="n">try</span><span class="w"> </span><span class="n">mutation</span>
+<span class="n">testing</span><span class="o">.</span><span class="w"> </span><span class="n">You</span><span class="w"> </span><span class="n">think</span><span class="w"> </span><span class="n">you</span><span class="err">’</span><span class="n">ve</span><span class="w"> </span><span class="n">done</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">good</span><span class="w"> </span><span class="n">job</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">guarantee</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">dozens</span>
+<span class="k">if</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">hundreds</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">untested</span><span class="w"> </span><span class="n">cases</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="n">even</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">something</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="mi">100</span><span class="o">%</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span>
 
-To properly evaluate mutation testing, I think this process is required, because you can’t
-truly understand how little line coverage gives you in comparison
+<span class="n">To</span><span class="w"> </span><span class="n">properly</span><span class="w"> </span><span class="n">evaluate</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">think</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">process</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">required</span><span class="p">,</span><span class="w"> </span><span class="n">because</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">can</span><span class="err">’</span><span class="n">t</span>
+<span class="n">truly</span><span class="w"> </span><span class="n">understand</span><span class="w"> </span><span class="n">how</span><span class="w"> </span><span class="n">little</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="n">gives</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">comparison</span>
 
-tjchambers 1:22 AM
-But I don&#39;t need a tool to tell me that a 250 character line of conditional code that by
-itself would be an oversized method AND counts more because there are fewer lines in the
-overall percentage contributes to a very foggy sense of coverage.
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">22</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">But</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">don</span><span class="s1">&#39;t need a tool to tell me that a 250 character line of conditional code that by</span>
+<span class="n">itself</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">oversized</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="n">AND</span><span class="w"> </span><span class="n">counts</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">because</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">fewer</span><span class="w"> </span><span class="n">lines</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span>
+<span class="n">overall</span><span class="w"> </span><span class="n">percentage</span><span class="w"> </span><span class="n">contributes</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">very</span><span class="w"> </span><span class="n">foggy</span><span class="w"> </span><span class="n">sense</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">coverage</span><span class="o">.</span>
 
-dkubb 1:22 AM
-It would not be unusual for something with 100% line coverage to undergo mutation testing
-and actually find out that the tests only kill 60-70% of possible mutations
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">22</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">It</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">unusual</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">something</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="mi">100</span><span class="o">%</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">undergo</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span>
+<span class="ow">and</span><span class="w"> </span><span class="n">actually</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">tests</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="n">kill</span><span class="w"> </span><span class="mi">60</span><span class="o">-</span><span class="mi">70</span><span class="o">%</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">possible</span><span class="w"> </span><span class="n">mutations</span>
 
-tjchambers 1:22 AM
-@dkubb or less
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">22</span><span class="w"> </span><span class="n">AM</span>
+<span class="err">@</span><span class="n">dkubb</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">less</span>
 
-dkubb 1:23 AM
-usually much less :stuck_out_tongue:
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">usually</span><span class="w"> </span><span class="n">much</span><span class="w"> </span><span class="n">less</span><span class="w"> </span><span class="p">:</span><span class="n">stuck_out_tongue</span><span class="p">:</span>
 
-it can be really humbling
+<span class="n">it</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">really</span><span class="w"> </span><span class="n">humbling</span>
 
-mbj 1:23 AM
-In this discussion you miss that many test suites (unless you have noop detection):
-Will show false coverage.
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">In</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">discussion</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">miss</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">many</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">suites</span><span class="w"> </span><span class="p">(</span><span class="n">unless</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">noop</span><span class="w"> </span><span class="n">detection</span><span class="p">):</span>
+<span class="n">Will</span><span class="w"> </span><span class="n">show</span><span class="w"> </span><span class="bp">false</span><span class="w"> </span><span class="n">coverage</span><span class="o">.</span>
 
-tjchambers 1:23 AM
-When I started with mutant on my own project which I developed I had 95% LOC coverage
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">When</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">started</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">mutant</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">my</span><span class="w"> </span><span class="n">own</span><span class="w"> </span><span class="n">project</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">developed</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="mi">95</span><span class="o">%</span><span class="w"> </span><span class="n">LOC</span><span class="w"> </span><span class="n">coverage</span>
 
-mbj 1:23 AM
-Test suites need to be fixed to comply to mutation testing invariants.
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Test</span><span class="w"> </span><span class="n">suites</span><span class="w"> </span><span class="n">need</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">fixed</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">comply</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">testing</span><span class="w"> </span><span class="n">invariants</span><span class="o">.</span>
 
-tjchambers 1:23 AM
-I had 34% mutation coverage
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">I</span><span class="w"> </span><span class="n">had</span><span class="w"> </span><span class="mi">34</span><span class="o">%</span><span class="w"> </span><span class="n">mutation</span><span class="w"> </span><span class="n">coverage</span>
 
-And that was ignoring the 5% that wasn&#39;t covered at all
+<span class="n">And</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">ignoring</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="mi">5</span><span class="o">%</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">wasn</span><span class="s1">&#39;t covered at all</span>
 
-mbj 1:24 AM
-Also if the tool you compare MT with line coverage on: Is not very strong,
-the improvement may not be visible.
+<span class="n">mbj</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">24</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Also</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">tool</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">compare</span><span class="w"> </span><span class="n">MT</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="n">coverage</span><span class="w"> </span><span class="n">on</span><span class="p">:</span><span class="w"> </span><span class="n">Is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">very</span><span class="w"> </span><span class="n">strong</span><span class="p">,</span>
+<span class="n">the</span><span class="w"> </span><span class="n">improvement</span><span class="w"> </span><span class="n">may</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">visible</span><span class="o">.</span>
 
-dkubb 1:24 AM
-another nice benefit is that you will become much better at enumerating all
-the things you need to do when writing tests
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">24</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">another</span><span class="w"> </span><span class="n">nice</span><span class="w"> </span><span class="n">benefit</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">become</span><span class="w"> </span><span class="n">much</span><span class="w"> </span><span class="n">better</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">enumerating</span><span class="w"> </span><span class="n">all</span>
+<span class="n">the</span><span class="w"> </span><span class="n">things</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">need</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">do</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">writing</span><span class="w"> </span><span class="n">tests</span>
 
-tjchambers 1:24 AM
-@dkubb or better yet - when writing code.
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">24</span><span class="w"> </span><span class="n">AM</span>
+<span class="err">@</span><span class="n">dkubb</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">better</span><span class="w"> </span><span class="n">yet</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">writing</span><span class="w"> </span><span class="n">code</span><span class="o">.</span>
 
-The way I look at it - the fewer the alive mutations the better the test,
-the fewer the mutations the better the code.
+<span class="n">The</span><span class="w"> </span><span class="n">way</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">look</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">fewer</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">alive</span><span class="w"> </span><span class="n">mutations</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">better</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">test</span><span class="p">,</span>
+<span class="n">the</span><span class="w"> </span><span class="n">fewer</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutations</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">better</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">code</span><span class="o">.</span>
 
-dkubb 1:29 AM
-yeah, you can infer a kind of cyclomatic complexity by looking at how many mutations there are
+<span class="n">dkubb</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">29</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">yeah</span><span class="p">,</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">infer</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">kind</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">cyclomatic</span><span class="w"> </span><span class="n">complexity</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">looking</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">how</span><span class="w"> </span><span class="n">many</span><span class="w"> </span><span class="n">mutations</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">are</span>
 
-tjchambers 1:31 AM
-Even without tests (not recommended) you can judge a lot from the mutations themselves.
+<span class="n">tjchambers</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="mi">31</span><span class="w"> </span><span class="n">AM</span>
+<span class="n">Even</span><span class="w"> </span><span class="n">without</span><span class="w"> </span><span class="n">tests</span><span class="w"> </span><span class="p">(</span><span class="ow">not</span><span class="w"> </span><span class="n">recommended</span><span class="p">)</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">judge</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">lot</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">mutations</span><span class="w"> </span><span class="n">themselves</span><span class="o">.</span>
 
-I still am an advocate for mutations/LOC metric
-</pre></div>
-
+<span class="n">I</span><span class="w"> </span><span class="n">still</span><span class="w"> </span><span class="n">am</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">advocate</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">mutations</span><span class="o">/</span><span class="n">LOC</span><span class="w"> </span><span class="n">metric</span>
+</code></pre></div>
 
 <p>As you can see members in the community are strong supporters of mutation testing, all of them
 having much more experience than I do.</p>
@@ -2992,7 +2958,7 @@ with another example.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

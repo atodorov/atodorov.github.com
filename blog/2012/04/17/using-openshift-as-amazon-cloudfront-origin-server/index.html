@@ -37,7 +37,7 @@
 
 
 
-        <meta name="description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are ...">
+        <meta name="description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are...">
 
         <meta name="author" content="Alexander Todorov">
 
@@ -54,7 +54,7 @@
 	<meta property="og:url" content="http://atodorov.org/blog/2012/04/17/using-openshift-as-amazon-cloudfront-origin-server/">
 	<meta property="og:title" content="Using OpenShift as Amazon CloudFront Origin Server">
 	<meta property="article:published_time" content="2012-04-17 17:30:00+03:00">
-            <meta property="og:description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are ...">
+            <meta property="og:description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are...">
 
             <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
         <meta name="twitter:card" content="summary_large_image">
@@ -63,7 +63,7 @@
 
             <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
 
-            <meta name="twitter:description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are ...">
+            <meta name="twitter:description" content="It's been several months after the start of Difio and I started migrating various parts of the platform to CDN. The first to go are...">
 </head>
 
 <body>
@@ -139,7 +139,7 @@ used objects are expired less often. Depending on the content you may want to up
 more or less frequently. In my case CSS and JavaScript files change rarely so I wanted to tell
 CloudFront to not expire the files quickly. I did this by telling <em>Apache</em> to send a custom value for
 the Expires header.</p>
-<div class="highlight"><pre>    $ curl http://d71ktrt2emu2j.cloudfront.net/static/v1/css/style.css -D headers.txt
+<div class="highlight"><pre><span></span><code>    $ curl http://d71ktrt2emu2j.cloudfront.net/static/v1/css/style.css -D headers.txt
     $ cat headers.txt 
     HTTP/1.0 200 OK
     Date: Mon, 16 Apr 2012 19:02:16 GMT
@@ -157,8 +157,7 @@ the Expires header.</p>
     X-Amz-Cf-Id: X558vcEOsQkVQn5V9fbrWNTdo543v8VStxdb7LXIcUWAIbLKuIvp-w==,e8Dipk5FSNej3e0Y7c5ro-9mmn7OK8kWfbaRGwi1ww8ihwVzSab24A==
     Via: 1.0 d6343f267c91f2f0e78ef0a7d0b7921d.cloudfront.net (CloudFront)
     Connection: close
-</pre></div>
-
+</code></pre></div>
 
 <p>All headers before Strict-Transport-Security come from the origin server.</p>
 <h2>Versioning</h2>
@@ -176,32 +175,30 @@ The next time visitors hit <em>CloudFront</em> they will receive the cached redi
 origin server, which is defeating the purpose of having CDN.</p>
 <p>To do it properly you have to rewrite the URLs but still return a 200 response code and the
 content which needs to be cached. This is done with <em>mod_proxy</em>: </p>
-<div class="highlight"><pre>    RewriteEngine on
+<div class="highlight"><pre><span></span><code>    RewriteEngine on
     RewriteRule ^VERSION-(\d+)/(.*)$ http://%{ENV:OPENSHIFT_INTERNAL_IP}:%{ENV:OPENSHIFT_INTERNAL_PORT}/static/$2 [P,L]
-</pre></div>
-
+</code></pre></div>
 
 <p>This .htaccess trick doesn't work on <em>OpenShift</em> though. <em>mod_proxy</em> is not enabled at the moment.
 See <a href="https://bugzilla.redhat.com/show_bug.cgi?id=812389">bug 812389</a> for more info.</p>
 <p>Luckily I was able to use symlinks to point to the content. Here's how it looks:</p>
-<div class="highlight"><pre><span class="x">    $ pwd</span>
-<span class="x">    /home/atodorov/difio/wsgi/static</span>
-<span class="x">    </span>
-<span class="x">    $ cat .htaccess</span>
-<span class="x">    ExpiresActive On</span>
-<span class="x">    ExpiresDefault &quot;access plus 1 year&quot;</span>
-<span class="x">    </span>
-<span class="x">    $ ls -l</span>
-<span class="x">    drwxrwxr-x. 6 atodorov atodorov 4096 16 Apr 21,31 o</span>
-<span class="x">    lrwxrwxrwx. 1 atodorov atodorov    1 16 Apr 21,47 v1 -&gt; o</span>
-<span class="x">    </span>
-<span class="x">    settings.py:</span>
-<span class="x">    STATIC_URL = &#39;//d71ktrt2emu2j.cloudfront.net/static/v1/&#39;</span>
-<span class="x">    </span>
-<span class="x">    HTML template:</span>
-<span class="x">    &lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; media=&quot;screen&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">STATIC_URL</span> <span class="cp">}}</span><span class="x">css/style.css&quot; /&gt;</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">pwd</span>
+<span class="w">    </span><span class="o">/</span><span class="nx">home</span><span class="o">/</span><span class="nx">atodorov</span><span class="o">/</span><span class="nx">difio</span><span class="o">/</span><span class="nx">wsgi</span><span class="o">/</span><span class="nx">static</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">cat</span><span class="w"> </span><span class="p">.</span><span class="nx">htaccess</span>
+<span class="w">    </span><span class="nx">ExpiresActive</span><span class="w"> </span><span class="nx">On</span>
+<span class="w">    </span><span class="nx">ExpiresDefault</span><span class="w"> </span><span class="s">&quot;access plus 1 year&quot;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">ls</span><span class="w"> </span><span class="o">-</span><span class="nx">l</span>
+<span class="w">    </span><span class="nx">drwxrwxr</span><span class="o">-</span><span class="nx">x</span><span class="p">.</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="mi">4096</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="nx">Apr</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span><span class="mi">31</span><span class="w"> </span><span class="nx">o</span>
+<span class="w">    </span><span class="nx">lrwxrwxrwx</span><span class="p">.</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="nx">atodorov</span><span class="w">    </span><span class="mi">1</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="nx">Apr</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span><span class="mi">47</span><span class="w"> </span><span class="nx">v1</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nx">o</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">settings</span><span class="p">.</span><span class="nx">py</span><span class="p">:</span>
+<span class="w">    </span><span class="nx">STATIC_URL</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="err">&#39;</span><span class="c1">//d71ktrt2emu2j.cloudfront.net/static/v1/&#39;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">HTML</span><span class="w"> </span><span class="nx">template</span><span class="p">:</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nx">link</span><span class="w"> </span><span class="k">type</span><span class="p">=</span><span class="s">&quot;text/css&quot;</span><span class="w"> </span><span class="nx">rel</span><span class="p">=</span><span class="s">&quot;stylesheet&quot;</span><span class="w"> </span><span class="nx">media</span><span class="p">=</span><span class="s">&quot;screen&quot;</span><span class="w"> </span><span class="nx">href</span><span class="p">=</span><span class="s">&quot;{{ STATIC_URL }}css/style.css&quot;</span><span class="w"> </span><span class="o">/</span><span class="p">&gt;</span>
+</code></pre></div>
 
 <h2>How to implement it</h2>
 <p>First you need to split all CSS and JavaScript from your HTML if you haven't done so already. </p>
@@ -312,7 +309,7 @@ to the user.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

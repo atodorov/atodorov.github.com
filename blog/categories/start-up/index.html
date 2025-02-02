@@ -246,58 +246,56 @@ from the comments of a WordPress.com blog and the UserVoice feedback/ticketing s
 Settings -&gt; Webhooks and add a new webhook with action <code>comment_post</code>
 and fields <code>comment_author</code>, <code>comment_author_email</code>. A simple
 Django view that handles the input is shown below.</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_wp_comment_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Not a POST</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;hook&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">hook</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hook&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s">&quot;comment_post&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hook</span> <span class="o">!=</span> <span class="s2">&quot;comment_post&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Go away</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">last_name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;comment_author&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">last_name</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
 
     <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
-        <span class="s">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;first_name&#39;</span> <span class="p">:</span> <span class="n">first_name</span><span class="p">,</span>
+        <span class="s1">&#39;last_name&#39;</span> <span class="p">:</span> <span class="n">last_name</span><span class="p">,</span>
+        <span class="s1">&#39;email&#39;</span> <span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;comment_author_email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;OK</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div>
 
 <h2>UserVoice</h2>
 <p>For UserVoice navigate to Admin Dashboard -&gt; Settings -&gt; Integrations -&gt; 
 Service Hooks and add a custom web hook for the New Ticket notification.
 Then use a sample code like that:</p>
-<div class="highlight"><pre><span class="nd">@csrf_exempt</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@csrf_exempt</span>
 <span class="k">def</span> <span class="nf">hook_uservoice_new_ticket</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Not a POST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Not a POST</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;data&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;event&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s">&quot;new_ticket&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;Go away</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">event</span> <span class="o">!=</span> <span class="s2">&quot;new_ticket&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Go away</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;ticket&#39;</span><span class="p">][</span><span class="s">&#39;contact&#39;</span><span class="p">][</span><span class="s">&#39;email&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;email&#39;</span> <span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ticket&#39;</span><span class="p">][</span><span class="s1">&#39;contact&#39;</span><span class="p">][</span><span class="s1">&#39;email&#39;</span><span class="p">],</span>
     <span class="p">}</span>
 
     <span class="n">store_user_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">&quot;OK</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</pre></div>
-
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;OK</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div>
 
 <p><code>store_user_details()</code> is a function which handles the email/name received in the webhook,
 possibly adding them to a database or anything else.</p>
@@ -1338,7 +1336,7 @@ please share your thoughts on the book.</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

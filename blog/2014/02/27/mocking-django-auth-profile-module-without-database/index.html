@@ -37,7 +37,7 @@
 
 
 
-        <meta name="description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open ...">
+        <meta name="description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open...">
 
         <meta name="author" content="Alexander Todorov">
 
@@ -52,7 +52,7 @@
 	<meta property="og:url" content="http://atodorov.org/blog/2014/02/27/mocking-django-auth-profile-module-without-database/">
 	<meta property="og:title" content="Mocking Django AUTH_PROFILE_MODULE without a Database">
 	<meta property="article:published_time" content="2014-02-27 16:18:00+02:00">
-            <meta property="og:description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open ...">
+            <meta property="og:description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open...">
 
             <meta property="og:image" content="http://atodorov.org//images/header_02.jpg">
         <meta name="twitter:card" content="summary_large_image">
@@ -61,7 +61,7 @@
 
             <meta name="twitter:image" content="http://atodorov.org//images/header_02.jpg">
 
-            <meta name="twitter:description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open ...">
+            <meta name="twitter:description" content="Difio is a Django based service which uses a profile model to provide site-specific, per-user information. In the process of open...">
 </head>
 
 <body>
@@ -128,73 +128,70 @@ override it as needed.
 <strong>How do you do that without creating useless table and records in the database
 but still have the profiles created automatically for every user?</strong></p>
 <p>It turns out the solution is quite simple. See my comments inside the code below.</p>
-<div class="highlight"><pre><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Any AUTH_PROFILE_MODULE model should inherit this</span>
 <span class="sd">        and override the default methods.</span>
 
 <span class="sd">        This model provides the FK to User!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">is_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">True</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="c"># no DB table created b/c model is abstract</span>
-        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c1"># no DB table created b/c model is abstract</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="k">class</span> <span class="nc">MockProfileManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This manager creates MockProfile&#39;s on the fly without</span>
 <span class="sd">        touching the database. It is needed by User.get_profile()</span>
 <span class="sd">        b/c we can&#39;t have an abstract base class as AUTH_PROFILE_MODULE.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            User.get_profile() calls .using(...).get(user_id__exact=X)</span>
 <span class="sd">            so we instrument it here to return a MockProfile() with</span>
 <span class="sd">            user_id=X parameter. Anything else may break!!!</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
 
-        <span class="c"># this creates an object in memory. To save it to DB</span>
-        <span class="c"># call obj.save() which we DON&#39;T do anyway!</span>
+        <span class="c1"># this creates an object in memory. To save it to DB</span>
+        <span class="c1"># call obj.save() which we DON&#39;T do anyway!</span>
         <span class="k">return</span> <span class="n">MockProfile</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MockProfile</span><span class="p">(</span><span class="n">AbstractMockProfile</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        In-memory (fake) profile class used by default for</span>
 <span class="sd">        the AUTH_PROFILE_MODULE setting.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">objects</span> <span class="o">=</span> <span class="n">MockProfileManager</span><span class="p">()</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="c"># DB table is NOT created automatically</span>
-        <span class="c"># when managed = False</span>
-        <span class="n">managed</span> <span class="o">=</span> <span class="bp">False</span>
-</pre></div>
-
+        <span class="c1"># DB table is NOT created automatically</span>
+        <span class="c1"># when managed = False</span>
+        <span class="n">managed</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
 
 <p>In Difio core the user profile is always used like this</p>
-<div class="highlight"><pre>profile = request.user.get_profile()
+<div class="highlight"><pre><span></span><code>profile = request.user.get_profile()
 if profile.is_subscribed():
     pass
-</pre></div>
-
+</code></pre></div>
 
 <p>and by default</p>
-<div class="highlight"><pre>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
+</code></pre></div>
 
 <p>Voila!</p>
     </article>
@@ -292,7 +289,7 @@ if profile.is_subscribed():
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

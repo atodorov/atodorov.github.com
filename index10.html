@@ -120,7 +120,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="http://amzn.to/1ivu2q4">
+                                    <a href="https://amzn.to/4aHmlLD">
                                         <span class="fa-stack fa-lg">
                                             <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
                                         </span>
@@ -259,73 +259,70 @@ override it as needed.
 <strong>How do you do that without creating useless table and records in the database
 but still have the profiles created automatically for every user?</strong></p>
 <p>It turns out the solution is quite simple. See my comments inside the code below.</p>
-<div class="highlight"><pre><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AbstractMockProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Any AUTH_PROFILE_MODULE model should inherit this</span>
 <span class="sd">        and override the default methods.</span>
 
 <span class="sd">        This model provides the FK to User!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">is_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">True</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Is this user subscribed for our newsletter? &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="c"># no DB table created b/c model is abstract</span>
-        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c1"># no DB table created b/c model is abstract</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="k">class</span> <span class="nc">MockProfileManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This manager creates MockProfile&#39;s on the fly without</span>
 <span class="sd">        touching the database. It is needed by User.get_profile()</span>
 <span class="sd">        b/c we can&#39;t have an abstract base class as AUTH_PROFILE_MODULE.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; It doesn&#39;t matter which database we use! &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            User.get_profile() calls .using(...).get(user_id__exact=X)</span>
 <span class="sd">            so we instrument it here to return a MockProfile() with</span>
 <span class="sd">            user_id=X parameter. Anything else may break!!!</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
 
-        <span class="c"># this creates an object in memory. To save it to DB</span>
-        <span class="c"># call obj.save() which we DON&#39;T do anyway!</span>
+        <span class="c1"># this creates an object in memory. To save it to DB</span>
+        <span class="c1"># call obj.save() which we DON&#39;T do anyway!</span>
         <span class="k">return</span> <span class="n">MockProfile</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MockProfile</span><span class="p">(</span><span class="n">AbstractMockProfile</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        In-memory (fake) profile class used by default for</span>
 <span class="sd">        the AUTH_PROFILE_MODULE setting.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">objects</span> <span class="o">=</span> <span class="n">MockProfileManager</span><span class="p">()</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="c"># DB table is NOT created automatically</span>
-        <span class="c"># when managed = False</span>
-        <span class="n">managed</span> <span class="o">=</span> <span class="bp">False</span>
-</pre></div>
-
+        <span class="c1"># DB table is NOT created automatically</span>
+        <span class="c1"># when managed = False</span>
+        <span class="n">managed</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
 
 <p>In Difio core the user profile is always used like this</p>
-<div class="highlight"><pre>profile = request.user.get_profile()
+<div class="highlight"><pre><span></span><code>profile = request.user.get_profile()
 if profile.is_subscribed():
     pass
-</pre></div>
-
+</code></pre></div>
 
 <p>and by default</p>
-<div class="highlight"><pre>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>AUTH_PROFILE_MODULE = &quot;difio.MockProfile&quot;
+</code></pre></div>
 
 <p>Voila!</p>
             <p class="post-meta">Posted by
@@ -344,24 +341,23 @@ or only render specific blocks from Jinja2 templates so here's my solution.
 Hopefully you find it useful too.</p>
 <p>With below template I want to be able to render <strong>only</strong> <em>kernel_options</em> block
 as a single line and then render the rest of the template <strong>excluding</strong> <em>kernel_options</em>.</p>
-<div class="highlight"><span class="filename">base.j2</span><pre><span class="cp">{%</span> <span class="k">block</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
+<div class="highlight"><pre><span></span><code><span class="cp">{%</span> <span class="k">block</span> <span class="nv">kernel_options</span> <span class="cp">%}</span>
 <span class="x">console=tty0</span>
-<span class="x">    </span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">debug</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">debug</span> <span class="cp">%}</span>
 <span class="x">        debug=1</span>
-<span class="x">    </span><span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
-<span class="cp">{%</span> <span class="k">endblock</span> <span class="nv">kernel_options</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="nv">kernel_options</span> <span class="cp">%}</span>
 
-<span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">==</span> <span class="m">5</span> <span class="cp">%}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">==</span> <span class="m">5</span> <span class="cp">%}</span>
 <span class="x">key --skip</span>
-<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
 
 <span class="x">%packages</span>
 <span class="x">@base</span>
-<span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">&gt;</span> <span class="m">5</span> <span class="cp">%}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">if</span> <span class="nv">OS_MAJOR</span> <span class="o">&gt;</span> <span class="m">5</span> <span class="cp">%}</span>
 <span class="x">%end</span>
-<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
-</pre></div>
-
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
+</code></pre></div>
 
 <p>To render a particular block you have to use the low level Jinja API
 <em><a href="http://jinja.pocoo.org/docs/api/#jinja2.Template.blocks">template.blocks</a></em>.
@@ -373,7 +369,7 @@ exactly this.</p>
 caching in the <em>Environment</em> (so you get a fresh template every time), render
 your blocks first, configure <em>env.skip_blocks</em> and render the entire template
 without the specified blocks.</p>
-<div class="highlight"><span class="filename">jinja2-render</span><pre><span class="c">#!/usr/bin/env python</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -382,39 +378,39 @@ without the specified blocks.</p>
 
 
 <span class="k">class</span> <span class="nc">SkipBlockExtension</span><span class="p">(</span><span class="n">Extension</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SkipBlockExtension</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SkipBlockExtension</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
         <span class="n">environment</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">skip_blocks</span><span class="o">=</span><span class="p">[])</span>
 
     <span class="k">def</span> <span class="nf">filter_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
         <span class="n">block_level</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">skip_level</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">in_endblock</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;block_begin&#39;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s">&#39;block&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;block_begin&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;block&#39;</span><span class="p">):</span>
                     <span class="n">block_level</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="k">if</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">look</span><span class="p">()</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">skip_blocks</span><span class="p">):</span>
                         <span class="n">skip_level</span> <span class="o">=</span> <span class="n">block_level</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s">&#39;endblock&#39;</span> <span class="p">):</span>
-                <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;endblock&#39;</span> <span class="p">):</span>
+                <span class="n">in_endblock</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="k">if</span> <span class="n">skip_level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">token</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;block_end&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;block_end&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">in_endblock</span><span class="p">:</span>
-                    <span class="n">in_endblock</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="n">in_endblock</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">block_level</span> <span class="o">-=</span> <span class="mi">1</span>
 
                     <span class="k">if</span> <span class="n">skip_level</span> <span class="o">==</span> <span class="n">block_level</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
                         <span class="n">skip_level</span> <span class="o">=</span> <span class="mi">0</span>
 
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;OS_MAJOR&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s">&#39;ARCH&#39;</span> <span class="p">:</span> <span class="s">&#39;x86_64&#39;</span><span class="p">}</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;OS_MAJOR&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;ARCH&#39;</span> <span class="p">:</span> <span class="s1">&#39;x86_64&#39;</span><span class="p">}</span>
 
     <span class="n">abs_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">dir_name</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span>
@@ -423,38 +419,36 @@ without the specified blocks.</p>
     <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span>
                 <span class="n">loader</span> <span class="o">=</span> <span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">dir_name</span><span class="p">),</span>
                 <span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">SkipBlockExtension</span><span class="p">],</span>
-                <span class="n">cache_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c"># disable cache b/c we do 2 get_template()</span>
+                <span class="n">cache_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1"># disable cache b/c we do 2 get_template()</span>
             <span class="p">)</span>
 
-    <span class="c"># first render only the block we want</span>
+    <span class="c1"># first render only the block we want</span>
     <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">blocks</span><span class="p">[</span><span class="s">&#39;kernel_options&#39;</span><span class="p">](</span><span class="n">template</span><span class="o">.</span><span class="n">new_context</span><span class="p">(</span><span class="n">context</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">blocks</span><span class="p">[</span><span class="s1">&#39;kernel_options&#39;</span><span class="p">](</span><span class="n">template</span><span class="o">.</span><span class="n">new_context</span><span class="p">(</span><span class="n">context</span><span class="p">)):</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-    <span class="k">print</span> <span class="s">&quot;Boot Args:&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;---------------------------&quot;</span>
+    <span class="nb">print</span> <span class="s2">&quot;Boot Args:&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;---------------------------&quot;</span>
 
-    <span class="c"># now instruct SkipBlockExtension which blocks we don&#39;t want</span>
-    <span class="c"># and get a new instance of the template with these blocks removed</span>
-    <span class="n">env</span><span class="o">.</span><span class="n">skip_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;kernel_options&#39;</span><span class="p">)</span>
+    <span class="c1"># now instruct SkipBlockExtension which blocks we don&#39;t want</span>
+    <span class="c1"># and get a new instance of the template with these blocks removed</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">skip_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;kernel_options&#39;</span><span class="p">)</span>
     <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
-    <span class="k">print</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;---------------------------&quot;</span>
-</pre></div>
-
+    <span class="nb">print</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;---------------------------&quot;</span>
+</code></pre></div>
 
 <p>The above code results in the following output:</p>
-<div class="highlight"><pre><span class="err">$</span> <span class="p">.</span><span class="o">/</span><span class="n">jinja2</span><span class="o">-</span><span class="n">render</span> <span class="p">.</span><span class="o">/</span><span class="n">base</span><span class="p">.</span><span class="n">j2</span> 
-<span class="n">Boot</span> <span class="nl">Args</span><span class="p">:</span> <span class="n">console</span><span class="o">=</span><span class="n">tty0</span> <span class="n">debug</span><span class="o">=</span><span class="mi">1</span> 
+<div class="highlight"><pre><span></span><code><span class="n">$</span><span class="w"> </span><span class="p">.</span><span class="o">/</span><span class="n">jinja2</span><span class="o">-</span><span class="n">render</span><span class="w"> </span><span class="p">.</span><span class="o">/</span><span class="n">base</span><span class="p">.</span><span class="n">j2</span><span class="w"> </span>
+<span class="n">Boot</span><span class="w"> </span><span class="n">Args</span><span class="o">:</span><span class="w"> </span><span class="n">console</span><span class="o">=</span><span class="n">tty0</span><span class="w"> </span><span class="n">debug</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span>
 <span class="o">---------------------------</span>
 
-<span class="n">key</span> <span class="o">--</span><span class="n">skip</span>
+<span class="n">key</span><span class="w"> </span><span class="o">--</span><span class="n">skip</span>
 
 <span class="nf">%packages</span>
 <span class="err">@</span><span class="n">base</span>
 <span class="o">---------------------------</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Teaser: this is part of my effort to replace SNAKE with a client side
 kickstart template engine for
@@ -473,7 +467,7 @@ so stay tuned!</p>
             </a>
                 <p>Today I celebrate my 7th year working at Red Hat's Quality Engineering department.
 Here's my story!</p>
-<p><img alt="Platform QE" src="/images/redhat_platform_qe.jpg" title="Platform QE" /></p>
+<p><img alt="Platform QE" src="/images/redhat_platform_qe.jpg" title="Platform QE"></p>
 <p>On a cold winter Friday in 2007 I left my job as a software developer in Sofia,
 packed my stuff together, purchased my <a href="http://amzn.to/1hlPuyr">first laptop</a> and
 on Sunday jumped the train to Brno to join the Release Test Team at Red Hat.
@@ -654,14 +648,13 @@ at liberty to share although they've all been fixed since then.</p>
 me and devel banging our heads against the wall until we figured out that on this
 particular system the NUMA configuration was not suitable for running Xen virtualization.</p>
 <p>Can you spot the problem here ?</p>
-<div class="highlight"><pre><span class="k">try</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">kickstartGui</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="k">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Could not open display because no X server is running.&quot;</span><span class="p">))</span>
-    <span class="k">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Try running &#39;system-config-kickstart --help&#39; for a list of options.&quot;</span><span class="p">))</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Could not open display because no X server is running.&quot;</span><span class="p">))</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Try running &#39;system-config-kickstart --help&#39; for a list of options.&quot;</span><span class="p">))</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>Be honest and use the comments form to tell me what you've found. If you struggled
 then see <a href="https://bugzilla.redhat.com/show_bug.cgi?id=703085">RHBZ #703085</a> and come
@@ -768,12 +761,11 @@ to ephemeral instance storage. I've decided to give it a try starting with <code
 directory where <a href="http://www.dif.io">Difio</a> operates.</p>
 <p>It should be noted that although instance storage may be available for some instance
 types it may not be attached by default. Use this command to check:</p>
-<div class="highlight"><pre><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/
 ami
 root
 swap
-</pre></div>
-
+</code></pre></div>
 
 <p>In the above example there is no instance storage present. </p>
 <p>You can attach one either when launching the EC2 instance or when creating a customized AMI
@@ -788,46 +780,43 @@ block device mapping for the instance. When you launch an M3 instance, Amazon ig
 any instance store volumes specified in the block device mapping for the AMI.</p>
 <p>As far as I can see the AWS Console doesn't indicate if instance storage is attached
 or not. For instance with 1 ephemeral volume:</p>
-<div class="highlight"><pre><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/
 ami
 ephemeral0
 root
 swap
 
-<span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
+$<span class="w"> </span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0
 sdb
-</pre></div>
-
+</code></pre></div>
 
 <p>Ephemeral devices can be mounted in <code>/media/ephemeralX/</code>, but not all volumes.
 I've found that usually only <code>ephemeral0</code> is mounted automatically.</p>
-<div class="highlight"><pre><span class="nv">$ </span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/
 ami
 ephemeral0
 ephemeral1
 root
 
-<span class="nv">$ </span>ls -l /media/
-drwxr-xr-x <span class="m">3</span> root root <span class="m">4096</span> <span class="m">21</span> ное  <span class="m">2009</span> ephemeral0
-</pre></div>
-
+$<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>/media/
+drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>root<span class="w"> </span>root<span class="w"> </span><span class="m">4096</span><span class="w"> </span><span class="m">21</span><span class="w"> </span>ное<span class="w">  </span><span class="m">2009</span><span class="w"> </span>ephemeral0
+</code></pre></div>
 
 <p>For Difio I have an init.d script which executes when the system
 boots. To enable <code>/tmp</code> on ephemeral storage I just added the following snippet:</p>
-<div class="highlight"><pre><span class="nb">echo</span> <span class="s2">$&quot;Mounting /tmp on ephemeral storage:&quot;</span>
-<span class="k">for</span> ef in <span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/ 2&gt;/dev/null <span class="p">|</span> grep ephemeral<span class="sb">`</span><span class="p">;</span> <span class="k">do</span>
-    <span class="nv">disk</span><span class="o">=</span><span class="sb">`</span>curl http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="nv">$ef</span> 2&gt;/dev/null<span class="sb">`</span>
-    <span class="nb">echo</span> <span class="nv">$&quot;</span>Unmounting /dev/<span class="nv">$disk</span><span class="s2">&quot;</span>
-<span class="s2">    umount /dev/</span><span class="nv">$disk</span><span class="s2"></span>
+<div class="highlight"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="s2">$&quot;Mounting /tmp on ephemeral storage:&quot;</span>
+<span class="k">for</span><span class="w"> </span>ef<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>ephemeral<span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">disk</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/block-device-mapping/<span class="nv">$ef</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="sb">`</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>$<span class="s2">&quot;Unmounting /dev/</span><span class="nv">$disk</span><span class="s2">&quot;</span>
+<span class="w">    </span>umount<span class="w"> </span>/dev/<span class="nv">$disk</span>
 
-<span class="s2">    echo </span><span class="nv">$&quot;</span><span class="s2">mkfs /dev/</span><span class="nv">$disk</span><span class="s2">&quot;</span>
-    mkfs.ext4 -q /dev/<span class="nv">$disk</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>$<span class="s2">&quot;mkfs /dev/</span><span class="nv">$disk</span><span class="s2">&quot;</span>
+<span class="w">    </span>mkfs.ext4<span class="w"> </span>-q<span class="w"> </span>/dev/<span class="nv">$disk</span>
 
-    <span class="nb">echo</span> <span class="nv">$&quot;</span>Mounting /dev/<span class="nv">$disk</span><span class="s2">&quot;</span>
-<span class="s2">    mount -t ext4 /dev/</span><span class="nv">$disk</span><span class="s2"> /tmp &amp;&amp; chmod 1777 /tmp &amp;&amp; success || failure</span>
-<span class="s2">done</span>
-</pre></div>
-
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>$<span class="s2">&quot;Mounting /dev/</span><span class="nv">$disk</span><span class="s2">&quot;</span>
+<span class="w">    </span>mount<span class="w"> </span>-t<span class="w"> </span>ext4<span class="w"> </span>/dev/<span class="nv">$disk</span><span class="w"> </span>/tmp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>chmod<span class="w"> </span><span class="m">1777</span><span class="w"> </span>/tmp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>success<span class="w"> </span><span class="o">||</span><span class="w"> </span>failure
+<span class="k">done</span>
+</code></pre></div>
 
 <p><strong>NB:</strong> success and failure are from <code>/etc/rc.d/init.d/functions</code>.
 If you are using LVM or RAID you need to reconstruct your block devices
@@ -882,13 +871,12 @@ which is shown at the bottom of this article. </p>
 <li>
 <p>Download the source RPM for anaconda from the tree and extract the sources to a working
 directory. Then;</p>
-<div class="highlight"><pre><span class="nb">cd </span>anaconda-20.25.16-1
-git init
-git add .
-git commit -m <span class="s2">&quot;initial import&quot;</span>
-git tag anaconda-20.25.16-1
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>anaconda-20.25.16-1
+git<span class="w"> </span>init
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;initial import&quot;</span>
+git<span class="w"> </span>tag<span class="w"> </span>anaconda-20.25.16-1
+</code></pre></div>
 
 </li>
 <li>
@@ -897,30 +885,28 @@ modification. The tag is required later by the script which creates the updates 
 </li>
 <li>
 <p>After making your changes commit them and from the top anaconda directory execute:</p>
-<div class="highlight"><pre>./scripts/makeupdates -t anaconda-20.25.16-1
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>./scripts/makeupdates<span class="w"> </span>-t<span class="w"> </span>anaconda-20.25.16-1
+</code></pre></div>
 
 </li>
 </ul>
 <p>You can also add RPM contents to the updates.img but you need to download the packages first:</p>
-<div class="highlight"><pre>yumdownloader python-coverage python-setuptools
+<div class="highlight"><pre><span></span><code>yumdownloader<span class="w"> </span>python-coverage<span class="w"> </span>python-setuptools
 
-./scripts/makeupdates -t anaconda-20.25.16-1 -a ~/python-coverage-3.7-1.fc20.x86_64.rpm -a ~/python-setuptools-1.4.2-1.fc20.noarch.rpm 
-BUILDDIR /home/atodorov/anaconda-20.25.16-1
-Including anaconda
-<span class="m">2</span> RPMs added manually:
+./scripts/makeupdates<span class="w"> </span>-t<span class="w"> </span>anaconda-20.25.16-1<span class="w"> </span>-a<span class="w"> </span>~/python-coverage-3.7-1.fc20.x86_64.rpm<span class="w"> </span>-a<span class="w"> </span>~/python-setuptools-1.4.2-1.fc20.noarch.rpm<span class="w"> </span>
+BUILDDIR<span class="w"> </span>/home/atodorov/anaconda-20.25.16-1
+Including<span class="w"> </span>anaconda
+<span class="m">2</span><span class="w"> </span>RPMs<span class="w"> </span>added<span class="w"> </span>manually:
 python-setuptools-1.4.2-1.fc20.noarch.rpm
 python-coverage-3.7-1.fc20.x86_64.rpm
-<span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates <span class="o">&amp;&amp;</span> rpm2cpio /home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm <span class="p">|</span> cpio -dium
-<span class="m">3534</span> blocks
-<span class="nb">cd</span> /home/atodorov/anaconda-20.25.16-1/updates <span class="o">&amp;&amp;</span> rpm2cpio /home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm <span class="p">|</span> cpio -dium
-<span class="m">1214</span> blocks
-&lt;stdin&gt; to &lt;stdout&gt; <span class="m">4831</span> blocks
+<span class="nb">cd</span><span class="w"> </span>/home/atodorov/anaconda-20.25.16-1/updates<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rpm2cpio<span class="w"> </span>/home/atodorov/python-setuptools-1.4.2-1.fc20.noarch.rpm<span class="w"> </span><span class="p">|</span><span class="w"> </span>cpio<span class="w"> </span>-dium
+<span class="m">3534</span><span class="w"> </span>blocks
+<span class="nb">cd</span><span class="w"> </span>/home/atodorov/anaconda-20.25.16-1/updates<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rpm2cpio<span class="w"> </span>/home/atodorov/python-coverage-3.7-1.fc20.x86_64.rpm<span class="w"> </span><span class="p">|</span><span class="w"> </span>cpio<span class="w"> </span>-dium
+<span class="m">1214</span><span class="w"> </span>blocks
+&lt;stdin&gt;<span class="w"> </span>to<span class="w"> </span>&lt;stdout&gt;<span class="w"> </span><span class="m">4831</span><span class="w"> </span>blocks
 
-updates.img ready
-</pre></div>
-
+updates.img<span class="w"> </span>ready
+</code></pre></div>
 
 <p>In the above example I have only modified the top level anaconda file (<code>/usr/sbin/anaconda</code>
 inside the installation environment) experimenting with
@@ -928,16 +914,16 @@ inside the installation environment) experimenting with
 <p>You are done! Make the <code>updates.img</code> available to Anaconda and start using it!</p>
 <p><strong>UPDATE 2014-02-08:</strong> If you prefer working with the anaconda source tree here's
 how to do it:</p>
-<div class="highlight"><pre>git clone git://git.fedorahosted.org/git/anaconda.git
-<span class="nb">cd </span>anaconda/
-git checkout anaconda-20.25.16-1 -b my_feature-branch
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>git://git.fedorahosted.org/git/anaconda.git
+<span class="nb">cd</span><span class="w"> </span>anaconda/
+git<span class="w"> </span>checkout<span class="w"> </span>anaconda-20.25.16-1<span class="w"> </span>-b<span class="w"> </span>my_feature-branch
 
-... make changes ...
+...<span class="w"> </span>make<span class="w"> </span>changes<span class="w"> </span>...
 
-git commit -a -m <span class="s2">&quot;Fixed something&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Fixed something&quot;</span>
 
-./scripts/makeupdates -t anaconda-20.25.16-1
-</pre></div>
+./scripts/makeupdates<span class="w"> </span>-t<span class="w"> </span>anaconda-20.25.16-1
+</code></pre></div>
             <p class="post-meta">Posted by
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Fri 07 February 2014
@@ -1008,7 +994,7 @@ name from the first step (e.g. <code>/dev/sda1</code>);</li>
                     FOSDEM 2014 Report - Day #2 Testing and Automation
                 </h2>
             </a>
-                <p><img alt="Testing and Automation" src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation" /></p>
+                <p><img alt="Testing and Automation" src="/images/fosdem/2014/testing_automation.jpg" title="Testing and Automation"></p>
 <p>FOSDEM was hosting the
 <a href="https://fosdem.org/2014/schedule/track/testing_and_automation/">Testing and automation devroom</a>
 for the second year and this was the very reason I attended the conference. I managed to get in
@@ -1098,7 +1084,7 @@ been to this part of the city before. Then I took off to FOSDEM arriving at noon
 a long time around the Python and Perl stands meeting new people and talking to them
 about their upgrade practices and how they manage package dependencies
 (aka promoting <a href="http://www.dif.io">Difio</a>).</p>
-<p><img alt="Fedora Octopus" src="/images/fosdem/2014/fedora_octopus.jpg" title="Fedora Octopus" /></p>
+<p><img alt="Fedora Octopus" src="/images/fosdem/2014/fedora_octopus.jpg" title="Fedora Octopus"></p>
 <p>Fedora stand was busy with 3D printing this year. I've seen 3D printing
 before but here I was amazed of the fine-grained quality of the pieces produced.
 This is definitely something to have in mind if you are building physical products.</p>
@@ -1184,7 +1170,7 @@ I own the book and can give it to you if you like. It's on the <a href="/blog/20
 list.</p>
 <p>I hope you find something interesting to read in my library. If not please share what did you
 read this month.</p>
-<hr />
+<hr>
 <p>PS: I'm currently in Milan and will be visiting FOSDEM at the end of the week. Catch
 you there if you're coming.</p>
             <p class="post-meta">Posted by
@@ -1349,9 +1335,9 @@ the existing <code>url()</code> method to do all background processing and simpl
 object to the new class. </p>
 <p>All code is available at <a href="https://djangosnippets.org/snippets/3013/">https://djangosnippets.org/snippets/3013/</a>. </p>
 <p>To use in your templates simply add</p>
-<div class="highlight"><pre>{% load fqdn_url from fqdn_url %}
-<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;{% fqdn_url &#39;dashboard&#39; %}&quot;</span><span class="nt">&gt;</span>Dashboard<span class="nt">&lt;/a&gt;</span>
-</pre></div>
+<div class="highlight"><pre><span></span><code>{%<span class="w"> </span>load<span class="w"> </span>fqdn_url<span class="w"> </span>from<span class="w"> </span>fqdn_url<span class="w"> </span>%}
+<span class="nt">&lt;a</span><span class="w"> </span><span class="na">href=</span><span class="s">&quot;{% fqdn_url &#39;dashboard&#39; %}&quot;</span><span class="nt">&gt;</span>Dashboard<span class="nt">&lt;/a&gt;</span>
+</code></pre></div>
             <p class="post-meta">Posted by
                     <a href="http://atodorov.org/author/alexander-todorov.html">Alexander Todorov</a>
                  on Sun 22 December 2013
@@ -1366,11 +1352,10 @@ object to the new class. </p>
                 <p>Today I had troubles with my Omnikey CardMan 6121 smart card reader.
 For some reason it will not detect the card inside and was unusable.
 <code>/var/log/messages</code> was filled with  <em>Card Not Powered</em> messages:</p>
-<div class="highlight"><pre>Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
+<div class="highlight"><pre><span></span><code>Dec 18 11:17:55 localhost pcscd: eventhandler.c:292:EHStatusHandlerThread() Error powering up card: -2146435050 0x80100016
 Dec 18 11:18:01 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
 Dec 18 11:18:02 localhost pcscd: winscard.c:368:SCardConnect() Card Not Powered
-</pre></div>
-
+</code></pre></div>
 
 <p><img src="/images/omnikey_cardman_6121.gif" style="float:right;margin-left:20px;" /></p>
 <p>I've found the solution in 
@@ -1543,15 +1528,13 @@ or inconsistencies occur if you receive a deleted message again.</p>
 <p>Amazon FAQ</p>
 </blockquote>
 <p>In my case the cron scheduler logs say:</p>
-<div class="highlight"><pre>&gt;&gt;&gt; &lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&gt;
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>&gt;&gt;&gt; &lt;AsyncResult: a9e5a73a-4d4a-4995-a91c-90295e27100a&gt;
+</code></pre></div>
 
 <p>While on the worker nodes the logs say:</p>
-<div class="highlight"><pre><span class="k">[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]</span>
+<div class="highlight"><pre><span></span><code><span class="k">[2013-12-06 10:13:06,229: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]</span>
 <span class="k">[2013-12-06 10:18:09,456: INFO/MainProcess] Got task from broker: tasks.cron_monthly_email_reminder[a9e5a73a-4d4a-4995-a91c-90295e27100a]</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>This clearly shows the same message (see the UUID) has been processed twice!
 This resulted in hundreds of duplicate emails :(.</p>
@@ -1595,27 +1578,26 @@ Thanks!</p>
             </a>
                 <p>Accidentally I have discovered a bug for Python's
 URLGrabber module which has to do with change in behavior in libcurl.</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">urlgrabber.grabber</span> <span class="kn">import</span> <span class="n">URLGrabber</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">URLGrabber</span><span class="p">(</span><span class="n">reget</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">urlgrab</span><span class="p">(</span><span class="s1">&#39;https://s3.amazonaws.com/production.s3.rubygems.org/gems/columnize-0.3.6.gem&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp/columnize.gem&#39;</span><span class="p">)</span>
 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;console&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">976</span><span class="p">,</span> <span class="ow">in</span> <span class="n">urlgrab</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retry</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">retryfunc</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="nb">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">880</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_retry</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">apply</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">opts</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span><span class="p">,</span> <span class="p">{})</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">962</span><span class="p">,</span> <span class="ow">in</span> <span class="n">retryfunc</span>
     <span class="n">fo</span> <span class="o">=</span> <span class="n">PyCurlFileObject</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1056</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__init__</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_do_open</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1307</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_do_open</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_set_opts</span><span class="p">()</span>
-  <span class="n">File</span> <span class="s">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
+  <span class="n">File</span> <span class="s2">&quot;/home/celeryd/.virtualenvs/difio/lib/python2.6/site-packages/urlgrabber/grabber.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1161</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_set_opts</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">curl_obj</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">SSL_VERIFYHOST</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">ssl_verify_host</span><span class="p">)</span>
-<span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+<span class="n">error</span><span class="p">:</span> <span class="p">(</span><span class="mi">43</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 <span class="o">&gt;&gt;&gt;</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>The code above works fine with curl-7.27 or older while it breaks with curl-7.29 and
 newer. As explained by 
@@ -1695,7 +1677,7 @@ there aren't any updates released on PyPI though!</p>
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>

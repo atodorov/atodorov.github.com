@@ -125,14 +125,13 @@ which comes from the rhcloud.com domain. Unfortunately this is not easily doable
 of the <a href="https://en.wikipedia.org/wiki/Same_origin_policy">Same origin policy</a> in browsers.</p>
 <p>I'm using the <a href="http://dojotoolkit.org/"><em>Dojo Toolkit</em></a> JavaScript framework which has a solution.
 It's called <a href="https://en.wikipedia.org/wiki/JSONP">JSONP</a>. Here's how it works:</p>
-<div class="highlight"><pre>     dif.io ------ JSONP request --&gt; abc.rhcloud.com --v
-        ^                                              |
-        |                                              |
-    JavaScript processing                              |
-        |                                              |
-        +------------------ JSONP response ------------+
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="w">     </span><span class="n">dif</span><span class="p">.</span><span class="n">io</span><span class="w"> </span><span class="o">------</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">abc</span><span class="p">.</span><span class="n">rhcloud</span><span class="p">.</span><span class="n">com</span><span class="w"> </span><span class="o">--</span><span class="n">v</span>
+<span class="w">        </span><span class="o">^</span><span class="w">                                              </span><span class="o">|</span>
+<span class="w">        </span><span class="o">|</span><span class="w">                                              </span><span class="o">|</span>
+<span class="w">    </span><span class="n">JavaScript</span><span class="w"> </span><span class="n">processing</span><span class="w">                              </span><span class="o">|</span>
+<span class="w">        </span><span class="o">|</span><span class="w">                                              </span><span class="o">|</span>
+<span class="w">        </span><span class="o">+------------------</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">------------+</span>
+</code></pre></div>
 
 <p>This is pretty standard configuration for a web service.</p>
 <h2>Going to the clouds</h2>
@@ -149,17 +148,16 @@ To enable this edit the CloudFront distribution <em>behavior(s)</em> and set <em
 <p>When a visitor of the website requests the data <em>Amazon CloudFront</em> will use exactly the same url path and query strings
 to fetch the content from the origin server. All that I had to do is switch the domain of the JSONP service
 to point to the cloudfront.net domain. It became like this:</p>
-<div class="highlight"><pre>                                                        | Everything on this side is handled by Amazon.
-                                                        | No code required!
-                                                        |
-     dif.io ------ JSONP request --&gt; xyz.cloudfront.net -- JSONP request if cache miss --&gt; abc.rhcloud.com --v
-        ^                              |                ^                                                    |
-        |                              |                |                                                    |
-    JavaScript processing              |                +---------- JSONP response --------------------------+
-        |                              |
-        +---- cached JSONP response ---+
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="w">                                                        </span><span class="o">|</span><span class="w"> </span><span class="n">Everything</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">side</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">handled</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">Amazon</span><span class="p">.</span>
+<span class="w">                                                        </span><span class="o">|</span><span class="w"> </span><span class="n">No</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">required</span><span class="o">!</span>
+<span class="w">                                                        </span><span class="o">|</span>
+<span class="w">     </span><span class="n">dif</span><span class="p">.</span><span class="n">io</span><span class="w"> </span><span class="o">------</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">cloudfront</span><span class="p">.</span><span class="n">net</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="nf">if</span><span class="w"> </span><span class="n">cache</span><span class="w"> </span><span class="n">miss</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">abc</span><span class="p">.</span><span class="n">rhcloud</span><span class="p">.</span><span class="n">com</span><span class="w"> </span><span class="o">--</span><span class="n">v</span>
+<span class="w">        </span><span class="o">^</span><span class="w">                              </span><span class="o">|</span><span class="w">                </span><span class="o">^</span><span class="w">                                                    </span><span class="o">|</span>
+<span class="w">        </span><span class="o">|</span><span class="w">                              </span><span class="o">|</span><span class="w">                </span><span class="o">|</span><span class="w">                                                    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">JavaScript</span><span class="w"> </span><span class="n">processing</span><span class="w">              </span><span class="o">|</span><span class="w">                </span><span class="o">+----------</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">--------------------------+</span>
+<span class="w">        </span><span class="o">|</span><span class="w">                              </span><span class="o">|</span>
+<span class="w">        </span><span class="o">+----</span><span class="w"> </span><span class="n">cached</span><span class="w"> </span><span class="n">JSONP</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">---+</span>
+</code></pre></div>
 
 <p>As you can see the website structure and code didn't change at all. All that changed was a single domain name.</p>
 <h2>Controlling the cache</h2>
@@ -170,25 +168,23 @@ However if the content changes you need some way to tell <em>CloudFront</em> abo
 using different URLs to access the same content. This will cause <em>CloudFront</em> to cache the content under the new location
 while keeping the old content until it expires.</p>
 <p><em>Dojo</em> makes this very easy:</p>
-<div class="highlight"><pre><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo/io/script&quot;</span><span class="p">],</span>
-    <span class="kd">function</span><span class="p">(</span><span class="nx">script</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">script</span><span class="p">.</span><span class="nx">get</span><span class="p">({</span>
-                <span class="nx">url</span><span class="o">:</span> <span class="s2">&quot;https://xyz.cloudfront.net/api/json/updates/1234&quot;</span><span class="p">,</span>
-                <span class="nx">callbackParamName</span><span class="o">:</span> <span class="s2">&quot;callback&quot;</span><span class="p">,</span>
-                <span class="nx">content</span><span class="o">:</span> <span class="p">{</span><span class="nx">t</span><span class="o">:</span> <span class="nx">timeStamp</span><span class="p">},</span>
-                <span class="nx">load</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">jsonData</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="p">....</span>
-                <span class="p">},</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="nx">require</span><span class="p">([</span><span class="s2">&quot;dojo/io/script&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="kd">function</span><span class="p">(</span><span class="nx">script</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">script</span><span class="p">.</span><span class="nx">get</span><span class="p">({</span>
+<span class="w">                </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://xyz.cloudfront.net/api/json/updates/1234&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">callbackParamName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;callback&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">t</span><span class="o">:</span><span class="w"> </span><span class="nx">timeStamp</span><span class="p">},</span>
+<span class="w">                </span><span class="nx">load</span><span class="o">:</span><span class="w"> </span><span class="kd">function</span><span class="p">(</span><span class="nx">jsonData</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="p">....</span>
+<span class="w">                </span><span class="p">},</span>
+</code></pre></div>
 
 <p>The <em>content</em> property allows additional key/value pairs to be sent in the query string. The
 <em>timeStamp</em> parameter serves only to control <em>Amazon CloudFront</em> cache. It's not processed server side.</p>
 <p>On the server-side we have:</p>
-<div class="highlight"><pre><span class="n">response</span><span class="p">[</span><span class="s">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;max-age=31536000&#39;</span>
-<span class="n">response</span><span class="p">[</span><span class="s">&#39;Expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">+</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">31536000</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;max-age=31536000&#39;</span>
+<span class="n">response</span><span class="p">[</span><span class="s1">&#39;Expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">+</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">31536000</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%a</span><span class="s1">, </span><span class="si">%d</span><span class="s1"> %b %Y %H:%M:%S GMT&#39;</span><span class="p">)</span>
+</code></pre></div>
 
 <h2>Benefits</h2>
 <p>There were two immediate benefits:</p>
@@ -235,7 +231,7 @@ used objects are expired less often. Depending on the content you may want to up
 more or less frequently. In my case CSS and JavaScript files change rarely so I wanted to tell
 CloudFront to not expire the files quickly. I did this by telling <em>Apache</em> to send a custom value for
 the Expires header.</p>
-<div class="highlight"><pre>    $ curl http://d71ktrt2emu2j.cloudfront.net/static/v1/css/style.css -D headers.txt
+<div class="highlight"><pre><span></span><code>    $ curl http://d71ktrt2emu2j.cloudfront.net/static/v1/css/style.css -D headers.txt
     $ cat headers.txt 
     HTTP/1.0 200 OK
     Date: Mon, 16 Apr 2012 19:02:16 GMT
@@ -253,8 +249,7 @@ the Expires header.</p>
     X-Amz-Cf-Id: X558vcEOsQkVQn5V9fbrWNTdo543v8VStxdb7LXIcUWAIbLKuIvp-w==,e8Dipk5FSNej3e0Y7c5ro-9mmn7OK8kWfbaRGwi1ww8ihwVzSab24A==
     Via: 1.0 d6343f267c91f2f0e78ef0a7d0b7921d.cloudfront.net (CloudFront)
     Connection: close
-</pre></div>
-
+</code></pre></div>
 
 <p>All headers before Strict-Transport-Security come from the origin server.</p>
 <h2>Versioning</h2>
@@ -272,32 +267,30 @@ The next time visitors hit <em>CloudFront</em> they will receive the cached redi
 origin server, which is defeating the purpose of having CDN.</p>
 <p>To do it properly you have to rewrite the URLs but still return a 200 response code and the
 content which needs to be cached. This is done with <em>mod_proxy</em>: </p>
-<div class="highlight"><pre>    RewriteEngine on
+<div class="highlight"><pre><span></span><code>    RewriteEngine on
     RewriteRule ^VERSION-(\d+)/(.*)$ http://%{ENV:OPENSHIFT_INTERNAL_IP}:%{ENV:OPENSHIFT_INTERNAL_PORT}/static/$2 [P,L]
-</pre></div>
-
+</code></pre></div>
 
 <p>This .htaccess trick doesn't work on <em>OpenShift</em> though. <em>mod_proxy</em> is not enabled at the moment.
 See <a href="https://bugzilla.redhat.com/show_bug.cgi?id=812389">bug 812389</a> for more info.</p>
 <p>Luckily I was able to use symlinks to point to the content. Here's how it looks:</p>
-<div class="highlight"><pre><span class="x">    $ pwd</span>
-<span class="x">    /home/atodorov/difio/wsgi/static</span>
-<span class="x">    </span>
-<span class="x">    $ cat .htaccess</span>
-<span class="x">    ExpiresActive On</span>
-<span class="x">    ExpiresDefault &quot;access plus 1 year&quot;</span>
-<span class="x">    </span>
-<span class="x">    $ ls -l</span>
-<span class="x">    drwxrwxr-x. 6 atodorov atodorov 4096 16 Apr 21,31 o</span>
-<span class="x">    lrwxrwxrwx. 1 atodorov atodorov    1 16 Apr 21,47 v1 -&gt; o</span>
-<span class="x">    </span>
-<span class="x">    settings.py:</span>
-<span class="x">    STATIC_URL = &#39;//d71ktrt2emu2j.cloudfront.net/static/v1/&#39;</span>
-<span class="x">    </span>
-<span class="x">    HTML template:</span>
-<span class="x">    &lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; media=&quot;screen&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">STATIC_URL</span> <span class="cp">}}</span><span class="x">css/style.css&quot; /&gt;</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">pwd</span>
+<span class="w">    </span><span class="o">/</span><span class="nx">home</span><span class="o">/</span><span class="nx">atodorov</span><span class="o">/</span><span class="nx">difio</span><span class="o">/</span><span class="nx">wsgi</span><span class="o">/</span><span class="nx">static</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">cat</span><span class="w"> </span><span class="p">.</span><span class="nx">htaccess</span>
+<span class="w">    </span><span class="nx">ExpiresActive</span><span class="w"> </span><span class="nx">On</span>
+<span class="w">    </span><span class="nx">ExpiresDefault</span><span class="w"> </span><span class="s">&quot;access plus 1 year&quot;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="err">$</span><span class="w"> </span><span class="nx">ls</span><span class="w"> </span><span class="o">-</span><span class="nx">l</span>
+<span class="w">    </span><span class="nx">drwxrwxr</span><span class="o">-</span><span class="nx">x</span><span class="p">.</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="mi">4096</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="nx">Apr</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span><span class="mi">31</span><span class="w"> </span><span class="nx">o</span>
+<span class="w">    </span><span class="nx">lrwxrwxrwx</span><span class="p">.</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nx">atodorov</span><span class="w"> </span><span class="nx">atodorov</span><span class="w">    </span><span class="mi">1</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="nx">Apr</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span><span class="mi">47</span><span class="w"> </span><span class="nx">v1</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nx">o</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">settings</span><span class="p">.</span><span class="nx">py</span><span class="p">:</span>
+<span class="w">    </span><span class="nx">STATIC_URL</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="err">&#39;</span><span class="c1">//d71ktrt2emu2j.cloudfront.net/static/v1/&#39;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">HTML</span><span class="w"> </span><span class="nx">template</span><span class="p">:</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nx">link</span><span class="w"> </span><span class="k">type</span><span class="p">=</span><span class="s">&quot;text/css&quot;</span><span class="w"> </span><span class="nx">rel</span><span class="p">=</span><span class="s">&quot;stylesheet&quot;</span><span class="w"> </span><span class="nx">media</span><span class="p">=</span><span class="s">&quot;screen&quot;</span><span class="w"> </span><span class="nx">href</span><span class="p">=</span><span class="s">&quot;{{ STATIC_URL }}css/style.css&quot;</span><span class="w"> </span><span class="o">/</span><span class="p">&gt;</span>
+</code></pre></div>
 
 <h2>How to implement it</h2>
 <p>First you need to split all CSS and JavaScript from your HTML if you haven't done so already. </p>
@@ -373,36 +366,35 @@ write, commit and push work-flow.</p>
 the cron cartridge and I decided to give it a try.</p>
 <p>The first thing I did is to write a simple script which can execute any task from the difio.tasks module
 by piping it to the Django shell (a Python shell actually).</p>
-<div class="highlight"><span class="filename">run_celery_task</span><pre><span class="c">#!/bin/bash</span>
-<span class="c">#</span>
-<span class="c"># Copyright (c) 2012, Alexander Todorov &lt;atodorov@nospam.otb.bg&gt;</span>
-<span class="c">#</span>
-<span class="c"># This script is symlinked to from the hourly/minutely, etc. directories</span>
-<span class="c">#</span>
-<span class="c"># SYNOPSIS</span>
-<span class="c">#</span>
-<span class="c"># ./run_celery_task cron_search_dates</span>
-<span class="c">#</span>
-<span class="c"># OR</span>
-<span class="c">#</span>
-<span class="c"># ln -s run_celery_task cron_search_dates</span>
-<span class="c"># ./cron_search_dates</span>
-<span class="c">#</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2012, Alexander Todorov &lt;atodorov@nospam.otb.bg&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># This script is symlinked to from the hourly/minutely, etc. directories</span>
+<span class="c1">#</span>
+<span class="c1"># SYNOPSIS</span>
+<span class="c1">#</span>
+<span class="c1"># ./run_celery_task cron_search_dates</span>
+<span class="c1">#</span>
+<span class="c1"># OR</span>
+<span class="c1">#</span>
+<span class="c1"># ln -s run_celery_task cron_search_dates</span>
+<span class="c1"># ./cron_search_dates</span>
+<span class="c1">#</span>
 
 <span class="nv">TASK_NAME</span><span class="o">=</span><span class="nv">$1</span>
-<span class="o">[</span> -z <span class="s2">&quot;</span><span class="nv">$TASK_NAME</span><span class="s2">&quot;</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">TASK_NAME</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$0</span><span class="k">)</span>
+<span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$TASK_NAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">TASK_NAME</span><span class="o">=</span><span class="k">$(</span>basename<span class="w"> </span><span class="nv">$0</span><span class="k">)</span>
 
-<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;</span><span class="nv">$OPENSHIFT_APP_DIR</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">source</span> <span class="nv">$OPENSHIFT_APP_DIR</span>/virtenv/bin/activate
-    <span class="nb">export </span><span class="nv">PYTHON_EGG_CACHE</span><span class="o">=</span><span class="nv">$OPENSHIFT_DATA_DIR</span>/.python-eggs
-    <span class="nv">REPO_DIR</span><span class="o">=</span><span class="nv">$OPENSHIFT_REPO_DIR</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$OPENSHIFT_APP_DIR</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">source</span><span class="w"> </span><span class="nv">$OPENSHIFT_APP_DIR</span>/virtenv/bin/activate
+<span class="w">    </span><span class="nb">export</span><span class="w"> </span><span class="nv">PYTHON_EGG_CACHE</span><span class="o">=</span><span class="nv">$OPENSHIFT_DATA_DIR</span>/.python-eggs
+<span class="w">    </span><span class="nv">REPO_DIR</span><span class="o">=</span><span class="nv">$OPENSHIFT_REPO_DIR</span>
 <span class="k">else</span>
-    <span class="nv">REPO_DIR</span><span class="o">=</span><span class="k">$(</span>dirname <span class="nv">$0</span><span class="k">)</span><span class="s2">&quot;/../../..&quot;</span>
+<span class="w">    </span><span class="nv">REPO_DIR</span><span class="o">=</span><span class="k">$(</span>dirname<span class="w"> </span><span class="nv">$0</span><span class="k">)</span><span class="s2">&quot;/../../..&quot;</span>
 <span class="k">fi</span>
 
-<span class="nb">echo</span> <span class="s2">&quot;import difio.tasks; difio.tasks.</span><span class="nv">$TASK_NAME</span><span class="s2">.delay()&quot;</span> <span class="p">|</span> <span class="nv">$REPO_DIR</span>/wsgi/difio/manage.py shell
-</pre></div>
-
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;import difio.tasks; difio.tasks.</span><span class="nv">$TASK_NAME</span><span class="s2">.delay()&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nv">$REPO_DIR</span>/wsgi/difio/manage.py<span class="w"> </span>shell
+</code></pre></div>
 
 <p>This is a multicall script which allows symlinks with different names to point to it. 
 Thus to add a new task to cron I just need to make a symlink to the script from one of the
@@ -410,16 +402,14 @@ hourly/, minutely/, daily/, etc. directories under cron/.</p>
 <p>The script accepts a parameter as well which allows me to execute it locally for debugging purposes
 or to schedule some tasks out of band.
 This is how it looks like on the file system:</p>
-<div class="highlight"><pre><span class="nv">$ </span>ls -l .openshift/cron/hourly/
-some_task_name -&gt; ../tasks/run_celery_task
-another_task -&gt; ../tasks/run_celery_task
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>.openshift/cron/hourly/
+some_task_name<span class="w"> </span>-&gt;<span class="w"> </span>../tasks/run_celery_task
+another_task<span class="w"> </span>-&gt;<span class="w"> </span>../tasks/run_celery_task
+</code></pre></div>
 
 <p>After having done these preparations I only had to embed the cron cartridge and git push to OpenShift:</p>
-<div class="highlight"><pre>rhc-ctl-app -a difio -e add-cron-1.4 &amp;&amp; git push
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>rhc-ctl-app -a difio -e add-cron-1.4 &amp;&amp; git push
+</code></pre></div>
 
 <h2>What's next</h2>
 <p>At present OpenShift can schedule your jobs every minute, hour, day, week or month and does so using the
@@ -445,21 +435,20 @@ unzipping the archive and poking through the files. I wanted a shell. Here's how
 <ol>
 <li>
 <p>Get the application info first</p>
-<div class="highlight"><pre><span class="nv">$ </span>rhc-domain-info 
-Password: 
-Application <span class="nv">Info</span>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>rhc-domain-info<span class="w"> </span>
+Password:<span class="w"> </span>
+Application<span class="w"> </span><span class="nv">Info</span>
 <span class="o">================</span>
 myapp
-    Framework: perl-5.10
-     Creation: 2012-03-08T13:34:46-04:00
-         UUID: 8946b976ad284cf5b2401caf736186bd
-      Git URL: ssh://8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-   Public URL: http://myapp-mydomain.rhcloud.com/
+<span class="w">    </span>Framework:<span class="w"> </span>perl-5.10
+<span class="w">     </span>Creation:<span class="w"> </span><span class="m">2012</span>-03-08T13:34:46-04:00
+<span class="w">         </span>UUID:<span class="w"> </span>8946b976ad284cf5b2401caf736186bd
+<span class="w">      </span>Git<span class="w"> </span>URL:<span class="w"> </span>ssh://8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com/~/git/myapp.git/
+<span class="w">   </span>Public<span class="w"> </span>URL:<span class="w"> </span>http://myapp-mydomain.rhcloud.com/
 
- Embedded: 
-      None
-</pre></div>
-
+<span class="w"> </span>Embedded:<span class="w"> </span>
+<span class="w">      </span>None
+</code></pre></div>
 
 </li>
 <li>
@@ -467,24 +456,23 @@ myapp
 </li>
 <li>
 <p>Now just ssh into the application</p>
-<div class="highlight"><pre><span class="nv">$ </span>ssh 8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>ssh<span class="w"> </span>8946b976ad284cf5b2401caf736186bd@myapp-mydomain.rhcloud.com
 
-    Welcome to OpenShift shell
+<span class="w">    </span>Welcome<span class="w"> </span>to<span class="w"> </span>OpenShift<span class="w"> </span>shell
 
-    This shell will assist you in managing OpenShift applications.
+<span class="w">    </span>This<span class="w"> </span>shell<span class="w"> </span>will<span class="w"> </span>assist<span class="w"> </span>you<span class="w"> </span><span class="k">in</span><span class="w"> </span>managing<span class="w"> </span>OpenShift<span class="w"> </span>applications.
 
-    !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
-    Shell access is quite powerful and it is possible <span class="k">for</span> you to
-    accidentally damage your application.  Proceed with care!
-    If worse comes to worst, destroy your application with <span class="s1">&#39;rhc app destroy&#39;</span>
-    and recreate it
-    !!! IMPORTANT !!! IMPORTANT !!! IMPORTANT !!!
+<span class="w">    </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!
+<span class="w">    </span>Shell<span class="w"> </span>access<span class="w"> </span>is<span class="w"> </span>quite<span class="w"> </span>powerful<span class="w"> </span>and<span class="w"> </span>it<span class="w"> </span>is<span class="w"> </span>possible<span class="w"> </span><span class="k">for</span><span class="w"> </span>you<span class="w"> </span>to
+<span class="w">    </span>accidentally<span class="w"> </span>damage<span class="w"> </span>your<span class="w"> </span>application.<span class="w">  </span>Proceed<span class="w"> </span>with<span class="w"> </span>care!
+<span class="w">    </span>If<span class="w"> </span>worse<span class="w"> </span>comes<span class="w"> </span>to<span class="w"> </span>worst,<span class="w"> </span>destroy<span class="w"> </span>your<span class="w"> </span>application<span class="w"> </span>with<span class="w"> </span><span class="s1">&#39;rhc app destroy&#39;</span>
+<span class="w">    </span>and<span class="w"> </span>recreate<span class="w"> </span>it
+<span class="w">    </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!<span class="w"> </span>IMPORTANT<span class="w"> </span>!!!
 
-    Type <span class="s2">&quot;help&quot;</span> <span class="k">for</span> more info.
+<span class="w">    </span>Type<span class="w"> </span><span class="s2">&quot;help&quot;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>more<span class="w"> </span>info.
 
-<span class="o">[</span>myapp-mydomain.rhcloud.com ~<span class="o">]</span><span class="se">\&gt;</span>
-</pre></div>
-
+<span class="o">[</span>myapp-mydomain.rhcloud.com<span class="w"> </span>~<span class="o">]</span><span class="se">\&gt;</span>
+</code></pre></div>
 
 </li>
 </ol>
@@ -508,35 +496,32 @@ Here is an example for an application using the python-2.6 cartridge.</p>
 <ol>
 <li>
 <p>Backup! Backup! Backup!</p>
-<div class="highlight"><pre>rhc-snapshot -a mycoolapp
+<div class="highlight"><pre><span></span><code>rhc-snapshot -a mycoolapp
 mv mycoolapp.tar.gz mycoolapp-backup-before-update.tar.gz
-</pre></div>
-
+</code></pre></div>
 
 </li>
 <li>
 <p>If you haven't specified any particular version in <code>setup.py</code> it will
 look like this:</p>
-<div class="highlight"><pre><span class="o">...</span>
+<div class="highlight"><pre><span></span><code><span class="o">...</span>
 <span class="n">install_requires</span><span class="o">=</span><span class="p">[</span>
-                <span class="s">&#39;difio-openshift-python&#39;</span><span class="p">,</span>
-                <span class="s">&#39;MySQL-python&#39;</span><span class="p">,</span>
-                <span class="s">&#39;Markdown&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;difio-openshift-python&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;MySQL-python&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Markdown&#39;</span><span class="p">,</span>
                <span class="p">],</span>
 <span class="o">...</span>
-</pre></div>
-
+</code></pre></div>
 
 </li>
 <li>
 <p>To update simply push to OpenShift instructing it to rebuild your virtualenv:</p>
-<div class="highlight"><pre>cd mycoolapp/
+<div class="highlight"><pre><span></span><code>cd mycoolapp/
 touch .openshift/markers/force_clean_build
 git add .openshift/markers/force_clean_build
 git commit -m &quot;update to latest upstream&quot;
 git push
-</pre></div>
-
+</code></pre></div>
 
 </li>
 </ol>
@@ -544,10 +529,9 @@ git push
 <h2>Keeping some packages unchanged</h2>
 <p>Suppose that before the update you have <code>Markdown-2.0.1</code> and you want to keep it!
 This is easily solved by adding versioned dependency to <code>setup.py</code></p>
-<div class="highlight"><pre><span class="gd">-       &#39;Markdown&#39;,</span>
+<div class="highlight"><pre><span></span><code><span class="gd">-       &#39;Markdown&#39;,</span>
 <span class="gi">+       &#39;Markdown==2.0.1&#39;,</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>If you do that OpenShift will install the same <code>Markdown</code> version when rebuilding your
 application. Everything else will use the latest available versions.</p>
@@ -558,26 +542,23 @@ and will not surprise you with unwanted changes.</p>
 <p>Unless your application is really simple or you have tested the updates, I suspect that
 you want to update only selected packages. This can be done without rebuilding the whole
 virtualenv. Use versioned dependencies in <code>setup.py</code> :</p>
-<div class="highlight"><pre><span class="gd">-       &#39;Markdown==2.0.1&#39;,</span>
+<div class="highlight"><pre><span></span><code><span class="gd">-       &#39;Markdown==2.0.1&#39;,</span>
 <span class="gd">-       &#39;django-countries&#39;,</span>
 <span class="gi">+       &#39;Markdown&gt;=2.1&#39;,</span>
 <span class="gi">+       &#39;django-countries&gt;=1.1.2&#39;,</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>No need for <code>force_clean_build</code> this time. Just</p>
-<div class="highlight"><pre>    git commit &amp;&amp; git push
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>    git commit &amp;&amp; git push
+</code></pre></div>
 
 <p>At the time of writing my application was using <code>Markdown-2.0.1</code> and <code>django-countries-1.0.5</code>.
 Then it updated to <code>Markdown-2.1.1</code> and <code>django-countires-1.1.2</code> which also happened to be
 the latest versions.</p>
 <p><strong>Note:</strong> this will not work without <code>force_clean_build</code></p>
-<div class="highlight"><pre><span class="gd">-       &#39;django-countries==1.0.5&#39;,</span>
+<div class="highlight"><pre><span></span><code><span class="gd">-       &#39;django-countries==1.0.5&#39;,</span>
 <span class="gi">+       &#39;django-countries&#39;,</span>
-</pre></div>
-
+</code></pre></div>
 
 <h2>Warning</h2>
 <p>OpenShift uses a local mirror of <a href="http://pypi.python.org">Python Package Index</a>.
@@ -602,34 +583,31 @@ With OpenShift this is easy and fast. Here's how:</p>
 <ol>
 <li>
 <p>Create another application on OpenShift. This will be your development instance.</p>
-<div class="highlight"><pre>rhc-create-app -a myappdevel -t python-2.6
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>rhc-create-app -a myappdevel -t python-2.6
+</code></pre></div>
 
 </li>
 <li>
 <p>Find out the git URL for the production application:</p>
-<div class="highlight"><pre><span class="nv">$ </span>rhc-user-info
-Application <span class="nv">Info</span>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>rhc-user-info
+Application<span class="w"> </span><span class="nv">Info</span>
 <span class="o">================</span>
 myapp
-    Framework: python-2.6
-     Creation: 2012-02-10T12:39:53-05:00
-         UUID: 723f0331e17041e8b34228f87a6cf1f5
-      Git URL: ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-   Public URL: http://myapp-mydomain.rhcloud.com/
-</pre></div>
-
+<span class="w">    </span>Framework:<span class="w"> </span>python-2.6
+<span class="w">     </span>Creation:<span class="w"> </span><span class="m">2012</span>-02-10T12:39:53-05:00
+<span class="w">         </span>UUID:<span class="w"> </span>723f0331e17041e8b34228f87a6cf1f5
+<span class="w">      </span>Git<span class="w"> </span>URL:<span class="w"> </span>ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
+<span class="w">   </span>Public<span class="w"> </span>URL:<span class="w"> </span>http://myapp-mydomain.rhcloud.com/
+</code></pre></div>
 
 </li>
 <li>
 <p>Push the current code base from the production instance to devel instance:</p>
-<div class="highlight"><pre>cd myappdevel
-git remote add production -m master ssh://723f0331e17041e8b34228f87a6cf1f5@myapp-mydomain.rhcloud.com/~/git/myapp.git/
-git pull -s recursive -X theirs production master
-git push
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="n">cd</span><span class="w"> </span><span class="n">myappdevel</span>
+<span class="n">git</span><span class="w"> </span><span class="n">remote</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">production</span><span class="w"> </span><span class="o">-</span><span class="n">m</span><span class="w"> </span><span class="n">master</span><span class="w"> </span><span class="nl">ssh</span><span class="p">:</span><span class="o">//</span><span class="mi">723</span><span class="n">f0331e17041e8b34228f87a6cf1f5</span><span class="nv">@myapp</span><span class="o">-</span><span class="n">mydomain</span><span class="p">.</span><span class="n">rhcloud</span><span class="p">.</span><span class="n">com</span><span class="o">/~/</span><span class="n">git</span><span class="o">/</span><span class="n">myapp</span><span class="p">.</span><span class="n">git</span><span class="o">/</span>
+<span class="n">git</span><span class="w"> </span><span class="n">pull</span><span class="w"> </span><span class="o">-</span><span class="n">s</span><span class="w"> </span><span class="k">recursive</span><span class="w"> </span><span class="o">-</span><span class="n">X</span><span class="w"> </span><span class="n">theirs</span><span class="w"> </span><span class="n">production</span><span class="w"> </span><span class="n">master</span>
+<span class="n">git</span><span class="w"> </span><span class="n">push</span>
+</code></pre></div>
 
 </li>
 <li>
@@ -654,130 +632,131 @@ I've been talking about this at one of the monthly conferences of Linux for Bulg
 Create RPM repository with access control. Access is allowed only for some systems and forbidden for the rest. This is a similar to what Red Hat Network does. </p>
 <p><strong>Solution:</strong><br />
 We're going to use yum and Apache capabilities to work with SSL certificates. The client side (yum) will identify itself using SSL certificate and the server (Apache) will use this information to control the access.</p>
-<p><strong>Client side set-up:</strong><br />
+<p><strong>Client side set-up:</strong><br /></p>
 <ol>
   <li>
 Yum version 3.2.27 or newer supports SSL certificates for client authentication. This version is available in Red Hat Enterprise Linux 6. 
-  </li></p>
-<p><li>
-First you need to generate a private key and certificate using OpenSSL:</p>
-<div class="highlight"><pre><span class="cp"># openssl genrsa -out /var/lib/yum/client.key 1024</span>
-<span class="n">Generating</span> <span class="n">RSA</span> <span class="n">private</span> <span class="n">key</span><span class="p">,</span> <span class="mi">1024</span> <span class="n">bit</span> <span class="kt">long</span> <span class="n">modulus</span>
+  </li>
+
+  <li>
+First you need to generate a private key and certificate using OpenSSL:
+
+<div class="highlight"><pre><span></span><code><span class="cp"># openssl genrsa -out /var/lib/yum/client.key 1024</span>
+<span class="n">Generating</span><span class="w"> </span><span class="n">RSA</span><span class="w"> </span><span class="n">private</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="w"> </span><span class="n">bit</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">modulus</span>
 <span class="p">....</span><span class="o">++++++</span>
 <span class="p">.......</span><span class="o">++++++</span>
-<span class="n">e</span> <span class="n">is</span> <span class="mi">65537</span> <span class="p">(</span><span class="mh">0x10001</span><span class="p">)</span>
+<span class="n">e</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="mi">65537</span><span class="w"> </span><span class="p">(</span><span class="mh">0x10001</span><span class="p">)</span>
 
 <span class="cp"># openssl req -new -x509 -text -key /var/lib/yum/client.key -out /var/lib/yum/client.cert</span>
-<span class="n">You</span> <span class="n">are</span> <span class="n">about</span> <span class="n">to</span> <span class="n">be</span> <span class="n">asked</span> <span class="n">to</span> <span class="n">enter</span> <span class="n">information</span> <span class="n">that</span> <span class="n">will</span> <span class="n">be</span> <span class="n">incorporated</span>
-<span class="n">into</span> <span class="n">your</span> <span class="n">certificate</span> <span class="n">request</span><span class="p">.</span>
-<span class="n">What</span> <span class="n">you</span> <span class="n">are</span> <span class="n">about</span> <span class="n">to</span> <span class="n">enter</span> <span class="n">is</span> <span class="n">what</span> <span class="n">is</span> <span class="n">called</span> <span class="n">a</span> <span class="n">Distinguished</span> <span class="n">Name</span> <span class="n">or</span> <span class="n">a</span> <span class="n">DN</span><span class="p">.</span>
-<span class="n">There</span> <span class="n">are</span> <span class="n">quite</span> <span class="n">a</span> <span class="n">few</span> <span class="n">fields</span> <span class="n">but</span> <span class="n">you</span> <span class="n">can</span> <span class="n">leave</span> <span class="n">some</span> <span class="n">blank</span>
-<span class="n">For</span> <span class="n">some</span> <span class="n">fields</span> <span class="n">there</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="k">default</span> <span class="n">value</span><span class="p">,</span>
-<span class="n">If</span> <span class="n">you</span> <span class="n">enter</span> <span class="sc">&#39;.&#39;</span><span class="p">,</span> <span class="n">the</span> <span class="n">field</span> <span class="n">will</span> <span class="n">be</span> <span class="n">left</span> <span class="n">blank</span><span class="p">.</span>
+<span class="n">You</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">about</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">asked</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">enter</span><span class="w"> </span><span class="n">information</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">incorporated</span>
+<span class="n">into</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">certificate</span><span class="w"> </span><span class="n">request</span><span class="p">.</span>
+<span class="n">What</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">about</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">enter</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">called</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">Distinguished</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">DN</span><span class="p">.</span>
+<span class="n">There</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">quite</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">few</span><span class="w"> </span><span class="n">fields</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">leave</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">blank</span>
+<span class="n">For</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">fields</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">value</span><span class="p">,</span>
+<span class="n">If</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">enter</span><span class="w"> </span><span class="sc">&#39;.&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="n">blank</span><span class="p">.</span>
 <span class="o">-----</span>
-<span class="n">Country</span> <span class="n">Name</span> <span class="p">(</span><span class="mi">2</span> <span class="n">letter</span> <span class="n">code</span><span class="p">)</span> <span class="p">[</span><span class="n">XX</span><span class="p">]</span><span class="o">:</span><span class="n">BG</span>
-<span class="n">State</span> <span class="n">or</span> <span class="n">Province</span> <span class="n">Name</span> <span class="p">(</span><span class="n">full</span> <span class="n">name</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span><span class="n">Sofia</span>
-<span class="n">Locality</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">city</span><span class="p">)</span> <span class="p">[</span><span class="n">Default</span> <span class="n">City</span><span class="p">]</span><span class="o">:</span><span class="n">Sofia</span>
-<span class="n">Organization</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">company</span><span class="p">)</span> <span class="p">[</span><span class="n">Default</span> <span class="n">Company</span> <span class="n">Ltd</span><span class="p">]</span><span class="o">:</span><span class="n">Open</span> <span class="n">Technologies</span> <span class="n">Bulgaria</span>
-<span class="n">Organizational</span> <span class="n">Unit</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span><span class="n">IT</span>
-<span class="n">Common</span> <span class="n">Name</span> <span class="p">(</span><span class="n">eg</span><span class="p">,</span> <span class="n">your</span> <span class="n">name</span> <span class="n">or</span> <span class="n">your</span> <span class="n">server</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">hostname</span><span class="p">)</span> <span class="p">[]</span><span class="o">:</span>
-<span class="n">Email</span> <span class="n">Address</span> <span class="p">[]</span><span class="o">:</span><span class="n">no</span><span class="o">-</span><span class="n">spam</span><span class="p">@</span><span class="n">otb</span><span class="p">.</span><span class="n">bg</span>
-</pre></div>
+<span class="n">Country</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="n">letter</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="p">[</span><span class="n">XX</span><span class="p">]</span><span class="o">:</span><span class="n">BG</span>
+<span class="n">State</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">Province</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="n">full</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="o">:</span><span class="n">Sofia</span>
+<span class="n">Locality</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="n">eg</span><span class="p">,</span><span class="w"> </span><span class="n">city</span><span class="p">)</span><span class="w"> </span><span class="p">[</span><span class="n">Default</span><span class="w"> </span><span class="n">City</span><span class="p">]</span><span class="o">:</span><span class="n">Sofia</span>
+<span class="n">Organization</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="n">eg</span><span class="p">,</span><span class="w"> </span><span class="n">company</span><span class="p">)</span><span class="w"> </span><span class="p">[</span><span class="n">Default</span><span class="w"> </span><span class="n">Company</span><span class="w"> </span><span class="n">Ltd</span><span class="p">]</span><span class="o">:</span><span class="n">Open</span><span class="w"> </span><span class="n">Technologies</span><span class="w"> </span><span class="n">Bulgaria</span>
+<span class="n">Organizational</span><span class="w"> </span><span class="n">Unit</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="n">eg</span><span class="p">,</span><span class="w"> </span><span class="n">section</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="o">:</span><span class="n">IT</span>
+<span class="n">Common</span><span class="w"> </span><span class="n">Name</span><span class="w"> </span><span class="p">(</span><span class="n">eg</span><span class="p">,</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">server</span><span class="err">&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">hostname</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="o">:</span>
+<span class="n">Email</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="p">[]</span><span class="o">:</span><span class="n">no</span><span class="o">-</span><span class="n">spam</span><span class="p">@</span><span class="n">otb</span><span class="p">.</span><span class="n">bg</span>
+</code></pre></div>
 
 
-</li>
+  </li>
 
-<p><li>
-For better security you can change file permissions of <em>client.key</em>:</p>
-<div class="highlight"><pre># chmod 600 /var/lib/yum/client.key
-</pre></div>
+  <li>
+For better security you can change file permissions of <em>client.key</em>:
 
-
-</li>
-
-<p><li>
-You need to define the protected repository in a .repo file. It needs to look something like this:</p>
-<div class="highlight"><pre># cat /etc/yum.repos.d/protected.repo
-[protected]
-name=SSL protected repository
-baseurl=https://repos.example.com/protected
-enabled=1
-gpgcheck=1
-gpgkey=https://repos.example.com/RPM-GPG-KEY
-
-sslverify=1
-sslclientcert=/var/lib/yum/client.cert
-sslclientkey=/var/lib/yum/client.key
-</pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># chmod 600 /var/lib/yum/client.key</span>
+</code></pre></div>
 
 
-</li>
+  </li>
 
-<p><li>
+  <li>
+You need to define the protected repository in a .repo file. It needs to look something like this:
+
+<div class="highlight"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="n">cat</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">yum</span><span class="p">.</span><span class="n">repos</span><span class="p">.</span><span class="n">d</span><span class="o">/</span><span class="n">protected</span><span class="p">.</span><span class="n">repo</span>
+<span class="o">[</span><span class="n">protected</span><span class="o">]</span>
+<span class="n">name</span><span class="o">=</span><span class="n">SSL</span><span class="w"> </span><span class="n">protected</span><span class="w"> </span><span class="n">repository</span>
+<span class="n">baseurl</span><span class="o">=</span><span class="nl">https</span><span class="p">:</span><span class="o">//</span><span class="n">repos</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">protected</span>
+<span class="n">enabled</span><span class="o">=</span><span class="mi">1</span>
+<span class="n">gpgcheck</span><span class="o">=</span><span class="mi">1</span>
+<span class="n">gpgkey</span><span class="o">=</span><span class="nl">https</span><span class="p">:</span><span class="o">//</span><span class="n">repos</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">RPM</span><span class="o">-</span><span class="n">GPG</span><span class="o">-</span><span class="k">KEY</span>
+
+<span class="n">sslverify</span><span class="o">=</span><span class="mi">1</span>
+<span class="n">sslclientcert</span><span class="o">=/</span><span class="nf">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">yum</span><span class="o">/</span><span class="n">client</span><span class="p">.</span><span class="n">cert</span>
+<span class="n">sslclientkey</span><span class="o">=/</span><span class="nf">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">yum</span><span class="o">/</span><span class="n">client</span><span class="p">.</span><span class="k">key</span>
+</code></pre></div>
+
+
+  </li>
+
+  <li>
 If you use self-signed server certificate you can specify  <em>sslverify=0</em>, but this is not recommended.
   </li>
-</ol></p>
+</ol>
+
 <p>Whenever yum tries to reach the URL of the repository it will identify itself using the specified certificate.</p>
-<p><strong>Server side set-up:</strong><br />
+<p><strong>Server side set-up:</strong><br /></p>
 <ol>
   <li>
 Install and configure the <em>mod_ssl</em> module for Apache.
-  </li></p>
-<p><li>
+  </li>
+
+  <li>
 Create a directory for the repository which will be available over HTTPS.
-  </li></p>
-<p><li>
-In the repository directory add <em>.htaccess</em>, which looks something like this:</p>
-<div class="highlight"><pre>Action rpm-protected /cgi-bin/rpm.cgi
+  </li>
+
+  <li>
+In the repository directory add <em>.htaccess</em>, which looks something like this:
+
+<div class="highlight"><pre><span></span><code>Action rpm-protected /cgi-bin/rpm.cgi
 AddHandler rpm-protected .rpm .drpm
 SSLVerifyClient optional_no_ca
-</pre></div>
+</code></pre></div>
 
 
-</li>
+  </li>
 
-<p><li>
+  <li>
 The <em>Action</em> and <em>AddHandler</em> directives instruct Apache to run the <em>rpm.cgi</em> CGI script every time someone tries to access files with extension .rpm and .drpm.
-  </li></p>
-<p><li>
+  </li>
+
+  <li>
 The <em>SSLVerifyClient</em> directive tells Apache that the http client may present a valid certificate but it has not to be (successfully) verifyable.
 For more information on this configuration please see
 <a href="http://www.modssl.org/docs/2.1/ssl_reference.html#ToC13">http://www.modssl.org/docs/2.1/ssl_reference.html#ToC13</a>.
-  </li></p>
-<p><li>
-The simplest form of <em>rpm.cgi</em> script may look like this:</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
- 2
- 3
- 4
- 5
- 6
- 7
- 8
- 9
-10
-11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+  </li>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;</span><span class="nv">$SSL_CLIENT_M_SERIAL</span><span class="s2">&quot;</span> <span class="o">==</span> <span class="s2">&quot;9F938211B53B4F44&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> <span class="s2">&quot;Content-type: application/x-rpm&quot;</span>
-    <span class="nb">echo</span> <span class="s2">&quot;Content-length: </span><span class="k">$(</span>stat --printf<span class="o">=</span><span class="s1">&#39;%s&#39;</span> <span class="nv">$PATH_TRANSLATED</span><span class="k">)</span><span class="s2">&quot;</span>
-    <span class="nb">echo</span>
+  <li>
+The simplest form of <em>rpm.cgi</em> script may look like this:
 
-<span class="nb">    </span>cat <span class="nv">$PATH_TRANSLATED</span>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SSL_CLIENT_M_SERIAL</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;9F938211B53B4F44&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Content-type: application/x-rpm&quot;</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Content-length: </span><span class="k">$(</span>stat<span class="w"> </span>--printf<span class="o">=</span><span class="s1">&#39;%s&#39;</span><span class="w"> </span><span class="nv">$PATH_TRANSLATED</span><span class="k">)</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="nb">echo</span>
+
+<span class="w">    </span>cat<span class="w"> </span><span class="nv">$PATH_TRANSLATED</span>
 <span class="k">else</span>
-    <span class="nb">echo</span> <span class="s2">&quot;Status: 403&quot;</span>
-    <span class="nb">echo</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Status: 403&quot;</span>
+<span class="w">    </span><span class="nb">echo</span>
 <span class="k">fi</span>
-</pre></div>
-</td></tr></table>
+</code></pre></div>
 
-</li>
 
-<p><li>
+  </li>
+
+  <li>
 The script will allow access to a client which uses a certificate with serial number <em>9F938211B53B4F44</em>. Other clients will be denied access and the server will return standard 403 error code.
   </li>
-</ol></p>
+</ol>
+
 <p><strong>In practice:</strong><br />
 The above set-up is very basic and only demonstrates the technology behind this. In a real world configuration you will need some more tools to make this really usable. </p>
 <p>My company <a href="http://otb.bg">Open Technologies Bulgaria, Ltd.</a> has developed a custom solution for our customers based on the above example called Voyager. It features a Drupal module, a CGI script and a client side yum plugin. </p>
@@ -864,33 +843,31 @@ We've decided to use <em>GDM 2.16</em> from RHEL5 due to the above factors. In p
 <p><em>GDM</em>, <em>udlfb</em> and <em>xorg-x11-drv-fbdev-displaylink</em> need to be compiled and installed on the system. </p>
 <p>To build an older <em>GDM</em> on RHEL6 you will need to adjust some of the patches in the src.rpm package to apply cleanly and tweak the .spec file to your needs. This also includes using the appropriate version of <em>ltmain.sh</em> from the distro.</p>
 <p>The udev rules and scripts are slightly different due to the different device paths in RHEL6:</p>
-<div class="highlight"><pre>SYSFS<span class="o">{</span>idVendor<span class="o">}==</span><span class="s2">&quot;17e9&quot;</span>, SYSFS<span class="o">{</span>bConfigurationValue<span class="o">}==</span><span class="s2">&quot;2&quot;</span>, <span class="nv">RUN</span><span class="o">=</span><span class="s2">&quot;/bin/echo 1 &gt; /sys%p/bConfigurationValue&quot;</span>
+<div class="highlight"><pre><span></span><code>SYSFS<span class="o">{</span>idVendor<span class="o">}==</span><span class="s2">&quot;17e9&quot;</span>,<span class="w"> </span>SYSFS<span class="o">{</span>bConfigurationValue<span class="o">}==</span><span class="s2">&quot;2&quot;</span>,<span class="w"> </span><span class="nv">RUN</span><span class="o">=</span><span class="s2">&quot;/bin/echo 1 &gt; /sys%p/bConfigurationValue&quot;</span>
 
-<span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;add&quot;</span>,    <span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>, <span class="nv">SUBSYSTEMS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>, <span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../&quot;</span>, SYMLINK+<span class="o">=</span><span class="s2">&quot;usbseat/%c/display&quot;</span>,  RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
-<span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;remove&quot;</span>, <span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>, RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/stop-seat %k&quot;</span>
+<span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;add&quot;</span>,<span class="w">    </span><span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEMS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>,<span class="w"> </span><span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../&quot;</span>,<span class="w"> </span><span class="nv">SYMLINK</span><span class="o">+=</span><span class="s2">&quot;usbseat/%c/display&quot;</span>,<span class="w">  </span><span class="nv">RUN</span><span class="o">+=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
+<span class="nv">ACTION</span><span class="o">==</span><span class="s2">&quot;remove&quot;</span>,<span class="w"> </span><span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;fb*&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;graphics&quot;</span>,<span class="w"> </span><span class="nv">RUN</span><span class="o">+=</span><span class="s2">&quot;/etc/udev/scripts/stop-seat %k&quot;</span>
 
-<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;control*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;sound&quot;</span>, <span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>, <span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>, SYMLINK+<span class="o">=</span><span class="s2">&quot;usbseat/%c/sound&quot;</span>
-<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;event*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;input&quot;</span>, <span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>, SYSFS<span class="o">{</span>bInterfaceClass<span class="o">}==</span><span class="s2">&quot;03&quot;</span>, SYSFS<span class="o">{</span>bInterfaceProtocol<span class="o">}==</span><span class="s2">&quot;01&quot;</span>, <span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>, SYMLINK+<span class="o">=</span><span class="s2">&quot;usbseat/%c/keyboard&quot;</span>, RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
-<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;event*&quot;</span>, <span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;input&quot;</span>, <span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>, SYSFS<span class="o">{</span>bInterfaceClass<span class="o">}==</span><span class="s2">&quot;03&quot;</span>, SYSFS<span class="o">{</span>bInterfaceProtocol<span class="o">}==</span><span class="s2">&quot;02&quot;</span>, <span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>, SYMLINK+<span class="o">=</span><span class="s2">&quot;usbseat/%c/mouse&quot;</span>,    RUN+<span class="o">=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
-</pre></div>
-
+<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;control*&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;sound&quot;</span>,<span class="w"> </span><span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>,<span class="w"> </span><span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>,<span class="w"> </span><span class="nv">SYMLINK</span><span class="o">+=</span><span class="s2">&quot;usbseat/%c/sound&quot;</span>
+<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;event*&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;input&quot;</span>,<span class="w"> </span><span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>,<span class="w"> </span>SYSFS<span class="o">{</span>bInterfaceClass<span class="o">}==</span><span class="s2">&quot;03&quot;</span>,<span class="w"> </span>SYSFS<span class="o">{</span>bInterfaceProtocol<span class="o">}==</span><span class="s2">&quot;01&quot;</span>,<span class="w"> </span><span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>,<span class="w"> </span><span class="nv">SYMLINK</span><span class="o">+=</span><span class="s2">&quot;usbseat/%c/keyboard&quot;</span>,<span class="w"> </span><span class="nv">RUN</span><span class="o">+=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
+<span class="nv">KERNEL</span><span class="o">==</span><span class="s2">&quot;event*&quot;</span>,<span class="w"> </span><span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;input&quot;</span>,<span class="w"> </span><span class="nv">BUS</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>,<span class="w"> </span>SYSFS<span class="o">{</span>bInterfaceClass<span class="o">}==</span><span class="s2">&quot;03&quot;</span>,<span class="w"> </span>SYSFS<span class="o">{</span>bInterfaceProtocol<span class="o">}==</span><span class="s2">&quot;02&quot;</span>,<span class="w"> </span><span class="nv">PROGRAM</span><span class="o">=</span><span class="s2">&quot;/usr/bin/sumu-hub-id /sys/%p/device/../../../../&quot;</span>,<span class="w"> </span><span class="nv">SYMLINK</span><span class="o">+=</span><span class="s2">&quot;usbseat/%c/mouse&quot;</span>,<span class="w">    </span><span class="nv">RUN</span><span class="o">+=</span><span class="s2">&quot;/etc/udev/scripts/start-seat %c&quot;</span>
+</code></pre></div>
 
 <p>We also use only <em>/dev/event*</em> devices for both mouse and keyboard.</p>
 <p>The <em>sumu-hub-id</em> script returns the string busX-devY indicating the location of the device:</p>
-<div class="highlight"><pre><span class="c">#!/bin/bash</span>
-<span class="k">if</span> <span class="o">[</span> -d <span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> <span class="s2">&quot;bus</span><span class="k">$(</span>cat <span class="nv">$1</span>/busnum<span class="k">)</span><span class="s2">-dev</span><span class="k">$(</span>cat <span class="nv">$1</span>/devnum<span class="k">)</span><span class="s2">&quot;</span>
-    <span class="nb">exit </span>0
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;bus</span><span class="k">$(</span>cat<span class="w"> </span><span class="nv">$1</span>/busnum<span class="k">)</span><span class="s2">-dev</span><span class="k">$(</span>cat<span class="w"> </span><span class="nv">$1</span>/devnum<span class="k">)</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
 <span class="k">else</span>
-    <span class="nb">exit </span>1
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
 <span class="k">fi</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>USB device numbering is unique per bus and there isn't a global device identifier as far as I know. On systems with 2 or more USB buses this can lead to mismatch between devices/seats.</p>
 <p>For seat/display numbering we use the number of the framebuffer device associated with the seat. This is unique, numbers start from 1 (<em>fb0</em> is the text console) and are sequential unlike USB device numbers. This also ensures easy match between <em>$DISPLAY</em> and <em>/dev/fbX</em> for debugging purposes.</p>
 <p>Our <em>xorg.conf.sed</em> template uses evdev as the input driver. This driver is the default in RHEL6:</p>
-<div class="highlight"><pre>Section &quot;InputDevice&quot;
+<div class="highlight"><pre><span></span><code>Section &quot;InputDevice&quot;
     Identifier &quot;keyboard&quot;
     Driver      &quot;evdev&quot;
     Option      &quot;CoreKeyboard&quot;
@@ -907,11 +884,10 @@ Section &quot;InputDevice&quot;
     Option      &quot;Buttons&quot; &quot;5&quot;
     Option      &quot;ZAxisMapping&quot; &quot;4 5&quot;
 EndSection
-</pre></div>
-
+</code></pre></div>
 
 <p>We also use a custom <em>gdm.conf</em> file to avoid conflicts with stock packages. Only the important settings are shown:</p>
-<div class="highlight"><pre><span class="k">[daemon]</span>
+<div class="highlight"><pre><span></span><code><span class="k">[daemon]</span>
 <span class="na">AlwaysRestartServer</span><span class="o">=</span><span class="s">false</span>
 <span class="na">DynamicXServers</span><span class="o">=</span><span class="s">true</span>
 <span class="na">FlexibleXServers</span><span class="o">=</span><span class="s">0</span>
@@ -919,8 +895,7 @@ EndSection
 
 <span class="k">[servers]</span>
 <span class="na">0</span><span class="o">=</span><span class="s">inactive</span>
-</pre></div>
-
+</code></pre></div>
 
 <p>AlwaysRestartServer=false is necessary to avoid a bug in <em>Xorg</em>. See below for issues description.</p>
 <p>Audio is supported by setting $PULSE_SINK/$PULSE_SOURCE environment variables using a script in <em>/etc/profile.d</em> which executes after login.</p>
@@ -959,7 +934,15 @@ Xorg will cause 100% CPU usage after logout - this is due to several factors. Th
 This works fine unless one of the users logs out of their GNOME session. After that GDM will kill and restart it's process and new Xorg process will be spawned. The restarted instance will loop endlessly executing the following code:
 
 
-wzxhzdk:4
+<div class="highlight"><pre><span></span><code><span class="n">ioctl</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">TCFLSH</span><span class="p">,</span><span class="w"> </span><span class="mh">0x2</span><span class="p">)</span><span class="w">                   </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="w"> </span><span class="n">EIO</span><span class="w"> </span><span class="p">(</span><span class="n">Input</span><span class="o">/</span><span class="n">output</span><span class="w"> </span><span class="n">error</span><span class="p">)</span>
+<span class="n">setitimer</span><span class="p">(</span><span class="n">ITIMER_REAL</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">it_interval</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">20000</span><span class="p">},</span><span class="w"> </span><span class="n">it_value</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">20000</span><span class="p">}},</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="n">clock_gettime</span><span class="p">(</span><span class="n">CLOCK_MONOTONIC</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">247</span><span class="p">,</span><span class="w"> </span><span class="mi">684817842</span><span class="p">})</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="n">clock_gettime</span><span class="p">(</span><span class="n">CLOCK_MONOTONIC</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">247</span><span class="p">,</span><span class="w"> </span><span class="mi">684921278</span><span class="p">})</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="n">setitimer</span><span class="p">(</span><span class="n">ITIMER_REAL</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">it_interval</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w"> </span><span class="n">it_value</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">}},</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="n">select</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="mi">13</span><span class="w"> </span><span class="mi">14</span><span class="w"> </span><span class="mi">15</span><span class="w"> </span><span class="mi">16</span><span class="p">],</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">409</span><span class="p">,</span><span class="w"> </span><span class="mi">254000</span><span class="p">})</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="n">in</span><span class="w"> </span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="p">{</span><span class="mi">409</span><span class="p">,</span><span class="w"> </span><span class="mi">253990</span><span class="p">})</span>
+<span class="n">ioctl</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">TCFLSH</span><span class="p">,</span><span class="w"> </span><span class="mh">0x2</span><span class="p">)</span><span class="w">                   </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="w"> </span><span class="n">EIO</span><span class="w"> </span><span class="p">(</span><span class="n">Input</span><span class="o">/</span><span class="n">output</span><span class="w"> </span><span class="n">error</span><span class="p">)</span>
+</code></pre></div>
+
 
 
 If you search on the Internet you will find plenty of bug reports related to this code block. The problem is in <em>Xorg</em> which doesn't properly handle the situation where it can't take control over the terminal. The solution is to not restart <em>Xorg</em> after user session ends. This is done by setting AlwaysRestartServer=false in <em>gdm.conf</em>.
@@ -971,7 +954,10 @@ No integration with <em>SELinux</em> and <em>ConsoleKit</em> - while configuring
 Newer <em>GDM</em> versions register the user session with <em>ConsoleKit</em> and integrate that into the desktop. Missing integration means that some things will fail. For example <em>NetworkManager</em> will not allow the user to connect to a VPN connection because it thinks this user is not logged in:
 
 
-wzxhzdk:5
+<div class="highlight"><pre><span></span><code><span class="o">**</span><span class="w"> </span><span class="o">(</span><span class="nt">nm-applet</span><span class="p">:</span><span class="nd">1168</span><span class="o">):</span><span class="w"> </span><span class="nt">WARNING</span><span class="w"> </span><span class="o">**:</span><span class="w"> </span><span class="o">&amp;</span><span class="nt">lt</span><span class="o">;</span><span class="nt">WARN</span><span class="o">&amp;</span><span class="nt">gt</span><span class="o">;</span><span class="w">  </span><span class="nt">activate_vpn_cb</span><span class="o">():</span><span class="w"> </span><span class="nt">VPN</span><span class="w"> </span><span class="nt">Connection</span><span class="w"> </span><span class="nt">activation</span><span class="w"> </span><span class="nt">failed</span><span class="o">:</span>
+<span class="o">(</span><span class="nt">org</span><span class="p">.</span><span class="nc">freedesktop</span><span class="p">.</span><span class="nc">NetworkManager</span><span class="p">.</span><span class="nc">PermissionDenied</span><span class="o">)</span><span class="w"> </span><span class="nt">No</span><span class="w"> </span><span class="nt">user</span><span class="w"> </span><span class="nt">settings</span><span class="w"> </span><span class="nt">service</span><span class="w"> </span><span class="nt">available</span>
+</code></pre></div>
+
 
 </li>
 
@@ -1055,7 +1041,7 @@ A demonstration video from the same deployment can be found at <a href="http://w
                                 </a>
                             </li>
                             <li>
-                                <a href="http://amzn.to/1ivu2q4">
+                                <a href="https://amzn.to/4aHmlLD">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-amazon fa-stack-1x fa-inverse"></i>
