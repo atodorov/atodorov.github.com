@@ -32,29 +32,15 @@ ARTICLE_SAVE_AS = ARTICLE_URL + 'index.html'
 TAG_URL = 'blog/categories/{slug}/'
 TAG_SAVE_AS = TAG_URL + 'index.html'
 
-# prepare for the change in
-# https://github.com/getpelican/pelican/pull/1638
-# expected in Pelican 3.7
-if type(DEFAULT_CONFIG['MD_EXTENSIONS']) == dict:
-    MD_EXTENSIONS = {}
-    MD_EXTENSIONS.update(DEFAULT_CONFIG['MD_EXTENSIONS'])
-    MD_EXTENSIONS.update({
-            'markdown.extensions.wikilinks' : {
-                'build_url' : build_url,
-            },
-            'nlbqx.nlbqx': {},
-            'nlcx.nlcx' : {},
-            'mdbz.rhbz' : {},
-        })
-else:
-    MD_EXTENSIONS = []
-    MD_EXTENSIONS += DEFAULT_CONFIG['MD_EXTENSIONS']
-    MD_EXTENSIONS += ['wikilinks', 'nlbqx.nlbqx', 'nlcx.nlcx', 'mdbz.rhbz']
-    MD_EXTENSION_CONFIGS = {
-        'wikilinks' : {
+MARKDOWN = DEFAULT_CONFIG['MARKDOWN'].copy()
+MARKDOWN['extension_configs'].update({
+        'markdown.extensions.wikilinks' : {
             'build_url' : build_url,
-        }
-    }
+        },
+        'nlbqx.nlbqx': {},
+        'nlcx.nlcx' : {},
+        'mdbz.rhbz' : {},
+    })
 
 # static paths will be copied under the same name
 STATIC_PATHS = ["images/", 'robots.txt', 'favicon.png', 'CNAME', 'override.css']
