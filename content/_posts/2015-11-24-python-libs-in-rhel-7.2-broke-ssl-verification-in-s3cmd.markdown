@@ -15,8 +15,8 @@ git checkout without any luck. This is when I started to suspect that python-lib
 has been updated in an incompatible way.
 
 After series of reported bugs,
-[rhbz#1284916],
-[rhbz#1284930],
+[RHBZ #1284916](https://bugzilla.redhat.com/show_bug.cgi?id=1284916),
+[RHBZ #1284930](https://bugzilla.redhat.com/show_bug.cgi?id=1284930),
 [Python#25722](http://bugs.python.org/issue25722), it was clear that
 `ssl.py` was working according to RFC6125, that Amazon S3 was not playing
 nicely with this same RFC and that my patch proposal was wrong.

@@ -59,7 +59,8 @@ There are so many different portability issues which may affect an otherwise
 working program. You only need to add a requirement to build/execute on another
 OS or CPU architecture - for example aarch64 (64-bit ARM).
 This resulted in hundreds of bugs
-reported by Dennis Gilmore, for example [RHBZ#926850] which is also related to
+reported by Dennis Gilmore, for example
+[RHBZ #926850](https://bugzilla.redhat.com/show_bug.cgi?id=926850) which is also related to
 packaging and the build chain.
 
 Then we have possibility for big endian vs. little endian issues especially if

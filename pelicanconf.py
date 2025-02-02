@@ -39,7 +39,6 @@ MARKDOWN['extension_configs'].update({
         },
         'nlbqx.nlbqx': {},
         'nlcx.nlcx' : {},
-        'mdbz.rhbz' : {},
     })
 
 # static paths will be copied under the same name
