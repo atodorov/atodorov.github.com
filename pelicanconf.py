@@ -14,7 +14,7 @@ def build_url(label, base, end):
         'Tradeo' : 'http://tradeo.com',
     }
 
-    if u.has_key(label):
+    if label in u:
         return u[label]
     else:
         return wikilinks.build_url(label, base, end)
